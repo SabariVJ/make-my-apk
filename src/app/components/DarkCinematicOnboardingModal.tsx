@@ -253,7 +253,6 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
       localStorage.setItem('svj_app_state_v5_has_dark_onboarded', 'true');
       localStorage.setItem('svj_app_state_v5_has_onboarded', 'true');
       updateUserProfile({
-        isOnboarded: true,
         evolutionTheme: EVOLUTION_THEMES[selectedThemeIndex]!.id as 'samurai',
         level: 1,
         leagueRank: 'APPRENTICE I',

@@ -1,0 +1,603 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel } from '../types';
+import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
+
+interface SVJContextType {
+  user: UserProfile;
+  challenges: DailyChallenge[];
+  feed: FeedActivity[];
+  leaderboard: LeaderboardEntry[];
+  rewards: RewardItem[];
+  comparingMember: LeaderboardEntry | null;
+  selectedMemberModal: LeaderboardEntry | null;
+  levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
+  isPaywallOpen: boolean;
+  isEditProfileOpen: boolean;
+  isUPIModalOpen: boolean;
+  isFirstTimeOnboardingOpen: boolean;
+  isDarkOnboardingOpen: boolean;
+  isGoogleAuthModalOpen: boolean;
+
+  // Actions
+  toggleChallenge: (id: string) => void;
+  addCustomChallenge: (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => void;
+  toggleReaction: (activityId: string, reaction: ReactionType) => void;
+  addComment: (activityId: string, text: string) => void;
+  redeemReward: (rewardId: string) => void;
+  updateUserProfile: (updates: Partial<UserProfile>) => void;
+  completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
+  upgradeToPremium: () => void;
+  loginWithGmail: (email: string, name?: string, avatar?: string) => void;
+  logoutGmail: () => void;
+  setComparingMember: (member: LeaderboardEntry | null) => void;
+  setSelectedMemberModal: (member: LeaderboardEntry | null) => void;
+  setLevelUpModalData: (data: { oldTier: TierLevel; newTier: TierLevel } | null) => void;
+  setIsPaywallOpen: (open: boolean) => void;
+  setIsEditProfileOpen: (open: boolean) => void;
+  setIsUPIModalOpen: (open: boolean) => void;
+  setIsFirstTimeOnboardingOpen: (open: boolean) => void;
+  setIsDarkOnboardingOpen: (open: boolean) => void;
+  setIsGoogleAuthModalOpen: (open: boolean) => void;
+  triggerConfetti: () => void;
+}
+
+const SVJContext = createContext<SVJContextType | undefined>(undefined);
+
+const LOCAL_STORAGE_KEY = 'svj_app_state_v5';
+
+export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_user`);
+    return saved ? JSON.parse(saved) : INITIAL_USER;
+  });
+
+  const [challenges, setChallenges] = useState<DailyChallenge[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_challenges`);
+    return saved ? JSON.parse(saved) : INITIAL_CHALLENGES;
+  });
+
+  const [feed, setFeed] = useState<FeedActivity[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feed`);
+    if (!saved) return INITIAL_FEED;
+    try {
+      const parsed: FeedActivity[] = JSON.parse(saved);
+      const seenIds = new Set<string>();
+      return parsed.map((item, idx) => {
+        if (!item.id || seenIds.has(item.id)) {
+          const uniqueId = `feed-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
+          seenIds.add(uniqueId);
+          return { ...item, id: uniqueId };
+        }
+        seenIds.add(item.id);
+        return item;
+      });
+    } catch {
+      return INITIAL_FEED;
+    }
+  });
+
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
+    return saved ? JSON.parse(saved) : LEADERBOARD_USERS;
+  });
+
+  const [rewards, setRewards] = useState<RewardItem[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_rewards`);
+    return saved ? JSON.parse(saved) : INITIAL_REWARDS;
+  });
+
+  const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
+  const [selectedMemberModal, setSelectedMemberModal] = useState<LeaderboardEntry | null>(null);
+  const [levelUpModalData, setLevelUpModalData] = useState<{ oldTier: TierLevel; newTier: TierLevel } | null>(null);
+  const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
+  const [isUPIModalOpen, setIsUPIModalOpen] = useState<boolean>(false);
+  const [isFirstTimeOnboardingOpen, setIsFirstTimeOnboardingOpen] = useState<boolean>(false);
+  const [isDarkOnboardingOpen, setIsDarkOnboardingOpen] = useState<boolean>(() => {
+    const onboarded = localStorage.getItem(`${LOCAL_STORAGE_KEY}_has_dark_onboarded`);
+    return !onboarded;
+  });
+  const [isGoogleAuthModalOpen, setIsGoogleAuthModalOpen] = useState<boolean>(false);
+
+  // Auto-restore active Gmail account if set
+  useEffect(() => {
+    const activeEmail = localStorage.getItem(`${LOCAL_STORAGE_KEY}_active_email`);
+    if (activeEmail) {
+      const savedAcc = localStorage.getItem(`svj_user_account_${activeEmail.toLowerCase()}`);
+      if (savedAcc) {
+        try {
+          const parsed = JSON.parse(savedAcc);
+          setUser(parsed);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  // Sync user state to local storage and sync user entry on the global leaderboard
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(user));
+    if (user.email) {
+      localStorage.setItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(user));
+    }
+
+    setLeaderboard(prev => {
+      const userIndex = prev.findIndex(item => item.id === user.id || item.id === 'user-me');
+      if (userIndex !== -1) {
+        const updated = [...prev];
+        updated[userIndex] = {
+          ...updated[userIndex],
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar,
+          tier: user.tier,
+          totalXP: user.totalXP,
+          weeklyXP: user.weeklyXP,
+          monthlyXP: user.monthlyXP,
+          streak: user.currentStreak,
+          isVerified: user.verifiedIcon,
+          isVIP: user.vipIcon,
+          isFounder: user.isFounder,
+          isOwner: user.isOwner,
+          bio: user.bio
+        };
+        return updated;
+      } else {
+        return [
+          ...prev,
+          {
+            rank: prev.length + 1,
+            rankDelta: 0,
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar,
+            tier: user.tier,
+            totalXP: user.totalXP,
+            weeklyXP: user.weeklyXP,
+            monthlyXP: user.monthlyXP,
+            streak: user.currentStreak,
+            country: 'US',
+            isVerified: user.verifiedIcon,
+            isVIP: user.vipIcon,
+            isFounder: user.isFounder,
+            isOwner: user.isOwner,
+            bio: user.bio
+          }
+        ];
+      }
+    });
+  }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_challenges`, JSON.stringify(challenges));
+  }, [challenges]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_feed`, JSON.stringify(feed));
+  }, [feed]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_leaderboard`, JSON.stringify(leaderboard));
+  }, [leaderboard]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(rewards));
+  }, [rewards]);
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#C81E3A', '#D4AF37', '#F4F2ED', '#E62846']
+    });
+  };
+
+  const getTierForXP = (xp: number): TierLevel => {
+    if (xp >= 60000) return 'Obsidian';
+    if (xp >= 35000) return 'Diamond';
+    if (xp >= 20000) return 'Platinum';
+    if (xp >= 12000) return 'Gold';
+    if (xp >= 6000) return 'Silver';
+    if (xp >= 2500) return 'Bronze';
+    return 'Initiate';
+  };
+
+  const toggleChallenge = (id: string) => {
+    setChallenges(prev => {
+      let xpDelta = 0;
+      let completedItem: DailyChallenge | undefined;
+
+      const updated = prev.map(ch => {
+        if (ch.id === id) {
+          const nextState = !ch.completed;
+          xpDelta = nextState ? ch.xp : -ch.xp;
+          completedItem = { ...ch, completed: nextState, completedAt: nextState ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined };
+          return completedItem;
+        }
+        return ch;
+      });
+
+      if (completedItem) {
+        if (completedItem.completed && xpDelta > 0) {
+          triggerConfetti();
+        }
+
+        // Update User XP & Check Tier Progression
+        setUser(prevUser => {
+          const oldXP = prevUser.totalXP;
+          const newXP = Math.max(0, oldXP + xpDelta);
+          const oldTier = prevUser.tier;
+          const newTier = getTierForXP(newXP);
+
+          if (completedItem?.completed && newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+            setLevelUpModalData({ oldTier, newTier });
+          }
+
+          // Also update 30-day XP history
+          const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+          const updatedHistory = [...prevUser.xpHistory];
+          const lastIdx = updatedHistory.length - 1;
+          if (lastIdx >= 0) {
+            updatedHistory[lastIdx] = {
+              date: todayStr,
+              xp: Math.max(0, updatedHistory[lastIdx].xp + xpDelta)
+            };
+          }
+
+          // Dynamically adjust category attribute stats
+          const categoryStatMap: Record<string, keyof UserStats> = {
+            Physical: 'physical',
+            Nutrition: 'physical',
+            Discipline: 'discipline',
+            Mental: 'mental',
+            Mindset: 'mental',
+            Social: 'social',
+            Community: 'social',
+            Intellect: 'intellect',
+            Guide: 'intellect',
+            Ambition: 'ambition',
+            Goal: 'ambition'
+          };
+
+          const statKey = categoryStatMap[completedItem.category] || 'discipline';
+          const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+          const statChange = completedItem.completed ? 3 : -3;
+          const updatedStats: UserStats = {
+            ...currentStats,
+            [statKey]: Math.min(100, Math.max(0, (currentStats[statKey] || 10) + statChange))
+          };
+
+          return {
+            ...prevUser,
+            totalXP: newXP,
+            weeklyXP: Math.max(0, prevUser.weeklyXP + xpDelta),
+            monthlyXP: Math.max(0, prevUser.monthlyXP + xpDelta),
+            totalChallengesCompleted: Math.max(0, prevUser.totalChallengesCompleted + (completedItem.completed ? 1 : -1)),
+            tier: newTier,
+            stats: updatedStats,
+            xpHistory: updatedHistory
+          };
+        });
+
+        if (completedItem.completed) {
+          // Add activity post to Feed
+          const newFeedItem: FeedActivity = {
+            id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId: user.id,
+            username: user.username,
+            userAvatar: user.avatar,
+            userTier: user.tier,
+            isVerified: user.verifiedIcon,
+            isVIP: user.vipIcon,
+            actionType: 'completed_challenge',
+            title: `⚡ Completed Challenge: ${completedItem.title}`,
+            details: `Earned +${completedItem.xp} XP in ${completedItem.category}. Daily discipline on point!`,
+            xpEarned: completedItem.xp,
+            timestamp: 'Just now',
+            reactions: { fire: 1, crown: 0, hundred: 1, bolt: 1, wolf: 0 },
+            userReactions: { [user.id]: 'fire' },
+            comments: []
+          };
+
+          setFeed(f => [newFeedItem, ...f]);
+        }
+      }
+
+      return updated;
+    });
+  };
+
+  const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
+    const newCh: DailyChallenge = {
+      id: `ch-custom-${Date.now()}`,
+      title,
+      category,
+      difficulty,
+      xp,
+      durationMinutes: 20,
+      description: 'Custom user habit designed for daily excellence.',
+      completed: false,
+      isCustom: true
+    };
+    setChallenges(prev => [newCh, ...prev]);
+  };
+
+  const toggleReaction = (activityId: string, reaction: ReactionType) => {
+    setFeed(prevFeed =>
+      prevFeed.map(item => {
+        if (item.id !== activityId) return item;
+
+        const currentReaction = item.userReactions[user.id];
+        const newReactions = { ...item.reactions };
+        const newUserReactions = { ...item.userReactions };
+
+        if (currentReaction === reaction) {
+          // Remove reaction
+          newReactions[reaction] = Math.max(0, newReactions[reaction] - 1);
+          delete newUserReactions[user.id];
+        } else {
+          // If had prior reaction, decrement old
+          if (currentReaction) {
+            newReactions[currentReaction] = Math.max(0, newReactions[currentReaction] - 1);
+          }
+          // Increment new
+          newReactions[reaction] = (newReactions[reaction] || 0) + 1;
+          newUserReactions[user.id] = reaction;
+        }
+
+        return {
+          ...item,
+          reactions: newReactions,
+          userReactions: newUserReactions
+        };
+      })
+    );
+  };
+
+  const addComment = (activityId: string, text: string) => {
+    if (!text.trim()) return;
+    const newComment = {
+      id: `comm-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      userId: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      text: text.trim(),
+      createdAt: 'Just now',
+      tier: user.tier
+    };
+
+    setFeed(prevFeed =>
+      prevFeed.map(item => {
+        if (item.id === activityId) {
+          return {
+            ...item,
+            comments: [...item.comments, newComment]
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const redeemReward = (rewardId: string) => {
+    const reward = rewards.find(r => r.id === rewardId);
+    if (!reward || reward.unlocked) return;
+
+    if (user.totalXP < reward.xpCost) {
+      alert(`You need ${reward.xpCost - user.totalXP} more XP to unlock this reward!`);
+      return;
+    }
+
+    if (reward.isPremiumOnly && !user.isPremium) {
+      setIsPaywallOpen(true);
+      return;
+    }
+
+    triggerConfetti();
+
+    setRewards(prev =>
+      prev.map(r => (r.id === rewardId ? { ...r, unlocked: true } : r))
+    );
+
+    // Deducing XP or maintaining lifetime total XP? In SVJ totalXP represents rank, so we unlock without burning lifetime rank XP!
+  };
+
+  const updateUserProfile = (updates: Partial<UserProfile>) => {
+    setUser(prev => ({ ...prev, ...updates }));
+    
+    // Sync leaderboard if user profile updates
+    setLeaderboard(prev =>
+      prev.map(item =>
+        item.id === 'user-me'
+          ? {
+              ...item,
+              username: updates.username || item.username,
+              avatar: updates.avatar || item.avatar,
+              bio: updates.bio || item.bio
+            }
+          : item
+      )
+    );
+  };
+
+  const completeOnboarding = (data: { name: string; username: string; bio: string; location: string; avatar: string }) => {
+    triggerConfetti();
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, 'true');
+
+    // Update user profile with welcome bonus +100 XP
+    setUser(prev => ({
+      ...prev,
+      name: data.name,
+      username: data.username,
+      bio: data.bio,
+      location: data.location,
+      avatar: data.avatar,
+      totalXP: 100,
+      weeklyXP: 100,
+      monthlyXP: 100,
+      xpHistory: [{ date: '31 Jul', xp: 100 }]
+    }));
+
+    // Update user on leaderboard
+    setLeaderboard(prev =>
+      prev.map(item =>
+        item.id === 'user-me'
+          ? {
+              ...item,
+              username: data.username,
+              avatar: data.avatar,
+              bio: data.bio,
+              totalXP: 100,
+              weeklyXP: 100,
+              monthlyXP: 100
+            }
+          : item
+      )
+    );
+
+    setIsFirstTimeOnboardingOpen(false);
+  };
+
+  const upgradeToPremium = () => {
+    triggerConfetti();
+    setUser(prev => ({
+      ...prev,
+      isPremium: true,
+      verifiedIcon: true,
+      vipIcon: true,
+      equippedBadge: 'bdg-verified'
+    }));
+    setIsPaywallOpen(false);
+  };
+
+  const loginWithGmail = (email: string, name?: string, avatar?: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const isOwnerEmail = cleanEmail === 'sabarivj777@gmail.com';
+
+    const savedAccount = localStorage.getItem(`svj_user_account_${cleanEmail}`);
+    let baseUser: UserProfile = user;
+
+    if (savedAccount) {
+      try {
+        baseUser = JSON.parse(savedAccount);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (isOwnerEmail) {
+      // Unlock all rewards vault items
+      setRewards(prev => {
+        const allUnlocked = prev.map(r => ({ ...r, unlocked: true }));
+        localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(allUnlocked));
+        return allUnlocked;
+      });
+    }
+
+    const updatedUser: UserProfile = {
+      ...baseUser,
+      email: cleanEmail,
+      name: isOwnerEmail ? 'Sabari (Founder & Owner)' : (name || (baseUser.name !== 'New Voyager' ? baseUser.name : cleanEmail.split('@')[0])),
+      username: baseUser.username !== 'initiate_svj' ? baseUser.username : cleanEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+      avatar: avatar || baseUser.avatar,
+      isFounder: isOwnerEmail || baseUser.isFounder || false,
+      isOwner: isOwnerEmail || baseUser.isOwner || false,
+      isPremium: isOwnerEmail ? true : baseUser.isPremium,
+      verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
+      vipIcon: isOwnerEmail ? true : baseUser.vipIcon,
+      tier: isOwnerEmail ? 'Obsidian' : baseUser.tier,
+      totalXP: isOwnerEmail ? Math.max(baseUser.totalXP, 100000) : baseUser.totalXP,
+      weeklyXP: isOwnerEmail ? Math.max(baseUser.weeklyXP, 15000) : baseUser.weeklyXP,
+      monthlyXP: isOwnerEmail ? Math.max(baseUser.monthlyXP, 50000) : baseUser.monthlyXP,
+      leagueRank: isOwnerEmail ? 'FOUNDER #1' : baseUser.leagueRank,
+      equippedFrame: isOwnerEmail ? 'frame-crimson' : baseUser.equippedFrame,
+      equippedBadge: isOwnerEmail ? 'bdg-top1' : baseUser.equippedBadge,
+      evolutionTheme: isOwnerEmail ? 'samurai' : baseUser.evolutionTheme,
+      stats: isOwnerEmail ? {
+        physical: 93,
+        mental: 91,
+        social: 87,
+        intellect: 84,
+        discipline: 93,
+        ambition: 95
+      } : baseUser.stats,
+      badges: isOwnerEmail ? baseUser.badges.map(b => ({ ...b, unlocked: true })) : baseUser.badges,
+      achievements: isOwnerEmail ? baseUser.achievements.map(a => ({ ...a, unlocked: true, unlockedAt: a.unlockedAt || '2026-07-31' })) : baseUser.achievements
+    };
+
+    setUser(updatedUser);
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(updatedUser));
+    localStorage.setItem(`svj_user_account_${cleanEmail}`, JSON.stringify(updatedUser));
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_active_email`, cleanEmail);
+    triggerConfetti();
+    setIsGoogleAuthModalOpen(false);
+  };
+
+  const logoutGmail = () => {
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_active_email`);
+    setUser(prev => {
+      const nextUser = {
+        ...prev,
+        email: undefined,
+        isFounder: false,
+        isOwner: false
+      };
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
+  return (
+    <SVJContext.Provider
+      value={{
+        user,
+        challenges,
+        feed,
+        leaderboard,
+        rewards,
+        comparingMember,
+        selectedMemberModal,
+        levelUpModalData,
+        isPaywallOpen,
+        isEditProfileOpen,
+        isUPIModalOpen,
+        isFirstTimeOnboardingOpen,
+        isDarkOnboardingOpen,
+        isGoogleAuthModalOpen,
+        toggleChallenge,
+        addCustomChallenge,
+        toggleReaction,
+        addComment,
+        redeemReward,
+        updateUserProfile,
+        completeOnboarding,
+        upgradeToPremium,
+        loginWithGmail,
+        logoutGmail,
+        setComparingMember,
+        setSelectedMemberModal,
+        setLevelUpModalData,
+        setIsPaywallOpen,
+        setIsEditProfileOpen,
+        setIsUPIModalOpen,
+        setIsFirstTimeOnboardingOpen,
+        setIsDarkOnboardingOpen,
+        setIsGoogleAuthModalOpen,
+        triggerConfetti
+      }}
+    >
+      {children}
+    </SVJContext.Provider>
+  );
+};
+
+export const useSVJ = () => {
+  const context = useContext(SVJContext);
+  if (!context) {
+    throw new Error('useSVJ must be used within an SVJProvider');
+  }
+  return context;
+};

@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --font-anton: 'Anton', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --color-svj-bg: #0B0B0C;
+  --color-svj-card: #17171A;
+  --color-svj-card-hover: #212126;
+  --color-svj-crimson: #C81E3A;
+  --color-svj-crimson-hover: #A0182E;
+  --color-svj-text: #F4F2ED;
+  --color-svj-secondary: #8C8C90;
+  --color-svj-gold: #D4AF37;
+  --color-svj-obsidian: #101014;
+}
+
+@layer utilities {
+  .font-anton {
+    font-family: 'Anton', sans-serif;
+    letter-spacing: 0.03em;
+  }
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-mono {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  
+  .svj-card-glow {
+    box-shadow: 0 0 25px -5px rgba(200, 30, 58, 0.15);
+  }
+  
+  .svj-text-gradient {
+    background: linear-gradient(135deg, #F4F2ED 0%, #8C8C90 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .svj-crimson-gradient {
+    background: linear-gradient(135deg, #E62846 0%, #C81E3A 50%, #800A1D 100%);
+  }
+
+  .svj-gold-gradient {
+    background: linear-gradient(135deg, #FFE58F 0%, #D4AF37 50%, #997A15 100%);
+  }
+
+  .svj-border-glow {
+    border-color: rgba(200, 30, 58, 0.3);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0B0C;
+}
+::-webkit-scrollbar-thumb {
+  background: #232328;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C81E3A;
+}
+
+/* Glass & Card effects */
+.svj-glass {
+  background: rgba(23, 23, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.svj-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Keyframes for subtle ambient animations */
+@keyframes crimson-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.animate-crimson-pulse {
+  animation: crimson-pulse 4s infinite ease-in-out;
+}
+

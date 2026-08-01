@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SVJ" },
-      { name: "description", content: "Self-improvement challenges, XP and community." },
+      { title: "SVJ — Self-Improvement Challenges & Community" },
+      { name: "description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
       { name: "theme-color", content: "#0B0B0C" },
-      { property: "og:title", content: "SVJ" },
-      { property: "og:description", content: "Self-improvement challenges, XP and community." },
+      { property: "og:title", content: "SVJ — Self-Improvement Challenges & Community" },
+      { property: "og:description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "SVJ — Self-Improvement Challenges & Community" },
+      { name: "twitter:description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png" },
     ],
     links: [
       {

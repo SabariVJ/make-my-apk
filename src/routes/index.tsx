@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Daily challenges, XP levels, leaderboards and rewards for people serious about self-improvement.",
+          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

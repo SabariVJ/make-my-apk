@@ -262,9 +262,9 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             Goal: 'ambition'
           };
 
-          const statKey = categoryStatMap[completedItem.category] || 'discipline';
+          const statKey = categoryStatMap[completedItem!.category] || 'discipline';
           const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
-          const statChange = completedItem.completed ? 3 : -3;
+          const statChange = completedItem!.completed ? 3 : -3;
           const updatedStats: UserStats = {
             ...currentStats,
             [statKey]: Math.min(100, Math.max(0, (currentStats[statKey] || 10) + statChange))
@@ -275,7 +275,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             totalXP: newXP,
             weeklyXP: Math.max(0, prevUser.weeklyXP + xpDelta),
             monthlyXP: Math.max(0, prevUser.monthlyXP + xpDelta),
-            totalChallengesCompleted: Math.max(0, prevUser.totalChallengesCompleted + (completedItem.completed ? 1 : -1)),
+            totalChallengesCompleted: Math.max(0, prevUser.totalChallengesCompleted + (completedItem!.completed ? 1 : -1)),
             tier: newTier,
             stats: updatedStats,
             xpHistory: updatedHistory
@@ -294,7 +294,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             isVIP: user.vipIcon,
             actionType: 'completed_challenge',
             title: `⚡ Completed Challenge: ${completedItem.title}`,
-            details: `Earned +${completedItem.xp} XP in ${completedItem.category}. Daily discipline on point!`,
+            details: `Earned +${completedItem.xp} XP in ${completedItem!.category}. Daily discipline on point!`,
             xpEarned: completedItem.xp,
             timestamp: 'Just now',
             reactions: { fire: 1, crown: 0, hundred: 1, bolt: 1, wolf: 0 },

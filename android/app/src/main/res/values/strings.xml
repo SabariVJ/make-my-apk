@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SVJ</string>
+    <string name="title_activity_main">SVJ</string>
+    <string name="package_name">app.lovable.svj</string>
+    <string name="custom_url_scheme">app.lovable.svj</string>
+    <string name="admob_app_id">ca-app-pub-1475355973043918~5474059195</string>
+</resources>

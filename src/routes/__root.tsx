@@ -132,12 +132,11 @@ function RootComponent() {
 
 useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      AdMob.initialize({ initializeForTesting: true }).then(() => {
+      AdMob.initialize({ }).then(() => {
         AdMob.showBanner({
-          adId: "ca-app-pub-3940256099942544/6300978111",
+          adId: "ca-app-pub-1475355973043918/9002240668",
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
-          isTesting: true,
         });
       });
     }

@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "6B-chuOphdbFJNlIFzt4a"
+uri = "file://make-my-apk-build.zip"
+type = "unspecified"
+title = "make-my-apk Build Output"
+description = "Production build of the Make My APK app (.output folder zipped, ~1.1 MB)"

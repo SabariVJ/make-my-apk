@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, QrCode, Check, ShieldCheck, Zap, Upload, ArrowRight, Smartphone } from 'lucide-react';
 import { useSVJ } from '../context/SVJContext';
+import upiQr from '@/assets/upi-qr.jpg.asset.json';
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
@@ -49,7 +50,7 @@ export const UPIPaymentModal: React.FC = () => {
             <div className="space-y-5 text-center py-4">
               <div className="relative w-28 h-28 rounded-2xl bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
                 <img
-                  src="/qr-code.png"
+                  src={upiQr.url}
                   alt="SVJ QR Code"
                   className="w-full h-full object-contain rounded-lg"
                   referrerPolicy="no-referrer"
@@ -86,7 +87,7 @@ export const UPIPaymentModal: React.FC = () => {
               <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
                 <div className="w-56 h-56 bg-white p-1 rounded flex items-center justify-center overflow-hidden">
                   <img
-                    src="/qr-code.png"
+                    src={upiQr.url}
                     alt="SVJ Official Payment QR Code"
                     className="w-full h-full object-contain"
                     referrerPolicy="no-referrer"
@@ -96,7 +97,7 @@ export const UPIPaymentModal: React.FC = () => {
 
               <div className="space-y-1">
                 <div className="text-xs font-mono text-[#8C8C90] uppercase">
-                  UPI ID: <span className="text-white font-bold">svj.plus@upi</span>
+                  UPI ID: <span className="text-white font-bold">7639662008@fam</span>
                 </div>
                 <div className="text-[11px] text-[#8C8C90] font-inter">
                   Scan with GPay, PhonePe, Paytm or any UPI App

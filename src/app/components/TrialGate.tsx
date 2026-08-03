@@ -3,6 +3,9 @@ import { Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import type { Session } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { getTrialStatus, unlockPlus } from '@/lib/trial.functions';
 import { AuthScreen } from './AuthScreen';
@@ -23,6 +26,37 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
   const fetchStatus = useServerFn(getTrialStatus);
   const doUnlock = useServerFn(unlockPlus);
 
+  // ── Native deep-link handler ──────────────────────────────────────────────
+  // When Google OAuth completes on Android/iOS it redirects to:
+  //   app.lovable.svj://auth/callback#access_token=...&refresh_token=...
+  // We catch that URL, extract the tokens, set the Supabase session, and close
+  // the in-app browser that was opened by the Capacitor Browser plugin.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {
+      if (!url.includes('app.lovable.svj://auth/callback')) return;
+
+      // Tokens arrive in the URL fragment, e.g. #access_token=...&refresh_token=...
+      const fragment = url.split('#')[1] ?? '';
+      const params = new URLSearchParams(fragment);
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+
+      if (access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token });
+      }
+
+      // Dismiss the in-app browser window
+      await Browser.close();
+    });
+
+    return () => {
+      listener.then((l) => l.remove());
+    };
+  }, []);
+
+  // ── Supabase auth state ───────────────────────────────────────────────────
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Mail, Lock, ShieldCheck, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable/index';
+import { signInWithGoogle } from '@/lib/googleAuth';
 
 export const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -46,16 +46,13 @@ export const AuthScreen: React.FC = () => {
   const handleGoogle = async () => {
     setError('');
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
-    });
+    const result = await signInWithGoogle();
     if (result.error) {
       setError(result.error.message || 'Google sign-in failed');
       setBusy(false);
-      return;
     }
-    if (result.redirected) return;
-    setBusy(false);
+    // On native: busy stays true — the deep-link callback in TrialGate completes the session.
+    // On web: page navigates away immediately — nothing more to do here.
   };
 
   return (

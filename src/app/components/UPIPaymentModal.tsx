@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, QrCode, Check, ShieldCheck, Zap, Upload, ArrowRight, Smartphone } from 'lucide-react';
 import { useSVJ } from '../context/SVJContext';
-import upiQr from '@/assets/upi-qr.jpg.asset.json';
+import upiQr from '@/assets/upi-qr-clean.png.asset.json';
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
@@ -96,9 +96,6 @@ export const UPIPaymentModal: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <div className="text-xs font-mono text-[#8C8C90] uppercase">
-                  UPI ID: <span className="text-white font-bold">7639662008@fam</span>
-                </div>
                 <div className="text-[11px] text-[#8C8C90] font-inter">
                   Scan with GPay, PhonePe, Paytm or any UPI App
                 </div>

@@ -16,6 +16,7 @@ import { PaywallModal } from './components/PaywallModal';
 import { FirstTimeOnboardingModal } from './components/FirstTimeOnboardingModal';
 import { DarkCinematicOnboardingModal } from './components/DarkCinematicOnboardingModal';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
+import { TrialGate } from './components/TrialGate';
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('challenges');
@@ -87,8 +88,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <SVJProvider>
-      <AppContent />
-    </SVJProvider>
+    <TrialGate>
+      <SVJProvider>
+        <AppContent />
+      </SVJProvider>
+    </TrialGate>
   );
 }

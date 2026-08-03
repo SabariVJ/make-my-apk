@@ -85,11 +85,16 @@ export const UPIPaymentModal: React.FC = () => {
             /* QR Code Scanner Display */
             <div className="space-y-5 text-center py-2">
               <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-                <div className="w-56 h-56 bg-white p-1 rounded flex items-center justify-center overflow-hidden">
+                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded flex items-center justify-center overflow-hidden">
                   <img
                     src={upiQr.url}
                     alt="SVJ Official Payment QR Code"
-                    className="w-full h-full object-contain"
+                    width={669}
+                    height={610}
+                    loading="eager"
+                    decoding="sync"
+                    draggable={false}
+                    className="w-full h-full object-contain select-none [image-rendering:-webkit-optimize-contrast] [backface-visibility:hidden] [transform:translateZ(0)]"
                     referrerPolicy="no-referrer"
                   />
                 </div>

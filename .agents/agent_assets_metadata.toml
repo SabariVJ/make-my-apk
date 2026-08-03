@@ -7,3 +7,10 @@ uri = "file://make-my-apk-build.zip"
 type = "unspecified"
 title = "make-my-apk Build Output"
 description = "Production build of the Make My APK app (.output folder zipped, ~1.1 MB)"
+
+[[outputs]]
+id = "mAw1t4KsNYDT0RxXklHZa"
+uri = "file://app-release.zip"
+type = "unspecified"
+title = "app-release.zip"
+description = "Your APK renamed to a .zip file (6.8 MB)"

@@ -3,12 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, Flame, Crown, Zap, Shield, MessageSquare, Send, Heart, UserPlus, Filter } from 'lucide-react';
 import { useSVJ } from '../context/SVJContext';
 import { FeedActivity, ReactionType, LeaderboardEntry } from '../types';
+import { FriendsPanel } from '../components/FriendsPanel';
+import { useFriends } from '../hooks/useFriends';
 
 export const CommunityView: React.FC = () => {
   const { feed, toggleReaction, addComment, setSelectedMemberModal, leaderboard, user } = useSVJ();
-  const [activeSubTab, setActiveSubTab] = useState<'feed' | 'directory'>('feed');
+  const [activeSubTab, setActiveSubTab] = useState<'feed' | 'directory' | 'friends'>('feed');
   const [searchQuery, setSearchQuery] = useState('');
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const friendsApi = useFriends({
+    username: user.username,
+    displayName: user.name,
+    avatar: user.avatar,
+    totalXP: user.totalXP,
+    currentStreak: user.currentStreak,
+  });
 
   const reactionEmojis: { type: ReactionType; emoji: string; label: string }[] = [
     { type: 'fire', emoji: '🔥', label: 'Fire' },
@@ -67,10 +76,25 @@ export const CommunityView: React.FC = () => {
           >
             Members
           </button>
+          <button
+            onClick={() => setActiveSubTab('friends')}
+            className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer relative ${
+              activeSubTab === 'friends'
+                ? 'bg-[#C81E3A] text-white'
+                : 'text-[#8C8C90] hover:text-white'
+            }`}
+          >
+            Friends
+            {friendsApi.incoming.length > 0 && activeSubTab !== 'friends' && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#C81E3A]" />
+            )}
+          </button>
         </div>
       </div>
 
-      {activeSubTab === 'feed' ? (
+      {activeSubTab === 'friends' ? (
+        <FriendsPanel friendsApi={friendsApi} />
+      ) : activeSubTab === 'feed' ? (
         /* ACTIVITY FEED TAB */
         <div className="space-y-4">
           {feed.map((item, index) => {

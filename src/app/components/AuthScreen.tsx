@@ -45,14 +45,21 @@ export const AuthScreen: React.FC = () => {
 
   const handleGoogle = async () => {
     setError('');
+    setNotice('');
     setBusy(true);
-    const result = await signInWithGoogle();
-    if (result.error) {
-      setError(result.error.message || 'Google sign-in failed');
+    const outcome = await signInWithGoogle();
+    if (outcome.status === 'redirecting') return; // page is navigating away
+    if (outcome.status === 'cancelled') {
+      setError('Google sign-in was cancelled. No problem — you can try again.');
       setBusy(false);
+      return;
     }
-    // On native: busy stays true — the deep-link callback in TrialGate completes the session.
-    // On web: page navigates away immediately — nothing more to do here.
+    if (outcome.status === 'error') {
+      setError(outcome.message);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
   };
 
   return (
@@ -122,7 +129,19 @@ export const AuthScreen: React.FC = () => {
             </button>
           </div>
 
-          {error && <p className="text-[11px] text-red-400 font-mono">{error}</p>}
+          {error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 space-y-2">
+              <p className="text-[11px] text-red-300 font-mono">{error}</p>
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={busy}
+                className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-red-200 cursor-pointer disabled:opacity-60"
+              >
+                Try Google sign-in again
+              </button>
+            </div>
+          )}
           {notice && <p className="text-[11px] text-emerald-400 font-mono">{notice}</p>}
 
           <button

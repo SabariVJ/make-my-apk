@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable/index';
 
 /**
  * The custom URL scheme registered in capacitor.config.ts (appId: "app.lovable.svj").
@@ -33,15 +34,11 @@ export async function signInWithGoogle(): Promise<{ error?: Error }> {
 
     return {};
   } else {
-    // Web: let Supabase do a normal redirect back to the current origin.
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
+    // Web: use the managed OAuth broker (works inside the preview iframe too).
+    const result = await lovable.auth.signInWithOAuth('google', {
+      redirect_uri: window.location.origin,
     });
-
-    if (error) return { error };
+    if (result.error) return { error: result.error as Error };
     return {};
   }
 }

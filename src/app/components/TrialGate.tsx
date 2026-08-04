@@ -8,6 +8,7 @@ import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { getTrialStatus, unlockPlus } from '@/lib/trial.functions';
+import { emitOAuthError } from '@/lib/googleAuth';
 import { AuthScreen } from './AuthScreen';
 import { TrialExpiredScreen } from './TrialExpiredScreen';
 
@@ -37,6 +38,21 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {
       if (!url.includes('app.lovable.svj://auth/callback')) return;
 
+      // Provider/Supabase errors come back as query or fragment params.
+      const query = new URLSearchParams(url.split('?')[1]?.split('#')[0] ?? '');
+      const fragParams = new URLSearchParams(url.split('#')[1] ?? '');
+      const oauthError =
+        query.get('error_description') ||
+        query.get('error') ||
+        fragParams.get('error_description') ||
+        fragParams.get('error');
+
+      if (oauthError) {
+        emitOAuthError(oauthError);
+        await Browser.close();
+        return;
+      }
+
       // Tokens arrive in the URL fragment, e.g. #access_token=...&refresh_token=...
       const fragment = url.split('#')[1] ?? '';
       const params = new URLSearchParams(fragment);
@@ -45,6 +61,8 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
 
       if (access_token && refresh_token) {
         await supabase.auth.setSession({ access_token, refresh_token });
+      } else {
+        emitOAuthError('Google sign-in did not return a session. Please try again.');
       }
 
       // Dismiss the in-app browser window

@@ -7,10 +7,13 @@ import { EVOLUTION_THEMES } from '../components/DarkCinematicOnboardingModal';
 import { AvatarFrame } from '../components/AvatarFrame';
 import { HexagonRadarChart } from '../components/HexagonRadarChart';
 import { UserStats } from '../types';
+import { useFriends } from '../hooks/useFriends';
+import { Loader2 } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const [activeTab, setActiveTab] = useState<'analytics' | 'badges' | 'achievements'>('analytics');
+  const { friends, loading: friendsLoading } = useFriends();
 
   const currentTheme = EVOLUTION_THEMES.find(t => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 
@@ -81,6 +84,58 @@ export const ProfileView: React.FC = () => {
 
       {/* Digital Membership Card Section */}
       <MembershipCard user={user} />
+
+      {/* Friends List */}
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#C81E3A]" /> Friends
+          </h2>
+          <span className="text-[10px] font-mono text-[#8C8C90]">{friends.length} connected</span>
+        </div>
+
+        {friendsLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin text-[#C81E3A]" />
+        ) : friends.length === 0 ? (
+          <p className="text-xs font-mono text-[#8C8C90]">
+            No friends yet — head to Community → Friends to search members and send requests.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {friends.map(f => (
+              <div
+                key={f.friendship_id}
+                className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
+              >
+                {f.avatar_url ? (
+                  <img
+                    src={f.avatar_url}
+                    alt={f.username ?? 'friend'}
+                    className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-[#17171A] border border-white/10 flex items-center justify-center font-anton text-white uppercase">
+                    {(f.username ?? f.display_name ?? 'V').slice(0, 1)}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-anton text-sm text-white uppercase truncate">
+                    @{f.username ?? f.display_name ?? 'Voyager'}
+                  </p>
+                  <div className="flex items-center gap-3 text-[10px] font-mono mt-0.5">
+                    <span className="text-[#C81E3A] flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> {f.total_xp.toLocaleString()} XP
+                    </span>
+                    <span className="text-orange-400 flex items-center gap-1">
+                      <Flame className="w-3 h-3" /> {f.current_streak}d
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Navigation Sub-Tabs */}
       <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">

@@ -46,11 +46,19 @@ export const GoogleAuthModal: React.FC = () => {
   const handleConnect = async () => {
     setError('');
     setBusy(true);
-    const result = await signInWithGoogle();
-    if (result.error) {
-      setError(result.error.message || 'Google sign-in failed');
+    const outcome = await signInWithGoogle();
+    if (outcome.status === 'redirecting') return; // page navigating away
+    if (outcome.status === 'cancelled') {
+      setError('Google sign-in was cancelled. No problem — you can try again.');
       setBusy(false);
+      return;
     }
+    if (outcome.status === 'error') {
+      setError(outcome.message);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
     // On native: busy stays true until the deep-link fires and onAuthStateChange above resolves it.
     // On web: the page navigates away immediately — no further action needed here.
   };
@@ -182,9 +190,17 @@ export const GoogleAuthModal: React.FC = () => {
                 </p>
 
                 {error && (
-                  <p className="text-[11px] text-red-400 font-mono bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
-                    {error}
-                  </p>
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2 space-y-2">
+                    <p className="text-[11px] text-red-300 font-mono">{error}</p>
+                    <button
+                      type="button"
+                      onClick={handleConnect}
+                      disabled={busy}
+                      className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-red-200 cursor-pointer disabled:opacity-60"
+                    >
+                      Try again
+                    </button>
+                  </div>
                 )}
 
                 <button

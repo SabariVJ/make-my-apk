@@ -14,36 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
+          current_streak: number
           display_name: string | null
           email: string | null
           id: string
           is_plus_member: boolean
           plus_unlocked_at: string | null
           signup_date: string
+          total_xp: number
           updated_at: string
+          username: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
+          current_streak?: number
           display_name?: string | null
           email?: string | null
           id: string
           is_plus_member?: boolean
           plus_unlocked_at?: string | null
           signup_date?: string
+          total_xp?: number
           updated_at?: string
+          username?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
+          current_streak?: number
           display_name?: string | null
           email?: string | null
           id?: string
           is_plus_member?: boolean
           plus_unlocked_at?: string | null
           signup_date?: string
+          total_xp?: number
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -52,7 +91,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_friend_requests: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          current_streak: number
+          direction: string
+          display_name: string
+          friendship_id: string
+          id: string
+          total_xp: number
+          username: string
+        }[]
+      }
+      get_friends: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          current_streak: number
+          display_name: string
+          friendship_id: string
+          id: string
+          since: string
+          total_xp: number
+          username: string
+        }[]
+      }
+      search_profiles: {
+        Args: { _q: string }
+        Returns: {
+          avatar_url: string
+          current_streak: number
+          display_name: string
+          friendship_status: string
+          id: string
+          is_incoming: boolean
+          total_xp: number
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

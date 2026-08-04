@@ -131,15 +131,25 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
 useEffect(() => {
+
     if (Capacitor.isNativePlatform()) {
-      AdMob.initialize({ }).then(() => {
+
+      AdMob.initialize({}).then(() => {
+
         AdMob.showBanner({
+
           adId: "ca-app-pub-1475355973043918/9002240668",
+
           adSize: BannerAdSize.BANNER,
+
           position: BannerAdPosition.BOTTOM_CENTER,
+
         });
+
       });
+
     }
+
   }, []);
   return (
     <QueryClientProvider client={queryClient}>

@@ -9,36 +9,107 @@ import { lovable } from '@/integrations/lovable/index';
  */
 const NATIVE_REDIRECT = 'app.lovable.svj://auth/callback';
 
+/** Broadcast channel used by the native deep-link handler to report OAuth failures. */
+export const OAUTH_ERROR_EVENT = 'svj:oauth-error';
+
+export type GoogleAuthOutcome =
+  | { status: 'success' }
+  | { status: 'redirecting' }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string };
+
+export function emitOAuthError(message: string) {
+  window.dispatchEvent(new CustomEvent(OAUTH_ERROR_EVENT, { detail: message }));
+}
+
+function friendly(message?: string | null): string {
+  const raw = (message ?? '').toLowerCase();
+  if (!raw) return 'Google sign-in did not complete. Please try again.';
+  if (raw.includes('access_denied') || raw.includes('denied') || raw.includes('cancel')) {
+    return 'You cancelled Google sign-in. Try again when you are ready.';
+  }
+  if (raw.includes('network') || raw.includes('fetch')) {
+    return 'Network issue while contacting Google. Check your connection and retry.';
+  }
+  if (raw.includes('popup')) {
+    return 'The Google window was blocked or closed. Allow popups and try again.';
+  }
+  return message ?? 'Google sign-in failed. Please try again.';
+}
+
 /**
  * Trigger Google OAuth.
  *
  * - Native (Android/iOS via Capacitor): uses skipBrowserRedirect + Capacitor Browser plugin
  *   so the system browser opens, completes OAuth, then deep-links back to the app.
- * - Web: standard full-page redirect handled by Supabase.
+ *   If the user dismisses the browser without finishing, we resolve as `cancelled`.
+ * - Web: standard managed OAuth broker / redirect handled by Supabase.
  */
-export async function signInWithGoogle(): Promise<{ error?: Error }> {
-  if (Capacitor.isNativePlatform()) {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        skipBrowserRedirect: true,
-        redirectTo: NATIVE_REDIRECT,
-      },
-    });
+export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          skipBrowserRedirect: true,
+          redirectTo: NATIVE_REDIRECT,
+        },
+      });
 
-    if (error) return { error };
+      if (error) return { status: 'error', message: friendly(error.message) };
+      if (!data?.url) return { status: 'error', message: friendly(null) };
 
-    if (data?.url) {
       await Browser.open({ url: data.url, windowName: '_self' });
+
+      // Wait for one of: session established, deep-link error, or the user
+      // closing the in-app browser (= cancelled).
+      return await new Promise<GoogleAuthOutcome>((resolve) => {
+        let settled = false;
+        const finish = (outcome: GoogleAuthOutcome) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(outcome);
+        };
+
+        const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+          if (session) finish({ status: 'success' });
+        });
+
+        const onError = (e: Event) => {
+          finish({ status: 'error', message: friendly((e as CustomEvent<string>).detail) });
+        };
+        window.addEventListener(OAUTH_ERROR_EVENT, onError);
+
+        const finishedListener = Browser.addListener('browserFinished', async () => {
+          // Give the deep-link handler a beat to set the session first.
+          setTimeout(async () => {
+            const { data: s } = await supabase.auth.getSession();
+            finish(s.session ? { status: 'success' } : { status: 'cancelled' });
+          }, 600);
+        });
+
+        const cleanup = () => {
+          sub.subscription.unsubscribe();
+          window.removeEventListener(OAUTH_ERROR_EVENT, onError);
+          finishedListener.then((l) => l.remove()).catch(() => {});
+        };
+      });
     }
 
-    return {};
-  } else {
     // Web: use the managed OAuth broker (works inside the preview iframe too).
     const result = await lovable.auth.signInWithOAuth('google', {
       redirect_uri: window.location.origin,
     });
-    if (result.error) return { error: result.error as Error };
-    return {};
+    if (result.error) {
+      return { status: 'error', message: friendly((result.error as Error).message) };
+    }
+    if ((result as { redirected?: boolean }).redirected) return { status: 'redirecting' };
+    return { status: 'success' };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    // Popup closed by the user surfaces as a thrown error in the web broker.
+    if (/closed|cancel|abort/i.test(message)) return { status: 'cancelled' };
+    return { status: 'error', message: friendly(message) };
   }
 }

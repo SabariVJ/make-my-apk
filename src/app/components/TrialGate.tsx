@@ -19,6 +19,27 @@ const Splash: React.FC<{ label: string }> = ({ label }) => (
   </div>
 );
 
+const TRIAL_CHECK_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('Timed out while checking your membership. Please retry.')),
+      ms,
+    );
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
+
 export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
@@ -94,7 +115,7 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const statusQuery = useQuery({
     queryKey: ['trial-status', userId],
-    queryFn: () => fetchStatus({}),
+    queryFn: () => withTimeout(fetchStatus({}) as Promise<Awaited<ReturnType<typeof fetchStatus>>>, TRIAL_CHECK_TIMEOUT_MS),
     enabled: Boolean(userId),
     // Re-checked on every app open, tab focus and reconnect — never cached stale.
     staleTime: 0,

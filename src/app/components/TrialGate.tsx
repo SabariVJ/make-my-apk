@@ -106,9 +106,15 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setSessionReady(true);
-    });
+    }).catch(() => setSessionReady(true));
 
-    return () => sub.subscription.unsubscribe();
+    // Never hang on the splash if Supabase never answers.
+    const failsafe = setTimeout(() => setSessionReady(true), TRIAL_CHECK_TIMEOUT_MS);
+
+    return () => {
+      clearTimeout(failsafe);
+      sub.subscription.unsubscribe();
+    };
   }, [queryClient]);
 
   const userId = session?.user.id ?? null;
@@ -134,12 +140,26 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     return (
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="font-anton uppercase tracking-wider">Could not verify your membership</p>
-        <button
-          onClick={() => statusQuery.refetch()}
-          className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
-        >
-          Retry
-        </button>
+        <p className="text-[11px] font-mono text-[#8C8C90] max-w-xs">
+          {statusQuery.error instanceof Error ? statusQuery.error.message : 'Something went wrong.'}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => statusQuery.refetch()}
+            className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
+          >
+            Retry
+          </button>
+          <button
+            onClick={async () => {
+              queryClient.clear();
+              await supabase.auth.signOut();
+            }}
+            className="px-4 py-2 rounded-xl border border-white/15 text-white font-mono text-xs cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }

@@ -146,5 +146,15 @@ export const unlockPlus = createServerFn({ method: 'POST' })
       .single();
 
     if (error) throw error;
+
+    // Keep any sibling account with the same email unlocked too.
+    const email = ((context.claims['email'] as string | undefined) ?? '').toLowerCase();
+    if (email) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
+        .ilike('email', email);
+    }
+
     return buildStatus(data);
   });

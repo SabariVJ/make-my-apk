@@ -19,6 +19,27 @@ const Splash: React.FC<{ label: string }> = ({ label }) => (
   </div>
 );
 
+const TRIAL_CHECK_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('Timed out while checking your membership. Please retry.')),
+      ms,
+    );
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
+
 export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
@@ -85,16 +106,22 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setSessionReady(true);
-    });
+    }).catch(() => setSessionReady(true));
 
-    return () => sub.subscription.unsubscribe();
+    // Never hang on the splash if Supabase never answers.
+    const failsafe = setTimeout(() => setSessionReady(true), TRIAL_CHECK_TIMEOUT_MS);
+
+    return () => {
+      clearTimeout(failsafe);
+      sub.subscription.unsubscribe();
+    };
   }, [queryClient]);
 
   const userId = session?.user.id ?? null;
 
   const statusQuery = useQuery({
     queryKey: ['trial-status', userId],
-    queryFn: () => fetchStatus({}),
+    queryFn: () => withTimeout(fetchStatus({}) as Promise<Awaited<ReturnType<typeof fetchStatus>>>, TRIAL_CHECK_TIMEOUT_MS),
     enabled: Boolean(userId),
     // Re-checked on every app open, tab focus and reconnect — never cached stale.
     staleTime: 0,
@@ -113,12 +140,26 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     return (
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="font-anton uppercase tracking-wider">Could not verify your membership</p>
-        <button
-          onClick={() => statusQuery.refetch()}
-          className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
-        >
-          Retry
-        </button>
+        <p className="text-[11px] font-mono text-[#8C8C90] max-w-xs">
+          {statusQuery.error instanceof Error ? statusQuery.error.message : 'Something went wrong.'}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => statusQuery.refetch()}
+            className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
+          >
+            Retry
+          </button>
+          <button
+            onClick={async () => {
+              queryClient.clear();
+              await supabase.auth.signOut();
+            }}
+            className="px-4 py-2 rounded-xl border border-white/15 text-white font-mono text-xs cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }

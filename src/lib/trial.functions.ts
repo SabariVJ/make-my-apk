@@ -42,6 +42,8 @@ export const getTrialStatus = createServerFn({ method: 'GET' })
   .handler(async ({ context }): Promise<TrialStatus> => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
 
+    const email = ((context.claims['email'] as string | undefined) ?? '').toLowerCase() || null;
+
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, email, display_name, signup_date, is_plus_member')
@@ -50,21 +52,86 @@ export const getTrialStatus = createServerFn({ method: 'GET' })
 
     if (error) throw error;
 
-    if (data) return buildStatus(data);
+    if (data) return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, data));
 
     // Safety net for users created before the profiles trigger existed.
     const { data: created, error: insertError } = await supabaseAdmin
       .from('profiles')
       .insert({
         id: context.userId,
-        email: (context.claims['email'] as string | undefined) ?? null,
+        email,
       })
       .select('id, email, display_name, signup_date, is_plus_member')
       .single();
 
     if (insertError) throw insertError;
-    return buildStatus(created);
+    return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, created));
   });
+
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  signup_date: string;
+  is_plus_member: boolean;
+};
+
+/**
+ * Account unification for people who signed up with email/password and later
+ * used "Continue with Google" (or vice versa) with the SAME email address.
+ *
+ * Supabase may mint a second auth user for the second provider. We cannot merge
+ * auth rows server-side, so instead we keep every profile that shares an email
+ * perfectly in sync: the oldest signup date wins, membership/XP/stats/tier are
+ * carried over, and both rows are written back. The result is that signing in
+ * with either provider lands on the exact same account data.
+ */
+async function mergeSiblingAccounts(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  admin: any,
+  userId: string,
+  email: string | null,
+  self: ProfileRow,
+): Promise<ProfileRow> {
+  if (!email) return self;
+
+  const { data: siblings } = await admin
+    .from('profiles')
+    .select(
+      'id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, username, avatar_url, total_xp, current_streak',
+    )
+    .ilike('email', email);
+
+  if (!siblings || siblings.length < 2) return self;
+
+  // Canonical record = richest/oldest across all rows sharing this email.
+  const canonical = siblings.reduce(
+    (acc: Record<string, unknown>, row: Record<string, unknown>) => ({
+      signup_date:
+        new Date(row['signup_date'] as string) < new Date(acc['signup_date'] as string)
+          ? row['signup_date']
+          : acc['signup_date'],
+      is_plus_member: Boolean(acc['is_plus_member']) || Boolean(row['is_plus_member']),
+      plus_unlocked_at: acc['plus_unlocked_at'] ?? row['plus_unlocked_at'] ?? null,
+      display_name: acc['display_name'] ?? row['display_name'] ?? null,
+      username: acc['username'] ?? row['username'] ?? null,
+      avatar_url: acc['avatar_url'] ?? row['avatar_url'] ?? null,
+      total_xp: Math.max(Number(acc['total_xp'] ?? 0), Number(row['total_xp'] ?? 0)),
+      current_streak: Math.max(Number(acc['current_streak'] ?? 0), Number(row['current_streak'] ?? 0)),
+    }),
+    siblings[0] as Record<string, unknown>,
+  );
+
+  await admin.from('profiles').update(canonical).ilike('email', email);
+
+  return {
+    id: userId,
+    email,
+    display_name: (canonical['display_name'] as string | null) ?? null,
+    signup_date: canonical['signup_date'] as string,
+    is_plus_member: Boolean(canonical['is_plus_member']),
+  };
+}
 
 export const unlockPlus = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
@@ -79,5 +146,15 @@ export const unlockPlus = createServerFn({ method: 'POST' })
       .single();
 
     if (error) throw error;
+
+    // Keep any sibling account with the same email unlocked too.
+    const email = ((context.claims['email'] as string | undefined) ?? '').toLowerCase();
+    if (email) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
+        .ilike('email', email);
+    }
+
     return buildStatus(data);
   });

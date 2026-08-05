@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Flame, Zap, Shield, Crown, Award, Calendar, BarChart3, Settings, Edit3, Lock, CheckCircle2, Sparkles, Mail, Dumbbell, Brain, Users, BookOpen, X } from 'lucide-react';
+import { User, Flame, Zap, Shield, Crown, Award, Calendar, BarChart3, Settings, Edit3, Lock, CheckCircle2, Sparkles, Mail, Dumbbell, Brain, Users, BookOpen, X, LogOut } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useSVJ } from '../context/SVJContext';
 import { MembershipCard } from '../components/MembershipCard';
 import { EVOLUTION_THEMES } from '../components/DarkCinematicOnboardingModal';
@@ -14,6 +16,20 @@ export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const [activeTab, setActiveTab] = useState<'analytics' | 'badges' | 'achievements'>('analytics');
   const { friends, loading: friendsLoading } = useFriends();
+  const queryClient = useQueryClient();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await supabase.auth.signOut();
+      // TrialGate listens to onAuthStateChange and swaps in the login screen.
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   const currentTheme = EVOLUTION_THEMES.find(t => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 
@@ -369,6 +385,19 @@ export const ProfileView: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Account actions */}
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+        >
+          <LogOut className="w-4 h-4" />
+          {signingOut ? 'Signing out…' : 'Log out'}
+        </button>
+      </div>
 
     </div>
   );

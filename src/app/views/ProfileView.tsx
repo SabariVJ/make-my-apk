@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Flame, Zap, Shield, Crown, Award, Calendar, BarChart3, Settings, Edit3, Lock, CheckCircle2, Sparkles, Mail, Dumbbell, Brain, Users, BookOpen, X } from 'lucide-react';
+import { User, Flame, Zap, Shield, Crown, Award, Calendar, BarChart3, Settings, Edit3, Lock, CheckCircle2, Sparkles, Mail, Dumbbell, Brain, Users, BookOpen, X, LogOut } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useSVJ } from '../context/SVJContext';
 import { MembershipCard } from '../components/MembershipCard';
 import { EVOLUTION_THEMES } from '../components/DarkCinematicOnboardingModal';
@@ -14,6 +16,20 @@ export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const [activeTab, setActiveTab] = useState<'analytics' | 'badges' | 'achievements'>('analytics');
   const { friends, loading: friendsLoading } = useFriends();
+  const queryClient = useQueryClient();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await supabase.auth.signOut();
+      // TrialGate listens to onAuthStateChange and swaps in the login screen.
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   const currentTheme = EVOLUTION_THEMES.find(t => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 

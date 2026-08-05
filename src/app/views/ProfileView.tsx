@@ -386,6 +386,19 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
+      {/* Account actions */}
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+        >
+          <LogOut className="w-4 h-4" />
+          {signingOut ? 'Signing out…' : 'Log out'}
+        </button>
+      </div>
+
     </div>
   );
 };

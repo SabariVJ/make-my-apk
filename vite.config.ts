@@ -12,4 +12,20 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    define: {
+      // Publishable (safe to ship) backend config, baked in so published builds
+      // never boot without it even when build-time env injection is unavailable.
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
+        process.env["VITE_SUPABASE_URL"] ?? "https://oltmnrkceodpyqznfhjb.supabase.co",
+      ),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+        process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+          "sb_publishable_JbQU0vfJC2iQsnTg08N3XQ_hVBxK8DR",
+      ),
+      "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify(
+        process.env["VITE_SUPABASE_PROJECT_ID"] ?? "oltmnrkceodpyqznfhjb",
+      ),
+    },
+  },
 });

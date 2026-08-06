@@ -336,6 +336,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
 
+
     const newCh: DailyChallenge = {
       id: `ch-custom-${Date.now()}`,
       title,

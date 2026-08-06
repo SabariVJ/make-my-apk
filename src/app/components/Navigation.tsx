@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Flame, Users, Trophy, Gift, Crown, User } from 'lucide-react';
+import { Flame, Dumbbell, Users, Trophy, Gift, Crown, User } from 'lucide-react';
 import { useSVJ } from '../context/SVJContext';
 
-export type ActiveTab = 'challenges' | 'community' | 'leaderboard' | 'rewards' | 'plus' | 'profile';
+export type ActiveTab = 'challenges' | 'workouts' | 'community' | 'leaderboard' | 'rewards' | 'plus' | 'profile';
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -15,6 +15,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
 
   const navItems = [
     { id: 'challenges', label: 'Challenges', icon: Flame },
+    { id: 'workouts', label: 'Train', icon: Dumbbell },
     { id: 'community', label: 'Community', icon: Users },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'rewards', label: 'Rewards', icon: Gift },
@@ -23,8 +24,8 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-2 py-2 sm:py-3">
-      <div className="max-w-md mx-auto flex items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">
+      <div className="max-w-xl mx-auto flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -33,7 +34,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as ActiveTab)}
-              className="relative flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all cursor-pointer group"
+              className="relative flex flex-col items-center gap-1 py-1 px-2 sm:px-3 rounded-xl transition-all cursor-pointer group"
             >
               {isActive && (
                 <motion.div

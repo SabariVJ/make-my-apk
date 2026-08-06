@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel } from '../types';
+import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise } from '../types';
 import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
 
 interface SVJContextType {
@@ -9,6 +9,8 @@ interface SVJContextType {
   feed: FeedActivity[];
   leaderboard: LeaderboardEntry[];
   rewards: RewardItem[];
+  workouts: WorkoutEntry[];
+  workoutTemplates: WorkoutTemplate[];
   comparingMember: LeaderboardEntry | null;
   selectedMemberModal: LeaderboardEntry | null;
   levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
@@ -25,6 +27,10 @@ interface SVJContextType {
   toggleReaction: (activityId: string, reaction: ReactionType) => void;
   addComment: (activityId: string, text: string) => void;
   redeemReward: (rewardId: string) => void;
+  logWorkout: (name: string, exercises: WorkoutExercise[]) => void;
+  deleteWorkout: (id: string) => void;
+  saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
+  deleteWorkoutTemplate: (id: string) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
   upgradeToPremium: () => void;
@@ -85,6 +91,16 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [rewards, setRewards] = useState<RewardItem[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_rewards`);
     return saved ? JSON.parse(saved) : INITIAL_REWARDS;
+  });
+
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workouts`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workout_templates`);
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
@@ -185,6 +201,14 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(rewards));
   }, [rewards]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workouts`, JSON.stringify(workouts));
+  }, [workouts]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
+  }, [workoutTemplates]);
 
   const triggerConfetti = () => {
     confetti({
@@ -310,7 +334,107 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const logWorkout = (name: string, exercises: WorkoutExercise[]) => {
+    const cleaned = exercises
+      .map(ex => ({ ...ex, sets: ex.sets.filter(st => st.reps > 0) }))
+      .filter(ex => ex.name.trim() && ex.sets.length > 0);
+
+    if (cleaned.length === 0) return;
+
+    const totalSets = cleaned.reduce((sum, ex) => sum + ex.sets.length, 0);
+    const totalVolume = cleaned.reduce(
+      (sum, ex) => sum + ex.sets.reduce((s, st) => s + st.reps * st.weight, 0),
+      0
+    );
+    const xpEarned = Math.max(25, Math.min(400, totalSets * 15 + Math.round(totalVolume / 100)));
+
+    const entry: WorkoutEntry = {
+      id: `wo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name: name.trim() || 'Training Session',
+      date: new Date().toISOString(),
+      exercises: cleaned,
+      totalVolume,
+      xpEarned
+    };
+
+    setWorkouts(prev => [entry, ...prev]);
+    triggerConfetti();
+
+    setUser(prevUser => {
+      const oldTier = prevUser.tier;
+      const newXP = prevUser.totalXP + xpEarned;
+      const newTier = getTierForXP(newXP);
+      if (newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+        setLevelUpModalData({ oldTier, newTier });
+      }
+
+      const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+      const updatedHistory = [...prevUser.xpHistory];
+      const lastIdx = updatedHistory.length - 1;
+      if (lastIdx >= 0) {
+        updatedHistory[lastIdx] = { date: todayStr, xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned) };
+      }
+
+      const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+      const updatedStats: UserStats = {
+        ...currentStats,
+        physical: Math.min(100, (currentStats.physical || 10) + 3)
+      };
+
+      return {
+        ...prevUser,
+        totalXP: newXP,
+        weeklyXP: prevUser.weeklyXP + xpEarned,
+        monthlyXP: prevUser.monthlyXP + xpEarned,
+        tier: newTier,
+        stats: updatedStats,
+        xpHistory: updatedHistory
+      };
+    });
+
+    const newFeedItem: FeedActivity = {
+      id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      userId: user.id,
+      username: user.username,
+      userAvatar: user.avatar,
+      userTier: user.tier,
+      isVerified: user.verifiedIcon,
+      isVIP: user.vipIcon,
+      actionType: 'completed_challenge',
+      title: `\ud83c\udfcb\ufe0f Logged Workout: ${entry.name}`,
+      details: `${totalSets} sets \u2022 ${Math.round(totalVolume).toLocaleString()} kg total volume. Physical +3.`,
+      xpEarned,
+      timestamp: 'Just now',
+      reactions: { fire: 1, crown: 0, hundred: 0, bolt: 1, wolf: 0 },
+      userReactions: { [user.id]: 'fire' },
+      comments: []
+    };
+    setFeed(f => [newFeedItem, ...f]);
+  };
+
+  const deleteWorkout = (id: string) => {
+    setWorkouts(prev => prev.filter(w => w.id !== id));
+  };
+
+  const saveWorkoutTemplate = (name: string, exercises: WorkoutExercise[]) => {
+    const cleaned = exercises.filter(ex => ex.name.trim());
+    if (!cleaned.length) return;
+    const tpl: WorkoutTemplate = {
+      id: `tpl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name: name.trim() || 'Untitled Template',
+      exercises: cleaned,
+      createdAt: new Date().toISOString()
+    };
+    setWorkoutTemplates(prev => [tpl, ...prev]);
+  };
+
+  const deleteWorkoutTemplate = (id: string) => {
+    setWorkoutTemplates(prev => prev.filter(t => t.id !== id));
+  };
+
   const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
+
+
     const newCh: DailyChallenge = {
       id: `ch-custom-${Date.now()}`,
       title,
@@ -558,6 +682,8 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         feed,
         leaderboard,
         rewards,
+        workouts,
+        workoutTemplates,
         comparingMember,
         selectedMemberModal,
         levelUpModalData,
@@ -572,6 +698,10 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleReaction,
         addComment,
         redeemReward,
+        logWorkout,
+        deleteWorkout,
+        saveWorkoutTemplate,
+        deleteWorkoutTemplate,
         updateUserProfile,
         completeOnboarding,
         upgradeToPremium,

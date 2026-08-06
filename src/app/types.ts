@@ -178,3 +178,51 @@ export interface LeaderboardEntry {
   bio?: string;
   joinDate?: string;
 }
+
+export interface ExerciseSet {
+  reps: number;
+  weight: number;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  name: string;
+  sets: ExerciseSet[];
+}
+
+export interface WorkoutEntry {
+  id: string;
+  name: string;
+  date: string; // ISO string
+  exercises: WorkoutExercise[];
+  totalVolume: number;
+  xpEarned: number;
+}
+
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  exercises: WorkoutExercise[];
+  createdAt: string;
+}
+
+interface LeaderboardEntryLegacyUnused {
+  rank: number;
+  rankDelta: number; // e.g. +12, -3, 0
+  id: string;
+  username: string;
+  avatar: string;
+  tier: TierLevel;
+  totalXP: number;
+  weeklyXP: number;
+  monthlyXP: number;
+  streak: number;
+  country: string;
+  isVerified?: boolean;
+  isVIP?: boolean;
+  isFounder?: boolean;
+  isOwner?: boolean;
+  equippedFrame?: string;
+  bio?: string;
+  joinDate?: string;
+}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel } from '../types';
+import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise } from '../types';
 import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
 
 interface SVJContextType {
@@ -9,6 +9,8 @@ interface SVJContextType {
   feed: FeedActivity[];
   leaderboard: LeaderboardEntry[];
   rewards: RewardItem[];
+  workouts: WorkoutEntry[];
+  workoutTemplates: WorkoutTemplate[];
   comparingMember: LeaderboardEntry | null;
   selectedMemberModal: LeaderboardEntry | null;
   levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
@@ -25,6 +27,10 @@ interface SVJContextType {
   toggleReaction: (activityId: string, reaction: ReactionType) => void;
   addComment: (activityId: string, text: string) => void;
   redeemReward: (rewardId: string) => void;
+  logWorkout: (name: string, exercises: WorkoutExercise[]) => void;
+  deleteWorkout: (id: string) => void;
+  saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
+  deleteWorkoutTemplate: (id: string) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
   upgradeToPremium: () => void;
@@ -85,6 +91,16 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [rewards, setRewards] = useState<RewardItem[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_rewards`);
     return saved ? JSON.parse(saved) : INITIAL_REWARDS;
+  });
+
+  const [workouts, setWorkouts] = useState<WorkoutEntry[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workouts`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workout_templates`);
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
@@ -185,6 +201,14 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(rewards));
   }, [rewards]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workouts`, JSON.stringify(workouts));
+  }, [workouts]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
+  }, [workoutTemplates]);
 
   const triggerConfetti = () => {
     confetti({
@@ -311,6 +335,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
+
     const newCh: DailyChallenge = {
       id: `ch-custom-${Date.now()}`,
       title,

@@ -225,6 +225,14 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
   }, [workoutTemplates]);
 
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_meals`, JSON.stringify(meals));
+  }, [meals]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_calorie_goal`, String(calorieGoal));
+  }, [calorieGoal]);
+
   const triggerConfetti = () => {
     confetti({
       particleCount: 80,

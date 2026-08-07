@@ -7,7 +7,7 @@ import { lovable } from '@/integrations/lovable/index';
  * The custom URL scheme registered in capacitor.config.ts (appId: "app.lovable.svj").
  * Supabase will redirect here after Google OAuth completes on native.
  */
-const NATIVE_REDIRECT = 'app.lovable.svj://auth/callback';
+const NATIVE_REDIRECT = 'https://savaje-com.lovable.app/auth/callback';
 
 /** Broadcast channel used by the native deep-link handler to report OAuth failures. */
 export const OAUTH_ERROR_EVENT = 'svj:oauth-error';

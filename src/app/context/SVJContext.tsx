@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise } from '../types';
+import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise, MealEntry } from '../types';
 import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
 
 interface SVJContextType {
@@ -11,6 +11,8 @@ interface SVJContextType {
   rewards: RewardItem[];
   workouts: WorkoutEntry[];
   workoutTemplates: WorkoutTemplate[];
+  meals: MealEntry[];
+  calorieGoal: number;
   comparingMember: LeaderboardEntry | null;
   selectedMemberModal: LeaderboardEntry | null;
   levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
@@ -31,6 +33,9 @@ interface SVJContextType {
   deleteWorkout: (id: string) => void;
   saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
   deleteWorkoutTemplate: (id: string) => void;
+  logMeal: (name: string, calories: number, mealType: MealEntry['mealType']) => void;
+  deleteMeal: (id: string) => void;
+  setCalorieGoal: (goal: number) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
   upgradeToPremium: () => void;

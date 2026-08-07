@@ -74,16 +74,20 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
         return;
       }
 
-      // Tokens arrive in the URL fragment, e.g. #access_token=...&refresh_token=...
-      const fragment = url.split('#')[1] ?? '';
-      const params = new URLSearchParams(fragment);
-      const access_token = params.get('access_token');
-      const refresh_token = params.get('refresh_token');
-
-      if (access_token && refresh_token) {
-        await supabase.auth.setSession({ access_token, refresh_token });
+      // PKCE: the callback page forwards ?code=... into the deep link.
+      const code = query.get('code');
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) emitOAuthError(error.message);
       } else {
-        emitOAuthError('Google sign-in did not return a session. Please try again.');
+        // Legacy implicit flow fallback: tokens in the URL fragment.
+        const access_token = fragParams.get('access_token');
+        const refresh_token = fragParams.get('refresh_token');
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        } else {
+          emitOAuthError('Google sign-in did not return a session. Please try again.');
+        }
       }
 
       // Dismiss the in-app browser window

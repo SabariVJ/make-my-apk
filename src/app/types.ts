@@ -205,3 +205,12 @@ export interface WorkoutTemplate {
   exercises: WorkoutExercise[];
   createdAt: string;
 }
+
+export interface MealEntry {
+  id: string;
+  name: string;
+  calories: number;
+  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  date: string; // ISO string
+  xpEarned: number;
+}

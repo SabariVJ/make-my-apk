@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { Navigation, ActiveTab } from './components/Navigation';
 import { ChallengesView } from './views/ChallengesView';
 import { WorkoutView } from './views/WorkoutView';
+import { NutritionView } from './views/NutritionView';
 import { CommunityView } from './views/CommunityView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { RewardsView } from './views/RewardsView';
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
       <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
         {activeTab === 'challenges' && <ChallengesView />}
         {activeTab === 'workouts' && <WorkoutView />}
+        {activeTab === 'nutrition' && <NutritionView />}
         {activeTab === 'community' && <CommunityView />}
         {activeTab === 'leaderboard' && <LeaderboardView />}
         {activeTab === 'rewards' && <RewardsView />}

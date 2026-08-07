@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise } from '../types';
+import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise, MealEntry } from '../types';
 import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
 
 interface SVJContextType {
@@ -11,6 +11,8 @@ interface SVJContextType {
   rewards: RewardItem[];
   workouts: WorkoutEntry[];
   workoutTemplates: WorkoutTemplate[];
+  meals: MealEntry[];
+  calorieGoal: number;
   comparingMember: LeaderboardEntry | null;
   selectedMemberModal: LeaderboardEntry | null;
   levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
@@ -31,6 +33,9 @@ interface SVJContextType {
   deleteWorkout: (id: string) => void;
   saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
   deleteWorkoutTemplate: (id: string) => void;
+  logMeal: (name: string, calories: number, mealType: MealEntry['mealType']) => void;
+  deleteMeal: (id: string) => void;
+  setCalorieGoal: (goal: number) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
   upgradeToPremium: () => void;
@@ -101,6 +106,16 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workout_templates`);
     return saved ? JSON.parse(saved) : [];
+  });
+
+  const [meals, setMeals] = useState<MealEntry[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_meals`);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [calorieGoal, setCalorieGoalState] = useState<number>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_calorie_goal`);
+    return saved ? Number(saved) : 2200;
   });
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
@@ -209,6 +224,14 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
   }, [workoutTemplates]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_meals`, JSON.stringify(meals));
+  }, [meals]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_calorie_goal`, String(calorieGoal));
+  }, [calorieGoal]);
 
   const triggerConfetti = () => {
     confetti({
@@ -430,6 +453,94 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteWorkoutTemplate = (id: string) => {
     setWorkoutTemplates(prev => prev.filter(t => t.id !== id));
+  };
+
+  const setCalorieGoal = (goal: number) => {
+    setCalorieGoalState(Math.max(500, Math.min(10000, Math.round(goal) || 2000)));
+  };
+
+  const deleteMeal = (id: string) => {
+    setMeals(prev => prev.filter(m => m.id !== id));
+  };
+
+  const logMeal = (name: string, calories: number, mealType: MealEntry['mealType']) => {
+    const cleanName = name.trim();
+    const kcal = Math.max(0, Math.round(calories) || 0);
+    if (!cleanName || kcal <= 0) return;
+
+    const todayKey = new Date().toDateString();
+    const isFirstToday = !meals.some(m => new Date(m.date).toDateString() === todayKey);
+
+    // Consistency bonus: first log of the day is worth far more than extra entries
+    const xpEarned = isFirstToday ? 60 : 10;
+
+    const entry: MealEntry = {
+      id: `meal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name: cleanName,
+      calories: kcal,
+      mealType,
+      date: new Date().toISOString(),
+      xpEarned
+    };
+
+    setMeals(prev => [entry, ...prev]);
+
+    setUser(prevUser => {
+      const oldTier = prevUser.tier;
+      const newXP = prevUser.totalXP + xpEarned;
+      const newTier = getTierForXP(newXP);
+      if (newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+        setLevelUpModalData({ oldTier, newTier });
+      }
+
+      const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+      const updatedHistory = [...prevUser.xpHistory];
+      const lastIdx = updatedHistory.length - 1;
+      if (lastIdx >= 0) {
+        updatedHistory[lastIdx] = { date: todayStr, xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned) };
+      }
+
+      const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+      const updatedStats: UserStats = isFirstToday
+        ? {
+            ...currentStats,
+            discipline: Math.min(100, (currentStats.discipline || 10) + 2),
+            physical: Math.min(100, (currentStats.physical || 10) + 1)
+          }
+        : currentStats;
+
+      return {
+        ...prevUser,
+        totalXP: newXP,
+        weeklyXP: prevUser.weeklyXP + xpEarned,
+        monthlyXP: prevUser.monthlyXP + xpEarned,
+        tier: newTier,
+        stats: updatedStats,
+        xpHistory: updatedHistory
+      };
+    });
+
+    if (isFirstToday) {
+      triggerConfetti();
+      const newFeedItem: FeedActivity = {
+        id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        userId: user.id,
+        username: user.username,
+        userAvatar: user.avatar,
+        userTier: user.tier,
+        isVerified: user.verifiedIcon,
+        isVIP: user.vipIcon,
+        actionType: 'completed_challenge',
+        title: `\ud83c\udf7d\ufe0f Nutrition logged for today`,
+        details: `Started tracking intake with ${cleanName} (${kcal} kcal). Discipline +2, Physical +1.`,
+        xpEarned,
+        timestamp: 'Just now',
+        reactions: { fire: 1, crown: 0, hundred: 0, bolt: 0, wolf: 0 },
+        userReactions: { [user.id]: 'fire' },
+        comments: []
+      };
+      setFeed(f => [newFeedItem, ...f]);
+    }
   };
 
   const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
@@ -684,6 +795,8 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         rewards,
         workouts,
         workoutTemplates,
+        meals,
+        calorieGoal,
         comparingMember,
         selectedMemberModal,
         levelUpModalData,
@@ -702,6 +815,9 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteWorkout,
         saveWorkoutTemplate,
         deleteWorkoutTemplate,
+        logMeal,
+        deleteMeal,
+        setCalorieGoal,
         updateUserProfile,
         completeOnboarding,
         upgradeToPremium,

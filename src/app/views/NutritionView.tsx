@@ -1,25 +1,25 @@
-import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Apple, Plus, Trash2, Flame, Target, CalendarDays, Check } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import { MealEntry } from '../types';
+import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Apple, Plus, Trash2, Flame, Target, CalendarDays, Check } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import { MealEntry } from "../types";
 
-const MEAL_TYPES: MealEntry['mealType'][] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+const MEAL_TYPES: MealEntry["mealType"][] = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
 export const NutritionView: React.FC = () => {
   const { meals, calorieGoal, logMeal, deleteMeal, setCalorieGoal } = useSVJ();
 
-  const [name, setName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [mealType, setMealType] = useState<MealEntry['mealType']>('Breakfast');
+  const [name, setName] = useState("");
+  const [calories, setCalories] = useState("");
+  const [mealType, setMealType] = useState<MealEntry["mealType"]>("Breakfast");
   const [goalDraft, setGoalDraft] = useState(String(calorieGoal));
   const [editingGoal, setEditingGoal] = useState(false);
 
   const todayKey = new Date().toDateString();
 
   const todayMeals = useMemo(
-    () => meals.filter(m => new Date(m.date).toDateString() === todayKey),
-    [meals, todayKey]
+    () => meals.filter((m) => new Date(m.date).toDateString() === todayKey),
+    [meals, todayKey],
   );
 
   const todayTotal = todayMeals.reduce((sum, m) => sum + m.calories, 0);
@@ -33,12 +33,12 @@ export const NutritionView: React.FC = () => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toDateString();
-      const dayMeals = meals.filter(m => new Date(m.date).toDateString() === key);
+      const dayMeals = meals.filter((m) => new Date(m.date).toDateString() === key);
       days.push({
-        label: i === 0 ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' }),
+        label: i === 0 ? "Today" : d.toLocaleDateString("en-US", { weekday: "short" }),
         key,
         total: dayMeals.reduce((s, m) => s + m.calories, 0),
-        count: dayMeals.length
+        count: dayMeals.length,
       });
     }
     return days;
@@ -49,7 +49,7 @@ export const NutritionView: React.FC = () => {
     for (let i = 0; i < 60; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const has = meals.some(m => new Date(m.date).toDateString() === d.toDateString());
+      const has = meals.some((m) => new Date(m.date).toDateString() === d.toDateString());
       if (has) streak++;
       else if (i > 0) break;
     }
@@ -61,8 +61,8 @@ export const NutritionView: React.FC = () => {
     const kcal = parseInt(calories, 10);
     if (!name.trim() || !kcal || kcal <= 0) return;
     logMeal(name, kcal, mealType);
-    setName('');
-    setCalories('');
+    setName("");
+    setCalories("");
   };
 
   const saveGoal = () => {
@@ -100,7 +100,7 @@ export const NutritionView: React.FC = () => {
                 <input
                   type="number"
                   value={goalDraft}
-                  onChange={e => setGoalDraft(e.target.value)}
+                  onChange={(e) => setGoalDraft(e.target.value)}
                   className="w-24 bg-[#0B0B0C] border border-white/15 rounded-lg px-2 py-1.5 text-sm text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]"
                 />
                 <button
@@ -113,7 +113,10 @@ export const NutritionView: React.FC = () => {
               </div>
             ) : (
               <button
-                onClick={() => { setGoalDraft(String(calorieGoal)); setEditingGoal(true); }}
+                onClick={() => {
+                  setGoalDraft(String(calorieGoal));
+                  setEditingGoal(true);
+                }}
                 className="flex items-center gap-1.5 text-sm text-[#8C8C90] hover:text-[#F4F2ED] transition-colors"
               >
                 <Target className="w-4 h-4" />
@@ -130,13 +133,15 @@ export const NutritionView: React.FC = () => {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
-            transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-            className={`h-full rounded-full ${todayTotal > calorieGoal ? 'bg-[#E4B44C]' : 'bg-gradient-to-r from-[#8C1327] to-[#C81E3A]'}`}
+            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            className={`h-full rounded-full ${todayTotal > calorieGoal ? "bg-[#E4B44C]" : "bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"}`}
           />
         </div>
 
         <div className="flex items-center justify-between mt-3 text-[11px] text-[#8C8C90]">
-          <span>{todayMeals.length} item{todayMeals.length === 1 ? '' : 's'} logged</span>
+          <span>
+            {todayMeals.length} item{todayMeals.length === 1 ? "" : "s"} logged
+          </span>
           <span className="flex items-center gap-1">
             <Flame className="w-3.5 h-3.5 text-[#C81E3A]" />
             {loggingStreak} day logging streak
@@ -145,13 +150,16 @@ export const NutritionView: React.FC = () => {
       </div>
 
       {/* Add entry */}
-      <form onSubmit={handleSubmit} className="rounded-2xl bg-[#141416] border border-white/10 p-5 space-y-3">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-2xl bg-[#141416] border border-white/10 p-5 space-y-3"
+      >
         <p className="text-[11px] uppercase tracking-widest text-[#8C8C90]">Add food</p>
 
         <div className="flex gap-2">
           <input
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Grilled chicken & rice"
             className="flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
@@ -159,22 +167,22 @@ export const NutritionView: React.FC = () => {
             type="number"
             inputMode="numeric"
             value={calories}
-            onChange={e => setCalories(e.target.value)}
+            onChange={(e) => setCalories(e.target.value)}
             placeholder="kcal"
             className="w-24 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {MEAL_TYPES.map(t => (
+          {MEAL_TYPES.map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setMealType(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 mealType === t
-                  ? 'bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]'
-                  : 'bg-transparent border-white/10 text-[#8C8C90] hover:text-[#F4F2ED]'
+                  ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
+                  : "bg-transparent border-white/10 text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
               {t}
@@ -192,20 +200,23 @@ export const NutritionView: React.FC = () => {
         </button>
 
         <p className="text-[11px] text-[#8C8C90] text-center">
-          First log each day: <span className="text-[#C81E3A] font-medium">+60 XP</span>, Discipline +2, Physical +1. Extra entries +10 XP.
+          First log each day: <span className="text-[#C81E3A] font-medium">+60 XP</span>, Discipline
+          +2, Physical +1. Extra entries +10 XP.
         </p>
       </form>
 
       {/* Today's entries */}
       <div className="rounded-2xl bg-[#141416] border border-white/10 p-5">
-        <p className="text-[11px] uppercase tracking-widest text-[#8C8C90] mb-3">Today&apos;s log</p>
+        <p className="text-[11px] uppercase tracking-widest text-[#8C8C90] mb-3">
+          Today&apos;s log
+        </p>
 
         {todayMeals.length === 0 ? (
           <p className="text-sm text-[#5C5C60] py-4 text-center">Nothing logged yet today.</p>
         ) : (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-              {todayMeals.map(m => (
+              {todayMeals.map((m) => (
                 <motion.div
                   key={m.id}
                   layout
@@ -217,8 +228,11 @@ export const NutritionView: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#F4F2ED] truncate">{m.name}</p>
                     <p className="text-[11px] text-[#8C8C90]">
-                      {m.mealType} ·{' '}
-                      {new Date(m.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      {m.mealType} ·{" "}
+                      {new Date(m.date).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-[#F4F2ED] whitespace-nowrap">
@@ -246,8 +260,8 @@ export const NutritionView: React.FC = () => {
         </p>
 
         <div className="flex items-end justify-between gap-2 h-28">
-          {[...history].reverse().map(day => {
-            const max = Math.max(calorieGoal, ...history.map(h => h.total), 1);
+          {[...history].reverse().map((day) => {
+            const max = Math.max(calorieGoal, ...history.map((h) => h.total), 1);
             const h = Math.round((day.total / max) * 100);
             return (
               <div key={day.key} className="flex-1 flex flex-col items-center gap-2">
@@ -256,7 +270,7 @@ export const NutritionView: React.FC = () => {
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(day.total > 0 ? 6 : 2, h)}%` }}
                     className={`w-full rounded-t-md ${
-                      day.count > 0 ? 'bg-gradient-to-t from-[#8C1327] to-[#C81E3A]' : 'bg-white/5'
+                      day.count > 0 ? "bg-gradient-to-t from-[#8C1327] to-[#C81E3A]" : "bg-white/5"
                     }`}
                   />
                 </div>

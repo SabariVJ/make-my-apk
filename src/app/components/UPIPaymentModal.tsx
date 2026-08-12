@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, QrCode, Check, ShieldCheck, Zap, Upload, ArrowRight, Smartphone } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import upiQr from '@/assets/upi-qr-clean.png.asset.json';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { X, QrCode, Check, ShieldCheck, Zap, Upload, ArrowRight, Smartphone } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
@@ -62,7 +62,8 @@ export const UPIPaymentModal: React.FC = () => {
                   Pay via UPI or GPay?
                 </h3>
                 <p className="text-xs text-[#8C8C90] font-inter mt-1 max-w-xs mx-auto leading-relaxed">
-                  Scan QR code using GPay, PhonePe, Paytm, or BHIM to complete instant SVJ Plus verification.
+                  Scan QR code using GPay, PhonePe, Paytm, or BHIM to complete instant SVJ Plus
+                  verification.
                 </p>
               </div>
 

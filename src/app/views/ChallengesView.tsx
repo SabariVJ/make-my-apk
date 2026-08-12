@@ -1,60 +1,80 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Flame, CheckCircle2, Plus, Clock, Zap, Target, ShieldAlert, Sparkles, Filter, ChevronDown } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import { ChallengeCategory, DailyChallenge } from '../types';
-import { HexagonRadarChart } from '../components/HexagonRadarChart';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Flame,
+  CheckCircle2,
+  Plus,
+  Clock,
+  Zap,
+  Target,
+  ShieldAlert,
+  Sparkles,
+  Filter,
+  ChevronDown,
+} from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import { ChallengeCategory, DailyChallenge } from "../types";
+import { HexagonRadarChart } from "../components/HexagonRadarChart";
 
 export const ChallengesView: React.FC = () => {
   const { challenges, toggleChallenge, addCustomChallenge, user, leaderboard } = useSVJ();
-  const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | 'All'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalXP - a.totalXP);
-  const myIndexInSorted = sortedLeaderboard.findIndex(l => l.id === user.id || l.id === 'user-me');
+  const myIndexInSorted = sortedLeaderboard.findIndex(
+    (l) => l.id === user.id || l.id === "user-me",
+  );
   const userRank = myIndexInSorted !== -1 ? myIndexInSorted + 1 : sortedLeaderboard.length;
 
   // New Custom Challenge form state
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState<ChallengeCategory>('Physical');
-  const [newDifficulty, setNewDifficulty] = useState<DailyChallenge['difficulty']>('Medium');
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState<ChallengeCategory>("Physical");
+  const [newDifficulty, setNewDifficulty] = useState<DailyChallenge["difficulty"]>("Medium");
   const [newXP, setNewXP] = useState(80);
 
-  const filteredChallenges = selectedCategory === 'All'
-    ? challenges
-    : challenges.filter(c => c.category === selectedCategory);
+  const filteredChallenges =
+    selectedCategory === "All"
+      ? challenges
+      : challenges.filter((c) => c.category === selectedCategory);
 
-  const completedCount = challenges.filter(c => c.completed).length;
+  const completedCount = challenges.filter((c) => c.completed).length;
   const totalCount = challenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const todayXP = challenges.filter(c => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  const todayXP = challenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
 
-  const categories: (ChallengeCategory | 'All')[] = ['All', 'Physical', 'Discipline', 'Mental', 'Mindset', 'Nutrition'];
+  const categories: (ChallengeCategory | "All")[] = [
+    "All",
+    "Physical",
+    "Discipline",
+    "Mental",
+    "Mindset",
+    "Nutrition",
+  ];
 
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     addCustomChallenge(newTitle.trim(), newCategory, newDifficulty, newXP);
-    setNewTitle('');
+    setNewTitle("");
     setIsAddModalOpen(false);
   };
 
-  const getDifficultyBadge = (diff: DailyChallenge['difficulty']) => {
+  const getDifficultyBadge = (diff: DailyChallenge["difficulty"]) => {
     switch (diff) {
-      case 'Easy':
-        return 'bg-emerald-950/80 text-emerald-400 border-emerald-800';
-      case 'Medium':
-        return 'bg-amber-950/80 text-amber-400 border-amber-800';
-      case 'Hard':
-        return 'bg-rose-950/80 text-rose-400 border-rose-800';
-      case 'Elite':
-        return 'bg-purple-950/80 text-purple-300 border-purple-800';
+      case "Easy":
+        return "bg-emerald-950/80 text-emerald-400 border-emerald-800";
+      case "Medium":
+        return "bg-amber-950/80 text-amber-400 border-amber-800";
+      case "Hard":
+        return "bg-rose-950/80 text-rose-400 border-rose-800";
+      case "Elite":
+        return "bg-purple-950/80 text-purple-300 border-purple-800";
     }
   };
 
   return (
     <div className="space-y-6 pb-24">
-      
       {/* Today's Mission Banner */}
       <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
@@ -86,9 +106,7 @@ export const ChallengesView: React.FC = () => {
               <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
               XP Today
             </div>
-            <div className="font-mono text-xl font-bold text-[#C81E3A]">
-              +{todayXP}
-            </div>
+            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{todayXP}</div>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
@@ -97,7 +115,8 @@ export const ChallengesView: React.FC = () => {
               Completed
             </div>
             <div className="font-mono text-xl font-bold text-white">
-              {completedCount} <span className="text-xs text-[#8C8C90] font-normal">/ {totalCount}</span>
+              {completedCount}{" "}
+              <span className="text-xs text-[#8C8C90] font-normal">/ {totalCount}</span>
             </div>
           </div>
 
@@ -106,9 +125,7 @@ export const ChallengesView: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               Global Rank
             </div>
-            <div className="font-mono text-xl font-bold text-amber-400">
-              #{userRank}
-            </div>
+            <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
           </div>
         </div>
 
@@ -137,24 +154,35 @@ export const ChallengesView: React.FC = () => {
                 Character Hexagon Matrix (Level {user.level || 1})
               </span>
               <span className="px-2 py-0.5 rounded-md bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold uppercase">
-                {user.leagueRank || 'APPRENTICE I'}
+                {user.leagueRank || "APPRENTICE I"}
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[#8C8C90]">Complete challenges to expand stats</span>
+            <span className="text-[10px] font-mono text-[#8C8C90]">
+              Complete challenges to expand stats
+            </span>
           </div>
 
           <HexagonRadarChart
-            stats={user.stats || { physical: 93, mental: 91, social: 87, intellect: 84, discipline: 93, ambition: 95 }}
+            stats={
+              user.stats || {
+                physical: 93,
+                mental: 91,
+                social: 87,
+                intellect: 84,
+                discipline: 93,
+                ambition: 95,
+              }
+            }
             level={user.level}
             onStatClick={(statKey) => {
               // Quick filter by clicked attribute's category!
               const statCatMap: Record<string, ChallengeCategory> = {
-                physical: 'Physical',
-                mental: 'Mental',
-                discipline: 'Discipline',
-                social: 'Mindset',
-                intellect: 'Mindset',
-                ambition: 'Mindset'
+                physical: "Physical",
+                mental: "Mental",
+                discipline: "Discipline",
+                social: "Mindset",
+                intellect: "Mindset",
+                ambition: "Mindset",
               };
               if (statCatMap[statKey]) {
                 setSelectedCategory(statCatMap[statKey]);
@@ -167,14 +195,14 @@ export const ChallengesView: React.FC = () => {
       {/* Categories & Custom Habit Button */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
         <div className="flex items-center gap-2">
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20'
-                  : 'bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5'
+                  ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
+                  : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"
               }`}
             >
               {cat}
@@ -194,7 +222,7 @@ export const ChallengesView: React.FC = () => {
       {/* Challenges List */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
-          {filteredChallenges.map(challenge => (
+          {filteredChallenges.map((challenge) => (
             <motion.div
               key={challenge.id}
               layout
@@ -204,8 +232,8 @@ export const ChallengesView: React.FC = () => {
               onClick={() => toggleChallenge(challenge.id)}
               className={`group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                 challenge.completed
-                  ? 'bg-[#17171A]/40 border-white/5 opacity-75'
-                  : 'bg-[#17171A] border-white/10 hover:border-[#C81E3A]/40 shadow-lg'
+                  ? "bg-[#17171A]/40 border-white/5 opacity-75"
+                  : "bg-[#17171A] border-white/10 hover:border-[#C81E3A]/40 shadow-lg"
               }`}
             >
               <div className="flex items-start gap-3.5">
@@ -213,8 +241,8 @@ export const ChallengesView: React.FC = () => {
                 <div
                   className={`mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
-                      ? 'bg-[#C81E3A] border-[#C81E3A] text-white'
-                      : 'border-white/20 group-hover:border-[#C81E3A]'
+                      ? "bg-[#C81E3A] border-[#C81E3A] text-white"
+                      : "border-white/20 group-hover:border-[#C81E3A]"
                   }`}
                 >
                   {challenge.completed && <CheckCircle2 className="w-4 h-4" />}
@@ -224,14 +252,14 @@ export const ChallengesView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <h3
                       className={`font-inter font-semibold text-sm ${
-                        challenge.completed ? 'line-through text-[#8C8C90]' : 'text-white'
+                        challenge.completed ? "line-through text-[#8C8C90]" : "text-white"
                       }`}
                     >
                       {challenge.title}
                     </h3>
                     <span
                       className={`px-2 py-0.5 rounded text-[9px] font-mono border ${getDifficultyBadge(
-                        challenge.difficulty
+                        challenge.difficulty,
                       )}`}
                     >
                       {challenge.difficulty}
@@ -263,8 +291,8 @@ export const ChallengesView: React.FC = () => {
               <div
                 className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold shrink-0 ${
                   challenge.completed
-                    ? 'bg-emerald-950/30 text-emerald-400 border border-emerald-800/50'
-                    : 'bg-[#0B0B0C] text-[#C81E3A] border border-white/10'
+                    ? "bg-emerald-950/30 text-emerald-400 border border-emerald-800/50"
+                    : "bg-[#0B0B0C] text-[#C81E3A] border border-white/10"
                 }`}
               >
                 +{challenge.xp} XP
@@ -320,7 +348,7 @@ export const ChallengesView: React.FC = () => {
                   <input
                     type="text"
                     value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
+                    onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="e.g. 100 Kettlebell Swings"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
                     required
@@ -334,14 +362,16 @@ export const ChallengesView: React.FC = () => {
                     </label>
                     <select
                       value={newCategory}
-                      onChange={e => setNewCategory(e.target.value as ChallengeCategory)}
+                      onChange={(e) => setNewCategory(e.target.value as ChallengeCategory)}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
                     >
-                      {categories.filter(c => c !== 'All').map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
+                      {categories
+                        .filter((c) => c !== "All")
+                        .map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
                     </select>
                   </div>
 
@@ -351,10 +381,18 @@ export const ChallengesView: React.FC = () => {
                     </label>
                     <select
                       value={newDifficulty}
-                      onChange={e => {
-                        const diff = e.target.value as DailyChallenge['difficulty'];
+                      onChange={(e) => {
+                        const diff = e.target.value as DailyChallenge["difficulty"];
                         setNewDifficulty(diff);
-                        setNewXP(diff === 'Easy' ? 50 : diff === 'Medium' ? 80 : diff === 'Hard' ? 120 : 180);
+                        setNewXP(
+                          diff === "Easy"
+                            ? 50
+                            : diff === "Medium"
+                              ? 80
+                              : diff === "Hard"
+                                ? 120
+                                : 180,
+                        );
                       }}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
                     >
@@ -379,7 +417,6 @@ export const ChallengesView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

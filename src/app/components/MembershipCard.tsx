@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Shield, Crown, Sparkles, QrCode, RefreshCw, Share2, Check } from 'lucide-react';
-import { UserProfile } from '../types';
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { Shield, Crown, Sparkles, QrCode, RefreshCw, Share2, Check } from "lucide-react";
+import { UserProfile } from "../types";
 
 interface MembershipCardProps {
   user: UserProfile;
@@ -12,7 +12,9 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`SVJ Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${user.memberId}`);
+    navigator.clipboard.writeText(
+      `SVJ Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${user.memberId}`,
+    );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -32,8 +34,12 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
             className="p-1.5 rounded-lg bg-[#17171A] hover:bg-white/10 text-[#8C8C90] hover:text-white transition-colors cursor-pointer text-xs flex items-center gap-1 border border-white/10"
             title="Share Card"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span className="text-[11px]">{copied ? 'Copied' : 'Share'}</span>
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Share2 className="w-3.5 h-3.5" />
+            )}
+            <span className="text-[11px]">{copied ? "Copied" : "Share"}</span>
           </button>
           <button
             onClick={() => setIsFlipped(!isFlipped)}
@@ -50,12 +56,12 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
         transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
         className="relative w-full aspect-[1.586/1] rounded-2xl overflow-hidden cursor-pointer shadow-2xl shadow-black/80 border border-white/15 group"
         onClick={() => setIsFlipped(!isFlipped)}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: "preserve-3d" }}
       >
         {/* CARD FRONT */}
         <div
           className="absolute inset-0 p-5 flex flex-col justify-between bg-gradient-to-br from-[#1B1B20] via-[#111114] to-[#0A0A0C] text-[#F4F2ED]"
-          style={{ backfaceVisibility: 'hidden' }}
+          style={{ backfaceVisibility: "hidden" }}
         >
           {/* Ambient Lighting & Hologram Foil overlay */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#C81E3A]/20 via-transparent to-transparent pointer-events-none" />
@@ -100,9 +106,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
               {user.name}
               {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/30" />}
             </div>
-            <div className="text-xs font-mono text-[#8C8C90] mt-0.5">
-              @{user.username}
-            </div>
+            <div className="text-xs font-mono text-[#8C8C90] mt-0.5">@{user.username}</div>
           </div>
 
           {/* Bottom Card Footer */}
@@ -121,9 +125,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
             </div>
             <div>
               <div className="text-[8px] font-mono text-[#8C8C90] uppercase">Since</div>
-              <div className="text-xs font-mono text-white">
-                {user.joinDate}
-              </div>
+              <div className="text-xs font-mono text-white">{user.joinDate}</div>
             </div>
           </div>
         </div>
@@ -132,8 +134,8 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
         <div
           className="absolute inset-0 p-5 flex flex-col justify-between bg-gradient-to-br from-[#0F0F12] via-[#17171C] to-[#0A0A0C] text-[#F4F2ED]"
           style={{
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)'
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
           }}
         >
           {/* Magnetic Strip */}
@@ -150,7 +152,8 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
                 {user.name}
               </div>
               <p className="text-[9px] font-mono text-zinc-500 mt-2 leading-relaxed">
-                This digital card certifies active membership in the SVJ Self-Improvement Guild. Non-transferable.
+                This digital card certifies active membership in the SVJ Self-Improvement Guild.
+                Non-transferable.
               </p>
             </div>
 
@@ -162,7 +165,9 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
                 className="w-12 h-12 object-contain"
                 referrerPolicy="no-referrer"
               />
-              <span className="text-[8px] font-mono font-bold text-black tracking-tight">VERIFIED</span>
+              <span className="text-[8px] font-mono font-bold text-black tracking-tight">
+                VERIFIED
+              </span>
             </div>
           </div>
 

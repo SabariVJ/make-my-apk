@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface FriendProfile {
   id: string;
@@ -17,12 +17,12 @@ export interface FriendRow extends FriendProfile {
 
 export interface FriendRequestRow extends FriendProfile {
   friendship_id: string;
-  direction: 'incoming' | 'outgoing';
+  direction: "incoming" | "outgoing";
   created_at: string;
 }
 
 export interface SearchRow extends FriendProfile {
-  friendship_status: 'pending' | 'accepted' | 'declined' | null;
+  friendship_status: "pending" | "accepted" | "declined" | null;
   is_incoming: boolean;
 }
 
@@ -53,8 +53,8 @@ export function useFriends(sync?: SyncInput) {
       return;
     }
     const [f, r] = await Promise.all([
-      supabase.rpc('get_friends'),
-      supabase.rpc('get_friend_requests'),
+      supabase.rpc("get_friends"),
+      supabase.rpc("get_friend_requests"),
     ]);
     if (f.error || r.error) setError(f.error?.message ?? r.error?.message ?? null);
     else setError(null);
@@ -72,7 +72,7 @@ export function useFriends(sync?: SyncInput) {
       const uid = auth.user?.id;
       if (!uid || cancelled || !sync) return;
       await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           username: sync.username,
           display_name: sync.displayName,
@@ -80,7 +80,7 @@ export function useFriends(sync?: SyncInput) {
           total_xp: sync.totalXP,
           current_streak: sync.currentStreak,
         })
-        .eq('id', uid);
+        .eq("id", uid);
     })();
     return () => {
       cancelled = true;
@@ -94,7 +94,7 @@ export function useFriends(sync?: SyncInput) {
   const search = useCallback(async (query: string): Promise<SearchRow[]> => {
     const q = query.trim();
     if (!q) return [];
-    const { data, error: err } = await supabase.rpc('search_profiles', { _q: q });
+    const { data, error: err } = await supabase.rpc("search_profiles", { _q: q });
     if (err) {
       setError(err.message);
       return [];
@@ -109,47 +109,47 @@ export function useFriends(sync?: SyncInput) {
       const uid = auth.user?.id;
       if (uid) {
         const { error: err } = await supabase
-          .from('friendships')
-          .insert({ requester_id: uid, addressee_id: addresseeId, status: 'pending' });
+          .from("friendships")
+          .insert({ requester_id: uid, addressee_id: addresseeId, status: "pending" });
         if (err) setError(err.message);
       }
       await refresh();
       setBusyId(null);
     },
-    [refresh]
+    [refresh],
   );
 
   const respond = useCallback(
-    async (friendshipId: string, status: 'accepted' | 'declined') => {
+    async (friendshipId: string, status: "accepted" | "declined") => {
       setBusyId(friendshipId);
       const { error: err } = await supabase
-        .from('friendships')
+        .from("friendships")
         .update({ status })
-        .eq('id', friendshipId);
+        .eq("id", friendshipId);
       if (err) setError(err.message);
       await refresh();
       setBusyId(null);
     },
-    [refresh]
+    [refresh],
   );
 
   const removeFriend = useCallback(
     async (friendshipId: string) => {
       setBusyId(friendshipId);
-      const { error: err } = await supabase.from('friendships').delete().eq('id', friendshipId);
+      const { error: err } = await supabase.from("friendships").delete().eq("id", friendshipId);
       if (err) setError(err.message);
       await refresh();
       setBusyId(null);
     },
-    [refresh]
+    [refresh],
   );
 
   return {
     userId,
     friends,
     requests,
-    incoming: requests.filter(r => r.direction === 'incoming'),
-    outgoing: requests.filter(r => r.direction === 'outgoing'),
+    incoming: requests.filter((r) => r.direction === "incoming"),
+    outgoing: requests.filter((r) => r.direction === "outgoing"),
     loading,
     error,
     busyId,

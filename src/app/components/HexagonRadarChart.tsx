@@ -1,7 +1,16 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Dumbbell, Brain, Users, BookOpen, Flame, Shield, Sparkles, TrendingUp } from 'lucide-react';
-import { UserStats } from '../types';
+import React from "react";
+import { motion } from "motion/react";
+import {
+  Dumbbell,
+  Brain,
+  Users,
+  BookOpen,
+  Flame,
+  Shield,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
+import { UserStats } from "../types";
 
 interface HexagonRadarChartProps {
   stats: UserStats;
@@ -13,8 +22,8 @@ interface HexagonRadarChartProps {
 export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
   stats,
   level = 1,
-  className = '',
-  onStatClick
+  className = "",
+  onStatClick,
 }) => {
   // Ensure default fallback values for each attribute
   const safeStats = {
@@ -34,7 +43,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       safeStats.mental +
       safeStats.social +
       safeStats.discipline) /
-      6
+      6,
   );
 
   // 6 dimensions configuration arranged clockwise starting from Top (Physical)
@@ -48,66 +57,66 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
     icon: string;
   }[] = [
     {
-      key: 'physical',
-      label: 'Physical',
+      key: "physical",
+      label: "Physical",
       angle: -90, // Top
-      color: 'text-emerald-400',
-      hexColor: '#10B981',
-      bgGlow: 'rgba(16,185,129,0.15)',
-      icon: '💪'
+      color: "text-emerald-400",
+      hexColor: "#10B981",
+      bgGlow: "rgba(16,185,129,0.15)",
+      icon: "💪",
     },
     {
-      key: 'ambition',
-      label: 'Ambition',
+      key: "ambition",
+      label: "Ambition",
       angle: -30, // Top Right
-      color: 'text-purple-400',
-      hexColor: '#A855F7',
-      bgGlow: 'rgba(168,85,247,0.15)',
-      icon: '👑'
+      color: "text-purple-400",
+      hexColor: "#A855F7",
+      bgGlow: "rgba(168,85,247,0.15)",
+      icon: "👑",
     },
     {
-      key: 'intellect',
-      label: 'Intellect',
+      key: "intellect",
+      label: "Intellect",
       angle: 30, // Bottom Right
-      color: 'text-amber-400',
-      hexColor: '#F59E0B',
-      bgGlow: 'rgba(245,158,11,0.15)',
-      icon: '📖'
+      color: "text-amber-400",
+      hexColor: "#F59E0B",
+      bgGlow: "rgba(245,158,11,0.15)",
+      icon: "📖",
     },
     {
-      key: 'mental',
-      label: 'Mental',
+      key: "mental",
+      label: "Mental",
       angle: 90, // Bottom
-      color: 'text-yellow-400',
-      hexColor: '#EAB308',
-      bgGlow: 'rgba(234,179,8,0.15)',
-      icon: '🧠'
+      color: "text-yellow-400",
+      hexColor: "#EAB308",
+      bgGlow: "rgba(234,179,8,0.15)",
+      icon: "🧠",
     },
     {
-      key: 'social',
-      label: 'Social',
+      key: "social",
+      label: "Social",
       angle: 150, // Bottom Left
-      color: 'text-blue-400',
-      hexColor: '#3B82F6',
-      bgGlow: 'rgba(59,130,246,0.15)',
-      icon: '👥'
+      color: "text-blue-400",
+      hexColor: "#3B82F6",
+      bgGlow: "rgba(59,130,246,0.15)",
+      icon: "👥",
     },
     {
-      key: 'discipline',
-      label: 'Discipline',
+      key: "discipline",
+      label: "Discipline",
       angle: 210, // Top Left
-      color: 'text-rose-500',
-      hexColor: '#F43F5E',
-      bgGlow: 'rgba(244,63,94,0.15)',
-      icon: '⚔️'
-    }
+      color: "text-rose-500",
+      hexColor: "#F43F5E",
+      bgGlow: "rgba(244,63,94,0.15)",
+      icon: "⚔️",
+    },
   ];
 
   // SVG Geometry Constants
   const size = 320;
   const center = size / 2;
   const maxRadius = 112; // Max radius for 100 stat value
-  const minRadius = 46;  // Safe min radius so dots never overlap central OVR badge (box size ~35px radius)
+  const minRadius = 46; // Safe min radius so dots never overlap central OVR badge (box size ~35px radius)
 
   // Helper function to get XY coordinates from angle and distance
   const getCoordinates = (angleInDegrees: number, valueRadius: number) => {
@@ -119,25 +128,29 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
 
   // Generate concentric hexagon grid lines (25%, 50%, 75%, 100%)
   const gridRings = [0.25, 0.5, 0.75, 1.0];
-  const gridHexagons = gridRings.map(ringRatio => {
+  const gridHexagons = gridRings.map((ringRatio) => {
     const r = minRadius + ringRatio * (maxRadius - minRadius);
-    const points = dimensions.map(d => {
-      const { x, y } = getCoordinates(d.angle, r);
-      return `${x},${y}`;
-    }).join(' ');
+    const points = dimensions
+      .map((d) => {
+        const { x, y } = getCoordinates(d.angle, r);
+        return `${x},${y}`;
+      })
+      .join(" ");
     return { points, ratio: ringRatio };
   });
 
   // Calculate actual user stat polygon points
-  const userPolygonPoints = dimensions.map(d => {
-    const val = safeStats[d.key];
-    const effectiveRadius = minRadius + (val / 100) * (maxRadius - minRadius);
-    const { x, y } = getCoordinates(d.angle, effectiveRadius);
-    return `${x},${y}`;
-  }).join(' ');
+  const userPolygonPoints = dimensions
+    .map((d) => {
+      const val = safeStats[d.key];
+      const effectiveRadius = minRadius + (val / 100) * (maxRadius - minRadius);
+      const { x, y } = getCoordinates(d.angle, effectiveRadius);
+      return `${x},${y}`;
+    })
+    .join(" ");
 
   // Coordinates for vertex dots
-  const vertexPoints = dimensions.map(d => {
+  const vertexPoints = dimensions.map((d) => {
     const val = safeStats[d.key];
     const effectiveRadius = minRadius + (val / 100) * (maxRadius - minRadius);
     const coords = getCoordinates(d.angle, effectiveRadius);
@@ -145,7 +158,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
   });
 
   // Coordinates for outer labels
-  const labelPoints = dimensions.map(d => {
+  const labelPoints = dimensions.map((d) => {
     const labelRadius = maxRadius + 24;
     const coords = getCoordinates(d.angle, labelRadius);
     return { ...coords, ...d };
@@ -155,7 +168,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
     <div className={`flex flex-col items-center justify-center ${className}`}>
       {/* Hexagon Radar Chart Canvas */}
       <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center select-none">
-        
         {/* Ambient Backlight Glow */}
         <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-[#C81E3A]/20 via-purple-600/10 to-blue-600/20 blur-2xl pointer-events-none" />
 
@@ -281,14 +293,14 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
 
       {/* 6 Individual Stat Attribute Cards Grid matching uploaded image style */}
       <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2 font-mono">
-        {dimensions.map(d => {
+        {dimensions.map((d) => {
           const val = safeStats[d.key];
           return (
             <div
               key={d.key}
               onClick={() => onStatClick && onStatClick(d.key)}
               className={`p-3 rounded-2xl bg-[#121214] border border-white/10 hover:border-white/20 flex items-center justify-between transition-all group ${
-                onStatClick ? 'cursor-pointer hover:bg-white/5' : ''
+                onStatClick ? "cursor-pointer hover:bg-white/5" : ""
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -298,15 +310,13 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
                   style={{
                     backgroundColor: d.bgGlow,
                     borderColor: `${d.hexColor}50`,
-                    color: d.hexColor
+                    color: d.hexColor,
                   }}
                 >
                   <span>{d.icon}</span>
                 </div>
                 <div>
-                  <div className={`text-xs font-bold ${d.color} leading-none`}>
-                    {d.label}
-                  </div>
+                  <div className={`text-xs font-bold ${d.color} leading-none`}>{d.label}</div>
                   <div className="text-[9px] text-[#8C8C90] mt-0.5">
                     LEVEL {Math.floor(val / 10) + 1}
                   </div>
@@ -314,9 +324,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
               </div>
 
               {/* Numeric Rating */}
-              <div className="font-anton text-xl text-white tracking-tight">
-                {val}
-              </div>
+              <div className="font-anton text-xl text-white tracking-tight">{val}</div>
             </div>
           );
         })}

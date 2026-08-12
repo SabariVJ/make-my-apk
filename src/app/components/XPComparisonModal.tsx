@@ -1,8 +1,18 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Zap, TrendingUp, Calendar, Clock, Trophy, Flame, Swords, ArrowRight } from 'lucide-react';
-import { LeaderboardEntry } from '../types';
-import { useSVJ } from '../context/SVJContext';
+import React from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  X,
+  Zap,
+  TrendingUp,
+  Calendar,
+  Clock,
+  Trophy,
+  Flame,
+  Swords,
+  ArrowRight,
+} from "lucide-react";
+import { LeaderboardEntry } from "../types";
+import { useSVJ } from "../context/SVJContext";
 
 interface XPComparisonModalProps {
   member: LeaderboardEntry | null;
@@ -16,7 +26,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
   const xpDiff = Math.abs(user.totalXP - member.totalXP);
   const isUserAhead = user.totalXP >= member.totalXP;
-  
+
   // Daily average XP rate estimated from history or default ~380 XP
   const dailyRate = 380;
   const daysToCatchUp = xpDiff > 0 ? Math.ceil(xpDiff / dailyRate) : 0;
@@ -53,7 +63,6 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
           {/* Versus Card Header */}
           <div className="grid grid-cols-2 gap-3 my-6 relative">
-            
             {/* VS Badge in center */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-[#C81E3A] border-2 border-[#17171A] flex items-center justify-center font-anton text-xs text-white shadow-lg">
               VS
@@ -65,7 +74,9 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               </div>
               <span className="font-anton text-sm text-white uppercase">{user.name}</span>
-              <span className="text-[10px] font-mono text-[#8C8C90]">You (Rank #{user.xpHistory ? 47 : 47})</span>
+              <span className="text-[10px] font-mono text-[#8C8C90]">
+                You (Rank #{user.xpHistory ? 47 : 47})
+              </span>
               <div className="mt-2 text-lg font-mono font-bold text-[#C81E3A]">
                 {user.totalXP.toLocaleString()} XP
               </div>
@@ -74,7 +85,11 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             {/* TARGET MEMBER Box */}
             <div className="p-4 rounded-xl bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 mb-2">
-                <img src={member.avatar} alt={member.username} className="w-full h-full object-cover" />
+                <img
+                  src={member.avatar}
+                  alt={member.username}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-anton text-sm text-white uppercase">{member.username}</span>
               <span className="text-[10px] font-mono text-[#8C8C90]">Rank #{member.rank}</span>
@@ -103,7 +118,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               </span>
               <span className="font-mono font-bold text-xs text-emerald-400">
                 {isUserAhead
-                  ? 'You lead by ' + xpDiff.toLocaleString() + ' XP'
+                  ? "You lead by " + xpDiff.toLocaleString() + " XP"
                   : `~${daysToCatchUp} Days at average pace`}
               </span>
             </div>
@@ -114,7 +129,9 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <div>
               <div className="flex justify-between text-xs font-mono mb-1">
                 <span className="text-white">Your Progress</span>
-                <span className="text-[#C81E3A]">{user.totalXP.toLocaleString()} XP ({userPercent}%)</span>
+                <span className="text-[#C81E3A]">
+                  {user.totalXP.toLocaleString()} XP ({userPercent}%)
+                </span>
               </div>
               <div className="w-full h-3 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
                 <motion.div
@@ -129,7 +146,9 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <div>
               <div className="flex justify-between text-xs font-mono mb-1">
                 <span className="text-[#8C8C90]">{member.username}'s Progress</span>
-                <span className="text-amber-400">{member.totalXP.toLocaleString()} XP ({memberPercent}%)</span>
+                <span className="text-amber-400">
+                  {member.totalXP.toLocaleString()} XP ({memberPercent}%)
+                </span>
               </div>
               <div className="w-full h-3 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
                 <motion.div
@@ -151,15 +170,21 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
               <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
                 <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Weekly XP</div>
-                <div className="text-white font-bold">{user.weeklyXP} vs {member.weeklyXP}</div>
+                <div className="text-white font-bold">
+                  {user.weeklyXP} vs {member.weeklyXP}
+                </div>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
                 <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Monthly XP</div>
-                <div className="text-white font-bold">{user.monthlyXP} vs {member.monthlyXP}</div>
+                <div className="text-white font-bold">
+                  {user.monthlyXP} vs {member.monthlyXP}
+                </div>
               </div>
               <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
                 <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Active Streak</div>
-                <div className="text-white font-bold">{user.currentStreak}d vs {member.streak}d</div>
+                <div className="text-white font-bold">
+                  {user.currentStreak}d vs {member.streak}d
+                </div>
               </div>
             </div>
           </div>
@@ -174,7 +199,6 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <span>Lock In & Outperform</span>
             <ArrowRight className="w-4 h-4" />
           </motion.button>
-
         </motion.div>
       </div>
     </AnimatePresence>

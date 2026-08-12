@@ -1,31 +1,55 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { User, Sparkles, MapPin, Check, Shield, Flame, Target, Trophy } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { User, Sparkles, MapPin, Check, Shield, Flame, Target, Trophy } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
 
 const PRESET_AVATARS = [
-  { id: 'av-1', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80', label: 'Atlas' },
-  { id: 'av-2', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', label: 'Aura' },
-  { id: 'av-3', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', label: 'Titan' },
-  { id: 'av-4', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80', label: 'Apex' },
-  { id: 'av-5', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80', label: 'Zenith' },
-  { id: 'av-6', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80', label: 'Vanguard' }
+  {
+    id: "av-1",
+    url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
+    label: "Atlas",
+  },
+  {
+    id: "av-2",
+    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    label: "Aura",
+  },
+  {
+    id: "av-3",
+    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    label: "Titan",
+  },
+  {
+    id: "av-4",
+    url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
+    label: "Apex",
+  },
+  {
+    id: "av-5",
+    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+    label: "Zenith",
+  },
+  {
+    id: "av-6",
+    url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
+    label: "Vanguard",
+  },
 ];
 
 const FOCUS_GOALS = [
-  '🏋️ Physical Strength',
-  '🧊 Cold Discipline',
-  '🧠 Deep Focus & Reading',
-  '🧘 Daily Mindfulness'
+  "🏋️ Physical Strength",
+  "🧊 Cold Discipline",
+  "🧠 Deep Focus & Reading",
+  "🧘 Daily Mindfulness",
 ];
 
 export const FirstTimeOnboardingModal: React.FC = () => {
   const { isFirstTimeOnboardingOpen, completeOnboarding, user } = useSVJ();
 
-  const [name, setName] = useState(user.name !== 'New Voyager' ? user.name : '');
-  const [username, setUsername] = useState(user.username !== 'initiate_svj' ? user.username : '');
-  const [bio, setBio] = useState('Obsessed with 1% daily compound growth.');
-  const [location, setLocation] = useState('New York, USA');
+  const [name, setName] = useState(user.name !== "New Voyager" ? user.name : "");
+  const [username, setUsername] = useState(user.username !== "initiate_svj" ? user.username : "");
+  const [bio, setBio] = useState("Obsessed with 1% daily compound growth.");
+  const [location, setLocation] = useState("New York, USA");
   const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
   const [selectedGoal, setSelectedGoal] = useState(FOCUS_GOALS[0]);
 
@@ -33,15 +57,15 @@ export const FirstTimeOnboardingModal: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalName = name.trim() || 'Initiate Member';
-    const finalUsername = (username.trim() || 'voyager_svj').toLowerCase().replace(/\s+/g, '_');
-    
+    const finalName = name.trim() || "Initiate Member";
+    const finalUsername = (username.trim() || "voyager_svj").toLowerCase().replace(/\s+/g, "_");
+
     completeOnboarding({
       name: finalName,
       username: finalUsername,
-      bio: `${selectedGoal} • ${bio.trim() || 'Daily discipline over motivation.'}`,
-      location: location.trim() || 'Earth',
-      avatar: selectedAvatar
+      bio: `${selectedGoal} • ${bio.trim() || "Daily discipline over motivation."}`,
+      location: location.trim() || "Earth",
+      avatar: selectedAvatar,
     });
   };
 
@@ -68,27 +92,27 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               Initialize Your Identity
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-sm mx-auto leading-relaxed">
-              Set up your personal member profile to start tracking daily challenges, earning XP, and climbing the global leaderboard.
+              Set up your personal member profile to start tracking daily challenges, earning XP,
+              and climbing the global leaderboard.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="relative z-10 space-y-4">
-            
             {/* Avatar Selector */}
             <div>
               <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-2">
                 Choose Avatar Identity
               </label>
               <div className="grid grid-cols-6 gap-2">
-                {PRESET_AVATARS.map(av => (
+                {PRESET_AVATARS.map((av) => (
                   <button
                     key={av.id}
                     type="button"
                     onClick={() => setSelectedAvatar(av.url)}
                     className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                       selectedAvatar === av.url
-                        ? 'border-[#C81E3A] scale-105 shadow-lg shadow-[#C81E3A]/40'
-                        : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30'
+                        ? "border-[#C81E3A] scale-105 shadow-lg shadow-[#C81E3A]/40"
+                        : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
                     }`}
                   >
                     <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
@@ -113,7 +137,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                   <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Victor Archer"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
@@ -126,11 +150,13 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                   Unique Handle
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-xs font-mono text-[#8C8C90]">@</span>
+                  <span className="absolute left-3.5 top-2.5 text-xs font-mono text-[#8C8C90]">
+                    @
+                  </span>
                   <input
                     type="text"
                     value={username}
-                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
                     placeholder="e.g. victor_svj"
                     className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
@@ -145,15 +171,15 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 Primary Discipline Goal
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {FOCUS_GOALS.map(goal => (
+                {FOCUS_GOALS.map((goal) => (
                   <button
                     key={goal}
                     type="button"
                     onClick={() => setSelectedGoal(goal)}
                     className={`px-3 py-2 rounded-xl text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
                       selectedGoal === goal
-                        ? 'bg-[#C81E3A] text-white border-[#C81E3A] shadow-md'
-                        : 'bg-[#0B0B0C] text-[#8C8C90] border-white/10 hover:text-white'
+                        ? "bg-[#C81E3A] text-white border-[#C81E3A] shadow-md"
+                        : "bg-[#0B0B0C] text-[#8C8C90] border-white/10 hover:text-white"
                     }`}
                   >
                     {goal}
@@ -170,7 +196,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               <input
                 type="text"
                 value={bio}
-                onChange={e => setBio(e.target.value)}
+                onChange={(e) => setBio(e.target.value)}
                 placeholder="e.g. Obsessed with 1% compound progress daily."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
               />
@@ -186,7 +212,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 <input
                   type="text"
                   value={location}
-                  onChange={e => setLocation(e.target.value)}
+                  onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. London, UK or Mumbai, India"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
                 />
@@ -209,7 +235,6 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 <span>Initialize Profile & Claim +100 XP</span>
               </button>
             </div>
-
           </form>
         </motion.div>
       </div>

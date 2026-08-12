@@ -1,4 +1,5 @@
-export type TierLevel = 'Initiate' | 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Obsidian';
+export type TierLevel =
+  "Initiate" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Obsidian";
 
 export interface TierInfo {
   name: TierLevel;
@@ -10,8 +11,8 @@ export interface TierInfo {
   benefits: string[];
 }
 
-export type ChallengeCategory = 'Physical' | 'Discipline' | 'Mental' | 'Mindset' | 'Nutrition';
-export type ChallengeDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Elite';
+export type ChallengeCategory = "Physical" | "Discipline" | "Mental" | "Mindset" | "Nutrition";
+export type ChallengeDifficulty = "Easy" | "Medium" | "Hard" | "Elite";
 
 export interface DailyChallenge {
   id: string;
@@ -34,7 +35,7 @@ export interface Achievement {
   unlocked: boolean;
   unlockedAt?: string;
   xpReward: number;
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+  rarity: "Common" | "Rare" | "Epic" | "Legendary";
   isPremiumExclusive?: boolean;
 }
 
@@ -51,7 +52,7 @@ export interface Badge {
 export interface RewardItem {
   id: string;
   title: string;
-  category: 'Cosmetic' | 'Digital Asset' | 'Guide' | 'VIP Perk';
+  category: "Cosmetic" | "Digital Asset" | "Guide" | "VIP Perk";
   xpCost: number;
   minTier: TierLevel;
   description: string;
@@ -83,7 +84,7 @@ export interface ReactionCount {
   wolf: number;
 }
 
-export type ReactionType = 'fire' | 'crown' | 'hundred' | 'bolt' | 'wolf';
+export type ReactionType = "fire" | "crown" | "hundred" | "bolt" | "wolf";
 
 export interface FeedActivity {
   id: string;
@@ -93,7 +94,7 @@ export interface FeedActivity {
   userTier: TierLevel;
   isVerified?: boolean;
   isVIP?: boolean;
-  actionType: 'completed_challenge' | 'unlocked_achievement' | 'reached_tier' | 'streak_milestone';
+  actionType: "completed_challenge" | "unlocked_achievement" | "reached_tier" | "streak_milestone";
   title: string;
   details: string;
   xpEarned?: number;
@@ -143,17 +144,18 @@ export interface UserProfile {
   // Dark Gamification System additions
   level: number;
   leagueRank: string;
-  evolutionTheme: 'wolf' | 'anime' | 'fighter' | 'samurai' | 'cyber' | 'knight' | 'gladiator' | 'valkyrie';
+  evolutionTheme:
+    "wolf" | "anime" | "fighter" | "samurai" | "cyber" | "knight" | "gladiator" | "valkyrie";
   stats: UserStats;
   screenTimeHrs?: number;
   wastedHoursOnTrack?: number;
   assessmentCompleted?: boolean;
-  
+
   // Stats breakdown
   habitCompletionRate: number; // e.g. 92%
   xpHistory: { date: string; xp: number }[]; // 30 day history
   weeklyHistory: { week: string; xp: number }[];
-  
+
   achievements: Achievement[];
   badges: Badge[];
 }
@@ -210,7 +212,7 @@ export interface MealEntry {
   id: string;
   name: string;
   calories: number;
-  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  mealType: "Breakfast" | "Lunch" | "Dinner" | "Snack";
   date: string; // ISO string
   xpEarned: number;
 }

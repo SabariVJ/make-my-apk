@@ -1,7 +1,27 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
-import { UserProfile, UserStats, DailyChallenge, FeedActivity, LeaderboardEntry, RewardItem, ReactionType, TierLevel, WorkoutEntry, WorkoutTemplate, WorkoutExercise, MealEntry } from '../types';
-import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_FEED, LEADERBOARD_USERS, INITIAL_REWARDS, TIERS } from '../data/initialData';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import confetti from "canvas-confetti";
+import {
+  UserProfile,
+  UserStats,
+  DailyChallenge,
+  FeedActivity,
+  LeaderboardEntry,
+  RewardItem,
+  ReactionType,
+  TierLevel,
+  WorkoutEntry,
+  WorkoutTemplate,
+  WorkoutExercise,
+  MealEntry,
+} from "../types";
+import {
+  INITIAL_USER,
+  INITIAL_CHALLENGES,
+  INITIAL_FEED,
+  LEADERBOARD_USERS,
+  INITIAL_REWARDS,
+  TIERS,
+} from "../data/initialData";
 
 interface SVJContextType {
   user: UserProfile;
@@ -25,7 +45,12 @@ interface SVJContextType {
 
   // Actions
   toggleChallenge: (id: string) => void;
-  addCustomChallenge: (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => void;
+  addCustomChallenge: (
+    title: string,
+    category: DailyChallenge["category"],
+    difficulty: DailyChallenge["difficulty"],
+    xp: number,
+  ) => void;
   toggleReaction: (activityId: string, reaction: ReactionType) => void;
   addComment: (activityId: string, text: string) => void;
   redeemReward: (rewardId: string) => void;
@@ -33,11 +58,17 @@ interface SVJContextType {
   deleteWorkout: (id: string) => void;
   saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
   deleteWorkoutTemplate: (id: string) => void;
-  logMeal: (name: string, calories: number, mealType: MealEntry['mealType']) => void;
+  logMeal: (name: string, calories: number, mealType: MealEntry["mealType"]) => void;
   deleteMeal: (id: string) => void;
   setCalorieGoal: (goal: number) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
-  completeOnboarding: (data: { name: string; username: string; bio: string; location: string; avatar: string }) => void;
+  completeOnboarding: (data: {
+    name: string;
+    username: string;
+    bio: string;
+    location: string;
+    avatar: string;
+  }) => void;
   upgradeToPremium: () => void;
   loginWithGmail: (email: string, name?: string, avatar?: string) => void;
   logoutGmail: () => void;
@@ -55,7 +86,7 @@ interface SVJContextType {
 
 const SVJContext = createContext<SVJContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = 'svj_app_state_v5';
+const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 
 export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(() => {
@@ -120,7 +151,10 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
   const [selectedMemberModal, setSelectedMemberModal] = useState<LeaderboardEntry | null>(null);
-  const [levelUpModalData, setLevelUpModalData] = useState<{ oldTier: TierLevel; newTier: TierLevel } | null>(null);
+  const [levelUpModalData, setLevelUpModalData] = useState<{
+    oldTier: TierLevel;
+    newTier: TierLevel;
+  } | null>(null);
   const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isUPIModalOpen, setIsUPIModalOpen] = useState<boolean>(false);
@@ -154,8 +188,8 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(user));
     }
 
-    setLeaderboard(prev => {
-      const userIndex = prev.findIndex(item => item.id === user.id || item.id === 'user-me');
+    setLeaderboard((prev) => {
+      const userIndex = prev.findIndex((item) => item.id === user.id || item.id === "user-me");
       if (userIndex !== -1) {
         const updated = [...prev];
         updated[userIndex] = {
@@ -172,7 +206,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           isVIP: user.vipIcon,
           isFounder: user.isFounder,
           isOwner: user.isOwner,
-          bio: user.bio
+          bio: user.bio,
         };
         return updated;
       } else {
@@ -189,13 +223,13 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             weeklyXP: user.weeklyXP,
             monthlyXP: user.monthlyXP,
             streak: user.currentStreak,
-            country: 'US',
+            country: "US",
             isVerified: user.verifiedIcon,
             isVIP: user.vipIcon,
             isFounder: user.isFounder,
             isOwner: user.isOwner,
-            bio: user.bio
-          }
+            bio: user.bio,
+          },
         ];
       }
     });
@@ -222,7 +256,10 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [workouts]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
+    localStorage.setItem(
+      `${LOCAL_STORAGE_KEY}_workout_templates`,
+      JSON.stringify(workoutTemplates),
+    );
   }, [workoutTemplates]);
 
   useEffect(() => {
@@ -238,30 +275,36 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#C81E3A', '#D4AF37', '#F4F2ED', '#E62846']
+      colors: ["#C81E3A", "#D4AF37", "#F4F2ED", "#E62846"],
     });
   };
 
   const getTierForXP = (xp: number): TierLevel => {
-    if (xp >= 60000) return 'Obsidian';
-    if (xp >= 35000) return 'Diamond';
-    if (xp >= 20000) return 'Platinum';
-    if (xp >= 12000) return 'Gold';
-    if (xp >= 6000) return 'Silver';
-    if (xp >= 2500) return 'Bronze';
-    return 'Initiate';
+    if (xp >= 60000) return "Obsidian";
+    if (xp >= 35000) return "Diamond";
+    if (xp >= 20000) return "Platinum";
+    if (xp >= 12000) return "Gold";
+    if (xp >= 6000) return "Silver";
+    if (xp >= 2500) return "Bronze";
+    return "Initiate";
   };
 
   const toggleChallenge = (id: string) => {
-    setChallenges(prev => {
+    setChallenges((prev) => {
       let xpDelta = 0;
       let completedItem: DailyChallenge | undefined;
 
-      const updated = prev.map(ch => {
+      const updated = prev.map((ch) => {
         if (ch.id === id) {
           const nextState = !ch.completed;
           xpDelta = nextState ? ch.xp : -ch.xp;
-          completedItem = { ...ch, completed: nextState, completedAt: nextState ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined };
+          completedItem = {
+            ...ch,
+            completed: nextState,
+            completedAt: nextState
+              ? new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : undefined,
+          };
           return completedItem;
         }
         return ch;
@@ -273,48 +316,62 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Update User XP & Check Tier Progression
-        setUser(prevUser => {
+        setUser((prevUser) => {
           const oldXP = prevUser.totalXP;
           const newXP = Math.max(0, oldXP + xpDelta);
           const oldTier = prevUser.tier;
           const newTier = getTierForXP(newXP);
 
-          if (completedItem?.completed && newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+          if (
+            completedItem?.completed &&
+            newTier !== oldTier &&
+            TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
+          ) {
             setLevelUpModalData({ oldTier, newTier });
           }
 
           // Also update 30-day XP history
-          const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+          const todayStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "short",
+          });
           const updatedHistory = [...prevUser.xpHistory];
           const lastIdx = updatedHistory.length - 1;
           if (lastIdx >= 0) {
             updatedHistory[lastIdx] = {
               date: todayStr,
-              xp: Math.max(0, updatedHistory[lastIdx].xp + xpDelta)
+              xp: Math.max(0, updatedHistory[lastIdx].xp + xpDelta),
             };
           }
 
           // Dynamically adjust category attribute stats
           const categoryStatMap: Record<string, keyof UserStats> = {
-            Physical: 'physical',
-            Nutrition: 'physical',
-            Discipline: 'discipline',
-            Mental: 'mental',
-            Mindset: 'mental',
-            Social: 'social',
-            Community: 'social',
-            Intellect: 'intellect',
-            Guide: 'intellect',
-            Ambition: 'ambition',
-            Goal: 'ambition'
+            Physical: "physical",
+            Nutrition: "physical",
+            Discipline: "discipline",
+            Mental: "mental",
+            Mindset: "mental",
+            Social: "social",
+            Community: "social",
+            Intellect: "intellect",
+            Guide: "intellect",
+            Ambition: "ambition",
+            Goal: "ambition",
           };
 
-          const statKey = categoryStatMap[completedItem!.category] || 'discipline';
-          const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+          const statKey = categoryStatMap[completedItem!.category] || "discipline";
+          const currentStats = prevUser.stats || {
+            physical: 12,
+            social: 10,
+            discipline: 15,
+            mental: 14,
+            intellect: 12,
+            ambition: 20,
+          };
           const statChange = completedItem!.completed ? 3 : -3;
           const updatedStats: UserStats = {
             ...currentStats,
-            [statKey]: Math.min(100, Math.max(0, (currentStats[statKey] || 10) + statChange))
+            [statKey]: Math.min(100, Math.max(0, (currentStats[statKey] || 10) + statChange)),
           };
 
           return {
@@ -322,10 +379,13 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             totalXP: newXP,
             weeklyXP: Math.max(0, prevUser.weeklyXP + xpDelta),
             monthlyXP: Math.max(0, prevUser.monthlyXP + xpDelta),
-            totalChallengesCompleted: Math.max(0, prevUser.totalChallengesCompleted + (completedItem!.completed ? 1 : -1)),
+            totalChallengesCompleted: Math.max(
+              0,
+              prevUser.totalChallengesCompleted + (completedItem!.completed ? 1 : -1),
+            ),
             tier: newTier,
             stats: updatedStats,
-            xpHistory: updatedHistory
+            xpHistory: updatedHistory,
           };
         });
 
@@ -339,17 +399,17 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             userTier: user.tier,
             isVerified: user.verifiedIcon,
             isVIP: user.vipIcon,
-            actionType: 'completed_challenge',
+            actionType: "completed_challenge",
             title: `⚡ Completed Challenge: ${completedItem.title}`,
             details: `Earned +${completedItem.xp} XP in ${completedItem!.category}. Daily discipline on point!`,
             xpEarned: completedItem.xp,
-            timestamp: 'Just now',
+            timestamp: "Just now",
             reactions: { fire: 1, crown: 0, hundred: 1, bolt: 1, wolf: 0 },
-            userReactions: { [user.id]: 'fire' },
-            comments: []
+            userReactions: { [user.id]: "fire" },
+            comments: [],
           };
 
-          setFeed(f => [newFeedItem, ...f]);
+          setFeed((f) => [newFeedItem, ...f]);
         }
       }
 
@@ -359,49 +419,62 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logWorkout = (name: string, exercises: WorkoutExercise[]) => {
     const cleaned = exercises
-      .map(ex => ({ ...ex, sets: ex.sets.filter(st => st.reps > 0) }))
-      .filter(ex => ex.name.trim() && ex.sets.length > 0);
+      .map((ex) => ({ ...ex, sets: ex.sets.filter((st) => st.reps > 0) }))
+      .filter((ex) => ex.name.trim() && ex.sets.length > 0);
 
     if (cleaned.length === 0) return;
 
     const totalSets = cleaned.reduce((sum, ex) => sum + ex.sets.length, 0);
     const totalVolume = cleaned.reduce(
       (sum, ex) => sum + ex.sets.reduce((s, st) => s + st.reps * st.weight, 0),
-      0
+      0,
     );
     const xpEarned = Math.max(25, Math.min(400, totalSets * 15 + Math.round(totalVolume / 100)));
 
     const entry: WorkoutEntry = {
       id: `wo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: name.trim() || 'Training Session',
+      name: name.trim() || "Training Session",
       date: new Date().toISOString(),
       exercises: cleaned,
       totalVolume,
-      xpEarned
+      xpEarned,
     };
 
-    setWorkouts(prev => [entry, ...prev]);
+    setWorkouts((prev) => [entry, ...prev]);
     triggerConfetti();
 
-    setUser(prevUser => {
+    setUser((prevUser) => {
       const oldTier = prevUser.tier;
       const newXP = prevUser.totalXP + xpEarned;
       const newTier = getTierForXP(newXP);
-      if (newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+      if (
+        newTier !== oldTier &&
+        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
+      ) {
         setLevelUpModalData({ oldTier, newTier });
       }
 
-      const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
       const updatedHistory = [...prevUser.xpHistory];
       const lastIdx = updatedHistory.length - 1;
       if (lastIdx >= 0) {
-        updatedHistory[lastIdx] = { date: todayStr, xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned) };
+        updatedHistory[lastIdx] = {
+          date: todayStr,
+          xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned),
+        };
       }
 
-      const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+      const currentStats = prevUser.stats || {
+        physical: 12,
+        social: 10,
+        discipline: 15,
+        mental: 14,
+        intellect: 12,
+        ambition: 20,
+      };
       const updatedStats: UserStats = {
         ...currentStats,
-        physical: Math.min(100, (currentStats.physical || 10) + 3)
+        physical: Math.min(100, (currentStats.physical || 10) + 3),
       };
 
       return {
@@ -411,7 +484,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         monthlyXP: prevUser.monthlyXP + xpEarned,
         tier: newTier,
         stats: updatedStats,
-        xpHistory: updatedHistory
+        xpHistory: updatedHistory,
       };
     });
 
@@ -423,36 +496,36 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userTier: user.tier,
       isVerified: user.verifiedIcon,
       isVIP: user.vipIcon,
-      actionType: 'completed_challenge',
+      actionType: "completed_challenge",
       title: `\ud83c\udfcb\ufe0f Logged Workout: ${entry.name}`,
       details: `${totalSets} sets \u2022 ${Math.round(totalVolume).toLocaleString()} kg total volume. Physical +3.`,
       xpEarned,
-      timestamp: 'Just now',
+      timestamp: "Just now",
       reactions: { fire: 1, crown: 0, hundred: 0, bolt: 1, wolf: 0 },
-      userReactions: { [user.id]: 'fire' },
-      comments: []
+      userReactions: { [user.id]: "fire" },
+      comments: [],
     };
-    setFeed(f => [newFeedItem, ...f]);
+    setFeed((f) => [newFeedItem, ...f]);
   };
 
   const deleteWorkout = (id: string) => {
-    setWorkouts(prev => prev.filter(w => w.id !== id));
+    setWorkouts((prev) => prev.filter((w) => w.id !== id));
   };
 
   const saveWorkoutTemplate = (name: string, exercises: WorkoutExercise[]) => {
-    const cleaned = exercises.filter(ex => ex.name.trim());
+    const cleaned = exercises.filter((ex) => ex.name.trim());
     if (!cleaned.length) return;
     const tpl: WorkoutTemplate = {
       id: `tpl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: name.trim() || 'Untitled Template',
+      name: name.trim() || "Untitled Template",
       exercises: cleaned,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
-    setWorkoutTemplates(prev => [tpl, ...prev]);
+    setWorkoutTemplates((prev) => [tpl, ...prev]);
   };
 
   const deleteWorkoutTemplate = (id: string) => {
-    setWorkoutTemplates(prev => prev.filter(t => t.id !== id));
+    setWorkoutTemplates((prev) => prev.filter((t) => t.id !== id));
   };
 
   const setCalorieGoal = (goal: number) => {
@@ -460,16 +533,16 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteMeal = (id: string) => {
-    setMeals(prev => prev.filter(m => m.id !== id));
+    setMeals((prev) => prev.filter((m) => m.id !== id));
   };
 
-  const logMeal = (name: string, calories: number, mealType: MealEntry['mealType']) => {
+  const logMeal = (name: string, calories: number, mealType: MealEntry["mealType"]) => {
     const cleanName = name.trim();
     const kcal = Math.max(0, Math.round(calories) || 0);
     if (!cleanName || kcal <= 0) return;
 
     const todayKey = new Date().toDateString();
-    const isFirstToday = !meals.some(m => new Date(m.date).toDateString() === todayKey);
+    const isFirstToday = !meals.some((m) => new Date(m.date).toDateString() === todayKey);
 
     // Consistency bonus: first log of the day is worth far more than extra entries
     const xpEarned = isFirstToday ? 60 : 10;
@@ -480,32 +553,45 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       calories: kcal,
       mealType,
       date: new Date().toISOString(),
-      xpEarned
+      xpEarned,
     };
 
-    setMeals(prev => [entry, ...prev]);
+    setMeals((prev) => [entry, ...prev]);
 
-    setUser(prevUser => {
+    setUser((prevUser) => {
       const oldTier = prevUser.tier;
       const newXP = prevUser.totalXP + xpEarned;
       const newTier = getTierForXP(newXP);
-      if (newTier !== oldTier && TIERS.findIndex(t => t.name === newTier) > TIERS.findIndex(t => t.name === oldTier)) {
+      if (
+        newTier !== oldTier &&
+        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
+      ) {
         setLevelUpModalData({ oldTier, newTier });
       }
 
-      const todayStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
+      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
       const updatedHistory = [...prevUser.xpHistory];
       const lastIdx = updatedHistory.length - 1;
       if (lastIdx >= 0) {
-        updatedHistory[lastIdx] = { date: todayStr, xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned) };
+        updatedHistory[lastIdx] = {
+          date: todayStr,
+          xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned),
+        };
       }
 
-      const currentStats = prevUser.stats || { physical: 12, social: 10, discipline: 15, mental: 14, intellect: 12, ambition: 20 };
+      const currentStats = prevUser.stats || {
+        physical: 12,
+        social: 10,
+        discipline: 15,
+        mental: 14,
+        intellect: 12,
+        ambition: 20,
+      };
       const updatedStats: UserStats = isFirstToday
         ? {
             ...currentStats,
             discipline: Math.min(100, (currentStats.discipline || 10) + 2),
-            physical: Math.min(100, (currentStats.physical || 10) + 1)
+            physical: Math.min(100, (currentStats.physical || 10) + 1),
           }
         : currentStats;
 
@@ -516,7 +602,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         monthlyXP: prevUser.monthlyXP + xpEarned,
         tier: newTier,
         stats: updatedStats,
-        xpHistory: updatedHistory
+        xpHistory: updatedHistory,
       };
     });
 
@@ -530,22 +616,25 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userTier: user.tier,
         isVerified: user.verifiedIcon,
         isVIP: user.vipIcon,
-        actionType: 'completed_challenge',
+        actionType: "completed_challenge",
         title: `\ud83c\udf7d\ufe0f Nutrition logged for today`,
         details: `Started tracking intake with ${cleanName} (${kcal} kcal). Discipline +2, Physical +1.`,
         xpEarned,
-        timestamp: 'Just now',
+        timestamp: "Just now",
         reactions: { fire: 1, crown: 0, hundred: 0, bolt: 0, wolf: 0 },
-        userReactions: { [user.id]: 'fire' },
-        comments: []
+        userReactions: { [user.id]: "fire" },
+        comments: [],
       };
-      setFeed(f => [newFeedItem, ...f]);
+      setFeed((f) => [newFeedItem, ...f]);
     }
   };
 
-  const addCustomChallenge = (title: string, category: DailyChallenge['category'], difficulty: DailyChallenge['difficulty'], xp: number) => {
-
-
+  const addCustomChallenge = (
+    title: string,
+    category: DailyChallenge["category"],
+    difficulty: DailyChallenge["difficulty"],
+    xp: number,
+  ) => {
     const newCh: DailyChallenge = {
       id: `ch-custom-${Date.now()}`,
       title,
@@ -553,16 +642,16 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       difficulty,
       xp,
       durationMinutes: 20,
-      description: 'Custom user habit designed for daily excellence.',
+      description: "Custom user habit designed for daily excellence.",
       completed: false,
-      isCustom: true
+      isCustom: true,
     };
-    setChallenges(prev => [newCh, ...prev]);
+    setChallenges((prev) => [newCh, ...prev]);
   };
 
   const toggleReaction = (activityId: string, reaction: ReactionType) => {
-    setFeed(prevFeed =>
-      prevFeed.map(item => {
+    setFeed((prevFeed) =>
+      prevFeed.map((item) => {
         if (item.id !== activityId) return item;
 
         const currentReaction = item.userReactions[user.id];
@@ -586,9 +675,9 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...item,
           reactions: newReactions,
-          userReactions: newUserReactions
+          userReactions: newUserReactions,
         };
-      })
+      }),
     );
   };
 
@@ -600,25 +689,25 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       username: user.username,
       avatar: user.avatar,
       text: text.trim(),
-      createdAt: 'Just now',
-      tier: user.tier
+      createdAt: "Just now",
+      tier: user.tier,
     };
 
-    setFeed(prevFeed =>
-      prevFeed.map(item => {
+    setFeed((prevFeed) =>
+      prevFeed.map((item) => {
         if (item.id === activityId) {
           return {
             ...item,
-            comments: [...item.comments, newComment]
+            comments: [...item.comments, newComment],
           };
         }
         return item;
-      })
+      }),
     );
   };
 
   const redeemReward = (rewardId: string) => {
-    const reward = rewards.find(r => r.id === rewardId);
+    const reward = rewards.find((r) => r.id === rewardId);
     if (!reward || reward.unlocked) return;
 
     if (user.totalXP < reward.xpCost) {
@@ -633,37 +722,41 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     triggerConfetti();
 
-    setRewards(prev =>
-      prev.map(r => (r.id === rewardId ? { ...r, unlocked: true } : r))
-    );
+    setRewards((prev) => prev.map((r) => (r.id === rewardId ? { ...r, unlocked: true } : r)));
 
     // Deducing XP or maintaining lifetime total XP? In SVJ totalXP represents rank, so we unlock without burning lifetime rank XP!
   };
 
   const updateUserProfile = (updates: Partial<UserProfile>) => {
-    setUser(prev => ({ ...prev, ...updates }));
-    
+    setUser((prev) => ({ ...prev, ...updates }));
+
     // Sync leaderboard if user profile updates
-    setLeaderboard(prev =>
-      prev.map(item =>
-        item.id === 'user-me'
+    setLeaderboard((prev) =>
+      prev.map((item) =>
+        item.id === "user-me"
           ? {
               ...item,
               username: updates.username || item.username,
               avatar: updates.avatar || item.avatar,
-              bio: updates.bio || item.bio
+              bio: updates.bio || item.bio,
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
-  const completeOnboarding = (data: { name: string; username: string; bio: string; location: string; avatar: string }) => {
+  const completeOnboarding = (data: {
+    name: string;
+    username: string;
+    bio: string;
+    location: string;
+    avatar: string;
+  }) => {
     triggerConfetti();
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, 'true');
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
 
     // Update user profile with welcome bonus +100 XP
-    setUser(prev => ({
+    setUser((prev) => ({
       ...prev,
       name: data.name,
       username: data.username,
@@ -673,13 +766,13 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalXP: 100,
       weeklyXP: 100,
       monthlyXP: 100,
-      xpHistory: [{ date: '31 Jul', xp: 100 }]
+      xpHistory: [{ date: "31 Jul", xp: 100 }],
     }));
 
     // Update user on leaderboard
-    setLeaderboard(prev =>
-      prev.map(item =>
-        item.id === 'user-me'
+    setLeaderboard((prev) =>
+      prev.map((item) =>
+        item.id === "user-me"
           ? {
               ...item,
               username: data.username,
@@ -687,10 +780,10 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               bio: data.bio,
               totalXP: 100,
               weeklyXP: 100,
-              monthlyXP: 100
+              monthlyXP: 100,
             }
-          : item
-      )
+          : item,
+      ),
     );
 
     setIsFirstTimeOnboardingOpen(false);
@@ -698,19 +791,19 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const upgradeToPremium = () => {
     triggerConfetti();
-    setUser(prev => ({
+    setUser((prev) => ({
       ...prev,
       isPremium: true,
       verifiedIcon: true,
       vipIcon: true,
-      equippedBadge: 'bdg-verified'
+      equippedBadge: "bdg-verified",
     }));
     setIsPaywallOpen(false);
   };
 
   const loginWithGmail = (email: string, name?: string, avatar?: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    const isOwnerEmail = cleanEmail === 'sabarivj777@gmail.com';
+    const isOwnerEmail = cleanEmail === "sabarivj777@gmail.com";
 
     const savedAccount = localStorage.getItem(`svj_user_account_${cleanEmail}`);
     let baseUser: UserProfile = user;
@@ -725,8 +818,8 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isOwnerEmail) {
       // Unlock all rewards vault items
-      setRewards(prev => {
-        const allUnlocked = prev.map(r => ({ ...r, unlocked: true }));
+      setRewards((prev) => {
+        const allUnlocked = prev.map((r) => ({ ...r, unlocked: true }));
         localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(allUnlocked));
         return allUnlocked;
       });
@@ -735,32 +828,50 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUser: UserProfile = {
       ...baseUser,
       email: cleanEmail,
-      name: isOwnerEmail ? 'Sabari (Founder & Owner)' : (name || (baseUser.name !== 'New Voyager' ? baseUser.name : cleanEmail.split('@')[0])),
-      username: baseUser.username !== 'initiate_svj' ? baseUser.username : cleanEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+      name: isOwnerEmail
+        ? "Sabari (Founder & Owner)"
+        : name || (baseUser.name !== "New Voyager" ? baseUser.name : cleanEmail.split("@")[0]),
+      username:
+        baseUser.username !== "initiate_svj"
+          ? baseUser.username
+          : cleanEmail
+              .split("@")[0]
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, "_"),
       avatar: avatar || baseUser.avatar,
       isFounder: isOwnerEmail || baseUser.isFounder || false,
       isOwner: isOwnerEmail || baseUser.isOwner || false,
       isPremium: isOwnerEmail ? true : baseUser.isPremium,
       verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
       vipIcon: isOwnerEmail ? true : baseUser.vipIcon,
-      tier: isOwnerEmail ? 'Obsidian' : baseUser.tier,
+      tier: isOwnerEmail ? "Obsidian" : baseUser.tier,
       totalXP: isOwnerEmail ? Math.max(baseUser.totalXP, 100000) : baseUser.totalXP,
       weeklyXP: isOwnerEmail ? Math.max(baseUser.weeklyXP, 15000) : baseUser.weeklyXP,
       monthlyXP: isOwnerEmail ? Math.max(baseUser.monthlyXP, 50000) : baseUser.monthlyXP,
-      leagueRank: isOwnerEmail ? 'FOUNDER #1' : baseUser.leagueRank,
-      equippedFrame: isOwnerEmail ? 'frame-crimson' : baseUser.equippedFrame,
-      equippedBadge: isOwnerEmail ? 'bdg-top1' : baseUser.equippedBadge,
-      evolutionTheme: isOwnerEmail ? 'samurai' : baseUser.evolutionTheme,
-      stats: isOwnerEmail ? {
-        physical: 93,
-        mental: 91,
-        social: 87,
-        intellect: 84,
-        discipline: 93,
-        ambition: 95
-      } : baseUser.stats,
-      badges: isOwnerEmail ? baseUser.badges.map(b => ({ ...b, unlocked: true })) : baseUser.badges,
-      achievements: isOwnerEmail ? baseUser.achievements.map(a => ({ ...a, unlocked: true, unlockedAt: a.unlockedAt || '2026-07-31' })) : baseUser.achievements
+      leagueRank: isOwnerEmail ? "FOUNDER #1" : baseUser.leagueRank,
+      equippedFrame: isOwnerEmail ? "frame-crimson" : baseUser.equippedFrame,
+      equippedBadge: isOwnerEmail ? "bdg-top1" : baseUser.equippedBadge,
+      evolutionTheme: isOwnerEmail ? "samurai" : baseUser.evolutionTheme,
+      stats: isOwnerEmail
+        ? {
+            physical: 93,
+            mental: 91,
+            social: 87,
+            intellect: 84,
+            discipline: 93,
+            ambition: 95,
+          }
+        : baseUser.stats,
+      badges: isOwnerEmail
+        ? baseUser.badges.map((b) => ({ ...b, unlocked: true }))
+        : baseUser.badges,
+      achievements: isOwnerEmail
+        ? baseUser.achievements.map((a) => ({
+            ...a,
+            unlocked: true,
+            unlockedAt: a.unlockedAt || "2026-07-31",
+          }))
+        : baseUser.achievements,
     };
 
     setUser(updatedUser);
@@ -773,12 +884,12 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logoutGmail = () => {
     localStorage.removeItem(`${LOCAL_STORAGE_KEY}_active_email`);
-    setUser(prev => {
+    setUser((prev) => {
       const nextUser = {
         ...prev,
         email: undefined,
         isFounder: false,
-        isOwner: false
+        isOwner: false,
       };
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(nextUser));
       return nextUser;
@@ -832,7 +943,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsFirstTimeOnboardingOpen,
         setIsDarkOnboardingOpen,
         setIsGoogleAuthModalOpen,
-        triggerConfetti
+        triggerConfetti,
       }}
     >
       {children}
@@ -843,7 +954,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 export const useSVJ = () => {
   const context = useContext(SVJContext);
   if (!context) {
-    throw new Error('useSVJ must be used within an SVJProvider');
+    throw new Error("useSVJ must be used within an SVJProvider");
   }
   return context;
 };

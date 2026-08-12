@@ -1,23 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Gift, Lock, Check, Sparkles, Zap, Key, Copy, ArrowRight, ShieldCheck, X, BookOpen, Crown, ExternalLink, Sliders, Clock, RefreshCw, Calendar, Flame } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import { RewardItem } from '../types';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Gift,
+  Lock,
+  Check,
+  Sparkles,
+  Zap,
+  Key,
+  Copy,
+  ArrowRight,
+  ShieldCheck,
+  X,
+  BookOpen,
+  Crown,
+  ExternalLink,
+  Sliders,
+  Clock,
+  RefreshCw,
+  Calendar,
+  Flame,
+} from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import { RewardItem } from "../types";
 
 export const RewardsView: React.FC = () => {
   const { rewards, redeemReward, user, updateUserProfile, triggerConfetti } = useSVJ();
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [activeModalReward, setActiveModalReward] = useState<RewardItem | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showNextWeekPreview, setShowNextWeekPreview] = useState(false);
 
   // Weekly Vault Countdown State
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({
     days: 3,
     hours: 14,
     minutes: 22,
-    seconds: 45
+    seconds: 45,
   });
 
   useEffect(() => {
@@ -42,11 +66,10 @@ export const RewardsView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const categories = ['All', 'Cosmetic', 'Guide', 'VIP Perk'];
+  const categories = ["All", "Cosmetic", "Guide", "VIP Perk"];
 
-  const filteredRewards = selectedCategory === 'All'
-    ? rewards
-    : rewards.filter(r => r.category === selectedCategory);
+  const filteredRewards =
+    selectedCategory === "All" ? rewards : rewards.filter((r) => r.category === selectedCategory);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -67,7 +90,7 @@ export const RewardsView: React.FC = () => {
 
   const handleToggleFrame = (frameId: string, title: string) => {
     if (user.equippedFrame === frameId) {
-      updateUserProfile({ equippedFrame: '' });
+      updateUserProfile({ equippedFrame: "" });
       showToast(`Unequipped ${title}`);
     } else {
       updateUserProfile({ equippedFrame: frameId });
@@ -77,16 +100,20 @@ export const RewardsView: React.FC = () => {
   };
 
   const handleAccessReward = (item: RewardItem) => {
-    if (item.category === 'Cosmetic') {
-      if (item.cosmeticId === 'samurai' || item.cosmeticId === 'theme-crimson-night') {
-        const isThemeActive = user.evolutionTheme === 'samurai';
-        updateUserProfile({ evolutionTheme: isThemeActive ? 'wolf' : 'samurai' });
-        showToast(isThemeActive ? 'Switched to Default Theme' : 'Equipped SVJ Obsidian Theme!');
+    if (item.category === "Cosmetic") {
+      if (item.cosmeticId === "samurai" || item.cosmeticId === "theme-crimson-night") {
+        const isThemeActive = user.evolutionTheme === "samurai";
+        updateUserProfile({ evolutionTheme: isThemeActive ? "wolf" : "samurai" });
+        showToast(isThemeActive ? "Switched to Default Theme" : "Equipped SVJ Obsidian Theme!");
         triggerConfetti();
-      } else if (item.cosmeticId === 'frame-crimson' || item.cosmeticId === 'frame-gold' || item.cosmeticId === 'frame-cyber') {
+      } else if (
+        item.cosmeticId === "frame-crimson" ||
+        item.cosmeticId === "frame-gold" ||
+        item.cosmeticId === "frame-cyber"
+      ) {
         handleToggleFrame(item.cosmeticId, item.title);
       } else {
-        handleToggleFrame('frame-crimson', item.title);
+        handleToggleFrame("frame-crimson", item.title);
       }
     } else {
       setActiveModalReward(item);
@@ -95,7 +122,6 @@ export const RewardsView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 relative">
-      
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -127,7 +153,8 @@ export const RewardsView: React.FC = () => {
               The SVJ Vault
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter mt-1">
-              Exchange your earned discipline XP for elite themes, guides, and steel membership perks.
+              Exchange your earned discipline XP for elite themes, guides, and steel membership
+              perks.
             </p>
           </div>
 
@@ -166,22 +193,30 @@ export const RewardsView: React.FC = () => {
           {/* Live Countdown Ticker */}
           <div className="flex items-center gap-1.5 font-mono">
             <div className="text-center px-2 py-1 rounded-lg bg-black/60 border border-white/10">
-              <div className="text-xs font-bold text-white">{String(timeLeft.days).padStart(2, '0')}</div>
+              <div className="text-xs font-bold text-white">
+                {String(timeLeft.days).padStart(2, "0")}
+              </div>
               <div className="text-[8px] text-[#8C8C90]">DAYS</div>
             </div>
             <span className="text-white font-bold">:</span>
             <div className="text-center px-2 py-1 rounded-lg bg-black/60 border border-white/10">
-              <div className="text-xs font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}</div>
+              <div className="text-xs font-bold text-white">
+                {String(timeLeft.hours).padStart(2, "0")}
+              </div>
               <div className="text-[8px] text-[#8C8C90]">HRS</div>
             </div>
             <span className="text-white font-bold">:</span>
             <div className="text-center px-2 py-1 rounded-lg bg-black/60 border border-white/10">
-              <div className="text-xs font-bold text-white">{String(timeLeft.minutes).padStart(2, '0')}</div>
+              <div className="text-xs font-bold text-white">
+                {String(timeLeft.minutes).padStart(2, "0")}
+              </div>
               <div className="text-[8px] text-[#8C8C90]">MIN</div>
             </div>
             <span className="text-white font-bold">:</span>
             <div className="text-center px-2 py-1 rounded-lg bg-black/60 border border-white/10">
-              <div className="text-xs font-bold text-amber-400">{String(timeLeft.seconds).padStart(2, '0')}</div>
+              <div className="text-xs font-bold text-amber-400">
+                {String(timeLeft.seconds).padStart(2, "0")}
+              </div>
               <div className="text-[8px] text-[#8C8C90]">SEC</div>
             </div>
           </div>
@@ -198,14 +233,14 @@ export const RewardsView: React.FC = () => {
 
       {/* Category Selector */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {categories.map(cat => (
+        {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             className={`px-4 py-2 rounded-xl text-xs font-mono transition-all shrink-0 cursor-pointer ${
               selectedCategory === cat
-                ? 'bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20'
-                : 'bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5'
+                ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
+                : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"
             }`}
           >
             {cat}
@@ -215,7 +250,7 @@ export const RewardsView: React.FC = () => {
 
       {/* Rewards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filteredRewards.map(item => {
+        {filteredRewards.map((item) => {
           const canAfford = user.totalXP >= item.xpCost;
 
           return (
@@ -227,7 +262,11 @@ export const RewardsView: React.FC = () => {
               <div>
                 {/* Image & Badges */}
                 <div className="relative h-40 overflow-hidden bg-[#0B0B0C]">
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover opacity-80" />
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover opacity-80"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#17171A] via-transparent to-black/40" />
 
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
@@ -262,23 +301,30 @@ export const RewardsView: React.FC = () => {
                 </div>
 
                 {item.unlocked ? (
-                  item.category === 'Cosmetic' ? (
+                  item.category === "Cosmetic" ? (
                     (() => {
-                      const isEquipped = item.cosmeticId === 'samurai'
-                        ? user.evolutionTheme === 'samurai'
-                        : isFrameEquipped(item.cosmeticId);
+                      const isEquipped =
+                        item.cosmeticId === "samurai"
+                          ? user.evolutionTheme === "samurai"
+                          : isFrameEquipped(item.cosmeticId);
 
                       return (
                         <button
                           onClick={() => handleAccessReward(item)}
                           className={`px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all ${
                             isEquipped
-                              ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-amber-500/20'
-                              : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
+                              ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-amber-500/20"
+                              : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white"
                           }`}
                         >
-                          <Sparkles className={`w-4 h-4 ${isEquipped ? 'text-black' : 'text-emerald-200'}`} />
-                          <span>{isEquipped ? '✓ EQUIPPED (ACTIVE)' : `Equip ${item.title.split(' ')[0]}`}</span>
+                          <Sparkles
+                            className={`w-4 h-4 ${isEquipped ? "text-black" : "text-emerald-200"}`}
+                          />
+                          <span>
+                            {isEquipped
+                              ? "✓ EQUIPPED (ACTIVE)"
+                              : `Equip ${item.title.split(" ")[0]}`}
+                          </span>
                         </button>
                       );
                     })()
@@ -288,7 +334,7 @@ export const RewardsView: React.FC = () => {
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all"
                     >
                       <Check className="w-4 h-4 text-emerald-200" />
-                      <span>{item.actionLabel || 'Access Reward'}</span>
+                      <span>{item.actionLabel || "Access Reward"}</span>
                     </button>
                   )
                 ) : (
@@ -296,16 +342,15 @@ export const RewardsView: React.FC = () => {
                     onClick={() => redeemReward(item.id)}
                     className={`px-4 py-2 rounded-xl text-xs font-anton tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all ${
                       canAfford
-                        ? 'bg-[#C81E3A] hover:bg-[#A0182E] text-white shadow-lg shadow-[#C81E3A]/20'
-                        : 'bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white'
+                        ? "bg-[#C81E3A] hover:bg-[#A0182E] text-white shadow-lg shadow-[#C81E3A]/20"
+                        : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
                     }`}
                   >
                     {!canAfford && <Lock className="w-3.5 h-3.5" />}
-                    <span>{canAfford ? 'Redeem Item' : 'Lock & Save XP'}</span>
+                    <span>{canAfford ? "Redeem Item" : "Lock & Save XP"}</span>
                   </button>
                 )}
               </div>
-
             </motion.div>
           );
         })}
@@ -325,7 +370,7 @@ export const RewardsView: React.FC = () => {
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/40 flex items-center justify-center text-[#C81E3A]">
-                    {activeModalReward.category === 'Guide' ? (
+                    {activeModalReward.category === "Guide" ? (
                       <BookOpen className="w-4 h-4" />
                     ) : (
                       <Crown className="w-4 h-4 text-amber-400" />
@@ -350,7 +395,7 @@ export const RewardsView: React.FC = () => {
 
               {/* Modal Body */}
               <div className="py-4 overflow-y-auto space-y-4 flex-1">
-                {activeModalReward.category === 'Guide' ? (
+                {activeModalReward.category === "Guide" ? (
                   <div className="space-y-4 font-inter">
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3 text-xs text-slate-200 leading-relaxed whitespace-pre-line font-mono">
                       {activeModalReward.guideContent || activeModalReward.description}
@@ -359,8 +404,12 @@ export const RewardsView: React.FC = () => {
                     {activeModalReward.code && (
                       <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between">
                         <div>
-                          <div className="text-[10px] font-mono text-emerald-400 uppercase">Access Passkey</div>
-                          <div className="text-sm font-mono font-bold text-white">{activeModalReward.code}</div>
+                          <div className="text-[10px] font-mono text-emerald-400 uppercase">
+                            Access Passkey
+                          </div>
+                          <div className="text-sm font-mono font-bold text-white">
+                            {activeModalReward.code}
+                          </div>
                         </div>
                         <button
                           onClick={() => handleCopyCode(activeModalReward.code!)}
@@ -379,14 +428,20 @@ export const RewardsView: React.FC = () => {
                         <Crown className="w-4 h-4" />
                         <span>VIP PERK DETAILS</span>
                       </div>
-                      <p className="whitespace-pre-line">{activeModalReward.perkDetails || activeModalReward.description}</p>
+                      <p className="whitespace-pre-line">
+                        {activeModalReward.perkDetails || activeModalReward.description}
+                      </p>
                     </div>
 
                     {activeModalReward.code && (
                       <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
                         <div>
-                          <div className="text-[10px] font-mono text-[#8C8C90] uppercase">Voucher Redemption Code</div>
-                          <div className="text-lg font-mono font-bold text-white">{activeModalReward.code}</div>
+                          <div className="text-[10px] font-mono text-[#8C8C90] uppercase">
+                            Voucher Redemption Code
+                          </div>
+                          <div className="text-lg font-mono font-bold text-white">
+                            {activeModalReward.code}
+                          </div>
                         </div>
                         <button
                           onClick={() => handleCopyCode(activeModalReward.code!)}
@@ -435,7 +490,8 @@ export const RewardsView: React.FC = () => {
                       Upcoming Week 15 Vault Drop
                     </h2>
                     <p className="text-[10px] font-mono text-amber-400">
-                      Replaces Current Vault in {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m
+                      Replaces Current Vault in {timeLeft.days}d {timeLeft.hours}h{" "}
+                      {timeLeft.minutes}m
                     </p>
                   </div>
                 </div>
@@ -453,8 +509,12 @@ export const RewardsView: React.FC = () => {
                     ⚡
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white uppercase">Cyber Neon Halo Frame</div>
-                    <p className="text-[10px] text-[#8C8C90]">Cosmetic • Animated Pulsing Cyan/Violet Avatar Glow</p>
+                    <div className="text-xs font-bold text-white uppercase">
+                      Cyber Neon Halo Frame
+                    </div>
+                    <p className="text-[10px] text-[#8C8C90]">
+                      Cosmetic • Animated Pulsing Cyan/Violet Avatar Glow
+                    </p>
                   </div>
                   <span className="ml-auto text-xs text-amber-400 font-bold">6,000 XP</span>
                 </div>
@@ -464,8 +524,12 @@ export const RewardsView: React.FC = () => {
                     📖
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white uppercase">Sovereign State Focus Manual Vol 2</div>
-                    <p className="text-[10px] text-[#8C8C90]">Guide • Advanced Neuro-Acoustic Workstation Setup</p>
+                    <div className="text-xs font-bold text-white uppercase">
+                      Sovereign State Focus Manual Vol 2
+                    </div>
+                    <p className="text-[10px] text-[#8C8C90]">
+                      Guide • Advanced Neuro-Acoustic Workstation Setup
+                    </p>
                   </div>
                   <span className="ml-auto text-xs text-amber-400 font-bold">8,500 XP</span>
                 </div>
@@ -475,15 +539,21 @@ export const RewardsView: React.FC = () => {
                     👑
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white uppercase">SVJ Global Founder Summit Session #15</div>
-                    <p className="text-[10px] text-[#8C8C90]">VIP Perk • Private AMA with Sabari & SVJ Athletics Team</p>
+                    <div className="text-xs font-bold text-white uppercase">
+                      SVJ Global Founder Summit Session #15
+                    </div>
+                    <p className="text-[10px] text-[#8C8C90]">
+                      VIP Perk • Private AMA with Sabari & SVJ Athletics Team
+                    </p>
                   </div>
                   <span className="ml-auto text-xs text-amber-400 font-bold">20,000 XP</span>
                 </div>
               </div>
 
               <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-[#8C8C90]">New Vault Drops Every Sunday 00:00 UTC</span>
+                <span className="text-[10px] font-mono text-[#8C8C90]">
+                  New Vault Drops Every Sunday 00:00 UTC
+                </span>
                 <button
                   onClick={() => setShowNextWeekPreview(false)}
                   className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs font-bold cursor-pointer"
@@ -495,8 +565,6 @@ export const RewardsView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };
-

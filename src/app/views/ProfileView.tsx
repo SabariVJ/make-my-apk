@@ -1,20 +1,41 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { User, Flame, Zap, Shield, Crown, Award, Calendar, BarChart3, Settings, Edit3, Lock, CheckCircle2, Sparkles, Mail, Dumbbell, Brain, Users, BookOpen, X, LogOut } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useSVJ } from '../context/SVJContext';
-import { MembershipCard } from '../components/MembershipCard';
-import { EVOLUTION_THEMES } from '../components/DarkCinematicOnboardingModal';
-import { AvatarFrame } from '../components/AvatarFrame';
-import { HexagonRadarChart } from '../components/HexagonRadarChart';
-import { UserStats } from '../types';
-import { useFriends } from '../hooks/useFriends';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import {
+  User,
+  Flame,
+  Zap,
+  Shield,
+  Crown,
+  Award,
+  Calendar,
+  BarChart3,
+  Settings,
+  Edit3,
+  Lock,
+  CheckCircle2,
+  Sparkles,
+  Mail,
+  Dumbbell,
+  Brain,
+  Users,
+  BookOpen,
+  X,
+  LogOut,
+} from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSVJ } from "../context/SVJContext";
+import { MembershipCard } from "../components/MembershipCard";
+import { EVOLUTION_THEMES } from "../components/DarkCinematicOnboardingModal";
+import { AvatarFrame } from "../components/AvatarFrame";
+import { HexagonRadarChart } from "../components/HexagonRadarChart";
+import { UserStats } from "../types";
+import { useFriends } from "../hooks/useFriends";
+import { Loader2 } from "lucide-react";
 
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
-  const [activeTab, setActiveTab] = useState<'analytics' | 'badges' | 'achievements'>('analytics');
+  const [activeTab, setActiveTab] = useState<"analytics" | "badges" | "achievements">("analytics");
   const { friends, loading: friendsLoading } = useFriends();
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
@@ -31,16 +52,20 @@ export const ProfileView: React.FC = () => {
     }
   };
 
-  const currentTheme = EVOLUTION_THEMES.find(t => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
+  const currentTheme =
+    EVOLUTION_THEMES.find((t) => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 
   return (
     <div className="space-y-6 pb-24">
-      
       {/* Profile Header */}
       <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden shadow-2xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="relative group cursor-pointer" onClick={() => setIsEditProfileOpen(true)} title="Click to edit profile photo">
+            <div
+              className="relative group cursor-pointer"
+              onClick={() => setIsEditProfileOpen(true)}
+              title="Click to edit profile photo"
+            >
               <AvatarFrame
                 src={user.avatar}
                 alt={user.name}
@@ -58,16 +83,17 @@ export const ProfileView: React.FC = () => {
                 <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
                   {user.name}
                 </h1>
-                {user.verifiedIcon && <Shield className="w-5 h-5 text-[#C81E3A] fill-[#C81E3A]/20" />}
+                {user.verifiedIcon && (
+                  <Shield className="w-5 h-5 text-[#C81E3A] fill-[#C81E3A]/20" />
+                )}
                 {user.isPremium && <Crown className="w-5 h-5 text-amber-400 fill-amber-400/20" />}
               </div>
               <p className="text-xs font-mono text-[#8C8C90]">
-                @{user.username} • <span className="text-[#C81E3A] font-bold">{user.tier} Tier</span>
+                @{user.username} •{" "}
+                <span className="text-[#C81E3A] font-bold">{user.tier} Tier</span>
               </p>
-              <p className="text-xs text-[#F4F2ED]/80 font-inter mt-1.5 italic">
-                "{user.bio}"
-              </p>
-              
+              <p className="text-xs text-[#F4F2ED]/80 font-inter mt-1.5 italic">"{user.bio}"</p>
+
               {/* Linked Gmail pill */}
               <div className="mt-2.5 flex items-center gap-2">
                 <button
@@ -75,14 +101,18 @@ export const ProfileView: React.FC = () => {
                   onClick={() => setIsGoogleAuthModalOpen(true)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold border transition-all cursor-pointer ${
                     user.isFounder
-                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
                       : user.email
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white'
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>{user.isFounder ? 'sabarivj777@gmail.com (Founder)' : user.email || 'Link Gmail Account'}</span>
+                  <span>
+                    {user.isFounder
+                      ? "sabarivj777@gmail.com (Founder)"
+                      : user.email || "Link Gmail Account"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -118,7 +148,7 @@ export const ProfileView: React.FC = () => {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {friends.map(f => (
+            {friends.map((f) => (
               <div
                 key={f.friendship_id}
                 className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
@@ -126,17 +156,17 @@ export const ProfileView: React.FC = () => {
                 {f.avatar_url ? (
                   <img
                     src={f.avatar_url}
-                    alt={f.username ?? 'friend'}
+                    alt={f.username ?? "friend"}
                     className="w-10 h-10 rounded-xl object-cover border border-white/10"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-xl bg-[#17171A] border border-white/10 flex items-center justify-center font-anton text-white uppercase">
-                    {(f.username ?? f.display_name ?? 'V').slice(0, 1)}
+                    {(f.username ?? f.display_name ?? "V").slice(0, 1)}
                   </div>
                 )}
                 <div className="min-w-0">
                   <p className="font-anton text-sm text-white uppercase truncate">
-                    @{f.username ?? f.display_name ?? 'Voyager'}
+                    @{f.username ?? f.display_name ?? "Voyager"}
                   </p>
                   <div className="flex items-center gap-3 text-[10px] font-mono mt-0.5">
                     <span className="text-[#C81E3A] flex items-center gap-1">
@@ -156,51 +186,56 @@ export const ProfileView: React.FC = () => {
       {/* Navigation Sub-Tabs */}
       <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
         <button
-          onClick={() => setActiveTab('analytics')}
+          onClick={() => setActiveTab("analytics")}
           className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === 'analytics'
-              ? 'bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20'
-              : 'text-[#8C8C90] hover:text-white'
+            activeTab === "analytics"
+              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
+              : "text-[#8C8C90] hover:text-white"
           }`}
         >
           XP Analytics
         </button>
         <button
-          onClick={() => setActiveTab('badges')}
+          onClick={() => setActiveTab("badges")}
           className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === 'badges'
-              ? 'bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20'
-              : 'text-[#8C8C90] hover:text-white'
+            activeTab === "badges"
+              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
+              : "text-[#8C8C90] hover:text-white"
           }`}
         >
-          Badges ({user.badges.filter(b => b.unlocked).length})
+          Badges ({user.badges.filter((b) => b.unlocked).length})
         </button>
         <button
-          onClick={() => setActiveTab('achievements')}
+          onClick={() => setActiveTab("achievements")}
           className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === 'achievements'
-              ? 'bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20'
-              : 'text-[#8C8C90] hover:text-white'
+            activeTab === "achievements"
+              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
+              : "text-[#8C8C90] hover:text-white"
           }`}
         >
           Achievements
         </button>
       </div>
 
-      {activeTab === 'analytics' && (
+      {activeTab === "analytics" && (
         /* ANALYTICS TAB */
         <div className="space-y-4">
-
           {/* Evolution Theme Banner Card */}
           <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-5 overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#C81E3A] flex-shrink-0">
-                <img src={currentTheme.image} alt={currentTheme.name} className="w-full h-full object-cover" />
+                <img
+                  src={currentTheme.image}
+                  alt={currentTheme.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{currentTheme.icon}</span>
-                  <span className="font-anton text-xl text-white uppercase tracking-wider">{currentTheme.name}</span>
+                  <span className="font-anton text-xl text-white uppercase tracking-wider">
+                    {currentTheme.name}
+                  </span>
                 </div>
                 <div className="text-[10px] font-mono text-[#C81E3A] uppercase font-bold tracking-wider">
                   {currentTheme.tagline}
@@ -224,44 +259,74 @@ export const ProfileView: React.FC = () => {
                   DYNAMIC OVR
                 </span>
               </div>
-              <span className="text-[#C81E3A] font-bold">LEVEL {user.level || 1} ({user.leagueRank || 'APPRENTICE I'})</span>
+              <span className="text-[#C81E3A] font-bold">
+                LEVEL {user.level || 1} ({user.leagueRank || "APPRENTICE I"})
+              </span>
             </div>
 
             <p className="text-xs font-mono text-[#8C8C90]">
-              Your attribute polygon dynamically expands as you complete daily challenges, habits, and community goals.
+              Your attribute polygon dynamically expands as you complete daily challenges, habits,
+              and community goals.
             </p>
 
             {/* Radar Chart Component */}
             <HexagonRadarChart
-              stats={user.stats || { physical: 93, mental: 91, social: 87, intellect: 84, discipline: 93, ambition: 95 }}
+              stats={
+                user.stats || {
+                  physical: 93,
+                  mental: 91,
+                  social: 87,
+                  intellect: 84,
+                  discipline: 93,
+                  ambition: 95,
+                }
+              }
               level={user.level}
             />
           </div>
-          
+
           {/* Key Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Current Streak</div>
-              <div className="text-xl font-mono font-bold text-orange-400">🔥 {user.currentStreak} Days</div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">Best: {user.bestStreak} Days</div>
+              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                Current Streak
+              </div>
+              <div className="text-xl font-mono font-bold text-orange-400">
+                🔥 {user.currentStreak} Days
+              </div>
+              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                Best: {user.bestStreak} Days
+              </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Habit Consistency</div>
-              <div className="text-xl font-mono font-bold text-emerald-400">{user.habitCompletionRate}%</div>
+              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                Habit Consistency
+              </div>
+              <div className="text-xl font-mono font-bold text-emerald-400">
+                {user.habitCompletionRate}%
+              </div>
               <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">Last 30 days</div>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
               <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Weekly XP</div>
               <div className="text-xl font-mono font-bold text-[#C81E3A]">+{user.weeklyXP}</div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">Monthly: +{user.monthlyXP}</div>
+              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                Monthly: +{user.monthlyXP}
+              </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Total Completed</div>
-              <div className="text-xl font-mono font-bold text-white">{user.totalChallengesCompleted}</div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">{user.daysActive} Active Days</div>
+              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                Total Completed
+              </div>
+              <div className="text-xl font-mono font-bold text-white">
+                {user.totalChallengesCompleted}
+              </div>
+              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                {user.daysActive} Active Days
+              </div>
             </div>
           </div>
 
@@ -270,14 +335,16 @@ export const ProfileView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-                <h3 className="font-anton text-sm text-white uppercase tracking-wide">30-Day XP Growth Trend</h3>
+                <h3 className="font-anton text-sm text-white uppercase tracking-wide">
+                  30-Day XP Growth Trend
+                </h3>
               </div>
               <span className="text-xs font-mono text-[#8C8C90]">Avg 380 XP/day</span>
             </div>
 
             <div className="h-32 flex items-end justify-between gap-1 pt-4 px-1">
               {user.xpHistory.map((item, idx) => {
-                const maxVal = Math.max(...user.xpHistory.map(h => h.xp), 600);
+                const maxVal = Math.max(...user.xpHistory.map((h) => h.xp), 600);
                 const barHeight = Math.round((item.xp / maxVal) * 100);
 
                 return (
@@ -294,7 +361,7 @@ export const ProfileView: React.FC = () => {
                       />
                     </div>
                     <span className="text-[8px] font-mono text-[#8C8C90] truncate max-w-[20px]">
-                      {item.date.split(' ')[0]}
+                      {item.date.split(" ")[0]}
                     </span>
                   </div>
                 );
@@ -312,7 +379,9 @@ export const ProfileView: React.FC = () => {
                 <Crown className="w-6 h-6 text-amber-400 shrink-0" />
                 <div>
                   <h3 className="font-anton text-sm text-white uppercase">Upgrade to SVJ Plus</h3>
-                  <p className="text-xs text-[#8C8C90]">Unlock animated aura frames, dark obsidian themes & VIP badge.</p>
+                  <p className="text-xs text-[#8C8C90]">
+                    Unlock animated aura frames, dark obsidian themes & VIP badge.
+                  </p>
                 </div>
               </div>
               <span className="px-3 py-1.5 rounded-xl bg-[#C81E3A] text-white text-xs font-anton tracking-wider uppercase group-hover:bg-[#A0182E] transition-colors">
@@ -320,49 +389,50 @@ export const ProfileView: React.FC = () => {
               </span>
             </div>
           )}
-
         </div>
       )}
 
-      {activeTab === 'badges' && (
+      {activeTab === "badges" && (
         /* BADGES TAB */
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {user.badges.map(badge => (
+          {user.badges.map((badge) => (
             <div
               key={badge.id}
               className={`p-4 rounded-2xl border text-center space-y-2 ${
                 badge.unlocked
-                  ? 'bg-[#17171A] border-white/10'
-                  : 'bg-[#17171A]/40 border-white/5 opacity-50'
+                  ? "bg-[#17171A] border-white/10"
+                  : "bg-[#17171A]/40 border-white/5 opacity-50"
               }`}
             >
               <div className="text-3xl">{badge.icon}</div>
               <div className="font-anton text-sm text-white uppercase">{badge.name}</div>
-              <p className="text-[10px] text-[#8C8C90] font-inter line-clamp-2">{badge.description}</p>
+              <p className="text-[10px] text-[#8C8C90] font-inter line-clamp-2">
+                {badge.description}
+              </p>
               <span
                 className={`inline-block px-2 py-0.5 rounded text-[9px] font-mono ${
                   badge.unlocked
-                    ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
-                    : 'bg-zinc-900 text-zinc-500'
+                    ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800"
+                    : "bg-zinc-900 text-zinc-500"
                 }`}
               >
-                {badge.unlocked ? 'Unlocked' : 'Locked'}
+                {badge.unlocked ? "Unlocked" : "Locked"}
               </span>
             </div>
           ))}
         </div>
       )}
 
-      {activeTab === 'achievements' && (
+      {activeTab === "achievements" && (
         /* ACHIEVEMENTS TAB */
         <div className="space-y-3">
-          {user.achievements.map(ach => (
+          {user.achievements.map((ach) => (
             <div
               key={ach.id}
               className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
                 ach.unlocked
-                  ? 'bg-[#17171A] border-white/10'
-                  : 'bg-[#17171A]/40 border-white/5 opacity-60'
+                  ? "bg-[#17171A] border-white/10"
+                  : "bg-[#17171A]/40 border-white/5 opacity-60"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -373,13 +443,17 @@ export const ProfileView: React.FC = () => {
                   <h3 className="font-anton text-sm text-white uppercase">{ach.title}</h3>
                   <p className="text-xs text-[#8C8C90] font-inter">{ach.description}</p>
                   {ach.unlockedAt && (
-                    <span className="text-[10px] font-mono text-emerald-400">Unlocked on {ach.unlockedAt}</span>
+                    <span className="text-[10px] font-mono text-emerald-400">
+                      Unlocked on {ach.unlockedAt}
+                    </span>
                   )}
                 </div>
               </div>
 
               <div className="text-right shrink-0">
-                <span className="font-mono text-xs font-bold text-[#C81E3A]">+{ach.xpReward} XP</span>
+                <span className="font-mono text-xs font-bold text-[#C81E3A]">
+                  +{ach.xpReward} XP
+                </span>
               </div>
             </div>
           ))}
@@ -395,10 +469,9 @@ export const ProfileView: React.FC = () => {
           className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
         >
           <LogOut className="w-4 h-4" />
-          {signingOut ? 'Signing out…' : 'Log out'}
+          {signingOut ? "Signing out…" : "Log out"}
         </button>
       </div>
-
     </div>
   );
 };

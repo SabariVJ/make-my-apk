@@ -1,90 +1,107 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  ChevronLeft, Sparkles, Star, CheckCircle2
-} from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { ChevronLeft, Sparkles, Star, CheckCircle2 } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
 
 // 8 Evolution Themes Spec
 export const EVOLUTION_THEMES = [
   {
-    id: 'classic',
-    name: 'Classic',
-    tagline: 'FROM CHIHUAHUA TO WOLF',
-    icon: '🐺',
-    accent: '#C81E3A',
-    image: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=600&q=80',
-    desc: 'Unbroken predatory discipline. Pure instinct and relentless stamina.'
+    id: "classic",
+    name: "Classic",
+    tagline: "FROM CHIHUAHUA TO WOLF",
+    icon: "🐺",
+    accent: "#C81E3A",
+    image:
+      "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=600&q=80",
+    desc: "Unbroken predatory discipline. Pure instinct and relentless stamina.",
   },
   {
-    id: 'anime',
-    name: 'Anime Hero',
-    tagline: 'FROM LOW-RANK TO MAIN CHARACTER',
-    icon: '⚡',
-    accent: '#3B82F6',
-    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80',
-    desc: 'The classic zero-to-god arc. Overcoming impossible odds with fiery resolve.'
+    id: "anime",
+    name: "Anime Hero",
+    tagline: "FROM LOW-RANK TO MAIN CHARACTER",
+    icon: "⚡",
+    accent: "#3B82F6",
+    image:
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80",
+    desc: "The classic zero-to-god arc. Overcoming impossible odds with fiery resolve.",
   },
   {
-    id: 'fighter',
-    name: 'Fighter',
-    tagline: 'FROM STREET FIGHTER TO CHAMPION',
-    icon: '🥊',
-    accent: '#EF4444',
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80',
-    desc: 'Gritty physical grit. Every punch honed through thousands of grueling rounds.'
+    id: "fighter",
+    name: "Fighter",
+    tagline: "FROM STREET FIGHTER TO CHAMPION",
+    icon: "🥊",
+    accent: "#EF4444",
+    image:
+      "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
+    desc: "Gritty physical grit. Every punch honed through thousands of grueling rounds.",
   },
   {
-    id: 'samurai',
-    name: 'Samurai',
-    tagline: 'FROM APPRENTICE TO BLADEMASTER',
-    icon: '⚔️',
-    accent: '#10B981',
-    image: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=600&q=80',
-    desc: 'Stoic mental precision and razor-sharp clarity. Zero wasted movement.'
+    id: "samurai",
+    name: "Samurai",
+    tagline: "FROM APPRENTICE TO BLADEMASTER",
+    icon: "⚔️",
+    accent: "#10B981",
+    image:
+      "https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=600&q=80",
+    desc: "Stoic mental precision and razor-sharp clarity. Zero wasted movement.",
   },
   {
-    id: 'cyber',
-    name: 'Cyber Agent',
-    tagline: 'FROM INITIATE TO DIGITAL SINGULARITY',
-    icon: '🦾',
-    accent: '#06B6D4',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80',
-    desc: 'Hyper-intellect and system optimization. Upgrade your neural output.'
+    id: "cyber",
+    name: "Cyber Agent",
+    tagline: "FROM INITIATE TO DIGITAL SINGULARITY",
+    icon: "🦾",
+    accent: "#06B6D4",
+    image:
+      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
+    desc: "Hyper-intellect and system optimization. Upgrade your neural output.",
   },
   {
-    id: 'knight',
-    name: 'Fallen Knight',
-    tagline: 'FROM FALLEN TO ETERNAL KING',
-    icon: '🛡️',
-    accent: '#8B5CF6',
-    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80',
-    desc: 'Rise from dishonor and hardship into absolute unwavering sovereignty.'
+    id: "knight",
+    name: "Fallen Knight",
+    tagline: "FROM FALLEN TO ETERNAL KING",
+    icon: "🛡️",
+    accent: "#8B5CF6",
+    image:
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
+    desc: "Rise from dishonor and hardship into absolute unwavering sovereignty.",
   },
   {
-    id: 'gladiator',
-    name: 'Gladiator',
-    tagline: 'FROM CHAINS TO ARENA LEGEND',
-    icon: '🏛️',
-    accent: '#F59E0B',
-    image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=600&q=80',
-    desc: 'Conquer the arena of life. Turn crowd skepticism into roaring applause.'
+    id: "gladiator",
+    name: "Gladiator",
+    tagline: "FROM CHAINS TO ARENA LEGEND",
+    icon: "🏛️",
+    accent: "#F59E0B",
+    image:
+      "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=600&q=80",
+    desc: "Conquer the arena of life. Turn crowd skepticism into roaring applause.",
   },
   {
-    id: 'valkyrie',
-    name: 'Valkyrie',
-    tagline: 'FROM SHIELD MAIDEN TO GODDESS OF WAR',
-    icon: '🦅',
-    accent: '#EC4899',
-    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
-    desc: 'Divine martial focus. Soar above mental clutter with unstoppable force.'
-  }
+    id: "valkyrie",
+    name: "Valkyrie",
+    tagline: "FROM SHIELD MAIDEN TO GODDESS OF WAR",
+    icon: "🦅",
+    accent: "#EC4899",
+    image:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",
+    desc: "Divine martial focus. Soar above mental clutter with unstoppable force.",
+  },
 ];
 
 // SVG Metallic 3D rendered floating objects
 const FloatingHourglassSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]">
-    <path d="M25 15 H75 V22 L56 45 L75 68 V75 H25 V68 L44 45 L25 22 Z" fill="url(#silverGrad)" stroke="#E2E8F0" strokeWidth="2.5" />
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]"
+  >
+    <path
+      d="M25 15 H75 V22 L56 45 L75 68 V75 H25 V68 L44 45 L25 22 Z"
+      fill="url(#silverGrad)"
+      stroke="#E2E8F0"
+      strokeWidth="2.5"
+    />
     <path d="M30 18 H70 M30 72 H70" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
     <ellipse cx="50" cy="62" rx="14" ry="6" fill="#A0A0A0" opacity="0.6" />
     <defs>
@@ -98,8 +115,23 @@ const FloatingHourglassSVG = () => (
 );
 
 const FloatingPhoneSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform -rotate-12">
-    <rect x="28" y="15" width="44" height="70" rx="8" fill="url(#phoneGrad)" stroke="#E2E8F0" strokeWidth="2" />
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform -rotate-12"
+  >
+    <rect
+      x="28"
+      y="15"
+      width="44"
+      height="70"
+      rx="8"
+      fill="url(#phoneGrad)"
+      stroke="#E2E8F0"
+      strokeWidth="2"
+    />
     <rect x="32" y="22" width="36" height="52" rx="3" fill="#121215" />
     <line x1="42" y1="18" x2="58" y2="18" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" />
     <circle cx="50" cy="79" r="2.5" fill="#D1D5DB" />
@@ -113,7 +145,13 @@ const FloatingPhoneSVG = () => (
 );
 
 const FloatingCompassSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform rotate-12">
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform rotate-12"
+  >
     <circle cx="50" cy="50" r="35" fill="url(#compassGrad)" stroke="#E2E8F0" strokeWidth="3" />
     <circle cx="50" cy="50" r="28" fill="#18181B" stroke="#4B5563" strokeWidth="1" />
     <polygon points="50,26 56,50 50,46" fill="#F87171" />
@@ -129,10 +167,26 @@ const FloatingCompassSVG = () => (
 );
 
 const FloatingBustSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]">
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]"
+  >
     <path d="M35 75 H65 V80 H35 Z M38 65 L42 75 H58 L62 65 Z" fill="#D1D5DB" />
-    <path d="M50 20 C40 20 32 28 32 38 C32 46 36 50 40 56 L44 65 H56 L60 56 C64 50 68 46 68 38 C68 28 60 20 50 20 Z" fill="url(#bustGrad)" stroke="#F3F4F6" strokeWidth="1.5" />
-    <path d="M42 28 C45 25 55 25 58 28 M40 38 Q50 35 60 38" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+    <path
+      d="M50 20 C40 20 32 28 32 38 C32 46 36 50 40 56 L44 65 H56 L60 56 C64 50 68 46 68 38 C68 28 60 20 50 20 Z"
+      fill="url(#bustGrad)"
+      stroke="#F3F4F6"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M42 28 C45 25 55 25 58 28 M40 38 Q50 35 60 38"
+      stroke="#9CA3AF"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
     <defs>
       <linearGradient id="bustGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#FFFFFF" />
@@ -143,10 +197,21 @@ const FloatingBustSVG = () => (
 );
 
 const FloatingCubeSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]">
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]"
+  >
     <path d="M50 15 L82 32 L50 49 L18 32 Z" fill="#E5E7EB" stroke="#374151" strokeWidth="1.5" />
     <path d="M18 32 L50 49 V83 L18 66 Z" fill="url(#cubeLeft)" stroke="#374151" strokeWidth="1.5" />
-    <path d="M82 32 L50 49 V83 L82 66 Z" fill="url(#cubeRight)" stroke="#374151" strokeWidth="1.5" />
+    <path
+      d="M82 32 L50 49 V83 L82 66 Z"
+      fill="url(#cubeRight)"
+      stroke="#374151"
+      strokeWidth="1.5"
+    />
     {/* Grid lines */}
     <line x1="39" y1="21" x2="71" y2="38" stroke="#9CA3AF" strokeWidth="1" />
     <line x1="29" y1="27" x2="61" y2="44" stroke="#9CA3AF" strokeWidth="1" />
@@ -166,10 +231,25 @@ const FloatingCubeSVG = () => (
 );
 
 const FloatingRookSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]">
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)]"
+  >
     <path d="M30 20 H38 V28 H46 V20 H54 V28 H62 V20 H70 V32 H30 Z" fill="#F3F4F6" />
     <path d="M34 32 L38 68 H62 L66 32 Z" fill="url(#rookGrad)" stroke="#E5E7EB" strokeWidth="1.5" />
-    <rect x="26" y="68" width="48" height="12" rx="2" fill="#9CA3AF" stroke="#374151" strokeWidth="1.5" />
+    <rect
+      x="26"
+      y="68"
+      width="48"
+      height="12"
+      rx="2"
+      fill="#9CA3AF"
+      stroke="#374151"
+      strokeWidth="1.5"
+    />
     <defs>
       <linearGradient id="rookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#FFFFFF" />
@@ -180,8 +260,19 @@ const FloatingRookSVG = () => (
 );
 
 const FloatingPuzzleSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform -rotate-12">
-    <path d="M30 30 H42 C42 36 48 40 54 40 C60 40 66 36 66 30 H70 V42 C64 42 60 48 60 54 C60 60 64 66 70 66 V70 H58 C58 64 52 60 46 60 C40 60 34 64 34 70 H30 V58 C36 58 40 52 40 46 C40 40 36 34 30 34 Z" fill="url(#puzzleGrad)" stroke="#FFFFFF" strokeWidth="2" />
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform -rotate-12"
+  >
+    <path
+      d="M30 30 H42 C42 36 48 40 54 40 C60 40 66 36 66 30 H70 V42 C64 42 60 48 60 54 C60 60 64 66 70 66 V70 H58 C58 64 52 60 46 60 C40 60 34 64 34 70 H30 V58 C36 58 40 52 40 46 C40 40 36 34 30 34 Z"
+      fill="url(#puzzleGrad)"
+      stroke="#FFFFFF"
+      strokeWidth="2"
+    />
     <defs>
       <linearGradient id="puzzleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#FFFFFF" />
@@ -192,7 +283,13 @@ const FloatingPuzzleSVG = () => (
 );
 
 const FloatingDartSVG = () => (
-  <svg width="72" height="72" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform rotate-45">
+  <svg
+    width="72"
+    height="72"
+    viewBox="0 0 100 100"
+    fill="none"
+    className="drop-shadow-[0_10px_20px_rgba(255,255,255,0.3)] transform rotate-45"
+  >
     <polygon points="50,15 54,35 50,30 46,35" fill="#E5E7EB" />
     <rect x="48" y="30" width="4" height="35" fill="#9CA3AF" />
     <polygon points="50,65 65,85 50,78 35,85" fill="url(#dartGrad)" />
@@ -207,16 +304,35 @@ const FloatingDartSVG = () => (
 
 const WolfAvatarSVG = () => (
   <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
-    <svg width="120" height="120" viewBox="0 0 100 100" fill="none" className="drop-shadow-[0_0_25px_rgba(200,30,58,0.5)]">
+    <svg
+      width="120"
+      height="120"
+      viewBox="0 0 100 100"
+      fill="none"
+      className="drop-shadow-[0_0_25px_rgba(200,30,58,0.5)]"
+    >
       {/* Wolf Head Polygon Silhouette */}
-      <polygon points="50,10 20,40 25,75 50,95 75,75 80,40" fill="#1C1C21" stroke="#3A3A42" strokeWidth="2" />
+      <polygon
+        points="50,10 20,40 25,75 50,95 75,75 80,40"
+        fill="#1C1C21"
+        stroke="#3A3A42"
+        strokeWidth="2"
+      />
       <polygon points="50,10 20,40 35,50 50,35 65,50 80,40" fill="#282830" />
       {/* Ears */}
       <polygon points="20,40 10,15 32,28" fill="#121215" stroke="#3A3A42" strokeWidth="1" />
       <polygon points="80,40 90,15 68,28" fill="#121215" stroke="#3A3A42" strokeWidth="1" />
       {/* Glowing Yellow Eyes */}
-      <polygon points="35,48 44,50 38,54" fill="#FBBF24" className="drop-shadow-[0_0_8px_#FBBF24]" />
-      <polygon points="65,48 56,50 62,54" fill="#FBBF24" className="drop-shadow-[0_0_8px_#FBBF24]" />
+      <polygon
+        points="35,48 44,50 38,54"
+        fill="#FBBF24"
+        className="drop-shadow-[0_0_8px_#FBBF24]"
+      />
+      <polygon
+        points="65,48 56,50 62,54"
+        fill="#FBBF24"
+        className="drop-shadow-[0_0_8px_#FBBF24]"
+      />
       {/* Snout */}
       <polygon points="50,60 42,75 50,85 58,75" fill="#0A0A0C" />
     </svg>
@@ -225,7 +341,7 @@ const WolfAvatarSVG = () => (
 
 export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
-  onClose
+  onClose,
 }) => {
   const { updateUserProfile, triggerConfetti, setIsEditProfileOpen } = useSVJ();
 
@@ -233,14 +349,14 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
   const totalSteps = 19;
 
   // Answers State
-  const [age, setAge] = useState('23-29');
-  const [screenTime, setScreenTime] = useState('5-8 hours per day');
-  const [futureOutlook, setFutureOutlook] = useState('A little');
-  const [emotionalState, setEmotionalState] = useState('Few times a week');
-  const [learningHabit, setLearningHabit] = useState('Sometimes');
-  const [changeReason, setChangeReason] = useState('I need to be successful');
-  const [prideTime, setPrideTime] = useState('Last week');
-  const [dream, setDream] = useState('I want to make a lot of money');
+  const [age, setAge] = useState("23-29");
+  const [screenTime, setScreenTime] = useState("5-8 hours per day");
+  const [futureOutlook, setFutureOutlook] = useState("A little");
+  const [emotionalState, setEmotionalState] = useState("Few times a week");
+  const [learningHabit, setLearningHabit] = useState("Sometimes");
+  const [changeReason, setChangeReason] = useState("I need to be successful");
+  const [prideTime, setPrideTime] = useState("Last week");
+  const [dream, setDream] = useState("I want to make a lot of money");
   const [selectedThemeIndex, setSelectedThemeIndex] = useState(0);
 
   if (!isOpen) return null;
@@ -250,20 +366,20 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
       setStep(step + 1);
     } else {
       // Save results
-      localStorage.setItem('svj_app_state_v5_has_dark_onboarded', 'true');
-      localStorage.setItem('svj_app_state_v5_has_onboarded', 'true');
+      localStorage.setItem("svj_app_state_v5_has_dark_onboarded", "true");
+      localStorage.setItem("svj_app_state_v5_has_onboarded", "true");
       updateUserProfile({
-        evolutionTheme: EVOLUTION_THEMES[selectedThemeIndex]!.id as 'samurai',
+        evolutionTheme: EVOLUTION_THEMES[selectedThemeIndex]!.id as "samurai",
         level: 1,
-        leagueRank: 'APPRENTICE I',
+        leagueRank: "APPRENTICE I",
         stats: {
           physical: 18,
           social: 15,
           discipline: 20,
           mental: 16,
           intellect: 19,
-          ambition: 25
-        }
+          ambition: 25,
+        },
       });
       triggerConfetti();
       onClose();
@@ -279,12 +395,11 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
 
   return (
     <div className="fixed inset-0 z-50 bg-[#050507] text-white overflow-y-auto flex flex-col font-sans selection:bg-red-500/30">
-      
       {/* Atmospheric Background Scene */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         {/* Subtle dark gradient overlay */}
         <div className="absolute inset-0 bg-radial from-[#121218] via-[#050507] to-[#020203] opacity-90" />
-        
+
         {/* Central Vertical Lightning Strike */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-[2px] bg-gradient-to-b from-white/80 via-white/40 to-transparent blur-[1px] opacity-25" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-full w-[200px] bg-white/5 blur-3xl opacity-10" />
@@ -335,7 +450,6 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
             transition={{ duration: 0.25 }}
             className="my-auto w-full"
           >
-
             {/* SCREEN 1: Welcome Greeting */}
             {step === 1 && (
               <div className="text-center space-y-6 my-12" onClick={nextStep}>
@@ -359,15 +473,15 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   How old are you?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['18-22', '23-29', '30-39', '40+'].map((opt) => (
+                  {["18-22", "23-29", "30-39", "40+"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setAge(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         age === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -385,15 +499,20 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   What's your current screen time?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['0-2 hour per day', '2-4 hours per day', '5-8 hours per day', '8+ hours per day'].map((opt) => (
+                  {[
+                    "0-2 hour per day",
+                    "2-4 hours per day",
+                    "5-8 hours per day",
+                    "8+ hours per day",
+                  ].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setScreenTime(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         screenTime === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -407,7 +526,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
             {step === 4 && (
               <div className="space-y-8 text-center my-4">
                 <div>
-                  <p className="text-sm font-sans text-white/80 mb-2">You're currently on track to waste</p>
+                  <p className="text-sm font-sans text-white/80 mb-2">
+                    You're currently on track to waste
+                  </p>
                   <h1 className="font-sans font-bold text-4xl sm:text-5xl text-[#FF3B30] tracking-tight drop-shadow-[0_0_25px_rgba(255,59,48,0.6)]">
                     2,33,600
                   </h1>
@@ -418,16 +539,21 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                 <div className="flex items-end justify-center gap-8 h-48 py-4">
                   <div className="flex flex-col items-center gap-2 h-full justify-end">
                     <div className="w-12 h-36 rounded-2xl bg-gradient-to-t from-[#800000] to-[#FF3B30] border-2 border-[#FF3B30] shadow-[0_0_20px_rgba(255,59,48,0.5)]" />
-                    <span className="text-[10px] font-mono text-[#FF3B30] uppercase font-bold tracking-wider">CURRENT YOU</span>
+                    <span className="text-[10px] font-mono text-[#FF3B30] uppercase font-bold tracking-wider">
+                      CURRENT YOU
+                    </span>
                   </div>
                   <div className="flex flex-col items-center gap-2 h-full justify-end">
                     <div className="w-12 h-16 rounded-2xl bg-white/20 border-2 border-white/60 shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
-                    <span className="text-[10px] font-mono text-white/60 uppercase font-bold tracking-wider">WITH SVJ</span>
+                    <span className="text-[10px] font-mono text-white/60 uppercase font-bold tracking-wider">
+                      WITH SVJ
+                    </span>
                   </div>
                 </div>
 
                 <p className="text-xs text-white/80 max-w-sm mx-auto leading-relaxed">
-                  SVJ users can decrease their screen time <span className="text-[#FF3B30] font-bold">by 110%</span> in the first 2 weeks.
+                  SVJ users can decrease their screen time{" "}
+                  <span className="text-[#FF3B30] font-bold">by 110%</span> in the first 2 weeks.
                 </p>
               </div>
             )}
@@ -440,15 +566,15 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   How excited do you feel about your life and future?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['Not at all', 'A little', 'Pretty solid', 'Life is great'].map((opt) => (
+                  {["Not at all", "A little", "Pretty solid", "Life is great"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setFutureOutlook(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         futureOutlook === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -466,15 +592,15 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   How often do you feel anxious or sad?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['Never', 'Few times a week', 'Everyday', 'I am a mess'].map((opt) => (
+                  {["Never", "Few times a week", "Everyday", "I am a mess"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setEmotionalState(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         emotionalState === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -492,15 +618,15 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   How often do you learn new things?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['Never', 'Sometimes', 'Few times a week', 'Always learning'].map((opt) => (
+                  {["Never", "Sometimes", "Few times a week", "Always learning"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setLearningHabit(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         learningHabit === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -519,10 +645,10 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
                   {[
-                    'I want to feel more confident',
+                    "I want to feel more confident",
                     "I'm not happy with my life",
-                    'I need to be successful',
-                    'I want to prove the world wrong'
+                    "I need to be successful",
+                    "I want to prove the world wrong",
                   ].map((opt) => (
                     <button
                       key={opt}
@@ -530,8 +656,8 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       onClick={() => setChangeReason(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         changeReason === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -545,7 +671,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
             {step === 9 && (
               <div className="space-y-8 text-center my-4">
                 <div>
-                  <p className="text-sm font-sans text-white/80 mb-1">You'll see real change in the first</p>
+                  <p className="text-sm font-sans text-white/80 mb-1">
+                    You'll see real change in the first
+                  </p>
                   <h1 className="font-sans font-bold text-4xl sm:text-5xl text-[#A855F7] tracking-tight drop-shadow-[0_0_25px_rgba(168,85,247,0.6)]">
                     60 days
                   </h1>
@@ -558,7 +686,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     <line x1="0" y1="120" x2="300" y2="120" stroke="#333" strokeDasharray="3 3" />
                     {/* WITHOUT SVJ line */}
                     <path d="M10 115 Q150 110 290 115" stroke="#6B7280" strokeWidth="2" />
-                    <text x="210" y="105" fill="#6B7280" fontSize="8" fontFamily="monospace">WITHOUT SVJ</text>
+                    <text x="210" y="105" fill="#6B7280" fontSize="8" fontFamily="monospace">
+                      WITHOUT SVJ
+                    </text>
 
                     {/* WITH SVJ curve area */}
                     <path
@@ -572,11 +702,30 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       strokeWidth="3.5"
                       className="drop-shadow-[0_0_10px_#A855F7]"
                     />
-                    <text x="175" y="30" fill="#A855F7" fontSize="8" fontFamily="monospace" fontWeight="bold">WITH SVJ</text>
-                    
+                    <text
+                      x="175"
+                      y="30"
+                      fill="#A855F7"
+                      fontSize="8"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      WITH SVJ
+                    </text>
+
                     {/* Vertical dashed marker */}
-                    <line x1="170" y1="40" x2="170" y2="120" stroke="#A855F7" strokeWidth="2" strokeDasharray="4 4" />
-                    <text x="155" y="132" fill="#A855F7" fontSize="7" fontFamily="monospace">MONTH 2</text>
+                    <line
+                      x1="170"
+                      y1="40"
+                      x2="170"
+                      y2="120"
+                      stroke="#A855F7"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                    />
+                    <text x="155" y="132" fill="#A855F7" fontSize="7" fontFamily="monospace">
+                      MONTH 2
+                    </text>
 
                     <defs>
                       <linearGradient id="purpleGlow" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -588,7 +737,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                 </div>
 
                 <p className="text-xs text-white/80 max-w-sm mx-auto leading-relaxed">
-                  SVJ users see up to <span className="text-[#A855F7] font-bold">200% improvement</span> in their habits within 2 months.
+                  SVJ users see up to{" "}
+                  <span className="text-[#A855F7] font-bold">200% improvement</span> in their habits
+                  within 2 months.
                 </p>
               </div>
             )}
@@ -601,15 +752,15 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   When was the last time you felt proud of yourself?
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
-                  {['Last week', 'Last month', 'Last year', 'Never'].map((opt) => (
+                  {["Last week", "Last month", "Last year", "Never"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setPrideTime(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         prideTime === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -628,10 +779,10 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                 </h2>
                 <div className="space-y-3 max-w-md mx-auto">
                   {[
-                    'I want to make a lot of money',
-                    'I want to impact the world',
-                    'I want to provide for my family',
-                    'I want to be happy and healthy'
+                    "I want to make a lot of money",
+                    "I want to impact the world",
+                    "I want to provide for my family",
+                    "I want to be happy and healthy",
                   ].map((opt) => (
                     <button
                       key={opt}
@@ -639,8 +790,8 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       onClick={() => setDream(opt)}
                       className={`w-full py-4 px-6 rounded-2xl text-sm font-medium transition-all cursor-pointer ${
                         dream === opt
-                          ? 'bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]'
+                          ? "bg-[#3A3A40]/80 border-2 border-white/90 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                          : "bg-[#121215]/60 border border-white/5 text-white/40 hover:text-white/70 hover:bg-[#1A1A1E]"
                       }`}
                     >
                       {opt}
@@ -665,7 +816,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     </div>
                     <div>
                       <p className="text-xs text-white/90 font-sans leading-relaxed">
-                        "Small changes in behavior repeated consistently create <span className="text-red-400 font-bold">lasting transformation</span> through neuroplasticity."
+                        "Small changes in behavior repeated consistently create{" "}
+                        <span className="text-red-400 font-bold">lasting transformation</span>{" "}
+                        through neuroplasticity."
                       </p>
                       <span className="text-[10px] font-mono text-white/40 mt-1 block">
                         Fogg, BJ (2019), Tiny Habits: Stanford Behavior Design Lab.
@@ -680,7 +833,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     </div>
                     <div>
                       <p className="text-xs text-white/90 font-sans leading-relaxed">
-                        "On average, it takes more than 2 months before a new behavior becomes automatic - <span className="text-purple-400 font-bold">66 days to be exact</span>."
+                        "On average, it takes more than 2 months before a new behavior becomes
+                        automatic -{" "}
+                        <span className="text-purple-400 font-bold">66 days to be exact</span>."
                       </p>
                       <span className="text-[10px] font-mono text-white/40 mt-1 block">
                         Lally, P., et al. (2009), European Journal of Social Psychology.
@@ -695,7 +850,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     </div>
                     <div>
                       <p className="text-xs text-white/90 font-sans leading-relaxed">
-                        "If you get one percent better each day for one year, you'll end up <span className="text-amber-400 font-bold">thirty-seven times better</span>."
+                        "If you get one percent better each day for one year, you'll end up{" "}
+                        <span className="text-amber-400 font-bold">thirty-seven times better</span>
+                        ."
                       </p>
                       <span className="text-[10px] font-mono text-white/40 mt-1 block">
                         Clear, J. (2018), Atomic Habits.
@@ -733,8 +890,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       alt={EVOLUTION_THEMES[selectedThemeIndex].name}
                       className="w-full h-full object-cover rounded-full filter drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] transition-all duration-300"
                       style={{
-                        maskImage: 'radial-gradient(circle at center, black 50%, transparent 92%)',
-                        WebkitMaskImage: 'radial-gradient(circle at center, black 50%, transparent 92%)'
+                        maskImage: "radial-gradient(circle at center, black 50%, transparent 92%)",
+                        WebkitMaskImage:
+                          "radial-gradient(circle at center, black 50%, transparent 92%)",
                       }}
                     />
                   </div>
@@ -759,8 +917,8 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       onClick={() => setSelectedThemeIndex(idx)}
                       className={`transition-all cursor-pointer ${
                         selectedThemeIndex === idx
-                          ? 'w-3 h-3 rounded-full bg-white ring-2 ring-white/50 scale-110 shadow-[0_0_10px_rgba(255,255,255,0.8)]'
-                          : 'w-2 h-2 rounded-full bg-white/20 hover:bg-white/40'
+                          ? "w-3 h-3 rounded-full bg-white ring-2 ring-white/50 scale-110 shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                          : "w-2 h-2 rounded-full bg-white/20 hover:bg-white/40"
                       }`}
                     />
                   ))}
@@ -787,12 +945,19 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                       Day 1
                     </div>
                     {/* 6 Peripheral Hex Nodes */}
-                    {['bg-purple-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-orange-500'].map((color, i) => (
+                    {[
+                      "bg-purple-500",
+                      "bg-blue-500",
+                      "bg-green-500",
+                      "bg-yellow-500",
+                      "bg-red-500",
+                      "bg-orange-500",
+                    ].map((color, i) => (
                       <div
                         key={i}
                         className={`absolute w-4 h-4 rounded-md ${color} opacity-80`}
                         style={{
-                          transform: `rotate(${i * 60}deg) translate(50px) rotate(-${i * 60}deg)`
+                          transform: `rotate(${i * 60}deg) translate(50px) rotate(-${i * 60}deg)`,
                         }}
                       />
                     ))}
@@ -800,7 +965,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
 
                   {/* Week Tabs */}
                   <div className="flex justify-center gap-2 text-[10px] font-mono text-white/40">
-                    <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-bold">Week 1</span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-bold">
+                      Week 1
+                    </span>
                     <span>Week 2</span>
                     <span>Week 3</span>
                     <span>Week 4</span>
@@ -839,19 +1006,26 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     3,48,674
                   </h1>
                   <p className="text-xs font-sans text-white/60 mt-1">
-                    members making <span className="font-bold text-white">real progress</span> with SVJ
+                    members making <span className="font-bold text-white">real progress</span> with
+                    SVJ
                   </p>
                 </div>
 
                 {/* Avatar Circles Row */}
                 <div className="flex justify-center -space-x-3">
-                  {['https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80',
-                    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80',
-                    'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&q=80'
+                  {[
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80",
+                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80",
+                    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80",
+                    "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&q=80",
                   ].map((url, i) => (
-                    <img key={i} src={url} alt="member" className="w-10 h-10 rounded-full border-2 border-black object-cover" />
+                    <img
+                      key={i}
+                      src={url}
+                      alt="member"
+                      className="w-10 h-10 rounded-full border-2 border-black object-cover"
+                    />
                   ))}
                 </div>
 
@@ -860,22 +1034,28 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                   <div className="p-4 rounded-2xl bg-[#121215] border border-white/10 space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-white">dylan m</span>
-                      <div className="flex text-amber-400"><Star className="w-3 h-3 fill-amber-400" /> 5.0</div>
+                      <div className="flex text-amber-400">
+                        <Star className="w-3 h-3 fill-amber-400" /> 5.0
+                      </div>
                     </div>
                     <span className="text-[10px] text-white/40 font-mono">25M in California</span>
                     <p className="text-xs text-white/80 pt-1 font-sans">
-                      "Completely changed my life. Built healthy productive habits into my daily routine."
+                      "Completely changed my life. Built healthy productive habits into my daily
+                      routine."
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-[#121215] border border-white/10 space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-white">michael h</span>
-                      <div className="flex text-amber-400"><Star className="w-3 h-3 fill-amber-400" /> 5.0</div>
+                      <div className="flex text-amber-400">
+                        <Star className="w-3 h-3 fill-amber-400" /> 5.0
+                      </div>
                     </div>
                     <span className="text-[10px] text-white/40 font-mono">23M in New York</span>
                     <p className="text-xs text-white/80 pt-1 font-sans">
-                      "This app helped me build discipline to get me out of my slump. Definitely download!"
+                      "This app helped me build discipline to get me out of my slump. Definitely
+                      download!"
                     </p>
                   </div>
                 </div>
@@ -901,7 +1081,9 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-3 text-center">
                       <span className="text-xs text-blue-400 font-bold">Awakened Hunter</span>
                       <span className="font-serif text-lg text-white font-bold">Level 72</span>
-                      <span className="text-[10px] text-cyan-300 font-bold uppercase">DIAMOND IV</span>
+                      <span className="text-[10px] text-cyan-300 font-bold uppercase">
+                        DIAMOND IV
+                      </span>
                     </div>
                   </div>
 
@@ -1039,9 +1221,7 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
             {/* SCREEN 19: Support Us with a Rating */}
             {step === 19 && (
               <div className="space-y-6 text-center my-2">
-                <h2 className="font-serif text-2xl text-white">
-                  Support us with a rating
-                </h2>
+                <h2 className="font-serif text-2xl text-white">Support us with a rating</h2>
 
                 {/* Rating Laurel Wreath */}
                 <div className="space-y-1">
@@ -1055,18 +1235,25 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                 </div>
 
                 <p className="text-xs text-white/70 font-sans">
-                  SVJ was made for <span className="font-bold text-white">people just like you</span>
+                  SVJ was made for{" "}
+                  <span className="font-bold text-white">people just like you</span>
                 </p>
 
                 {/* Avatar Circles Row */}
                 <div className="flex justify-center -space-x-2">
-                  {['https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80',
-                    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80',
-                    'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&q=80'
+                  {[
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80",
+                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80",
+                    "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80",
+                    "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&q=80",
                   ].map((url, i) => (
-                    <img key={i} src={url} alt="member" className="w-8 h-8 rounded-full border border-black object-cover" />
+                    <img
+                      key={i}
+                      src={url}
+                      alt="member"
+                      className="w-8 h-8 rounded-full border border-black object-cover"
+                    />
                   ))}
                 </div>
 
@@ -1078,7 +1265,8 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     </div>
                     <span className="text-[10px] text-white/40 font-mono">25M in California</span>
                     <p className="text-xs text-white/80 pt-1">
-                      "I used to waste a lot of time on my phone and never take action towards my goals but with SVJ I built healthy habits."
+                      "I used to waste a lot of time on my phone and never take action towards my
+                      goals but with SVJ I built healthy habits."
                     </p>
                   </div>
 
@@ -1089,13 +1277,13 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
                     </div>
                     <span className="text-[10px] text-white/40 font-mono">23M in New York</span>
                     <p className="text-xs text-white/80 pt-1">
-                      "This app helped me build healthy and productive habits to get me out of my slump. Definitely download!"
+                      "This app helped me build healthy and productive habits to get me out of my
+                      slump. Definitely download!"
                     </p>
                   </div>
                 </div>
               </div>
             )}
-
           </motion.div>
         </AnimatePresence>
 
@@ -1107,12 +1295,11 @@ export const DarkCinematicOnboardingModal: React.FC<{ isOpen: boolean; onClose: 
               onClick={nextStep}
               className="w-full py-3.5 rounded-2xl border-2 border-white/40 bg-white/10 hover:bg-white/20 active:scale-[0.99] text-white text-xs font-mono font-bold tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] cursor-pointer text-center"
             >
-              {step === totalSteps ? 'FINISH & START PROGRAM' : 'CONTINUE'}
+              {step === totalSteps ? "FINISH & START PROGRAM" : "CONTINUE"}
             </button>
           </div>
         )}
       </div>
-
     </div>
   );
 };

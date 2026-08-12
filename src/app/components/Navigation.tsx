@@ -1,9 +1,17 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { Flame, Dumbbell, Apple, Users, Trophy, Gift, Crown, User } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
+import React from "react";
+import { motion } from "motion/react";
+import { Flame, Dumbbell, Apple, Users, Trophy, Gift, Crown, User } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
 
-export type ActiveTab = 'challenges' | 'workouts' | 'nutrition' | 'community' | 'leaderboard' | 'rewards' | 'plus' | 'profile';
+export type ActiveTab =
+  | "challenges"
+  | "workouts"
+  | "nutrition"
+  | "community"
+  | "leaderboard"
+  | "rewards"
+  | "plus"
+  | "profile";
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -14,14 +22,14 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
   const { user } = useSVJ();
 
   const navItems = [
-    { id: 'challenges', label: 'Challenges', icon: Flame },
-    { id: 'workouts', label: 'Train', icon: Dumbbell },
-    { id: 'nutrition', label: 'Fuel', icon: Apple },
-    { id: 'community', label: 'Community', icon: Users },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'rewards', label: 'Rewards', icon: Gift },
-    { id: 'plus', label: 'Plus', icon: Crown, highlight: !user.isPremium },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: "challenges", label: "Challenges", icon: Flame },
+    { id: "workouts", label: "Train", icon: Dumbbell },
+    { id: "nutrition", label: "Fuel", icon: Apple },
+    { id: "community", label: "Community", icon: Users },
+    { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+    { id: "rewards", label: "Rewards", icon: Gift },
+    { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
+    { id: "profile", label: "Profile", icon: User },
   ];
 
   return (
@@ -41,16 +49,14 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
                 <motion.div
                   layoutId="activeTabGlow"
                   className="absolute inset-0 bg-[#C81E3A]/15 rounded-xl border border-[#C81E3A]/40"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              
+
               <div className="relative">
                 <Icon
                   className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
-                    isActive
-                      ? 'text-[#C81E3A] stroke-[2.5px]'
-                      : 'text-[#8C8C90] stroke-[1.8px]'
+                    isActive ? "text-[#C81E3A] stroke-[2.5px]" : "text-[#8C8C90] stroke-[1.8px]"
                   }`}
                 />
                 {item.highlight && (
@@ -60,7 +66,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
 
               <span
                 className={`text-[11px] font-inter font-medium transition-colors ${
-                  isActive ? 'text-[#F4F2ED] font-semibold' : 'text-[#8C8C90]'
+                  isActive ? "text-[#F4F2ED] font-semibold" : "text-[#8C8C90]"
                 }`}
               >
                 {item.label}

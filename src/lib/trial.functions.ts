@@ -1,5 +1,5 @@
-import { createServerFn } from '@tanstack/react-start';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const TRIAL_DAYS = 7;
 
@@ -37,31 +37,32 @@ function buildStatus(row: {
   };
 }
 
-export const getTrialStatus = createServerFn({ method: 'GET' })
+export const getTrialStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TrialStatus> => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const email = ((context.claims['email'] as string | undefined) ?? '').toLowerCase() || null;
+    const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase() || null;
 
     const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email, display_name, signup_date, is_plus_member')
-      .eq('id', context.userId)
+      .from("profiles")
+      .select("id, email, display_name, signup_date, is_plus_member")
+      .eq("id", context.userId)
       .maybeSingle();
 
     if (error) throw error;
 
-    if (data) return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, data));
+    if (data)
+      return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, data));
 
     // Safety net for users created before the profiles trigger existed.
     const { data: created, error: insertError } = await supabaseAdmin
-      .from('profiles')
+      .from("profiles")
       .insert({
         id: context.userId,
         email,
       })
-      .select('id, email, display_name, signup_date, is_plus_member')
+      .select("id, email, display_name, signup_date, is_plus_member")
       .single();
 
     if (insertError) throw insertError;
@@ -96,11 +97,11 @@ async function mergeSiblingAccounts(
   if (!email) return self;
 
   const { data: siblings } = await admin
-    .from('profiles')
+    .from("profiles")
     .select(
-      'id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, username, avatar_url, total_xp, current_streak',
+      "id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, username, avatar_url, total_xp, current_streak",
     )
-    .ilike('email', email);
+    .ilike("email", email);
 
   if (!siblings || siblings.length < 2) return self;
 
@@ -108,52 +109,55 @@ async function mergeSiblingAccounts(
   const canonical = siblings.reduce(
     (acc: Record<string, unknown>, row: Record<string, unknown>) => ({
       signup_date:
-        new Date(row['signup_date'] as string) < new Date(acc['signup_date'] as string)
-          ? row['signup_date']
-          : acc['signup_date'],
-      is_plus_member: Boolean(acc['is_plus_member']) || Boolean(row['is_plus_member']),
-      plus_unlocked_at: acc['plus_unlocked_at'] ?? row['plus_unlocked_at'] ?? null,
-      display_name: acc['display_name'] ?? row['display_name'] ?? null,
-      username: acc['username'] ?? row['username'] ?? null,
-      avatar_url: acc['avatar_url'] ?? row['avatar_url'] ?? null,
-      total_xp: Math.max(Number(acc['total_xp'] ?? 0), Number(row['total_xp'] ?? 0)),
-      current_streak: Math.max(Number(acc['current_streak'] ?? 0), Number(row['current_streak'] ?? 0)),
+        new Date(row["signup_date"] as string) < new Date(acc["signup_date"] as string)
+          ? row["signup_date"]
+          : acc["signup_date"],
+      is_plus_member: Boolean(acc["is_plus_member"]) || Boolean(row["is_plus_member"]),
+      plus_unlocked_at: acc["plus_unlocked_at"] ?? row["plus_unlocked_at"] ?? null,
+      display_name: acc["display_name"] ?? row["display_name"] ?? null,
+      username: acc["username"] ?? row["username"] ?? null,
+      avatar_url: acc["avatar_url"] ?? row["avatar_url"] ?? null,
+      total_xp: Math.max(Number(acc["total_xp"] ?? 0), Number(row["total_xp"] ?? 0)),
+      current_streak: Math.max(
+        Number(acc["current_streak"] ?? 0),
+        Number(row["current_streak"] ?? 0),
+      ),
     }),
     siblings[0] as Record<string, unknown>,
   );
 
-  await admin.from('profiles').update(canonical).ilike('email', email);
+  await admin.from("profiles").update(canonical).ilike("email", email);
 
   return {
     id: userId,
     email,
-    display_name: (canonical['display_name'] as string | null) ?? null,
-    signup_date: canonical['signup_date'] as string,
-    is_plus_member: Boolean(canonical['is_plus_member']),
+    display_name: (canonical["display_name"] as string | null) ?? null,
+    signup_date: canonical["signup_date"] as string,
+    is_plus_member: Boolean(canonical["is_plus_member"]),
   };
 }
 
-export const unlockPlus = createServerFn({ method: 'POST' })
+export const unlockPlus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TrialStatus> => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data, error } = await supabaseAdmin
-      .from('profiles')
+      .from("profiles")
       .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
-      .eq('id', context.userId)
-      .select('id, email, display_name, signup_date, is_plus_member')
+      .eq("id", context.userId)
+      .select("id, email, display_name, signup_date, is_plus_member")
       .single();
 
     if (error) throw error;
 
     // Keep any sibling account with the same email unlocked too.
-    const email = ((context.claims['email'] as string | undefined) ?? '').toLowerCase();
+    const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase();
     if (email) {
       await supabaseAdmin
-        .from('profiles')
+        .from("profiles")
         .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
-        .ilike('email', email);
+        .ilike("email", email);
     }
 
     return buildStatus(data);

@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Crown, Check, ShieldCheck, Sparkles, ArrowRight, Zap, Flame, Lock, Mail } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  X,
+  Crown,
+  Check,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Flame,
+  Lock,
+  Mail,
+} from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
 
 export const PaywallModal: React.FC = () => {
-  const { user, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen, upgradeToPremium, setIsGoogleAuthModalOpen, loginWithGmail } = useSVJ();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
-  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
+  const {
+    user,
+    isPaywallOpen,
+    setIsPaywallOpen,
+    setIsUPIModalOpen,
+    upgradeToPremium,
+    setIsGoogleAuthModalOpen,
+    loginWithGmail,
+  } = useSVJ();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
+  const [currency, setCurrency] = useState<"INR" | "USD">("INR");
 
   if (!isPaywallOpen) return null;
 
@@ -16,12 +35,36 @@ export const PaywallModal: React.FC = () => {
   };
 
   const benefits = [
-    { title: 'Animated Profile Frames', icon: Sparkles, desc: 'Glow Crimson, Cyber Violet, Golden Majesty' },
-    { title: 'Exclusive Themes', icon: Flame, desc: 'Unlock rare dark themes — Obsidian, Void, Crimson Night' },
-    { title: 'Premium Badges', icon: ShieldCheck, desc: 'Verified icon, VIP badge, rare achievement badges & animated avatars' },
-    { title: 'Advanced Analytics', icon: Zap, desc: 'Deep XP insights, habit completion trends & performance breakdowns' },
-    { title: 'Leaderboard Insights', icon: Crown, desc: 'See exactly who to beat, gap analysis & rank trajectory forecasts' },
-    { title: 'Early Access', icon: Lock, desc: 'First access to new challenges, features & exclusive community drops' },
+    {
+      title: "Animated Profile Frames",
+      icon: Sparkles,
+      desc: "Glow Crimson, Cyber Violet, Golden Majesty",
+    },
+    {
+      title: "Exclusive Themes",
+      icon: Flame,
+      desc: "Unlock rare dark themes — Obsidian, Void, Crimson Night",
+    },
+    {
+      title: "Premium Badges",
+      icon: ShieldCheck,
+      desc: "Verified icon, VIP badge, rare achievement badges & animated avatars",
+    },
+    {
+      title: "Advanced Analytics",
+      icon: Zap,
+      desc: "Deep XP insights, habit completion trends & performance breakdowns",
+    },
+    {
+      title: "Leaderboard Insights",
+      icon: Crown,
+      desc: "See exactly who to beat, gap analysis & rank trajectory forecasts",
+    },
+    {
+      title: "Early Access",
+      icon: Lock,
+      desc: "First access to new challenges, features & exclusive community drops",
+    },
   ];
 
   const handleStartTrial = () => {
@@ -73,7 +116,8 @@ export const PaywallModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-amber-200/90 font-mono">
-                App owner (Sabari) gets lifetime SVJ Plus access and full Founder privileges for free!
+                App owner (Sabari) gets lifetime SVJ Plus access and full Founder privileges for
+                free!
               </p>
               {!user.isFounder ? (
                 <button
@@ -93,28 +137,29 @@ export const PaywallModal: React.FC = () => {
             </div>
 
             <p className="text-xs sm:text-sm text-[#8C8C90] font-inter max-w-md mx-auto leading-relaxed">
-              Unlock the full SVJ experience. Premium cosmetics, deep analytics, and exclusive community access.
+              Unlock the full SVJ experience. Premium cosmetics, deep analytics, and exclusive
+              community access.
             </p>
           </div>
 
           {/* Plan Selector Toggle */}
           <div className="relative z-10 p-1 rounded-2xl bg-[#17171A] border border-white/10 max-w-xs mx-auto mb-6 grid grid-cols-2 text-xs font-mono">
             <button
-              onClick={() => setBillingCycle('monthly')}
+              onClick={() => setBillingCycle("monthly")}
               className={`py-2.5 rounded-xl font-semibold transition-all cursor-pointer ${
-                billingCycle === 'monthly'
-                  ? 'bg-[#0B0B0C] text-white shadow'
-                  : 'text-[#8C8C90] hover:text-white'
+                billingCycle === "monthly"
+                  ? "bg-[#0B0B0C] text-white shadow"
+                  : "text-[#8C8C90] hover:text-white"
               }`}
             >
               Monthly
             </button>
             <button
-              onClick={() => setBillingCycle('yearly')}
+              onClick={() => setBillingCycle("yearly")}
               className={`relative py-2.5 rounded-xl font-semibold transition-all cursor-pointer ${
-                billingCycle === 'yearly'
-                  ? 'bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30'
-                  : 'text-[#8C8C90] hover:text-white'
+                billingCycle === "yearly"
+                  ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
+                  : "text-[#8C8C90] hover:text-white"
               }`}
             >
               Yearly
@@ -128,16 +173,18 @@ export const PaywallModal: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10 mb-8">
             {/* Monthly Card */}
             <div
-              onClick={() => setBillingCycle('monthly')}
+              onClick={() => setBillingCycle("monthly")}
               className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                billingCycle === 'monthly'
-                  ? 'bg-[#17171A] border-[#C81E3A]'
-                  : 'bg-[#17171A]/50 border-white/5 hover:border-white/20'
+                billingCycle === "monthly"
+                  ? "bg-[#17171A] border-[#C81E3A]"
+                  : "bg-[#17171A]/50 border-white/5 hover:border-white/20"
               }`}
             >
-              <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">Monthly</div>
+              <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">
+                Monthly
+              </div>
               <div className="text-2xl font-anton text-white">
-                {currency === 'INR' ? '₹149' : '$1.99'}
+                {currency === "INR" ? "₹149" : "$1.99"}
                 <span className="text-xs font-mono text-[#8C8C90] font-normal"> / month</span>
               </div>
               <p className="text-[10px] font-mono text-[#8C8C90] mt-1">Billed every month</p>
@@ -145,19 +192,21 @@ export const PaywallModal: React.FC = () => {
 
             {/* Yearly Card (Best Value) */}
             <div
-              onClick={() => setBillingCycle('yearly')}
+              onClick={() => setBillingCycle("yearly")}
               className={`relative p-4 rounded-2xl border transition-all cursor-pointer ${
-                billingCycle === 'yearly'
-                  ? 'bg-[#17171A] border-[#C81E3A] shadow-xl shadow-[#C81E3A]/10'
-                  : 'bg-[#17171A]/50 border-white/5 hover:border-white/20'
+                billingCycle === "yearly"
+                  ? "bg-[#17171A] border-[#C81E3A] shadow-xl shadow-[#C81E3A]/10"
+                  : "bg-[#17171A]/50 border-white/5 hover:border-white/20"
               }`}
             >
               <div className="absolute -top-2.5 left-4 px-2 py-0.5 rounded bg-[#C81E3A] text-[9px] font-anton text-white uppercase tracking-wider">
                 BEST VALUE
               </div>
-              <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">Yearly</div>
+              <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">
+                Yearly
+              </div>
               <div className="text-2xl font-anton text-white flex items-baseline gap-1">
-                {currency === 'INR' ? '₹999' : '$12.99'}
+                {currency === "INR" ? "₹999" : "$12.99"}
                 <span className="text-xs font-mono text-[#8C8C90] font-normal"> / year</span>
               </div>
               <p className="text-[10px] font-mono text-emerald-400 mt-1 font-semibold">
@@ -175,13 +224,18 @@ export const PaywallModal: React.FC = () => {
               {benefits.map((b, i) => {
                 const Icon = b.icon;
                 return (
-                  <div key={i} className="p-3 rounded-xl bg-[#17171A] border border-white/5 flex items-start gap-3">
+                  <div
+                    key={i}
+                    className="p-3 rounded-xl bg-[#17171A] border border-white/5 flex items-start gap-3"
+                  >
                     <div className="p-2 rounded-lg bg-[#0B0B0C] text-[#C81E3A] shrink-0">
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-inter font-bold text-white">{b.title}</div>
-                      <div className="text-[11px] font-inter text-[#8C8C90] leading-tight mt-0.5">{b.desc}</div>
+                      <div className="text-[11px] font-inter text-[#8C8C90] leading-tight mt-0.5">
+                        {b.desc}
+                      </div>
                     </div>
                   </div>
                 );
@@ -212,7 +266,6 @@ export const PaywallModal: React.FC = () => {
               <span>Cancel Anytime</span>
             </div>
           </div>
-
         </motion.div>
       </div>
     </AnimatePresence>

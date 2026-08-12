@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   server: {
     url: "https://savaje-com.lovable.app",
-    cleartext: true
+    cleartext: true,
   },
   android: {
     backgroundColor: "#0B0B0C",

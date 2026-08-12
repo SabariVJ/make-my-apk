@@ -1,15 +1,15 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Crown, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import { TIERS } from '../data/initialData';
+import React from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Crown, Zap, CheckCircle2, ArrowRight } from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import { TIERS } from "../data/initialData";
 
 export const LevelUpModal: React.FC = () => {
   const { levelUpModalData, setLevelUpModalData } = useSVJ();
 
   if (!levelUpModalData) return null;
 
-  const newTierInfo = TIERS.find(t => t.name === levelUpModalData.newTier) || TIERS[1];
+  const newTierInfo = TIERS.find((t) => t.name === levelUpModalData.newTier) || TIERS[1];
 
   return (
     <AnimatePresence>
@@ -41,9 +41,7 @@ export const LevelUpModal: React.FC = () => {
             {newTierInfo.name} Tier
           </h2>
 
-          <p className="text-xs font-mono text-[#8C8C90] mb-6">
-            {newTierInfo.description}
-          </p>
+          <p className="text-xs font-mono text-[#8C8C90] mb-6">{newTierInfo.description}</p>
 
           {/* Benefits Unlocked */}
           <div className="p-4 rounded-xl bg-[#0B0B0C] border border-white/10 text-left mb-6 space-y-2">

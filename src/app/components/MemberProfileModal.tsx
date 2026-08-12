@@ -1,8 +1,19 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Shield, Crown, Flame, Zap, Swords, Calendar, Award, ThumbsUp, Heart } from 'lucide-react';
-import { LeaderboardEntry } from '../types';
-import { useSVJ } from '../context/SVJContext';
+import React from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  X,
+  Shield,
+  Crown,
+  Flame,
+  Zap,
+  Swords,
+  Calendar,
+  Award,
+  ThumbsUp,
+  Heart,
+} from "lucide-react";
+import { LeaderboardEntry } from "../types";
+import { useSVJ } from "../context/SVJContext";
 
 interface MemberProfileModalProps {
   member: LeaderboardEntry | null;
@@ -10,7 +21,11 @@ interface MemberProfileModalProps {
   onCompare: (member: LeaderboardEntry) => void;
 }
 
-export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, onClose, onCompare }) => {
+export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
+  member,
+  onClose,
+  onCompare,
+}) => {
   const { triggerConfetti } = useSVJ();
 
   if (!member) return null;
@@ -42,7 +57,11 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
           <div className="px-6 pb-6 relative">
             <div className="-mt-14 mb-3 flex items-end justify-between">
               <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-4 border-[#17171A] bg-[#0B0B0C] shadow-xl">
-                <img src={member.avatar} alt={member.username} className="w-full h-full object-cover" />
+                <img
+                  src={member.avatar}
+                  alt={member.username}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <motion.button
@@ -66,7 +85,9 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
                 <h2 className="font-anton text-2xl tracking-wide uppercase text-white">
                   {member.username}
                 </h2>
-                {member.isVerified && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
+                {member.isVerified && (
+                  <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />
+                )}
                 {member.isVIP && <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />}
               </div>
               <div className="text-xs font-mono text-[#8C8C90] flex items-center gap-2 mt-0.5">
@@ -75,7 +96,10 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
                 <span className="text-[#C81E3A] font-semibold">{member.tier} Tier</span>
               </div>
               <p className="text-xs text-[#F4F2ED]/80 mt-2 font-inter leading-relaxed italic">
-                "{member.bio || 'Discipline is doing what needs to be done, even when you don\'t feel like it.'}"
+                "
+                {member.bio ||
+                  "Discipline is doing what needs to be done, even when you don't feel like it."}
+                "
               </p>
             </div>
 
@@ -83,7 +107,9 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
             <div className="grid grid-cols-3 gap-2.5 my-4">
               <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
                 <Zap className="w-4 h-4 text-[#C81E3A] mx-auto mb-1" />
-                <div className="text-xs font-mono font-bold text-white">{member.totalXP.toLocaleString()}</div>
+                <div className="text-xs font-mono font-bold text-white">
+                  {member.totalXP.toLocaleString()}
+                </div>
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Total XP</div>
               </div>
 
@@ -96,7 +122,9 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
               <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
                 <Award className="w-4 h-4 text-amber-400 mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">#{member.rank}</div>
-                <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Global Rank</div>
+                <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">
+                  Global Rank
+                </div>
               </div>
             </div>
 
@@ -130,7 +158,6 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({ member, 
                 <span>Send Respect & Celebration 🔥</span>
               </button>
             </div>
-
           </div>
         </motion.div>
       </div>

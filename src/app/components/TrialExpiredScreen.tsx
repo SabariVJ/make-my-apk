@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Lock, Check, ShieldCheck, LogOut, Loader2 } from 'lucide-react';
-import upiQr from '@/assets/upi-qr-clean.png.asset.json';
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { Lock, Check, ShieldCheck, LogOut, Loader2 } from "lucide-react";
+import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 
 type Props = {
   email: string | null;
@@ -11,15 +11,17 @@ type Props = {
 
 export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleConfirm = async () => {
-    setError('');
+    setError("");
     setIsProcessing(true);
     try {
       await onUnlock();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not verify your upgrade. Please try again.');
+      setError(
+        err instanceof Error ? err.message : "Could not verify your upgrade. Please try again.",
+      );
       setIsProcessing(false);
     }
   };
@@ -39,7 +41,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut
             Your 7-Day Trial Has Ended
           </h1>
           <p className="text-[11px] font-mono text-[#8C8C90]">
-            Unlock SVJ Plus to continue{email ? ` as ${email}` : ''}.
+            Unlock SVJ Plus to continue{email ? ` as ${email}` : ""}.
           </p>
         </div>
 
@@ -69,7 +71,8 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut
             <span>Lifetime SVJ Plus Access</span>
           </div>
           <p className="text-[11px] text-[#8C8C90] leading-relaxed">
-            After paying, tap 'Confirm & Unlock' — your account is upgraded permanently, on every device.
+            After paying, tap 'Confirm & Unlock' — your account is upgraded permanently, on every
+            device.
           </p>
         </div>
 

@@ -79,17 +79,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SVJ — Self-Improvement Challenges & Community" },
-      { name: "description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
+      {
+        name: "description",
+        content:
+          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+      },
       { name: "theme-color", content: "#0B0B0C" },
       { property: "og:title", content: "SVJ — Self-Improvement Challenges & Community" },
-      { property: "og:description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
+      {
+        property: "og:description",
+        content:
+          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "SVJ — Self-Improvement Challenges & Community" },
-      { name: "twitter:description", content: "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png",
+      },
     ],
     links: [
       {
@@ -130,26 +150,18 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-useEffect(() => {
-
+  useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-
       AdMob.initialize({}).then(() => {
-
         AdMob.showBanner({
-
           adId: "ca-app-pub-1475355973043918/9002240668",
 
           adSize: BannerAdSize.BANNER,
 
           position: BannerAdPosition.BOTTOM_CENTER,
-
         });
-
       });
-
     }
-
   }, []);
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Search, Flame, Crown, Zap, Shield, MessageSquare, Send, Heart, UserPlus, Filter } from 'lucide-react';
-import { useSVJ } from '../context/SVJContext';
-import { FeedActivity, ReactionType, LeaderboardEntry } from '../types';
-import { FriendsPanel } from '../components/FriendsPanel';
-import { useFriends } from '../hooks/useFriends';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Search,
+  Flame,
+  Crown,
+  Zap,
+  Shield,
+  MessageSquare,
+  Send,
+  Heart,
+  UserPlus,
+  Filter,
+} from "lucide-react";
+import { useSVJ } from "../context/SVJContext";
+import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
+import { FriendsPanel } from "../components/FriendsPanel";
+import { useFriends } from "../hooks/useFriends";
 
 export const CommunityView: React.FC = () => {
   const { feed, toggleReaction, addComment, setSelectedMemberModal, leaderboard, user } = useSVJ();
-  const [activeSubTab, setActiveSubTab] = useState<'feed' | 'directory' | 'friends'>('feed');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState<"feed" | "directory" | "friends">("feed");
+  const [searchQuery, setSearchQuery] = useState("");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const friendsApi = useFriends({
     username: user.username,
@@ -20,30 +31,29 @@ export const CommunityView: React.FC = () => {
   });
 
   const reactionEmojis: { type: ReactionType; emoji: string; label: string }[] = [
-    { type: 'fire', emoji: '🔥', label: 'Fire' },
-    { type: 'crown', emoji: '👑', label: 'Crown' },
-    { type: 'hundred', emoji: '💯', label: 'Solid' },
-    { type: 'bolt', emoji: '⚡', label: 'Energy' },
-    { type: 'wolf', emoji: '🐺', label: 'Apex' },
+    { type: "fire", emoji: "🔥", label: "Fire" },
+    { type: "crown", emoji: "👑", label: "Crown" },
+    { type: "hundred", emoji: "💯", label: "Solid" },
+    { type: "bolt", emoji: "⚡", label: "Energy" },
+    { type: "wolf", emoji: "🐺", label: "Apex" },
   ];
 
   const filteredMembers = leaderboard.filter(
-    m =>
+    (m) =>
       m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.tier.toLowerCase().includes(searchQuery.toLowerCase())
+      m.tier.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCommentSubmit = (activityId: string) => {
     const text = commentInputs[activityId];
     if (text) {
       addComment(activityId, text);
-      setCommentInputs(prev => ({ ...prev, [activityId]: '' }));
+      setCommentInputs((prev) => ({ ...prev, [activityId]: "" }));
     }
   };
 
   return (
     <div className="space-y-6 pb-24">
-      
       {/* Header & Sub-tab Selector */}
       <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
@@ -57,44 +67,44 @@ export const CommunityView: React.FC = () => {
 
         <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
           <button
-            onClick={() => setActiveSubTab('feed')}
+            onClick={() => setActiveSubTab("feed")}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
-              activeSubTab === 'feed'
-                ? 'bg-[#C81E3A] text-white'
-                : 'text-[#8C8C90] hover:text-white'
+              activeSubTab === "feed"
+                ? "bg-[#C81E3A] text-white"
+                : "text-[#8C8C90] hover:text-white"
             }`}
           >
             Activity Feed
           </button>
           <button
-            onClick={() => setActiveSubTab('directory')}
+            onClick={() => setActiveSubTab("directory")}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
-              activeSubTab === 'directory'
-                ? 'bg-[#C81E3A] text-white'
-                : 'text-[#8C8C90] hover:text-white'
+              activeSubTab === "directory"
+                ? "bg-[#C81E3A] text-white"
+                : "text-[#8C8C90] hover:text-white"
             }`}
           >
             Members
           </button>
           <button
-            onClick={() => setActiveSubTab('friends')}
+            onClick={() => setActiveSubTab("friends")}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer relative ${
-              activeSubTab === 'friends'
-                ? 'bg-[#C81E3A] text-white'
-                : 'text-[#8C8C90] hover:text-white'
+              activeSubTab === "friends"
+                ? "bg-[#C81E3A] text-white"
+                : "text-[#8C8C90] hover:text-white"
             }`}
           >
             Friends
-            {friendsApi.incoming.length > 0 && activeSubTab !== 'friends' && (
+            {friendsApi.incoming.length > 0 && activeSubTab !== "friends" && (
               <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#C81E3A]" />
             )}
           </button>
         </div>
       </div>
 
-      {activeSubTab === 'friends' ? (
+      {activeSubTab === "friends" ? (
         <FriendsPanel friendsApi={friendsApi} />
-      ) : activeSubTab === 'feed' ? (
+      ) : activeSubTab === "feed" ? (
         /* ACTIVITY FEED TAB */
         <div className="space-y-4">
           {feed.map((item, index) => {
@@ -112,20 +122,30 @@ export const CommunityView: React.FC = () => {
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => {
-                      const found = leaderboard.find(l => l.id === item.userId || l.username === item.username);
+                      const found = leaderboard.find(
+                        (l) => l.id === item.userId || l.username === item.username,
+                      );
                       if (found) setSelectedMemberModal(found);
                     }}
                   >
                     <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
-                      <img src={item.userAvatar} alt={item.username} className="w-full h-full object-cover" />
+                      <img
+                        src={item.userAvatar}
+                        alt={item.username}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="font-anton text-sm text-white uppercase group-hover:text-[#C81E3A] transition-colors">
                           {item.username}
                         </span>
-                        {item.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A] fill-[#C81E3A]/20" />}
-                        {item.isVIP && <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />}
+                        {item.isVerified && (
+                          <Shield className="w-3.5 h-3.5 text-[#C81E3A] fill-[#C81E3A]/20" />
+                        )}
+                        {item.isVIP && (
+                          <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
+                        )}
                       </div>
                       <div className="text-[10px] font-mono text-[#8C8C90]">
                         {item.userTier} Tier • {item.timestamp}
@@ -143,12 +163,14 @@ export const CommunityView: React.FC = () => {
                 {/* Activity Detail */}
                 <div className="p-3.5 rounded-xl bg-[#0B0B0C] border border-white/5 space-y-1">
                   <h3 className="font-inter font-bold text-sm text-white">{item.title}</h3>
-                  <p className="text-xs text-[#8C8C90] font-inter leading-relaxed">{item.details}</p>
+                  <p className="text-xs text-[#8C8C90] font-inter leading-relaxed">
+                    {item.details}
+                  </p>
                 </div>
 
                 {/* Motivational Reactions Bar */}
                 <div className="flex items-center gap-2 pt-1 overflow-x-auto pb-1">
-                  {reactionEmojis.map(r => {
+                  {reactionEmojis.map((r) => {
                     const count = item.reactions[r.type] || 0;
                     const isSelected = userReaction === r.type;
 
@@ -158,8 +180,8 @@ export const CommunityView: React.FC = () => {
                         onClick={() => toggleReaction(item.id, r.type)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#C81E3A]/30 border border-[#C81E3A] text-white scale-105'
-                            : 'bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white'
+                            ? "bg-[#C81E3A]/30 border border-[#C81E3A] text-white scale-105"
+                            : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
                         }`}
                       >
                         <span>{r.emoji}</span>
@@ -174,12 +196,23 @@ export const CommunityView: React.FC = () => {
                   {item.comments.length > 0 && (
                     <div className="space-y-2">
                       {item.comments.map((c, cIdx) => (
-                        <div key={`${c.id}-${cIdx}`} className="p-2.5 rounded-xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2.5">
-                          <img src={c.avatar} alt={c.username} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
+                        <div
+                          key={`${c.id}-${cIdx}`}
+                          className="p-2.5 rounded-xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2.5"
+                        >
+                          <img
+                            src={c.avatar}
+                            alt={c.username}
+                            className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
+                          />
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
-                              <span className="font-anton text-white uppercase text-[11px]">{c.username}</span>
-                              <span className="text-[9px] font-mono text-[#8C8C90]">{c.createdAt}</span>
+                              <span className="font-anton text-white uppercase text-[11px]">
+                                {c.username}
+                              </span>
+                              <span className="text-[9px] font-mono text-[#8C8C90]">
+                                {c.createdAt}
+                              </span>
                             </div>
                             <p className="text-zinc-300 font-inter text-xs mt-0.5">{c.text}</p>
                           </div>
@@ -193,11 +226,11 @@ export const CommunityView: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Add motivational encouragement..."
-                      value={commentInputs[item.id] || ''}
-                      onChange={e =>
+                      value={commentInputs[item.id] || ""}
+                      onChange={(e) =>
                         setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
                       }
-                      onKeyDown={e => e.key === 'Enter' && handleCommentSubmit(item.id)}
+                      onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(item.id)}
                       className="flex-1 px-3.5 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-xs text-white placeholder:text-[#8C8C90] focus:outline-none focus:border-[#C81E3A]"
                     />
                     <button
@@ -208,7 +241,6 @@ export const CommunityView: React.FC = () => {
                     </button>
                   </div>
                 </div>
-
               </motion.div>
             );
           })}
@@ -223,13 +255,13 @@ export const CommunityView: React.FC = () => {
               type="text"
               placeholder="Search members by username or tier..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredMembers.map(m => (
+            {filteredMembers.map((m) => (
               <motion.div
                 key={m.id}
                 whileHover={{ scale: 1.02 }}
@@ -264,7 +296,6 @@ export const CommunityView: React.FC = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

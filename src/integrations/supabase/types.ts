@@ -44,6 +44,7 @@ export type Database = {
           email: string | null;
           id: string;
           is_plus_member: boolean;
+          plus_expires_at: string | null;
           plus_unlocked_at: string | null;
           signup_date: string;
           total_xp: number;
@@ -58,6 +59,7 @@ export type Database = {
           email?: string | null;
           id: string;
           is_plus_member?: boolean;
+          plus_expires_at?: string | null;
           plus_unlocked_at?: string | null;
           signup_date?: string;
           total_xp?: number;
@@ -72,6 +74,7 @@ export type Database = {
           email?: string | null;
           id?: string;
           is_plus_member?: boolean;
+          plus_expires_at?: string | null;
           plus_unlocked_at?: string | null;
           signup_date?: string;
           total_xp?: number;
@@ -80,11 +83,120 @@ export type Database = {
         };
         Relationships: [];
       };
+      challenge_enrollments: {
+        Row: {
+          best_streak: number;
+          code_granted: boolean;
+          completed_at: string | null;
+          created_at: string;
+          current_streak: number;
+          id: string;
+          paused_at: string | null;
+          started_at: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          best_streak?: number;
+          code_granted?: boolean;
+          completed_at?: string | null;
+          created_at?: string;
+          current_streak?: number;
+          id?: string;
+          paused_at?: string | null;
+          started_at?: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          best_streak?: number;
+          code_granted?: boolean;
+          completed_at?: string | null;
+          created_at?: string;
+          current_streak?: number;
+          id?: string;
+          paused_at?: string | null;
+          started_at?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      challenge_day_progress: {
+        Row: {
+          checkin_duration_minutes: number | null;
+          checkin_reflection: string | null;
+          completed_at: string | null;
+          created_at: string;
+          day_number: number;
+          enrollment_id: string;
+          id: string;
+          status: string;
+          tasks_completed: Json;
+        };
+        Insert: {
+          checkin_duration_minutes?: number | null;
+          checkin_reflection?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          day_number: number;
+          enrollment_id: string;
+          id?: string;
+          status?: string;
+          tasks_completed?: Json;
+        };
+        Update: {
+          checkin_duration_minutes?: number | null;
+          checkin_reflection?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          day_number?: number;
+          enrollment_id?: string;
+          id?: string;
+          status?: string;
+          tasks_completed?: Json;
+        };
+        Relationships: [];
+      };
+      redeem_codes: {
+        Row: {
+          code: string;
+          created_at: string;
+          id: string;
+          redeemed: boolean;
+          redeemed_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          id?: string;
+          redeemed?: boolean;
+          redeemed_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          id?: string;
+          redeemed?: boolean;
+          redeemed_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      db_now: {
+        Args: never;
+        Returns: string;
+      };
       get_friend_requests: {
         Args: never;
         Returns: {

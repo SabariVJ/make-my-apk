@@ -9,6 +9,10 @@ export type TrialStatus = {
   displayName: string | null;
   signupDate: string;
   isPlusMember: boolean;
+  /** Server-authoritative Plus status ("has_active_plus"). True only when
+   * is_plus_member is set AND the expiry (if any) is still in the future.
+   * The client must never derive this from localStorage. */
+  plusActive: boolean;
   dayOfTrial: number;
   daysLeft: number;
   locked: boolean;
@@ -20,20 +24,27 @@ function buildStatus(row: {
   display_name: string | null;
   signup_date: string;
   is_plus_member: boolean;
+  plus_expires_at: string | null;
 }): TrialStatus {
   const start = new Date(row.signup_date).getTime();
   const elapsedDays = Math.floor((Date.now() - start) / 86_400_000);
   const dayOfTrial = elapsedDays + 1;
   const daysLeft = Math.max(0, TRIAL_DAYS - elapsedDays);
+  // Plus is active for paid/lifetime members (no expiry) OR until the
+  // server-checked expiry timestamp for code-redemption grants (exactly 2 months).
+  const plusActive =
+    row.is_plus_member &&
+    (!row.plus_expires_at || new Date(row.plus_expires_at).getTime() > Date.now());
   return {
     userId: row.id,
     email: row.email,
     displayName: row.display_name,
     signupDate: row.signup_date,
     isPlusMember: row.is_plus_member,
+    plusActive,
     dayOfTrial,
     daysLeft,
-    locked: !row.is_plus_member && daysLeft <= 0,
+    locked: !plusActive && daysLeft <= 0,
   };
 }
 
@@ -46,7 +57,7 @@ export const getTrialStatus = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, display_name, signup_date, is_plus_member")
+      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
       .eq("id", context.userId)
       .maybeSingle();
 
@@ -62,7 +73,7 @@ export const getTrialStatus = createServerFn({ method: "GET" })
         id: context.userId,
         email,
       })
-      .select("id, email, display_name, signup_date, is_plus_member")
+      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
       .single();
 
     if (insertError) throw insertError;
@@ -75,6 +86,7 @@ type ProfileRow = {
   display_name: string | null;
   signup_date: string;
   is_plus_member: boolean;
+  plus_expires_at: string | null;
 };
 
 /**
@@ -99,7 +111,7 @@ async function mergeSiblingAccounts(
   const { data: siblings } = await admin
     .from("profiles")
     .select(
-      "id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, username, avatar_url, total_xp, current_streak",
+      "id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, plus_expires_at, username, avatar_url, total_xp, current_streak",
     )
     .ilike("email", email);
 
@@ -114,6 +126,10 @@ async function mergeSiblingAccounts(
           : acc["signup_date"],
       is_plus_member: Boolean(acc["is_plus_member"]) || Boolean(row["is_plus_member"]),
       plus_unlocked_at: acc["plus_unlocked_at"] ?? row["plus_unlocked_at"] ?? null,
+      plus_expires_at:
+        (acc["plus_expires_at"] as string | null) ??
+        (row["plus_expires_at"] as string | null) ??
+        null,
       display_name: acc["display_name"] ?? row["display_name"] ?? null,
       username: acc["username"] ?? row["username"] ?? null,
       avatar_url: acc["avatar_url"] ?? row["avatar_url"] ?? null,
@@ -134,6 +150,7 @@ async function mergeSiblingAccounts(
     display_name: (canonical["display_name"] as string | null) ?? null,
     signup_date: canonical["signup_date"] as string,
     is_plus_member: Boolean(canonical["is_plus_member"]),
+    plus_expires_at: (canonical["plus_expires_at"] as string | null) ?? null,
   };
 }
 
@@ -144,9 +161,13 @@ export const unlockPlus = createServerFn({ method: "POST" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
+      .update({
+        is_plus_member: true,
+        plus_unlocked_at: new Date().toISOString(),
+        plus_expires_at: null, // paid unlock is lifetime — no expiry
+      })
       .eq("id", context.userId)
-      .select("id, email, display_name, signup_date, is_plus_member")
+      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
       .single();
 
     if (error) throw error;
@@ -156,7 +177,11 @@ export const unlockPlus = createServerFn({ method: "POST" })
     if (email) {
       await supabaseAdmin
         .from("profiles")
-        .update({ is_plus_member: true, plus_unlocked_at: new Date().toISOString() })
+        .update({
+          is_plus_member: true,
+          plus_unlocked_at: new Date().toISOString(),
+          plus_expires_at: null,
+        })
         .ilike("email", email);
     }
 

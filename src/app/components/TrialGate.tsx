@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
-import { getTrialStatus, unlockPlus } from "@/lib/trial.functions";
+import { getTrialStatus, unlockPlus, type TrialStatus } from "@/lib/trial.functions";
 import { emitOAuthError } from "@/lib/googleAuth";
 import { AuthScreen } from "./AuthScreen";
 import { TrialExpiredScreen } from "./TrialExpiredScreen";
@@ -40,7 +40,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TrialGate: React.FC<{
+  children: React.ReactNode | ((status: TrialStatus) => React.ReactNode);
+}> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
   const queryClient = useQueryClient();
@@ -219,5 +221,7 @@ export const TrialGate: React.FC<{ children: React.ReactNode }> = ({ children })
     );
   }
 
-  return <>{children}</>;
+  // Pass the server-checked status down so the app can mirror the authoritative
+  // Plus state (e.g. SVJProvider's isPremium) — never trust localStorage for it.
+  return <>{typeof children === "function" ? children(status) : children}</>;
 };

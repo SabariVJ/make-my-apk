@@ -88,10 +88,22 @@ const SVJContext = createContext<SVJContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 
-export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SVJProvider: React.FC<{
+  children: React.ReactNode;
+  /** Server-authoritative Plus status from TrialGate (null = unknown/signed out). */
+  plusActive?: boolean | null;
+}> = ({ children, plusActive = null }) => {
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_user`);
-    return saved ? JSON.parse(saved) : INITIAL_USER;
+    if (!saved) return INITIAL_USER;
+    try {
+      const parsed = JSON.parse(saved) as UserProfile;
+      // Never trust a persisted isPremium — the server-side check is the only authority.
+      parsed.isPremium = false;
+      return parsed;
+    } catch {
+      return INITIAL_USER;
+    }
   });
 
   const [challenges, setChallenges] = useState<DailyChallenge[]>(() => {
@@ -172,7 +184,8 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const savedAcc = localStorage.getItem(`svj_user_account_${activeEmail.toLowerCase()}`);
       if (savedAcc) {
         try {
-          const parsed = JSON.parse(savedAcc);
+          const parsed = JSON.parse(savedAcc) as UserProfile;
+          parsed.isPremium = false; // server-side check is the only authority
           setUser(parsed);
         } catch (e) {
           console.error(e);
@@ -181,11 +194,24 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  // Server-authoritative Plus state: mirror the server status in BOTH directions.
+  // When the authenticated session loads or refreshes, TrialGate refetches the
+  // server status and feeds plusActive down — an expired Plus flips isPremium
+  // back to false, an active one flips it to true.
+  useEffect(() => {
+    if (plusActive === null) return;
+    setUser((prev) => (prev.isPremium === plusActive ? prev : { ...prev, isPremium: plusActive }));
+  }, [plusActive]);
+
   // Sync user state to local storage and sync user entry on the global leaderboard
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(user));
+    // Persist everything EXCEPT Plus status: isPremium is only ever derived from
+    // the server-side check (plusActive), so localStorage can never keep an
+    // expired user looking Premium.
+    const persisted = { ...user, isPremium: false };
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persisted));
     if (user.email) {
-      localStorage.setItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(user));
+      localStorage.setItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(persisted));
     }
 
     setLeaderboard((prev) => {
@@ -841,7 +867,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatar: avatar || baseUser.avatar,
       isFounder: isOwnerEmail || baseUser.isFounder || false,
       isOwner: isOwnerEmail || baseUser.isOwner || false,
-      isPremium: isOwnerEmail ? true : baseUser.isPremium,
+      isPremium: isOwnerEmail ? true : false, // otherwise server check decides
       verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
       vipIcon: isOwnerEmail ? true : baseUser.vipIcon,
       tier: isOwnerEmail ? "Obsidian" : baseUser.tier,
@@ -875,8 +901,11 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setUser(updatedUser);
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(updatedUser));
-    localStorage.setItem(`svj_user_account_${cleanEmail}`, JSON.stringify(updatedUser));
+    // Persist everything EXCEPT Plus status (same rule as the sync effect):
+    // localStorage must never hold isPremium=true, only the server check decides.
+    const persistedUser = { ...updatedUser, isPremium: false };
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persistedUser));
+    localStorage.setItem(`svj_user_account_${cleanEmail}`, JSON.stringify(persistedUser));
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_active_email`, cleanEmail);
     triggerConfetti();
     setIsGoogleAuthModalOpen(false);
@@ -890,6 +919,7 @@ export const SVJProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         email: undefined,
         isFounder: false,
         isOwner: false,
+        isPremium: false,
       };
       localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(nextUser));
       return nextUser;

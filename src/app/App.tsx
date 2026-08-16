@@ -8,6 +8,7 @@ import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
 import { RewardsView } from "./views/RewardsView";
+import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
 import { ProfileView } from "./views/ProfileView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
@@ -53,6 +54,7 @@ const AppContent: React.FC = () => {
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
         {activeTab === "rewards" && <RewardsView />}
+        {activeTab === "sixty" && <SixtyDayChallengeView />}
         {activeTab === "profile" && <ProfileView />}
       </main>
 
@@ -88,9 +90,14 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <TrialGate>
-      <SVJProvider>
-        <AppContent />
-      </SVJProvider>
+      {(status) => (
+        // status comes from the server-side getTrialStatus check, so isPremium
+        // mirrors the authoritative Plus state in BOTH directions (active or
+        // expired) instead of trusting what localStorage may have persisted.
+        <SVJProvider plusActive={status?.plusActive ?? null}>
+          <AppContent />
+        </SVJProvider>
+      )}
     </TrialGate>
   );
 }

@@ -7,6 +7,7 @@ import {
   Sparkles,
   Zap,
   Key,
+  KeyRound,
   Copy,
   ArrowRight,
   ShieldCheck,
@@ -19,17 +20,54 @@ import {
   RefreshCw,
   Calendar,
   Flame,
+  Loader2,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useSVJ } from "../context/SVJContext";
+import { redeemPlusCode } from "@/lib/challenge.functions";
 import { RewardItem } from "../types";
 
 export const RewardsView: React.FC = () => {
-  const { rewards, redeemReward, user, updateUserProfile, triggerConfetti } = useSVJ();
+  const { rewards, redeemReward, user, updateUserProfile, triggerConfetti, setIsPaywallOpen } =
+    useSVJ();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [activeModalReward, setActiveModalReward] = useState<RewardItem | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showNextWeekPreview, setShowNextWeekPreview] = useState(false);
+
+  // Redeem a 60-Day Challenge code (SVJ-XXXX-XXXX) for 2 months of SVJ Plus.
+  const callRedeemCode = useServerFn(redeemPlusCode);
+  const [redeemInput, setRedeemInput] = useState("");
+  const [redeemState, setRedeemState] = useState<{
+    busy: boolean;
+    ok: boolean;
+    message: string | null;
+  }>({ busy: false, ok: false, message: null });
+
+  const handleRedeemCode = async () => {
+    const code = redeemInput.trim();
+    if (!code || redeemState.busy) return;
+    setRedeemState({ busy: true, ok: false, message: null });
+    try {
+      const res = await callRedeemCode({ data: { code } });
+      if (res.ok) {
+        updateUserProfile({ isPremium: true, vipIcon: true, verifiedIcon: true });
+        setIsPaywallOpen(false);
+        triggerConfetti();
+        setRedeemInput("");
+        setRedeemState({ busy: false, ok: true, message: res.message });
+      } else {
+        setRedeemState({ busy: false, ok: false, message: res.message });
+      }
+    } catch (err) {
+      setRedeemState({
+        busy: false,
+        ok: false,
+        message: err instanceof Error ? err.message : "Something went wrong. Please retry.",
+      });
+    }
+  };
 
   // Weekly Vault Countdown State
   const [timeLeft, setTimeLeft] = useState<{
@@ -228,6 +266,65 @@ export const RewardsView: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Next Batch Teaser</span>
           </button>
+        </div>
+      </div>
+
+      {/* Redeem a 60-Day Challenge code */}
+      <div className="rounded-2xl bg-[#17171A] border border-amber-500/30 p-4 shadow-xl">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-anton text-amber-400 uppercase tracking-wide">
+              Redeem a 60-Day Challenge code
+            </div>
+            <p className="text-[11px] text-[#8C8C90] font-inter mt-0.5">
+              Earned an SVJ-XXXX-XXXX code from the 60-Day Gauntlet? Enter it below to activate 2
+              months of SVJ Plus. Codes are single-use and locked to your account.
+            </p>
+
+            <div className="flex items-center gap-2 mt-3">
+              <input
+                value={redeemInput}
+                onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleRedeemCode();
+                }}
+                placeholder="SVJ-XXXX-XXXX"
+                className="flex-1 min-w-0 bg-[#0B0B0C] svj-border rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-widest text-[#F4F2ED] placeholder:text-[#8C8C90]/50 focus:outline-none focus:border-amber-500/60 uppercase"
+              />
+              <button
+                onClick={() => void handleRedeemCode()}
+                disabled={redeemState.busy || !redeemInput.trim()}
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+              >
+                {redeemState.busy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <KeyRound className="w-3.5 h-3.5" />
+                )}
+                <span>Redeem</span>
+              </button>
+            </div>
+
+            {redeemState.message && (
+              <div
+                className={`mt-2.5 text-[11px] font-mono font-semibold ${
+                  redeemState.ok ? "text-emerald-400" : "text-rose-300"
+                }`}
+              >
+                {redeemState.ok ? (
+                  <span className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" />
+                    {redeemState.message}
+                  </span>
+                ) : (
+                  redeemState.message
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

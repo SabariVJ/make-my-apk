@@ -1,7 +1,5 @@
 import { createFileRoute, ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-
-const SvjApp = lazy(() => import("../app/App"));
+import SvjApp from "../app/App";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,16 +23,20 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+// Dark splash: the SVJ shell is dark from the very first paint (never white).
 function Splash() {
   return <div className="min-h-screen bg-svj-bg" />;
 }
 
 function Index() {
+  // ClientOnly is required: SVJProvider reads localStorage in its state
+  // initializers, which must not run during SSR. The app itself is statically
+  // imported so it is already in the entry bundle — no lazy chunk fetch means
+  // no blank-app window on cold start. Tab navigation is pure React state, so
+  // switching tabs never navigates, reloads, or blanks the shell.
   return (
     <ClientOnly fallback={<Splash />}>
-      <Suspense fallback={<Splash />}>
-        <SvjApp />
-      </Suspense>
+      <SvjApp />
     </ClientOnly>
   );
 }

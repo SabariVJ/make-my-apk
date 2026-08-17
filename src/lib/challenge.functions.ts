@@ -50,6 +50,8 @@ export interface ChallengeState {
   code: string | null;
   codeRedeemed: boolean;
   debugIsAdmin: boolean;
+  /** XP awarded by the LAST write call (0 for reads / replayed completions). */
+  lastGrantedXp: number;
 }
 
 export interface CompleteDayInput {
@@ -249,6 +251,7 @@ function buildState(
     code: code?.code ?? null,
     codeRedeemed: code?.redeemed ?? false,
     debugIsAdmin,
+    lastGrantedXp: 0,
   };
 }
 
@@ -462,20 +465,41 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
 
     const isFinalDay = day === TOTAL_DAYS;
 
-    // Upsert handles both a fresh completion and a resumed-after-miss completion.
-    const { error: progressError } = await admin.from("challenge_day_progress").upsert(
-      {
-        enrollment_id: enrollment.id,
-        day_number: day,
-        status: "completed",
-        completed_at: now.toISOString(),
-        checkin_duration_minutes: durationMinutes,
-        checkin_reflection: reflection.slice(0, 2000),
-        tasks_completed: JSON.stringify(def.tasks),
-      },
-      { onConflict: "enrollment_id,day_number" },
-    );
+    // Exactly-once completion: ON CONFLICT DO NOTHING (ignoreDuplicates) means a
+    // replayed/double-clicked completion of an already-stored day matches zero
+    // rows, so `.select("id")` returns an entry ONLY when this call created the
+    // day row for the first time. That single atomic statement is the guard that
+    // makes the XP award below exactly-once even under concurrent requests.
+    const { data: inserted, error: progressError } = await admin
+      .from("challenge_day_progress")
+      .upsert(
+        {
+          enrollment_id: enrollment.id,
+          day_number: day,
+          status: "completed",
+          completed_at: now.toISOString(),
+          checkin_duration_minutes: durationMinutes,
+          checkin_reflection: reflection.slice(0, 2000),
+          tasks_completed: JSON.stringify(def.tasks),
+        },
+        { onConflict: "enrollment_id,day_number", ignoreDuplicates: true },
+      )
+      .select("id");
     if (progressError) throw progressError;
+
+    // XP is awarded only for a genuinely new completion, server-side, via the
+    // atomic increment_total_xp RPC on the existing profiles.total_xp column.
+    // Replays return lastGrantedXp = 0 so the client can never double-apply XP.
+    const isNewCompletion = (inserted?.length ?? 0) > 0;
+    let lastGrantedXp = 0;
+    if (isNewCompletion) {
+      const { error: xpError } = await admin.rpc("increment_total_xp", {
+        target_user: context.userId,
+        amount: def.xp,
+      });
+      if (xpError) throw xpError;
+      lastGrantedXp = def.xp;
+    }
 
     const nextStreak = Math.max(enrollment.current_streak, day);
     const update: Record<string, unknown> = {
@@ -502,7 +526,8 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
       }
     }
 
-    return loadState(admin, context.userId, now);
+    const state = await loadState(admin, context.userId, now);
+    return { ...state, lastGrantedXp };
   });
 
 /** Resume after a missed day: re-anchor the unlock clock, keep streak + history. */

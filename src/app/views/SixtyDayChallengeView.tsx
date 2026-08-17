@@ -72,7 +72,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export const SixtyDayChallengeView: React.FC = () => {
-  const { triggerConfetti } = useSVJ();
+  const { triggerConfetti, awardXp } = useSVJ();
   const queryClient = useQueryClient();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -91,8 +91,12 @@ export const SixtyDayChallengeView: React.FC = () => {
   const stateQuery = useQuery({
     queryKey: ["sixty-challenge"],
     queryFn: () => callGetState({}) as Promise<ChallengeState>,
+    // staleTime 0 keeps server state authoritative (unlock clock lives server-side);
+    // a non-zero gcTime keeps previously loaded state in the cache so re-opening
+    // the tab paints instantly and refreshes in the background instead of
+    // remounting a blank loader every time.
     staleTime: 0,
-    gcTime: 0,
+    gcTime: 5 * 60_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
@@ -125,6 +129,12 @@ export const SixtyDayChallengeView: React.FC = () => {
       setReflection("");
       setSelectedDay(null);
       queryClient.invalidateQueries({ queryKey: ["sixty-challenge"] });
+      // XP is only applied client-side when the SERVER confirms it granted XP
+      // for this completion (lastGrantedXp > 0). Replays/double-clicks return 0
+      // and never touch the XP counters — exactly-once by construction.
+      if ((next.lastGrantedXp ?? 0) > 0) {
+        awardXp(next.lastGrantedXp);
+      }
       if (next.status === "completed") {
         triggerConfetti();
         setTimeout(triggerConfetti, 700);

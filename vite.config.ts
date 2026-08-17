@@ -4,7 +4,24 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { loadEnv } from "vite";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+// ── Production Supabase project (SVJ production data) ───────────────────────
+// The ONLY Supabase project the app is allowed to talk to. A URL/project ID is
+// public information, so a fallback here is safe — but it must NEVER point at
+// a stale/incorrect project (the old "oltm…" project was removed deliberately).
+const PROD_SUPABASE_URL = "https://zzsxemupbdrhzmkwfdoy.supabase.co";
+const PROD_SUPABASE_PROJECT_ID = "zzsxemupbdrhzmkwfdoy";
+
+// Load .env* files (dev/preview) AND the real process environment (build
+// servers inject VITE_* here). Precedence: process env > .env files >
+// safe production fallback (URL/project ID only, never a key).
+const env = loadEnv(
+  process.env.NODE_ENV === "production" ? "production" : "development",
+  process.cwd(),
+  "",
+);
 
 export default defineConfig({
   tanstackStart: {
@@ -14,17 +31,27 @@ export default defineConfig({
   },
   vite: {
     define: {
-      // Publishable (safe to ship) backend config, baked in so published builds
-      // never boot without it even when build-time env injection is unavailable.
+      // Publishable backend config, baked in at build time.
+      //  * VITE_SUPABASE_URL / VITE_SUPABASE_PROJECT_ID fall back to the CORRECT
+      //    production project so a build can never silently boot against the
+      //    old "oltm…" project.
+      //  * VITE_SUPABASE_PUBLISHABLE_KEY has NO hardcoded fallback: it must come
+      //    from the build environment or .env. If it is missing,
+      //    src/integrations/supabase/client.ts throws a clear
+      //    "Missing Supabase environment variable(s)" error instead of silently
+      //    connecting with a stale/foreign key. Never hardcode a key here.
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
-        process.env["VITE_SUPABASE_URL"] ?? "https://oltmnrkceodpyqznfhjb.supabase.co",
+        process.env["VITE_SUPABASE_URL"] ?? env.VITE_SUPABASE_URL ?? PROD_SUPABASE_URL,
       ),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
         process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
-          "sb_publishable_JbQU0vfJC2iQsnTg08N3XQ_hVBxK8DR",
+          env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+          "",
       ),
       "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify(
-        process.env["VITE_SUPABASE_PROJECT_ID"] ?? "oltmnrkceodpyqznfhjb",
+        process.env["VITE_SUPABASE_PROJECT_ID"] ??
+          env.VITE_SUPABASE_PROJECT_ID ??
+          PROD_SUPABASE_PROJECT_ID,
       ),
     },
   },

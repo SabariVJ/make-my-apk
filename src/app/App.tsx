@@ -48,7 +48,9 @@ const AppContent: React.FC = () => {
 
       {/* Main View Area */}
       <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
-        {activeTab === "challenges" && <ChallengesView />}
+        {activeTab === "challenges" && (
+          <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
+        )}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
         {activeTab === "community" && <CommunityView />}

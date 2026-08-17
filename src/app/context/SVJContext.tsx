@@ -45,6 +45,8 @@ interface SVJContextType {
 
   // Actions
   toggleChallenge: (id: string) => void;
+  /** Apply a server-confirmed XP grant to the user's profile (60-day challenge). */
+  awardXp: (xp: number) => void;
   addCustomChallenge: (
     title: string,
     category: DailyChallenge["category"],
@@ -313,6 +315,43 @@ export const SVJProvider: React.FC<{
     if (xp >= 6000) return "Silver";
     if (xp >= 2500) return "Bronze";
     return "Initiate";
+  };
+
+  // Server-confirmed XP grant (e.g. 60-Day Challenge day completion). The amount
+  // is validated server-side (increment_total_xp on profiles.total_xp) and only
+  // surfaced here after the server confirms the grant, so the client can never
+  // mint XP on its own. Mirrors the existing toggleChallenge/logWorkout XP math.
+  const awardXp = (xp: number) => {
+    const amount = Math.max(0, Math.round(xp) || 0);
+    if (amount <= 0) return;
+    setUser((prevUser) => {
+      const oldTier = prevUser.tier;
+      const newXP = prevUser.totalXP + amount;
+      const newTier = getTierForXP(newXP);
+      if (
+        newTier !== oldTier &&
+        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
+      ) {
+        setLevelUpModalData({ oldTier, newTier });
+      }
+      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
+      const updatedHistory = [...prevUser.xpHistory];
+      const lastIdx = updatedHistory.length - 1;
+      if (lastIdx >= 0) {
+        updatedHistory[lastIdx] = {
+          date: todayStr,
+          xp: Math.max(0, updatedHistory[lastIdx].xp + amount),
+        };
+      }
+      return {
+        ...prevUser,
+        totalXP: newXP,
+        weeklyXP: prevUser.weeklyXP + amount,
+        monthlyXP: prevUser.monthlyXP + amount,
+        tier: newTier,
+        xpHistory: updatedHistory,
+      };
+    });
   };
 
   const toggleChallenge = (id: string) => {
@@ -948,6 +987,7 @@ export const SVJProvider: React.FC<{
         isDarkOnboardingOpen,
         isGoogleAuthModalOpen,
         toggleChallenge,
+        awardXp,
         addCustomChallenge,
         toggleReaction,
         addComment,

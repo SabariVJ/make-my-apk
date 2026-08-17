@@ -137,6 +137,10 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark">
       <head>
+        {/* Critical inline background: keeps the SVJ dark shell visible from the
+            very first paint, before the Tailwind stylesheet arrives. Without it
+            the body defaults to white and flashes during any load. */}
+        <style>{`html,body{background-color:#0B0B0C}`}</style>
         <HeadContent />
       </head>
       <body className="bg-svj-bg text-svj-text antialiased overflow-x-hidden">

@@ -1,6 +1,11 @@
 -- ============================================================================
 -- 60-Day Challenge + redeem code reward system
 --
+-- ⚠️  RUN THIS ON THE CORRECT SVJ PRODUCTION SUPABASE DATABASE ⚠️
+--   Project: zzsxemupbdrhzmkwfdoy  (https://zzsxemupbdrhzmkwfdoy.supabase.co)
+--   Execute via the Supabase SQL editor or your migration pipeline.
+--   Do NOT run this against the old "oltm…" or any other project.
+--
 -- Security model:
 --   * ALL writes to challenge tables and redeem_codes go through TanStack Start
 --     server functions that use the service_role client (see src/lib/challenge.functions.ts).
@@ -8,6 +13,11 @@
 --     authenticated/anon, so direct client writes are impossible.
 --   * "now" for unlock math is always the database clock via public.db_now(),
 --     never the device clock.
+--
+-- Idempotency: every statement is safe to re-run (IF NOT EXISTS / CREATE OR
+-- REPLACE / DROP TRIGGER IF EXISTS / re-issuable grants), so applying it to a
+-- database where some objects already exist will not create duplicates or
+-- clobber existing data.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -61,13 +71,37 @@ REVOKE ALL ON FUNCTION public.db_now() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.db_now() TO authenticated, service_role;
 
 -- ----------------------------------------------------------------------------
--- 3) Challenge tables.
+-- 3) XP: atomic, server-side-only increment of the EXISTING profiles.total_xp
+--    column (the same column the leaderboard reads). Callable only by
+--    service_role; clients can never invoke it directly.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.increment_total_xp(target_user uuid, amount integer)
+RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  new_total integer;
+BEGIN
+  UPDATE public.profiles
+     SET total_xp = total_xp + amount
+   WHERE id = target_user
+   RETURNING total_xp INTO new_total;
+  RETURN new_total;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_total_xp(uuid, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_total_xp(uuid, integer) TO service_role;
+
+-- ----------------------------------------------------------------------------
+-- 4) Challenge tables.
 -- ----------------------------------------------------------------------------
 -- One enrollment per user, ever. started_at is the unlock-clock anchor:
 -- day N unlocks at started_at + (N - 1) * 24h. On a missed day the challenge
 -- pauses and, on resume, started_at is re-anchored so the pending day unlocks
 -- immediately (streak and completed-day history are preserved).
-CREATE TABLE public.challenge_enrollments (
+CREATE TABLE IF NOT EXISTS public.challenge_enrollments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'completed')),
@@ -85,7 +119,7 @@ CREATE TABLE public.challenge_enrollments (
 -- Only COMPLETED days are stored (a missed day is derived from timing + the
 -- enrollment's paused state). day_number is enforced sequentially by the
 -- server functions.
-CREATE TABLE public.challenge_day_progress (
+CREATE TABLE IF NOT EXISTS public.challenge_day_progress (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   enrollment_id uuid NOT NULL REFERENCES public.challenge_enrollments(id) ON DELETE CASCADE,
   day_number integer NOT NULL CHECK (day_number BETWEEN 1 AND 60),
@@ -99,7 +133,7 @@ CREATE TABLE public.challenge_day_progress (
 );
 
 -- One unique code per finisher, locked to their account (user_id), single use.
-CREATE TABLE public.redeem_codes (
+CREATE TABLE IF NOT EXISTS public.redeem_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text NOT NULL UNIQUE,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -110,7 +144,7 @@ CREATE TABLE public.redeem_codes (
 );
 
 -- ----------------------------------------------------------------------------
--- 4) Lock everything down: service_role (server functions) only.
+-- 5) Lock everything down: service_role (server functions) only.
 --    RLS is enabled with no policies, so authenticated/anon are denied every
 --    operation even if a stray grant appears later.
 -- ----------------------------------------------------------------------------

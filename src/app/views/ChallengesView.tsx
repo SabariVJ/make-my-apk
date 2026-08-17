@@ -16,7 +16,9 @@ import { useSVJ } from "../context/SVJContext";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 
-export const ChallengesView: React.FC = () => {
+export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
+  onOpenSixtyDay,
+}) => {
   const { challenges, toggleChallenge, addCustomChallenge, user, leaderboard } = useSVJ();
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -75,6 +77,37 @@ export const ChallengesView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
+      {/* 60-Day Gauntlet CTA */}
+      {onOpenSixtyDay && (
+        <button
+          onClick={onOpenSixtyDay}
+          className="w-full text-left rounded-3xl overflow-hidden relative bg-gradient-to-r from-[#2A1218] via-[#17171A] to-[#17171A] border border-[#C81E3A]/30 p-5 shadow-xl shadow-[#C81E3A]/10 transition-all hover:border-[#C81E3A]/60 hover:shadow-[#C81E3A]/20 group cursor-pointer"
+        >
+          <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-[#C81E3A]/15 blur-2xl group-hover:bg-[#C81E3A]/25 transition-colors pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 flex items-center justify-center shrink-0">
+                <Flame className="w-5 h-5 text-[#C81E3A]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-[#C81E3A] uppercase tracking-widest mb-0.5">
+                  <span>60-Day Gauntlet</span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold">
+                    2 months SVJ Plus reward
+                  </span>
+                </div>
+                <div className="font-anton text-lg text-white uppercase tracking-wide">
+                  60 days. One code. Your reward awaits.
+                </div>
+              </div>
+            </div>
+            <span className="px-4 py-2 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase shrink-0 transition-colors">
+              Open
+            </span>
+          </div>
+        </button>
+      )}
+
       {/* Today's Mission Banner */}
       <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />

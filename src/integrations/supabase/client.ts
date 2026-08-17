@@ -29,12 +29,39 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+// Use import.meta.env for client-side (Vite build-time replacement)
+// Fall back to process.env for SSR (server-side rendering)
+function getSupabaseConfig() {
+  return {
+    url:
+      import.meta.env["VITE_SUPABASE_URL"] ||
+      (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined),
+    publishableKey:
+      import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+      (typeof process !== "undefined"
+        ? process.env["SUPABASE_PUBLISHABLE_KEY"]
+        : undefined),
+  };
+}
+
+// Non-throwing checks so the app shell can render a clear message (instead of
+// crashing on first `supabase` access) when the environment is missing config,
+// e.g. a preview sandbox without the publishable key set yet.
+export function getMissingSupabaseEnv(): string[] {
+  const { url, publishableKey } = getSupabaseConfig();
+  return [
+    ...(!url ? ["VITE_SUPABASE_URL"] : []),
+    ...(!publishableKey ? ["VITE_SUPABASE_PUBLISHABLE_KEY"] : []),
+  ];
+}
+
+export function hasSupabaseConfig(): boolean {
+  return getMissingSupabaseEnv().length === 0;
+}
+
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
-  const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+  const { url: SUPABASE_URL, publishableKey: SUPABASE_PUBLISHABLE_KEY } =
+    getSupabaseConfig();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

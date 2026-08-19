@@ -75,7 +75,6 @@ interface SVJContextType {
     location: string;
     avatar: string;
   }) => void;
-  upgradeToPremium: () => void;
   loginWithGmail: (email: string, name?: string, avatar?: string) => void;
   logoutGmail: () => void;
   setComparingMember: (member: LeaderboardEntry | null) => void;
@@ -253,7 +252,9 @@ export const SVJProvider: React.FC<{
   >(() => {});
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const syncSessionProfile = async (session: Awaited<
+      ReturnType<typeof supabase.auth.getSession>
+    >["data"]["session"]) => {
       const sessionEmail = session?.user?.email;
       if (!sessionEmail) return;
       const lower = sessionEmail.toLowerCase();
@@ -309,9 +310,12 @@ export const SVJProvider: React.FC<{
       if (hasLocalProfile || serverProfile) {
         setIsDarkOnboardingOpen(false);
       }
-    });
+    };
 
-    return () => sub.subscription.unsubscribe();
+    // TrialGate owns the application's single auth subscription. By the time
+    // this provider mounts it has restored the session, so a one-shot read is
+    // sufficient and avoids racing a second listener against SIGNED_OUT.
+    void supabase.auth.getSession().then(({ data }) => syncSessionProfile(data.session));
   }, []);
 
   // Server-authoritative Plus state: mirror the server status in BOTH directions.
@@ -972,18 +976,6 @@ export const SVJProvider: React.FC<{
     setIsFirstTimeOnboardingOpen(false);
   };
 
-  const upgradeToPremium = () => {
-    triggerConfetti();
-    setUser((prev) => ({
-      ...prev,
-      isPremium: true,
-      verifiedIcon: true,
-      vipIcon: true,
-      equippedBadge: "bdg-verified",
-    }));
-    setIsPaywallOpen(false);
-  };
-
   const loginWithGmail = (
     email: string,
     name?: string,
@@ -1003,7 +995,9 @@ export const SVJProvider: React.FC<{
     // Idempotency guard: if we already have this email set, skip to avoid
     // redundant confetti / modal-close / state churn.
     if (user.email?.toLowerCase() === cleanEmail) return;
-    const isOwnerEmail = cleanEmail === "sabarivj777@gmail.com";
+    // Privileged presentation is never inferred from an email address. Until
+    // protected profile/RPC data exposes an entitlement, this remains false.
+    const isOwnerEmail = false;
 
     // Ensure the ref always points to the real function so the auth-sync
     // listener (which uses loginWithGmailRef) can invoke it even though
@@ -1167,7 +1161,6 @@ export const SVJProvider: React.FC<{
         setCalorieGoal,
         updateUserProfile,
         completeOnboarding,
-        upgradeToPremium,
         loginWithGmail,
         logoutGmail,
         setComparingMember,

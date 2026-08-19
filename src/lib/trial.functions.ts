@@ -53,7 +53,10 @@ export const getTrialStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<TrialStatus> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase() || null;
+    const emailVerified = context.claims["email_verified"] === true;
+    const email = emailVerified
+      ? ((context.claims["email"] as string | undefined) ?? "").toLowerCase() || null
+      : null;
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
@@ -153,37 +156,3 @@ async function mergeSiblingAccounts(
     plus_expires_at: (canonical["plus_expires_at"] as string | null) ?? null,
   };
 }
-
-export const unlockPlus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<TrialStatus> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        is_plus_member: true,
-        plus_unlocked_at: new Date().toISOString(),
-        plus_expires_at: null, // paid unlock is lifetime — no expiry
-      })
-      .eq("id", context.userId)
-      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
-      .single();
-
-    if (error) throw error;
-
-    // Keep any sibling account with the same email unlocked too.
-    const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase();
-    if (email) {
-      await supabaseAdmin
-        .from("profiles")
-        .update({
-          is_plus_member: true,
-          plus_unlocked_at: new Date().toISOString(),
-          plus_expires_at: null,
-        })
-        .ilike("email", email);
-    }
-
-    return buildStatus(data);
-  });

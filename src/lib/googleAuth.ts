@@ -7,7 +7,10 @@ import { lovable } from "@/integrations/lovable/index";
  * The custom URL scheme registered in capacitor.config.ts (appId: "app.lovable.svj").
  * Supabase will redirect here after Google OAuth completes on native.
  */
-const NATIVE_REDIRECT = "https://savaje-com.lovable.app/auth/callback";
+const PUBLIC_APP_URL = (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined)?.replace(
+  /\/$/,
+  "",
+);
 
 /** Broadcast channel used by the native deep-link handler to report OAuth failures. */
 export const OAUTH_ERROR_EVENT = "svj:oauth-error";
@@ -48,11 +51,18 @@ function friendly(message?: string | null): string {
 export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
   try {
     if (Capacitor.isNativePlatform()) {
+      if (!PUBLIC_APP_URL || !PUBLIC_APP_URL.startsWith("https://")) {
+        return {
+          status: "error",
+          message:
+            "Native Google sign-in requires VITE_PUBLIC_APP_URL to be the final HTTPS production origin.",
+        };
+      }
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           skipBrowserRedirect: true,
-          redirectTo: NATIVE_REDIRECT,
+          redirectTo: `${PUBLIC_APP_URL}/auth/callback`,
         },
       });
 
@@ -71,10 +81,6 @@ export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
           cleanup();
           resolve(outcome);
         };
-
-        const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-          if (session) finish({ status: "success" });
-        });
 
         const onError = (e: Event) => {
           finish({ status: "error", message: friendly((e as CustomEvent<string>).detail) });
@@ -115,7 +121,6 @@ export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
         });
 
         const cleanup = () => {
-          sub.subscription.unsubscribe();
           window.removeEventListener(OAUTH_ERROR_EVENT, onError);
           finishedListener.then((l) => l.remove()).catch(() => {});
         };

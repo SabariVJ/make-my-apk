@@ -5,18 +5,18 @@ import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 
 export const UPIPaymentModal: React.FC = () => {
-  const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
+  const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isUPIModalOpen) return null;
 
-  const handleSimulatePayment = () => {
+  const handlePaymentSubmitted = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      setIsUPIModalOpen(false);
-      upgradeToPremium();
+      // Payment proof must be verified by a protected server integration.
+      // This UI intentionally cannot grant Plus membership.
     }, 1500);
   };
 
@@ -122,7 +122,7 @@ export const UPIPaymentModal: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={isProcessing}
-                  onClick={handleSimulatePayment}
+                  onClick={handlePaymentSubmitted}
                   className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
@@ -130,7 +130,7 @@ export const UPIPaymentModal: React.FC = () => {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Confirm & Unlock SVJ Plus</span>
+                      <span>Submit Payment for Verification</span>
                     </>
                   )}
                 </motion.button>

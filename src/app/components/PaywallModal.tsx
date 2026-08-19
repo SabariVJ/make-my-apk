@@ -20,7 +20,6 @@ export const PaywallModal: React.FC = () => {
     isPaywallOpen,
     setIsPaywallOpen,
     setIsUPIModalOpen,
-    upgradeToPremium,
     setIsGoogleAuthModalOpen,
     loginWithGmail,
   } = useSVJ();

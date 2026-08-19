@@ -3,34 +3,17 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle2, ShieldCheck, Mail, Crown, LogOut, Loader2 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { signInWithGoogle } from "@/lib/googleAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 export const GoogleAuthModal: React.FC = () => {
-  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, loginWithGmail, logoutGmail } =
+  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } =
     useSVJ();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [succeeded, setSucceeded] = useState(false);
 
-  // Listen for Supabase auth state while the modal is open so we can react
-  // when the OAuth callback completes (both native deep-link and web redirect).
-  useEffect(() => {
-    if (!isGoogleAuthModalOpen) return;
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user?.email) {
-        loginWithGmail(
-          session.user.email,
-          session.user.user_metadata?.full_name as string | undefined,
-          session.user.user_metadata?.avatar_url as string | undefined,
-        );
-        setBusy(false);
-        setSucceeded(true);
-      }
-    });
-
-    return () => sub.subscription.unsubscribe();
-  }, [isGoogleAuthModalOpen, loginWithGmail]);
+  // ── Auth sync is handled centrally by SVJContext's unified onAuthStateChange
+  // listener, which calls loginWithGmail for EVERY sign-in path (AuthScreen,
+  // GoogleAuthModal, session restore). No per-modal listener is needed.
 
   // Reset transient state whenever the modal closes
   useEffect(() => {

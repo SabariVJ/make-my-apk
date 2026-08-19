@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import {
   UserProfile,
@@ -22,9 +22,13 @@ import {
   INITIAL_REWARDS,
   TIERS,
 } from "../data/initialData";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SVJContextType {
   user: UserProfile;
+  /** True once the user profile has been synced from localStorage or Supabase
+   *  auth — prevents a flash of INITIAL_USER while the session is loading. */
+  profileLoaded: boolean;
   challenges: DailyChallenge[];
   feed: FeedActivity[];
   leaderboard: LeaderboardEntry[];
@@ -179,7 +183,14 @@ export const SVJProvider: React.FC<{
   });
   const [isGoogleAuthModalOpen, setIsGoogleAuthModalOpen] = useState<boolean>(false);
 
-  // Auto-restore active Gmail account if set
+  // Tracks whether the user profile has been synced from localStorage or the
+  // Supabase session. While false the app shows a splash instead of rendering
+  // INITIAL_USER as if it were the real authenticated user.
+  const [profileLoaded, setProfileLoaded] = useState<boolean>(false);
+
+  // Auto-restore active Gmail account from localStorage cache.
+  // Only marks profileLoaded when data was actually restored — the auth-sync
+  // effect handles the cross-device case where localStorage is empty.
   useEffect(() => {
     const activeEmail = localStorage.getItem(`${LOCAL_STORAGE_KEY}_active_email`);
     if (activeEmail) {
@@ -189,11 +200,118 @@ export const SVJProvider: React.FC<{
           const parsed = JSON.parse(savedAcc) as UserProfile;
           parsed.isPremium = false; // server-side check is the only authority
           setUser(parsed);
+          setProfileLoaded(true);
         } catch (e) {
           console.error(e);
         }
       }
     }
+
+    // Safety net: if profileLoaded is still false after the localStorage
+    // check, verify whether there's a Supabase session.  When there ISN'T,
+    // the user is unauthenticated and TrialGate will show AuthScreen —
+    // mark profileLoaded so the AppContent splash guard doesn't get stuck.
+    // When there IS a session, the auth-sync effect below will call
+    // setProfileLoaded once the server profile lookup finishes.
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) setProfileLoaded(true);
+    }).catch(() => setProfileLoaded(true));
+  }, []);
+
+  // ── Unified auth sync ─────────────────────────────────────────────────────
+  // Subscribe to Supabase auth events at the context level so that
+  // loginWithGmail() is called for EVERY sign-in path — not just when the
+  // GoogleAuthModal happens to be open.  Without this, signing in from
+  // AuthScreen's "Continue with Google" button establishes the Supabase
+  // session but never syncs the user profile into the app state, leaving
+  // the user stuck on INITIAL_USER ("New Voyager", 0 XP, no email).
+  //
+  // This handles SIGNED_IN (new OAuth), INITIAL_SESSION (stored session on
+  // app boot), and TOKEN_REFRESHED — any event that carries a session with
+  // a user email triggers the sync.
+  //
+  // Cross-device: when localStorage has no cached profile, the effect
+  // queries the Supabase profiles table (RLS allows authenticated SELECT
+  // on own row) to restore server-persisted XP, streak, username, etc.
+  const syncedEmailRef = useRef<string | null>(null);
+  const loginWithGmailRef = useRef<
+    (
+      email: string,
+      name?: string,
+      avatar?: string,
+      userId?: string,
+      serverProfile?: {
+        id: string;
+        total_xp: number;
+        current_streak: number;
+        username: string | null;
+        display_name: string | null;
+        avatar_url: string | null;
+        is_plus_member: boolean;
+      } | null,
+    ) => void
+  >(() => {});
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const sessionEmail = session?.user?.email;
+      if (!sessionEmail) return;
+      const lower = sessionEmail.toLowerCase();
+      // Skip if we already synced this email (prevents redundant calls
+      // when GoogleAuthModal's own listener also handles the same event).
+      if (syncedEmailRef.current === lower) return;
+      syncedEmailRef.current = lower;
+
+      // Check whether we already have a cached profile for this email.
+      const hasLocalProfile = localStorage.getItem(`svj_user_account_${lower}`) !== null;
+
+      // Cross-device: if localStorage is empty, query the server profile
+      // so we can restore XP, streak, username, etc. from the database
+      // instead of falling back to INITIAL_USER.
+      let serverProfile: {
+        id: string;
+        total_xp: number;
+        current_streak: number;
+        username: string | null;
+        display_name: string | null;
+        avatar_url: string | null;
+        is_plus_member: boolean;
+      } | null = null;
+
+      if (!hasLocalProfile) {
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, total_xp, current_streak, username, display_name, avatar_url, is_plus_member")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          if (!error && data) {
+            serverProfile = data;
+          }
+        } catch (e) {
+          console.error("[SVJ] Failed to fetch server profile for cross-device restore:", e);
+        }
+      }
+
+      loginWithGmailRef.current(
+        sessionEmail,
+        session.user.user_metadata?.full_name as string | undefined,
+        session.user.user_metadata?.avatar_url as string | undefined,
+        session.user.id,
+        serverProfile,
+      );
+
+      // Mark profile as loaded so the splash disappears and the real app renders.
+      setProfileLoaded(true);
+
+      // If this is a returning user (cached locally or has a server profile),
+      // suppress the dark cinematic onboarding — they've already completed it.
+      if (hasLocalProfile || serverProfile) {
+        setIsDarkOnboardingOpen(false);
+      }
+    });
+
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   // Server-authoritative Plus state: mirror the server status in BOTH directions.
@@ -866,10 +984,34 @@ export const SVJProvider: React.FC<{
     setIsPaywallOpen(false);
   };
 
-  const loginWithGmail = (email: string, name?: string, avatar?: string) => {
+  const loginWithGmail = (
+    email: string,
+    name?: string,
+    avatar?: string,
+    userId?: string,
+    serverProfile?: {
+      id: string;
+      total_xp: number;
+      current_streak: number;
+      username: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+      is_plus_member: boolean;
+    } | null,
+  ) => {
     const cleanEmail = email.trim().toLowerCase();
+    // Idempotency guard: if we already have this email set, skip to avoid
+    // redundant confetti / modal-close / state churn.
+    if (user.email?.toLowerCase() === cleanEmail) return;
     const isOwnerEmail = cleanEmail === "sabarivj777@gmail.com";
 
+    // Ensure the ref always points to the real function so the auth-sync
+    // listener (which uses loginWithGmailRef) can invoke it even though
+    // it was defined before this function in the component body.
+    loginWithGmailRef.current = loginWithGmail;
+
+    // ── Resolve base profile ───────────────────────────────────────────────
+    // Priority: localStorage cache > server profile > current state (INITIAL_USER)
     const savedAccount = localStorage.getItem(`svj_user_account_${cleanEmail}`);
     let baseUser: UserProfile = user;
 
@@ -879,6 +1021,24 @@ export const SVJProvider: React.FC<{
       } catch (e) {
         console.error(e);
       }
+    } else if (serverProfile) {
+      // Cross-device restore: build base from Supabase server data.
+      // This prevents INITIAL_USER (0 XP, "New Voyager") from overwriting
+      // the real account on a new browser/device.
+      baseUser = {
+        ...INITIAL_USER,
+        id: userId || INITIAL_USER.id,
+        email: cleanEmail,
+        name: serverProfile.display_name || INITIAL_USER.name,
+        username: serverProfile.username || INITIAL_USER.username,
+        avatar: serverProfile.avatar_url || INITIAL_USER.avatar,
+        totalXP: serverProfile.total_xp,
+        currentStreak: serverProfile.current_streak,
+        bestStreak: serverProfile.current_streak,
+        tier: getTierForXP(serverProfile.total_xp),
+        level: Math.max(1, Math.floor(serverProfile.total_xp / 500) + 1),
+        isPremium: isOwnerEmail || false,
+      };
     }
 
     if (isOwnerEmail) {
@@ -892,6 +1052,7 @@ export const SVJProvider: React.FC<{
 
     const updatedUser: UserProfile = {
       ...baseUser,
+      id: userId || baseUser.id,
       email: cleanEmail,
       name: isOwnerEmail
         ? "Sabari (Founder & Owner)"
@@ -950,6 +1111,10 @@ export const SVJProvider: React.FC<{
     setIsGoogleAuthModalOpen(false);
   };
 
+  // Ensure the ref is also wired on the very first render (before loginWithGmail
+  // could be called from within the function body above).
+  loginWithGmailRef.current = loginWithGmail;
+
   const logoutGmail = () => {
     localStorage.removeItem(`${LOCAL_STORAGE_KEY}_active_email`);
     setUser((prev) => {
@@ -969,6 +1134,7 @@ export const SVJProvider: React.FC<{
     <SVJContext.Provider
       value={{
         user,
+        profileLoaded,
         challenges,
         feed,
         leaderboard,

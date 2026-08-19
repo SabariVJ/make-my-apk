@@ -6,7 +6,6 @@ import {
   Apple,
   Users,
   Trophy,
-  Gift,
   Crown,
   User,
   CalendarCheck,
@@ -19,7 +18,6 @@ export type ActiveTab =
   | "nutrition"
   | "community"
   | "leaderboard"
-  | "rewards"
   | "sixty"
   | "plus"
   | "profile";
@@ -34,19 +32,18 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
 
   const navItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
+    { id: "sixty", label: "60 Days", icon: CalendarCheck },
     { id: "workouts", label: "Train", icon: Dumbbell },
     { id: "nutrition", label: "Fuel", icon: Apple },
     { id: "community", label: "Community", icon: Users },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-    { id: "rewards", label: "Rewards", icon: Gift },
-    { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
     { id: "profile", label: "Profile", icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">
-      <div className="max-w-2xl mx-auto flex items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 pt-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] sm:py-3">
+      <div className="max-w-4xl mx-auto grid grid-cols-8 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -55,7 +52,8 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as ActiveTab)}
-              className="relative flex flex-col items-center gap-1 py-1 px-1.5 sm:px-3 rounded-xl transition-all cursor-pointer group"
+              aria-label={item.label}
+              className="relative min-w-0 flex flex-col items-center gap-1 py-1 px-0.5 sm:px-3 rounded-xl transition-all cursor-pointer group"
             >
               {isActive && (
                 <motion.div
@@ -77,7 +75,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
               </div>
 
               <span
-                className={`text-[11px] font-inter font-medium transition-colors ${
+                className={`max-w-full truncate text-[9px] sm:text-[11px] font-inter font-medium transition-colors ${
                   isActive ? "text-[#F4F2ED] font-semibold" : "text-[#8C8C90]"
                 }`}
               >

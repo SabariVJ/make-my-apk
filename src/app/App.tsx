@@ -7,7 +7,6 @@ import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
-import { RewardsView } from "./views/RewardsView";
 import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
 import { ProfileView } from "./views/ProfileView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
@@ -85,7 +84,7 @@ const AppContent: React.FC = () => {
       <Header />
 
       {/* Main View Area */}
-      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+      <main className="max-w-4xl mx-auto px-4 pt-4 pb-24 sm:px-6">
         {activeTab === "challenges" && (
           <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
         )}
@@ -93,7 +92,6 @@ const AppContent: React.FC = () => {
         {activeTab === "nutrition" && <NutritionView />}
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
-        {activeTab === "rewards" && <RewardsView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
         {activeTab === "profile" && <ProfileView />}
       </main>

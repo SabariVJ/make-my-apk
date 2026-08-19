@@ -45,6 +45,8 @@ export const ProfileView: React.FC = () => {
     try {
       await queryClient.cancelQueries();
       queryClient.clear();
+      localStorage.removeItem("svj_app_state_v5_active_email");
+      if (user.email) localStorage.removeItem(`svj_user_account_${user.email.toLowerCase()}`);
       await supabase.auth.signOut();
       // TrialGate listens to onAuthStateChange and swaps in the login screen.
     } finally {

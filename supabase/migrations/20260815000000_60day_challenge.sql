@@ -2,9 +2,8 @@
 -- 60-Day Challenge + redeem code reward system
 --
 -- ⚠️  RUN THIS ON THE CORRECT SVJ PRODUCTION SUPABASE DATABASE ⚠️
---   Project: zzsxemupbdrhzmkwfdoy  (https://zzsxemupbdrhzmkwfdoy.supabase.co)
+--   Project: oltmnrkceodpyqznfhjb  (https://oltmnrkceodpyqznfhjb.supabase.co)
 --   Execute via the Supabase SQL editor or your migration pipeline.
---   Do NOT run this against the old "oltm…" or any other project.
 --
 -- Security model:
 --   * ALL writes to challenge tables and redeem_codes go through TanStack Start

@@ -21,6 +21,7 @@ import {
   Medal,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { RedeemPlusCodeForm } from "../components/RedeemPlusCodeForm";
 import { CHALLENGE_DAYS, TOTAL_DAYS, getDayDef } from "@/lib/challengeDays";
 import {
   getChallengeState,
@@ -671,8 +672,18 @@ export const SixtyDayChallengeView: React.FC = () => {
                 <p className="text-[11px] font-mono text-[#8C8C90]">
                   {state.codeRedeemed
                     ? "Redeemed — SVJ Plus is active on this account. Single use, non-transferable."
-                    : "Redeem it in Rewards → Redeem code for 2 months of SVJ Plus. Single use, non-transferable."}
+                    : "Redeem below to activate 2 months of SVJ Plus — no need to leave this screen."}
                 </p>
+
+                {!state.codeRedeemed && (
+                  <div className="mt-3">
+                    <RedeemPlusCodeForm
+                      code={state.code ?? undefined}
+                      heading="Activate your 2-month SVJ Plus reward"
+                      description="Redeem your earned code right here. SVJ Plus activates for 2 months instantly."
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs font-mono text-amber-300/80">

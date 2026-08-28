@@ -61,7 +61,7 @@ export interface CompleteDayInput {
 }
 
 export type RedeemResult =
-  { ok: true; message: string; plusExpiresAt: string } | { ok: false; message: string };
+  { ok: true; message: string; plusExpiresAt: string | null } | { ok: false; message: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Admin = any;
@@ -594,9 +594,50 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
     };
     if (!codeRow || codeRow.redeemed || codeRow.user_id !== context.userId) return genericError;
 
+    // ── Entitlement safety: never shorten an existing Plus entitlement ───────
+    const { data: profileRow } = await admin
+      .from("profiles")
+      .select("is_plus_member, plus_expires_at")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const existingPlusActive =
+      (profileRow as Record<string, unknown> | null)?.is_plus_member === true;
+    const existingExpiresRaw = (profileRow as Record<string, unknown> | null)?.plus_expires_at;
+    const existingExpiresMs = existingExpiresRaw
+      ? new Date(existingExpiresRaw as string).getTime()
+      : 0;
+    const isLifetimePlus = existingPlusActive && !existingExpiresRaw;
+
+    if (isLifetimePlus) {
+      // Lifetime / Founder Plus — the code is consumed but the entitlement is
+      // already superior to anything a 2-month code can grant.
+      const { data: claimed, error: claimError } = await admin
+        .from("redeem_codes")
+        .update({ redeemed: true, redeemed_at: now.toISOString() })
+        .eq("id", codeRow.id)
+        .eq("redeemed", false)
+        .select("id")
+        .maybeSingle();
+      if (claimError) throw claimError;
+      if (!claimed) return genericError;
+
+      return {
+        ok: true,
+        message: "Code redeemed. Your existing lifetime SVJ Plus remains active.",
+        plusExpiresAt: null,
+      };
+    }
+
+    // Compute the new expiry: add 2 months after the existing expiry (if still
+    // active) or 2 months from now (if Plus expired / never held).
+    const baseMs =
+      existingPlusActive && existingExpiresMs > now.getTime() ? existingExpiresMs : now.getTime();
+    const expires = new Date(baseMs);
+    expires.setMonth(expires.getMonth() + PLUS_MONTHS);
+    const expiresAt = expires.toISOString();
+
     // Atomic claim: only one redemption can flip redeemed=false -> true.
-    // The `.eq("redeemed", false)` guard means a concurrent second attempt
-    // matches zero rows — we verify the flip actually happened before granting.
     const { data: claimed, error: claimError } = await admin
       .from("redeem_codes")
       .update({ redeemed: true, redeemed_at: now.toISOString() })
@@ -607,10 +648,7 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
     if (claimError) throw claimError;
     if (!claimed) return genericError; // lost the race — already redeemed elsewhere
 
-    // Exactly 2 calendar months from the server-recorded redemption time.
-    const expires = new Date(now.getTime());
-    expires.setMonth(expires.getMonth() + PLUS_MONTHS);
-    const expiresAt = expires.toISOString();
+    // Grant Plus via the service-role client.
     const plusPatch = {
       is_plus_member: true,
       plus_unlocked_at: now.toISOString(),
@@ -621,9 +659,17 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
       .from("profiles")
       .update(plusPatch)
       .eq("id", context.userId);
-    if (profileError) throw profileError;
+    if (profileError) {
+      // Best-effort compensation: un-burn the code so a transient error does
+      // not permanently destroy the user's reward.
+      await admin
+        .from("redeem_codes")
+        .update({ redeemed: false, redeemed_at: null })
+        .eq("id", codeRow.id);
+      throw profileError;
+    }
 
-    // Keep any sibling accounts (same email, other provider) in sync, like unlockPlus does.
+    // Keep any sibling accounts (same email, other provider) in sync.
     const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase();
     if (email) {
       await admin.from("profiles").update(plusPatch).ilike("email", email);

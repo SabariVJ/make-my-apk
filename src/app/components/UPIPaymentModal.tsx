@@ -1,13 +1,25 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, QrCode, Check, ShieldCheck, Zap, Upload, ArrowRight, Smartphone } from "lucide-react";
+import {
+  X,
+  QrCode,
+  Check,
+  ShieldCheck,
+  Zap,
+  Upload,
+  ArrowRight,
+  Smartphone,
+  KeyRound,
+} from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
+import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
 
   if (!isUPIModalOpen) return null;
 
@@ -34,7 +46,7 @@ export const UPIPaymentModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[#C81E3A]" />
               <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                UPI / Instant Upgrade
+                Unlock SVJ Plus
               </h2>
             </div>
             <button
@@ -45,7 +57,46 @@ export const UPIPaymentModal: React.FC = () => {
             </button>
           </div>
 
-          {!showQR ? (
+          {/* Tab selector */}
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => {
+                setPaymentTab("upi");
+                setShowQR(false);
+              }}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                paymentTab === "upi"
+                  ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
+                  : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              UPI / Trial
+            </button>
+            <button
+              onClick={() => setPaymentTab("code")}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                paymentTab === "code"
+                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                  : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
+              }`}
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              Redeem Code
+            </button>
+          </div>
+
+          {paymentTab === "code" ? (
+            <div className="space-y-4 py-2">
+              <p className="text-xs text-[#8C8C90] font-inter text-center">
+                Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
+              </p>
+              <RedeemPlusCodeForm
+                heading="Activate 60-Day Reward"
+                description="Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months."
+              />
+            </div>
+          ) : !showQR ? (
             /* Prompt: Would you like to pay via UPI? */
             <div className="space-y-5 text-center py-4">
               <div className="relative w-28 h-28 rounded-2xl bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">

@@ -39,19 +39,34 @@ function createSupabaseAdminClient() {
     "https://oltmnrkceodpyqznfhjb.supabase.co";
   const SUPABASE_SERVICE_ROLE_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    const missing = [
-      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
-      ...(!SUPABASE_SERVICE_ROLE_KEY ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
-    ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
+  if (!SUPABASE_URL) {
+    const message = `Missing Supabase environment variable(s): SUPABASE_URL. Connect Supabase in Lovable Cloud.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  // Use the service-role key when available (bypasses RLS). In environments
+  // like Lovable Cloud where the key is not set (reserved SUPABASE_ prefix),
+  // fall back to the publishable key — queries will respect RLS, which is
+  // acceptable because the auth middleware already attaches the user's own
+  // bearer token. Privileged cross-user writes will fail at the RLS level
+  // rather than crashing the entire server function chain.
+  const serviceKey =
+    SUPABASE_SERVICE_ROLE_KEY ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+    "sb_publishable_JbQU0vfJC2iQsnTg08N3XQ_hVBxK8DR";
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn(
+      `[Supabase] SUPABASE_SERVICE_ROLE_KEY is not set. Using publishable key as fallback. ` +
+        `Privileged RLS-bypassing operations will not work.`,
+    );
+  }
+
+  return createClient<Database>(SUPABASE_URL, serviceKey, {
     global: {
-      fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
+      fetch: createSupabaseFetch(serviceKey),
     },
     auth: {
       storage: undefined,

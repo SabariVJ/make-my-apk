@@ -13,6 +13,9 @@ export type TrialStatus = {
    * is_plus_member is set AND the expiry (if any) is still in the future.
    * The client must never derive this from localStorage. */
   plusActive: boolean;
+  /** ISO expiry timestamp for timed Plus, or null for lifetime Plus.
+   * Display-only — access control uses plusActive, not this value. */
+  plusExpiresAt: string | null;
   dayOfTrial: number;
   daysLeft: number;
   locked: boolean;
@@ -42,6 +45,7 @@ function buildStatus(row: {
     signupDate: row.signup_date,
     isPlusMember: row.is_plus_member,
     plusActive,
+    plusExpiresAt: row.plus_expires_at,
     dayOfTrial,
     daysLeft,
     locked: !plusActive && daysLeft <= 0,

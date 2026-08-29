@@ -29,6 +29,10 @@ interface SVJContextType {
   /** True once the user profile has been synced from localStorage or Supabase
    *  auth — prevents a flash of INITIAL_USER while the session is loading. */
   profileLoaded: boolean;
+  /** Server-authoritative: whether the user has a Plus membership row. */
+  isPlusMember: boolean | null;
+  /** Server-authoritative: ISO expiry timestamp for timed Plus, null for lifetime. */
+  plusExpiresAt: string | null;
   challenges: DailyChallenge[];
   feed: FeedActivity[];
   leaderboard: LeaderboardEntry[];
@@ -97,7 +101,16 @@ export const SVJProvider: React.FC<{
   children: React.ReactNode;
   /** Server-authoritative Plus status from TrialGate (null = unknown/signed out). */
   plusActive?: boolean | null;
-}> = ({ children, plusActive = null }) => {
+  /** Server-authoritative: whether the user has a Plus membership row. */
+  isPlusMember?: boolean | null;
+  /** Server-authoritative: ISO expiry timestamp for timed Plus, null for lifetime. */
+  plusExpiresAt?: string | null;
+}> = ({
+  children,
+  plusActive = null,
+  isPlusMember: isPlusMemberProp = null,
+  plusExpiresAt: plusExpiresAtProp = null,
+}) => {
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_user`);
     if (!saved) return INITIAL_USER;
@@ -1130,6 +1143,8 @@ export const SVJProvider: React.FC<{
       value={{
         user,
         profileLoaded,
+        isPlusMember: isPlusMemberProp,
+        plusExpiresAt: plusExpiresAtProp,
         challenges,
         feed,
         leaderboard,

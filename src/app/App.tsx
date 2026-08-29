@@ -133,7 +133,11 @@ export default function App() {
         // status comes from the server-side getTrialStatus check, so isPremium
         // mirrors the authoritative Plus state in BOTH directions (active or
         // expired) instead of trusting what localStorage may have persisted.
-        <SVJProvider plusActive={status?.plusActive ?? null}>
+        <SVJProvider
+          plusActive={status?.plusActive ?? null}
+          isPlusMember={status?.isPlusMember ?? null}
+          plusExpiresAt={status?.plusExpiresAt ?? null}
+        >
           <AppContent />
         </SVJProvider>
       )}

@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
-import { getTrialStatus, unlockPlus, type TrialStatus } from "@/lib/trial.functions";
+import { getTrialStatus, type TrialStatus } from "@/lib/trial.functions";
 import { emitOAuthError } from "@/lib/googleAuth";
 import { AuthScreen } from "./AuthScreen";
 import { TrialExpiredScreen } from "./TrialExpiredScreen";
@@ -48,7 +48,6 @@ export const TrialGate: React.FC<{
   const queryClient = useQueryClient();
 
   const fetchStatus = useServerFn(getTrialStatus);
-  const doUnlock = useServerFn(unlockPlus);
 
   // ── Native deep-link handler ──────────────────────────────────────────────
   // When Google OAuth completes on Android/iOS it redirects to:
@@ -207,11 +206,6 @@ export const TrialGate: React.FC<{
     return (
       <TrialExpiredScreen
         email={status.email}
-        onUnlock={async () => {
-          await doUnlock({});
-          await queryClient.invalidateQueries({ queryKey: ["trial-status"] });
-          await statusQuery.refetch();
-        }}
         onSignOut={async () => {
           await queryClient.cancelQueries();
           queryClient.clear();

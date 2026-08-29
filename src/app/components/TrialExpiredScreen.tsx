@@ -1,29 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
-import { Lock, Check, ShieldCheck, LogOut, Loader2 } from "lucide-react";
+import { Lock, ShieldCheck, LogOut, ExternalLink } from "lucide-react";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 
 type Props = {
   email: string | null;
-  onUnlock: () => Promise<void>;
   onSignOut: () => void;
 };
 
-export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleConfirm = async () => {
-    setError("");
-    setIsProcessing(true);
-    try {
-      await onUnlock();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not verify your upgrade. Please try again.",
-      );
-      setIsProcessing(false);
-    }
+export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
+  const handleContactSupport = () => {
+    window.open(
+      `https://wa.me/919790833416?text=${encodeURIComponent(`Hi! I've paid for SVJ Plus. My email: ${email ?? "(not signed in)"}. Please activate my account.`)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   return (
@@ -41,7 +32,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut
             Your 7-Day Trial Has Ended
           </h1>
           <p className="text-[11px] font-mono text-[#8C8C90]">
-            Unlock SVJ Plus to continue{email ? ` as ${email}` : ""}.
+            Upgrade to SVJ Plus to continue{email ? ` as ${email}` : ""}.
           </p>
         </div>
 
@@ -71,32 +62,25 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onUnlock, onSignOut
             <span>Lifetime SVJ Plus Access</span>
           </div>
           <p className="text-[11px] text-[#8C8C90] leading-relaxed">
-            After paying, tap 'Confirm & Unlock' — your account is upgraded permanently, on every
-            device.
+            After paying, contact us to activate your account. Access is granted manually after
+            payment verification — not automatically.
           </p>
         </div>
-
-        {error && <p className="text-[11px] text-red-400 font-mono">{error}</p>}
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          disabled={isProcessing}
-          onClick={handleConfirm}
-          className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-60"
+          onClick={handleContactSupport}
+          className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer"
         >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Verifying UPI Transaction...</span>
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              <span>Confirm &amp; Unlock SVJ Plus</span>
-            </>
-          )}
+          <ExternalLink className="w-4 h-4" />
+          <span>Request Upgrade</span>
         </motion.button>
+
+        <p className="text-[10px] font-mono text-[#8C8C90]">
+          After paying via UPI, tap above to message us on WhatsApp with your payment screenshot.
+          Your account will be activated within 24 hours.
+        </p>
 
         <button
           type="button"

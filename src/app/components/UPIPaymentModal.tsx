@@ -16,7 +16,7 @@ import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
 
 export const UPIPaymentModal: React.FC = () => {
-  const { isUPIModalOpen, setIsUPIModalOpen, upgradeToPremium } = useSVJ();
+  const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
@@ -28,7 +28,11 @@ export const UPIPaymentModal: React.FC = () => {
     setTimeout(() => {
       setIsProcessing(false);
       setIsUPIModalOpen(false);
-      upgradeToPremium();
+      window.open(
+        `https://wa.me/919790833416?text=${encodeURIComponent("Hi! I've paid for SVJ Plus. Please activate my account.")}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
     }, 1500);
   };
 

@@ -75,7 +75,6 @@ interface SVJContextType {
     location: string;
     avatar: string;
   }) => void;
-  upgradeToPremium: () => void;
   loginWithGmail: (email: string, name?: string, avatar?: string) => void;
   logoutGmail: () => void;
   setComparingMember: (member: LeaderboardEntry | null) => void;
@@ -213,9 +212,12 @@ export const SVJProvider: React.FC<{
     // mark profileLoaded so the AppContent splash guard doesn't get stuck.
     // When there IS a session, the auth-sync effect below will call
     // setProfileLoaded once the server profile lookup finishes.
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) setProfileLoaded(true);
-    }).catch(() => setProfileLoaded(true));
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!data.session) setProfileLoaded(true);
+      })
+      .catch(() => setProfileLoaded(true));
   }, []);
 
   // ── Unified auth sync ─────────────────────────────────────────────────────
@@ -282,7 +284,9 @@ export const SVJProvider: React.FC<{
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select("id, total_xp, current_streak, username, display_name, avatar_url, is_plus_member")
+            .select(
+              "id, total_xp, current_streak, username, display_name, avatar_url, is_plus_member",
+            )
             .eq("id", session.user.id)
             .maybeSingle();
           if (!error && data) {
@@ -331,7 +335,10 @@ export const SVJProvider: React.FC<{
     const persisted = { ...user, isPremium: false };
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persisted));
     if (user.email) {
-      localStorage.setItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(persisted));
+      localStorage.setItem(
+        `svj_user_account_${user.email.toLowerCase()}`,
+        JSON.stringify(persisted),
+      );
     }
 
     setLeaderboard((prev) => {
@@ -972,18 +979,6 @@ export const SVJProvider: React.FC<{
     setIsFirstTimeOnboardingOpen(false);
   };
 
-  const upgradeToPremium = () => {
-    triggerConfetti();
-    setUser((prev) => ({
-      ...prev,
-      isPremium: true,
-      verifiedIcon: true,
-      vipIcon: true,
-      equippedBadge: "bdg-verified",
-    }));
-    setIsPaywallOpen(false);
-  };
-
   const loginWithGmail = (
     email: string,
     name?: string,
@@ -1167,7 +1162,6 @@ export const SVJProvider: React.FC<{
         setCalorieGoal,
         updateUserProfile,
         completeOnboarding,
-        upgradeToPremium,
         loginWithGmail,
         logoutGmail,
         setComparingMember,

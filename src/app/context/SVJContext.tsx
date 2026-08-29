@@ -958,7 +958,7 @@ export const SVJProvider: React.FC<{
     triggerConfetti();
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
 
-    // Update user profile with welcome bonus +100 XP
+    // Update user profile with welcome bonus +100 XP (additive, never reset)
     setUser((prev) => ({
       ...prev,
       name: data.name,
@@ -966,13 +966,13 @@ export const SVJProvider: React.FC<{
       bio: data.bio,
       location: data.location,
       avatar: data.avatar,
-      totalXP: 100,
-      weeklyXP: 100,
-      monthlyXP: 100,
-      xpHistory: [{ date: "31 Jul", xp: 100 }],
+      totalXP: prev.totalXP + 100,
+      weeklyXP: prev.weeklyXP + 100,
+      monthlyXP: prev.monthlyXP + 100,
+      xpHistory: [{ date: "31 Jul", xp: 100 }, ...prev.xpHistory],
     }));
 
-    // Update user on leaderboard
+    // Update user on leaderboard (preserve existing XP, add onboarding bonus)
     setLeaderboard((prev) =>
       prev.map((item) =>
         item.id === "user-me"
@@ -981,9 +981,6 @@ export const SVJProvider: React.FC<{
               username: data.username,
               avatar: data.avatar,
               bio: data.bio,
-              totalXP: 100,
-              weeklyXP: 100,
-              monthlyXP: 100,
             }
           : item,
       ),

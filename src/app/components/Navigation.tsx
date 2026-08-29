@@ -1,16 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
-import {
-  Flame,
-  Dumbbell,
-  Apple,
-  Users,
-  Trophy,
-  Gift,
-  Crown,
-  User,
-  CalendarCheck,
-} from "lucide-react";
+import { Flame, Dumbbell, Apple, Users, Trophy, Crown, User, CalendarCheck } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export type ActiveTab =
@@ -19,7 +9,6 @@ export type ActiveTab =
   | "nutrition"
   | "community"
   | "leaderboard"
-  | "rewards"
   | "sixty"
   | "plus"
   | "profile";
@@ -38,7 +27,6 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
     { id: "nutrition", label: "Fuel", icon: Apple },
     { id: "community", label: "Community", icon: Users },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-    { id: "rewards", label: "Rewards", icon: Gift },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
     { id: "profile", label: "Profile", icon: User },

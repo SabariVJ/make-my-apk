@@ -7,7 +7,6 @@ import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
-import { RewardsView } from "./views/RewardsView";
 import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
 import { ProfileView } from "./views/ProfileView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
@@ -38,8 +37,8 @@ const ConfigMissingScreen: React.FC = () => {
         {missing.length > 0 ? ` (${missing.join(", ")})` : ""}.
       </p>
       <p className="text-[11px] font-mono text-[#8C8C90] max-w-sm">
-        Set the missing variable(s) in the project's environment / API keys and
-        restart the preview. The app will load here once Supabase is connected.
+        Set the missing variable(s) in the project's environment / API keys and restart the preview.
+        The app will load here once Supabase is connected.
       </p>
     </div>
   );
@@ -93,7 +92,6 @@ const AppContent: React.FC = () => {
         {activeTab === "nutrition" && <NutritionView />}
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
-        {activeTab === "rewards" && <RewardsView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
         {activeTab === "profile" && <ProfileView />}
       </main>

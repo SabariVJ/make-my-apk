@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTrialStatus, type TrialStatus } from "@/lib/trial.functions";
 import { emitOAuthError } from "@/lib/googleAuth";
 import { AuthScreen } from "./AuthScreen";
-import { TrialExpiredScreen } from "./TrialExpiredScreen";
 
 const Splash: React.FC<{ label: string }> = ({ label }) => (
   <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
@@ -202,20 +201,8 @@ export const TrialGate: React.FC<{
 
   const status = statusQuery.data;
 
-  if (status.locked) {
-    return (
-      <TrialExpiredScreen
-        email={status.email}
-        onSignOut={async () => {
-          await queryClient.cancelQueries();
-          queryClient.clear();
-          await supabase.auth.signOut();
-        }}
-      />
-    );
-  }
-
-  // Pass the server-checked status down so the app can mirror the authoritative
-  // Plus state (e.g. SVJProvider's isPremium) — never trust localStorage for it.
+  // Always pass the server-checked status to children so the app can mirror the
+  // authoritative Plus state and conditionally render a restricted shell when
+  // locked — never trust localStorage for entitlement.
   return <>{typeof children === "function" ? children(status) : children}</>;
 };

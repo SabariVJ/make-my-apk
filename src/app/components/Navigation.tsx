@@ -16,12 +16,18 @@ export type ActiveTab =
 interface NavigationProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
+  /** When true, only show tabs allowed in the post-trial restricted shell. */
+  restricted?: boolean;
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
+export const Navigation: React.FC<NavigationProps> = ({
+  activeTab,
+  setActiveTab,
+  restricted = false,
+}) => {
   const { user } = useSVJ();
 
-  const navItems = [
+  const allNavItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
     { id: "workouts", label: "Train", icon: Dumbbell },
     { id: "nutrition", label: "Fuel", icon: Apple },
@@ -31,6 +37,12 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
     { id: "profile", label: "Profile", icon: User },
   ];
+
+  // Restricted shell: only 60-Day Challenge, Plus (upgrade modal), and Profile
+  const allowedRestricted = new Set<ActiveTab>(["sixty", "plus", "profile"]);
+  const navItems = restricted
+    ? allNavItems.filter((item) => allowedRestricted.has(item.id as ActiveTab))
+    : allNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">

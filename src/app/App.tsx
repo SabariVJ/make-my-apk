@@ -44,8 +44,11 @@ const ConfigMissingScreen: React.FC = () => {
   );
 };
 
-const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("challenges");
+const AppContent: React.FC<{
+  locked?: boolean;
+  lockEmail?: string | null;
+}> = ({ locked = false, lockEmail = null }) => {
+  const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const {
     profileLoaded,
     comparingMember,
@@ -73,10 +76,35 @@ const AppContent: React.FC = () => {
   const handleTabChange = (tab: ActiveTab) => {
     if (tab === "plus") {
       setIsPaywallOpen(true);
+    } else if (locked && tab !== "sixty" && tab !== "profile") {
+      // Restricted shell: only sixty, plus (modal), and profile are allowed.
+      return;
     } else {
       setActiveTab(tab);
     }
   };
+
+  if (locked) {
+    // ── Restricted post-trial shell ──────────────────────────────────────
+    return (
+      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
+        <Header />
+
+        <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+          {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "profile" && <ProfileView />}
+        </main>
+
+        <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
+
+        {/* Global Modals still available in restricted shell */}
+        <UPIPaymentModal />
+        <PaywallModal />
+        <EditProfileModal />
+        <GoogleAuthModal />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
@@ -138,7 +166,7 @@ export default function App() {
           isPlusMember={status?.isPlusMember ?? null}
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
-          <AppContent />
+          <AppContent locked={status?.locked} lockEmail={status?.email} />
         </SVJProvider>
       )}
     </TrialGate>

@@ -18,8 +18,10 @@ import { PaywallModal } from "./components/PaywallModal";
 import { FirstTimeOnboardingModal } from "./components/FirstTimeOnboardingModal";
 import { DarkCinematicOnboardingModal } from "./components/DarkCinematicOnboardingModal";
 import { GoogleAuthModal } from "./components/GoogleAuthModal";
+import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { TrialGate } from "./components/TrialGate";
-import { getMissingSupabaseEnv, hasSupabaseConfig } from "@/integrations/supabase/client";
+import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 
 // Shown instead of crashing (white screen / generic error page) when the
@@ -59,6 +61,7 @@ const AppContent: React.FC<{
     isDarkOnboardingOpen,
     setIsDarkOnboardingOpen,
   } = useSVJ();
+  const queryClient = useQueryClient();
 
   // Show a splash while the user profile is being synced from localStorage or
   // the Supabase session. Without this, a fresh sign-in (or session restore on
@@ -74,10 +77,18 @@ const AppContent: React.FC<{
   }
 
   const handleTabChange = (tab: ActiveTab) => {
+    if (tab === "signout") {
+      void (async () => {
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        await supabase.auth.signOut();
+      })();
+      return;
+    }
     if (tab === "plus") {
       setIsPaywallOpen(true);
-    } else if (locked && tab !== "sixty" && tab !== "profile") {
-      // Restricted shell: only sixty, plus (modal), and profile are allowed.
+    } else if (locked && tab !== "sixty" && tab !== "redeem" && tab !== "profile") {
+      // Restricted shell: only sixty, redeem, and profile are allowed.
       return;
     } else {
       setActiveTab(tab);
@@ -92,6 +103,17 @@ const AppContent: React.FC<{
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
           {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "redeem" && (
+            <div className="space-y-4">
+              <h2 className="font-anton text-xl uppercase tracking-wider text-white">
+                Redeem Code
+              </h2>
+              <p className="text-xs text-[#8C8C90] font-inter">
+                Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
+              </p>
+              <RedeemPlusCodeForm />
+            </div>
+          )}
           {activeTab === "profile" && <ProfileView />}
         </main>
 

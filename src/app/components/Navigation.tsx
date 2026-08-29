@@ -1,6 +1,17 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Flame, Dumbbell, Apple, Users, Trophy, Crown, User, CalendarCheck } from "lucide-react";
+import {
+  Flame,
+  Dumbbell,
+  Apple,
+  Users,
+  Trophy,
+  Crown,
+  User,
+  CalendarCheck,
+  KeyRound,
+  LogOut,
+} from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export type ActiveTab =
@@ -11,6 +22,8 @@ export type ActiveTab =
   | "leaderboard"
   | "sixty"
   | "plus"
+  | "redeem"
+  | "signout"
   | "profile";
 
 interface NavigationProps {
@@ -38,11 +51,14 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  // Restricted shell: only 60-Day Challenge, Plus (upgrade modal), and Profile
-  const allowedRestricted = new Set<ActiveTab>(["sixty", "plus", "profile"]);
-  const navItems = restricted
-    ? allNavItems.filter((item) => allowedRestricted.has(item.id as ActiveTab))
-    : allNavItems;
+  // Restricted shell: 60-Day Challenge, Redeem Code, Profile, Sign Out
+  const restrictedNavItems: typeof allNavItems = [
+    { id: "sixty", label: "60 Day", icon: CalendarCheck },
+    { id: "redeem", label: "Redeem Code", icon: KeyRound },
+    { id: "profile", label: "Profile", icon: User },
+    { id: "signout", label: "Sign Out", icon: LogOut },
+  ];
+  const navItems = restricted ? restrictedNavItems : allNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">

@@ -97,111 +97,123 @@ export const LeaderboardView: React.FC = () => {
         ))}
       </div>
 
+      {/* Empty state */}
+      {sortedLeaderboard.length === 0 && (
+        <div className="text-center py-16 space-y-3">
+          <Trophy className="w-10 h-10 text-[#8C8C90] mx-auto" />
+          <p className="text-sm font-inter text-[#8C8C90]">
+            No leaderboard entries yet. Complete challenges to become the first.
+          </p>
+        </div>
+      )}
+
       {/* PODIUM TOP 3 */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-4 pb-2">
-        {/* 2nd Place */}
-        {top3[1] && (
-          <motion.div
-            whileHover={{ y: -4 }}
-            onClick={() => setComparingMember(top3[1])}
-            className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-slate-500/40 text-center relative cursor-pointer shadow-xl"
-          >
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-slate-700 text-slate-200 text-xs font-anton flex items-center justify-center border border-slate-400">
-              2
-            </div>
-            <div className="mx-auto my-2 relative flex justify-center">
-              <AvatarFrame
-                src={top3[1].avatar}
-                alt={top3[1].username}
-                frameId={top3[1].id === user.id ? user.equippedFrame : top3[1].equippedFrame}
-                size="lg"
-                isFounder={top3[1].id === user.id && user.isFounder}
-              />
-            </div>
-            <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
-              {top3[1].username}
-            </div>
-            <div className="text-[10px] font-mono text-slate-300 font-bold mt-0.5">
-              {filter === "weekly"
-                ? `${top3[1].weeklyXP} XP`
-                : `${top3[1].totalXP.toLocaleString()} XP`}
-            </div>
-            <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
-              {top3[1].tier}
-            </span>
-          </motion.div>
-        )}
+      {sortedLeaderboard.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-4 pb-2">
+          {/* 2nd Place */}
+          {top3[1] && (
+            <motion.div
+              whileHover={{ y: -4 }}
+              onClick={() => setComparingMember(top3[1])}
+              className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-slate-500/40 text-center relative cursor-pointer shadow-xl"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-slate-700 text-slate-200 text-xs font-anton flex items-center justify-center border border-slate-400">
+                2
+              </div>
+              <div className="mx-auto my-2 relative flex justify-center">
+                <AvatarFrame
+                  src={top3[1].avatar}
+                  alt={top3[1].username}
+                  frameId={top3[1].id === user.id ? user.equippedFrame : top3[1].equippedFrame}
+                  size="lg"
+                  isFounder={top3[1].id === user.id && user.isFounder}
+                />
+              </div>
+              <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
+                {top3[1].username}
+              </div>
+              <div className="text-[10px] font-mono text-slate-300 font-bold mt-0.5">
+                {filter === "weekly"
+                  ? `${top3[1].weeklyXP} XP`
+                  : `${top3[1].totalXP.toLocaleString()} XP`}
+              </div>
+              <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
+                {top3[1].tier}
+              </span>
+            </motion.div>
+          )}
 
-        {/* 1st Place (Crown Champion) */}
-        {top3[0] && (
-          <motion.div
-            whileHover={{ y: -4 }}
-            onClick={() => setComparingMember(top3[0])}
-            className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1E1A0F] to-[#17171A] border-2 border-amber-400 text-center relative cursor-pointer shadow-2xl shadow-amber-500/20 -translate-y-2"
-          >
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-amber-400 text-black text-sm font-anton flex items-center justify-center border-2 border-amber-300 shadow-lg">
-              <Crown className="w-5 h-5 text-black fill-black" />
-            </div>
-            <div className="mx-auto my-2 relative flex justify-center">
-              <AvatarFrame
-                src={top3[0].avatar}
-                alt={top3[0].username}
-                frameId={
-                  top3[0].id === user.id
-                    ? user.equippedFrame
-                    : top3[0].equippedFrame || "frame-gold"
-                }
-                size="xl"
-                isFounder={top3[0].id === user.id && user.isFounder}
-              />
-            </div>
-            <div className="font-anton text-sm sm:text-base text-amber-300 uppercase truncate">
-              {top3[0].username}
-            </div>
-            <div className="text-xs sm:text-sm font-mono text-amber-400 font-extrabold mt-0.5">
-              {filter === "weekly"
-                ? `${top3[0].weeklyXP} XP`
-                : `${top3[0].totalXP.toLocaleString()} XP`}
-            </div>
-            <span className="text-[9px] font-mono text-amber-200/80 uppercase block mt-1 font-bold">
-              {top3[0].tier} Legend
-            </span>
-          </motion.div>
-        )}
+          {/* 1st Place (Crown Champion) */}
+          {top3[0] && (
+            <motion.div
+              whileHover={{ y: -4 }}
+              onClick={() => setComparingMember(top3[0])}
+              className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1E1A0F] to-[#17171A] border-2 border-amber-400 text-center relative cursor-pointer shadow-2xl shadow-amber-500/20 -translate-y-2"
+            >
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-amber-400 text-black text-sm font-anton flex items-center justify-center border-2 border-amber-300 shadow-lg">
+                <Crown className="w-5 h-5 text-black fill-black" />
+              </div>
+              <div className="mx-auto my-2 relative flex justify-center">
+                <AvatarFrame
+                  src={top3[0].avatar}
+                  alt={top3[0].username}
+                  frameId={
+                    top3[0].id === user.id
+                      ? user.equippedFrame
+                      : top3[0].equippedFrame || "frame-gold"
+                  }
+                  size="xl"
+                  isFounder={top3[0].id === user.id && user.isFounder}
+                />
+              </div>
+              <div className="font-anton text-sm sm:text-base text-amber-300 uppercase truncate">
+                {top3[0].username}
+              </div>
+              <div className="text-xs sm:text-sm font-mono text-amber-400 font-extrabold mt-0.5">
+                {filter === "weekly"
+                  ? `${top3[0].weeklyXP} XP`
+                  : `${top3[0].totalXP.toLocaleString()} XP`}
+              </div>
+              <span className="text-[9px] font-mono text-amber-200/80 uppercase block mt-1 font-bold">
+                {top3[0].tier} Legend
+              </span>
+            </motion.div>
+          )}
 
-        {/* 3rd Place */}
-        {top3[2] && (
-          <motion.div
-            whileHover={{ y: -4 }}
-            onClick={() => setComparingMember(top3[2])}
-            className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-amber-800/50 text-center relative cursor-pointer shadow-xl"
-          >
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-amber-900 text-amber-300 text-xs font-anton flex items-center justify-center border border-amber-700">
-              3
-            </div>
-            <div className="mx-auto my-2 relative flex justify-center">
-              <AvatarFrame
-                src={top3[2].avatar}
-                alt={top3[2].username}
-                frameId={top3[2].id === user.id ? user.equippedFrame : top3[2].equippedFrame}
-                size="lg"
-                isFounder={top3[2].id === user.id && user.isFounder}
-              />
-            </div>
-            <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
-              {top3[2].username}
-            </div>
-            <div className="text-[10px] font-mono text-amber-400 font-bold mt-0.5">
-              {filter === "weekly"
-                ? `${top3[2].weeklyXP} XP`
-                : `${top3[2].totalXP.toLocaleString()} XP`}
-            </div>
-            <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
-              {top3[2].tier}
-            </span>
-          </motion.div>
-        )}
-      </div>
+          {/* 3rd Place */}
+          {top3[2] && (
+            <motion.div
+              whileHover={{ y: -4 }}
+              onClick={() => setComparingMember(top3[2])}
+              className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-amber-800/50 text-center relative cursor-pointer shadow-xl"
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-amber-900 text-amber-300 text-xs font-anton flex items-center justify-center border border-amber-700">
+                3
+              </div>
+              <div className="mx-auto my-2 relative flex justify-center">
+                <AvatarFrame
+                  src={top3[2].avatar}
+                  alt={top3[2].username}
+                  frameId={top3[2].id === user.id ? user.equippedFrame : top3[2].equippedFrame}
+                  size="lg"
+                  isFounder={top3[2].id === user.id && user.isFounder}
+                />
+              </div>
+              <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
+                {top3[2].username}
+              </div>
+              <div className="text-[10px] font-mono text-amber-400 font-bold mt-0.5">
+                {filter === "weekly"
+                  ? `${top3[2].weeklyXP} XP`
+                  : `${top3[2].totalXP.toLocaleString()} XP`}
+              </div>
+              <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
+                {top3[2].tier}
+              </span>
+            </motion.div>
+          )}
+        </div>
+      )}
 
       {/* Rankings List */}
       <div className="space-y-2.5">

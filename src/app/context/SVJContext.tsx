@@ -151,7 +151,9 @@ export const SVJProvider: React.FC<{
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
-    return saved ? JSON.parse(saved) : LEADERBOARD_USERS;
+    if (saved) return JSON.parse(saved);
+    // Static demo users are only shown in development; production starts empty.
+    return import.meta.env.DEV ? LEADERBOARD_USERS : [];
   });
 
   const [rewards, setRewards] = useState<RewardItem[]>(() => {
@@ -958,7 +960,8 @@ export const SVJProvider: React.FC<{
     triggerConfetti();
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
 
-    // Update user profile with welcome bonus +100 XP (additive, never reset)
+    // Idempotent onboarding baseline: ensure totalXP is at least 100 without
+    // reducing existing XP or allowing repeated grants from cleared localStorage.
     setUser((prev) => ({
       ...prev,
       name: data.name,
@@ -966,10 +969,10 @@ export const SVJProvider: React.FC<{
       bio: data.bio,
       location: data.location,
       avatar: data.avatar,
-      totalXP: prev.totalXP + 100,
-      weeklyXP: prev.weeklyXP + 100,
-      monthlyXP: prev.monthlyXP + 100,
-      xpHistory: [{ date: "31 Jul", xp: 100 }, ...prev.xpHistory],
+      totalXP: Math.max(prev.totalXP, 100),
+      weeklyXP: Math.max(prev.weeklyXP, 100),
+      monthlyXP: Math.max(prev.monthlyXP, 100),
+      xpHistory: prev.totalXP >= 100 ? prev.xpHistory : [{ date: "31 Jul", xp: 100 }],
     }));
 
     // Update user on leaderboard (preserve existing XP, add onboarding bonus)

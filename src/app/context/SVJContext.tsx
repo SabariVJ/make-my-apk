@@ -61,6 +61,7 @@ interface SVJContextType {
     difficulty: DailyChallenge["difficulty"],
     xp: number,
   ) => void;
+  removeChallenge: (id: string) => void;
   toggleReaction: (activityId: string, reaction: ReactionType) => void;
   addComment: (activityId: string, text: string) => void;
   redeemReward: (rewardId: string) => void;
@@ -126,7 +127,12 @@ export const SVJProvider: React.FC<{
 
   const [challenges, setChallenges] = useState<DailyChallenge[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_challenges`);
-    return saved ? JSON.parse(saved) : INITIAL_CHALLENGES;
+    if (saved) return JSON.parse(saved);
+    // Filter out previously removed IDs from defaults
+    const removedRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_removed_challenges`);
+    const removed: string[] = removedRaw ? JSON.parse(removedRaw) : [];
+    if (removed.length === 0) return INITIAL_CHALLENGES;
+    return INITIAL_CHALLENGES.filter((c) => !removed.includes(c.id));
   });
 
   const [feed, setFeed] = useState<FeedActivity[]>(() => {
@@ -847,11 +853,22 @@ export const SVJProvider: React.FC<{
       difficulty,
       xp,
       durationMinutes: 20,
-      description: "Custom user habit designed for daily excellence.",
+      description: "Custom user task designed for daily excellence.",
       completed: false,
       isCustom: true,
     };
     setChallenges((prev) => [newCh, ...prev]);
+  };
+
+  const removeChallenge = (id: string) => {
+    setChallenges((prev) => prev.filter((c) => c.id !== id));
+    // Track removed IDs so they stay hidden even if localStorage resets
+    const removedRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_removed_challenges`);
+    const removed: string[] = removedRaw ? JSON.parse(removedRaw) : [];
+    if (!removed.includes(id)) {
+      removed.push(id);
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}_removed_challenges`, JSON.stringify(removed));
+    }
   };
 
   const toggleReaction = (activityId: string, reaction: ReactionType) => {
@@ -1165,6 +1182,7 @@ export const SVJProvider: React.FC<{
         toggleChallenge,
         awardXp,
         addCustomChallenge,
+        removeChallenge,
         toggleReaction,
         addComment,
         redeemReward,

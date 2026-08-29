@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Flame,
   CheckCircle2,
   Plus,
+  X,
   Clock,
   Zap,
   Target,
@@ -15,11 +18,27 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
+import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 
-export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
-  onOpenSixtyDay,
-}) => {
-  const { challenges, toggleChallenge, addCustomChallenge, user, leaderboard } = useSVJ();
+export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOpenSixtyDay }) => {
+  const { challenges, toggleChallenge, addCustomChallenge, removeChallenge, user, leaderboard } =
+    useSVJ();
+
+  // Fetch server-authoritative challenge state to hide 60-Day CTA when completed
+  const callGetState = useServerFn(getChallengeState);
+  const sixtyDayQuery = useQuery<ChallengeState | null>({
+    queryKey: ["sixty-challenge"],
+    queryFn: async () => {
+      try {
+        return (await callGetState({})) as ChallengeState;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const sixtyDayCompleted = sixtyDayQuery.data?.status === "completed";
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -77,8 +96,8 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
 
   return (
     <div className="space-y-6 pb-24">
-      {/* 60-Day Gauntlet CTA */}
-      {onOpenSixtyDay && (
+      {/* 60-Day Gauntlet CTA — hidden when server confirms completion */}
+      {onOpenSixtyDay && !sixtyDayCompleted && !sixtyDayQuery.isLoading && (
         <button
           onClick={onOpenSixtyDay}
           className="w-full text-left rounded-3xl overflow-hidden relative bg-gradient-to-r from-[#2A1218] via-[#17171A] to-[#17171A] border border-[#C81E3A]/30 p-5 shadow-xl shadow-[#C81E3A]/10 transition-all hover:border-[#C81E3A]/60 hover:shadow-[#C81E3A]/20 group cursor-pointer"
@@ -225,7 +244,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
         </div>
       </div>
 
-      {/* Categories & Custom Habit Button */}
+      {/* Categories & Custom Task Button */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
         <div className="flex items-center gap-2">
           {categories.map((cat) => (
@@ -248,7 +267,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
           className="px-3.5 py-1.5 rounded-xl bg-[#17171A] hover:bg-white/10 text-white border border-white/10 text-xs font-mono font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 text-[#C81E3A]" />
-          <span>Add Habit</span>
+          <span>Add Task</span>
         </button>
       </div>
 
@@ -321,14 +340,27 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
               </div>
 
               {/* XP Value Pill */}
-              <div
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold shrink-0 ${
-                  challenge.completed
-                    ? "bg-emerald-950/30 text-emerald-400 border border-emerald-800/50"
-                    : "bg-[#0B0B0C] text-[#C81E3A] border border-white/10"
-                }`}
-              >
-                +{challenge.xp} XP
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeChallenge(challenge.id);
+                  }}
+                  aria-label={`Remove ${challenge.title}`}
+                  title={`Remove ${challenge.title}`}
+                  className="p-1.5 rounded-lg text-[#8C8C90] hover:text-[#C81E3A] hover:bg-[#C81E3A]/10 transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div
+                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold shrink-0 ${
+                    challenge.completed
+                      ? "bg-emerald-950/30 text-emerald-400 border border-emerald-800/50"
+                      : "bg-[#0B0B0C] text-[#C81E3A] border border-white/10"
+                  }`}
+                >
+                  +{challenge.xp} XP
+                </div>
               </div>
             </motion.div>
           ))}
@@ -363,7 +395,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
                 <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                  Add Custom Habit
+                  Add Custom Task
                 </h2>
                 <button
                   onClick={() => setIsAddModalOpen(false)}
@@ -376,7 +408,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
               <form onSubmit={handleCreateCustom} className="space-y-4">
                 <div>
                   <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                    Habit Title
+                    Task Title
                   </label>
                   <input
                     type="text"
@@ -442,7 +474,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({
                     type="submit"
                     className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase cursor-pointer"
                   >
-                    Add Habit to Mission
+                    Add Task to Mission
                   </button>
                 </div>
               </form>

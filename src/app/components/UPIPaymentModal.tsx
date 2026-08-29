@@ -49,9 +49,7 @@ export const UPIPaymentModal: React.FC = () => {
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
             <div className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[#C81E3A]" />
-              <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                Unlock SVJ Plus
-              </h2>
+              <h2 className="font-anton text-xl tracking-wide uppercase text-white">UPI Payment</h2>
             </div>
             <button
               onClick={() => setIsUPIModalOpen(false)}
@@ -75,7 +73,7 @@ export const UPIPaymentModal: React.FC = () => {
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              UPI / Trial
+              UPI Payment
             </button>
             <button
               onClick={() => setPaymentTab("code")}
@@ -117,8 +115,8 @@ export const UPIPaymentModal: React.FC = () => {
                   Pay via UPI or GPay?
                 </h3>
                 <p className="text-xs text-[#8C8C90] font-inter mt-1 max-w-xs mx-auto leading-relaxed">
-                  Scan QR code using GPay, PhonePe, Paytm, or BHIM to complete instant SVJ Plus
-                  verification.
+                  Scan QR code using GPay, PhonePe, Paytm, or BHIM to complete payment. SVJ Plus is
+                  activated only after manual verification.
                 </p>
               </div>
 
@@ -165,10 +163,11 @@ export const UPIPaymentModal: React.FC = () => {
               <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
                 <div className="flex items-center gap-2 text-emerald-400 font-mono font-semibold">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>7-Day Free Trial Activated</span>
+                  <span>Manual Verification Required</span>
                 </div>
                 <p className="text-[11px] text-[#8C8C90] leading-relaxed">
-                  Click 'Confirm Payment' below after scanning or to auto-activate instant trial.
+                  After paying, contact support with your UPI transaction reference. SVJ Plus is
+                  activated only after the payment is manually verified.
                 </p>
               </div>
 
@@ -181,11 +180,11 @@ export const UPIPaymentModal: React.FC = () => {
                   className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <span>Verifying UPI Transaction...</span>
+                    <span>Opening WhatsApp...</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Confirm & Unlock SVJ Plus</span>
+                      <span>I've Paid — Contact Support</span>
                     </>
                   )}
                 </motion.button>

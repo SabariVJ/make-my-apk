@@ -109,9 +109,7 @@ export const ProfileView: React.FC = () => {
                 >
                   <Mail className="w-3.5 h-3.5" />
                   <span>
-                    {user.isFounder
-                      ? "sabarivj777@gmail.com (Founder)"
-                      : user.email || "Link Gmail Account"}
+                    {user.isFounder ? "Founder Account" : user.email || "Link Gmail Account"}
                   </span>
                 </button>
               </div>

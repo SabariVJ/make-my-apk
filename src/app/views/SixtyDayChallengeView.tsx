@@ -28,7 +28,6 @@ import {
   startChallenge,
   completeChallengeDay,
   resumeChallenge,
-  adminDebugCompleteChallenge,
   type ChallengeState,
   type CompleteDayInput,
 } from "@/lib/challenge.functions";
@@ -80,14 +79,12 @@ export const SixtyDayChallengeView: React.FC = () => {
   const [duration, setDuration] = useState("");
   const [reflection, setReflection] = useState("");
   const [copied, setCopied] = useState(false);
-  const [debugBusy, setDebugBusy] = useState(false);
   const [, forceTick] = useState(0);
 
   const callGetState = useServerFn(getChallengeState);
   const callStart = useServerFn(startChallenge);
   const callComplete = useServerFn(completeChallengeDay);
   const callResume = useServerFn(resumeChallenge);
-  const callDebug = useServerFn(adminDebugCompleteChallenge);
 
   const stateQuery = useQuery({
     queryKey: ["sixty-challenge"],
@@ -147,16 +144,6 @@ export const SixtyDayChallengeView: React.FC = () => {
   });
 
   const state = stateQuery.data;
-
-  const handleDebug = async () => {
-    setDebugBusy(true);
-    try {
-      await callDebug({});
-      queryClient.invalidateQueries({ queryKey: ["sixty-challenge"] });
-    } finally {
-      setDebugBusy(false);
-    }
-  };
 
   const handleCopy = async (code: string) => {
     const ok = await copyText(code);
@@ -699,28 +686,6 @@ export const SixtyDayChallengeView: React.FC = () => {
             </div>
           </div>
         </motion.div>
-      )}
-
-      {/* ── DEBUG (founder only) — REMOVE BEFORE PLAY STORE ─────────────── */}
-      {state.debugIsAdmin && (
-        <div className="rounded-2xl bg-[#17171A] border border-dashed border-[#C81E3A]/50 p-4">
-          <div className="text-[10px] font-mono text-[#C81E3A] uppercase tracking-widest mb-2 flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            DEBUG — Founder only — remove before Play Store
-          </div>
-          <button
-            onClick={handleDebug}
-            disabled={debugBusy}
-            className="px-4 py-2 rounded-xl bg-[#C81E3A]/20 hover:bg-[#C81E3A]/40 border border-[#C81E3A]/50 text-[#C81E3A] font-mono text-xs font-bold cursor-pointer disabled:opacity-60 flex items-center gap-2"
-          >
-            {debugBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            DEBUG: Auto-complete all 60 days (real verification + code generation)
-          </button>
-          <p className="text-[10px] font-mono text-[#8C8C90] mt-2">
-            Calls the real completion-verification and code-generation paths. Generates a real
-            redeem code for sabarivj777@gmail.com.
-          </p>
-        </div>
       )}
     </div>
   );

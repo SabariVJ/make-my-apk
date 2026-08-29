@@ -142,7 +142,7 @@ async function mergeSiblingAccounts(
     siblings[0] as Record<string, unknown>,
   );
 
-  await admin.from("profiles").update(canonical).ilike("email", email);
+  await admin.from("profiles").update(canonical).eq("id", userId);
 
   return {
     id: userId,

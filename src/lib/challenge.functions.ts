@@ -669,12 +669,6 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
       throw profileError;
     }
 
-    // Keep any sibling accounts (same email, other provider) in sync.
-    const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase();
-    if (email) {
-      await admin.from("profiles").update(plusPatch).ilike("email", email);
-    }
-
     return {
       ok: true,
       message: "SVJ Plus activated for 2 months. Locked to your account — single use.",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
@@ -52,6 +52,12 @@ const AppContent: React.FC<{
   lockEmail?: string | null;
 }> = ({ locked = false, lockEmail = null }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
+  const [showTrialNotice, setShowTrialNotice] = useState(locked);
+
+  useEffect(() => {
+    setShowTrialNotice(locked);
+  }, [locked]);
+
   const {
     user,
     profileLoaded,
@@ -102,6 +108,48 @@ const AppContent: React.FC<{
     return (
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
         <Header />
+
+        {/* Trial-expired notice modal — shown once on first render */}
+        {showTrialNotice && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="trial-expired-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
+          >
+            <div className="w-full max-w-sm rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
+              <h2
+                id="trial-expired-title"
+                className="font-anton text-xl uppercase tracking-wider text-white"
+              >
+                Your 7-Day Trial Has Ended
+              </h2>
+              <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
+                Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a
+                reward code, manage your profile, or upgrade to SVJ Plus.
+              </p>
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrialNotice(false);
+                    setIsPaywallOpen(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                >
+                  Explore SVJ Plus
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowTrialNotice(false)}
+                  className="w-full py-3 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
+                >
+                  Continue in Limited Mode
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">

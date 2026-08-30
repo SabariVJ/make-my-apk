@@ -104,6 +104,15 @@ const AppContent: React.FC<{
         <Header />
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">
+            <p className="font-anton text-sm uppercase tracking-wider text-amber-300">
+              Your 7-Day Trial Has Ended
+            </p>
+            <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
+              Full SVJ access is locked. You can still complete the 60-Day Challenge, redeem a
+              reward code, manage your profile or sign out.
+            </p>
+          </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
           {activeTab === "redeem" && (
             <div className="space-y-4">

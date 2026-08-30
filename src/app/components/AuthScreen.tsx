@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { motion } from "motion/react";
 import { Mail, Lock, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { Capacitor } from "@capacitor/core";
+
+const NATIVE_REDIRECT = "https://savaje-com.lovable.app/auth/callback";
+
+function getRedirectUrl(): string {
+  return Capacitor.isNativePlatform() ? NATIVE_REDIRECT : window.location.origin;
+}
 
 export const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -13,6 +20,46 @@ export const AuthScreen: React.FC = () => {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  // ── Resend confirmation cooldown ────────────────────────────────────────
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCooldown = useCallback(() => {
+    setResendCooldown(60);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current);
+          cooldownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const handleResend = async () => {
+    if (!email.trim() || busy || resendCooldown > 0) return;
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: { emailRedirectTo: getRedirectUrl() },
+      });
+      if (resendError) throw resendError;
+      setNotice("Confirmation email sent. Check your inbox and Spam folder.");
+      startCooldown();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not resend confirmation email.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -20,14 +67,29 @@ export const AuthScreen: React.FC = () => {
     setBusy(true);
     try {
       if (mode === "signup") {
+        const redirectUrl = getRedirectUrl();
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: redirectUrl },
         });
         if (signUpError) throw signUpError;
-        if (!data.session) {
-          setNotice("Check your inbox and confirm your email to activate your 7-day trial.");
+
+        if (data.session) {
+          // Session established immediately (auto-confirm enabled) — normal auth flow
+          return;
+        }
+
+        const identities = data.user?.identities ?? [];
+
+        if (identities.length === 0) {
+          // Supabase obscures existing accounts; the user may already be registered.
+          setNotice(
+            "This email may already have an SVJ account. Sign in with your password or use Continue with Google. If the account is awaiting confirmation, you can resend the confirmation email.",
+          );
+        } else {
+          // Genuinely created unconfirmed account
+          setNotice("Confirmation requested. Check your inbox and Spam folder.");
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -48,7 +110,7 @@ export const AuthScreen: React.FC = () => {
     setNotice("");
     setBusy(true);
     const outcome = await signInWithGoogle();
-    if (outcome.status === "redirecting") return; // page is navigating away
+    if (outcome.status === "redirecting") return;
     if (outcome.status === "cancelled") {
       setError("Google sign-in was cancelled. No problem — you can try again.");
       setBusy(false);
@@ -60,6 +122,12 @@ export const AuthScreen: React.FC = () => {
       return;
     }
     setBusy(false);
+  };
+
+  const switchMode = () => {
+    setMode(mode === "signup" ? "signin" : "signup");
+    setError("");
+    setNotice("");
   };
 
   return (
@@ -120,6 +188,7 @@ export const AuthScreen: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              autoComplete="email"
               className="w-full pl-9 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
@@ -132,6 +201,7 @@ export const AuthScreen: React.FC = () => {
               placeholder="••••••••"
               required
               minLength={6}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
               className="w-full pl-9 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
             <button
@@ -156,7 +226,45 @@ export const AuthScreen: React.FC = () => {
               </button>
             </div>
           )}
-          {notice && <p className="text-[11px] text-emerald-400 font-mono">{notice}</p>}
+
+          {notice && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-3">
+              <p className="text-[11px] text-emerald-300 font-mono leading-relaxed">{notice}</p>
+              {mode === "signup" && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signin");
+                      setError("");
+                      setNotice("");
+                    }}
+                    className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-emerald-200 cursor-pointer text-left"
+                  >
+                    Sign in instead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGoogle}
+                    disabled={busy}
+                    className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-emerald-200 cursor-pointer text-left disabled:opacity-60"
+                  >
+                    Continue with Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={busy || resendCooldown > 0}
+                    className="text-[11px] font-mono text-[#8C8C90] hover:text-white cursor-pointer text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resendCooldown > 0
+                      ? `Resend confirmation (${resendCooldown}s)`
+                      : "Resend confirmation"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
@@ -174,11 +282,7 @@ export const AuthScreen: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => {
-            setMode(mode === "signup" ? "signin" : "signup");
-            setError("");
-            setNotice("");
-          }}
+          onClick={switchMode}
           className="w-full text-[11px] font-mono text-[#8C8C90] hover:text-white cursor-pointer"
         >
           {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}

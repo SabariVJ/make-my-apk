@@ -133,62 +133,71 @@
 }
 
 @layer base {
+  html {
+    background-color: #0b0b0c;
+    color-scheme: dark;
+    min-height: 100%;
+    margin: 0;
+  }
+
   * {
     border-color: var(--color-border);
   }
 
   body {
-    background-color: var(--color-background);
+    background-color: #0b0b0c;
     color: var(--color-foreground);
+    min-height: 100%;
+    margin: 0;
   }
 }
 
 /* ===== SVJ app design system ===== */
 
 @theme {
-  --font-anton: 'Anton', sans-serif;
-  --font-inter: 'Inter', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-anton: "Anton", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
 
-  --color-svj-bg: #0B0B0C;
-  --color-svj-card: #17171A;
+  --color-svj-bg: #0b0b0c;
+  --color-svj-card: #17171a;
   --color-svj-card-hover: #212126;
-  --color-svj-crimson: #C81E3A;
-  --color-svj-crimson-hover: #A0182E;
-  --color-svj-text: #F4F2ED;
-  --color-svj-secondary: #8C8C90;
-  --color-svj-gold: #D4AF37;
+  --color-svj-crimson: #c81e3a;
+  --color-svj-crimson-hover: #a0182e;
+  --color-svj-text: #f4f2ed;
+  --color-svj-secondary: #8c8c90;
+  --color-svj-gold: #d4af37;
   --color-svj-obsidian: #101014;
 }
 
 @layer utilities {
   .font-anton {
-    font-family: 'Anton', sans-serif;
+    font-family: "Anton", sans-serif;
     letter-spacing: 0.03em;
   }
   .font-inter {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
   .font-mono {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: "IBM Plex Mono", monospace;
   }
-  
+
   .svj-card-glow {
     box-shadow: 0 0 25px -5px rgba(200, 30, 58, 0.15);
   }
-  
+
   .svj-text-gradient {
-    background: linear-gradient(135deg, #F4F2ED 0%, #8C8C90 100%);
+    background: linear-gradient(135deg, #f4f2ed 0%, #8c8c90 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .svj-crimson-gradient {
-    background: linear-gradient(135deg, #E62846 0%, #C81E3A 50%, #800A1D 100%);
+    background: linear-gradient(135deg, #e62846 0%, #c81e3a 50%, #800a1d 100%);
   }
 
   .svj-gold-gradient {
-    background: linear-gradient(135deg, #FFE58F 0%, #D4AF37 50%, #997A15 100%);
+    background: linear-gradient(135deg, #ffe58f 0%, #d4af37 50%, #997a15 100%);
   }
 
   .svj-border-glow {
@@ -202,14 +211,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0B0C;
+  background: #0b0b0c;
 }
 ::-webkit-scrollbar-thumb {
   background: #232328;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #C81E3A;
+  background: #c81e3a;
 }
 
 /* Glass & Card effects */
@@ -226,11 +235,17 @@
 
 /* Keyframes for subtle ambient animations */
 @keyframes crimson-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
 }
 
 .animate-crimson-pulse {
   animation: crimson-pulse 4s infinite ease-in-out;
 }
-

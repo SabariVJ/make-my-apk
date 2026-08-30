@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
+import { Capacitor } from "@capacitor/core";
 import {
   UserProfile,
   UserStats,
@@ -445,11 +446,16 @@ export const SVJProvider: React.FC<{
   }, [calorieGoal]);
 
   const triggerConfetti = () => {
-    confetti({
+    // Canvas-confetti creates a full-screen canvas that causes white flashing
+    // on Android WebView. Disable it entirely in native builds.
+    if (Capacitor.isNativePlatform()) return;
+
+    void confetti({
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
       colors: ["#C81E3A", "#D4AF37", "#F4F2ED", "#E62846"],
+      disableForReducedMotion: true,
     });
   };
 
@@ -501,6 +507,11 @@ export const SVJProvider: React.FC<{
   };
 
   const toggleChallenge = (id: string) => {
+    // Capture whether the task is being completed before state update
+    let completing = false;
+    const current = challenges.find((c) => c.id === id);
+    if (current && !current.completed) completing = true;
+
     setChallenges((prev) => {
       let xpDelta = 0;
       let completedItem: DailyChallenge | undefined;
@@ -522,10 +533,6 @@ export const SVJProvider: React.FC<{
       });
 
       if (completedItem) {
-        if (completedItem.completed && xpDelta > 0) {
-          triggerConfetti();
-        }
-
         // Update User XP & Check Tier Progression
         setUser((prevUser) => {
           const oldXP = prevUser.totalXP;
@@ -626,6 +633,12 @@ export const SVJProvider: React.FC<{
 
       return updated;
     });
+
+    // Confetti side-effect moved outside the state updater.
+    // Triggered only when a task transitions from incomplete → complete.
+    if (completing) {
+      triggerConfetti();
+    }
   };
 
   const logWorkout = (name: string, exercises: WorkoutExercise[]) => {

@@ -19,6 +19,7 @@ import { FirstTimeOnboardingModal } from "./components/FirstTimeOnboardingModal"
 import { DarkCinematicOnboardingModal } from "./components/DarkCinematicOnboardingModal";
 import { GoogleAuthModal } from "./components/GoogleAuthModal";
 import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
+import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ const AppContent: React.FC<{
 }> = ({ locked = false, lockEmail = null }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const {
+    user,
     profileLoaded,
     comparingMember,
     setComparingMember,
@@ -124,6 +126,9 @@ const AppContent: React.FC<{
         <PaywallModal />
         <EditProfileModal />
         <GoogleAuthModal />
+
+        {/* AdMob banner — only for non-premium users after the real UI loads */}
+        <NativeBannerAd enabled={!user.isPremium} />
       </div>
     );
   }
@@ -171,6 +176,9 @@ const AppContent: React.FC<{
 
       {/* Bottom Sticky Navigation Bar */}
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
+
+      {/* AdMob banner — only for non-premium users after the real UI loads */}
+      <NativeBannerAd enabled={!user.isPremium} />
     </div>
   );
 };

@@ -11,8 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Capacitor } from "@capacitor/core";
-import { AdMob, BannerAdPosition, BannerAdSize } from "@capacitor-community/admob";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -153,20 +151,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      AdMob.initialize({}).then(() => {
-        AdMob.showBanner({
-          adId: "ca-app-pub-1475355973043918/9002240668",
-
-          adSize: BannerAdSize.BANNER,
-
-          position: BannerAdPosition.BOTTOM_CENTER,
-        });
-      });
-    }
-  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

@@ -1,10 +1,12 @@
 import React from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import { Flame, Zap, Crown, Shield, Mail } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export const Header: React.FC = () => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   return (
     <header className="sticky top-0 z-40 bg-[#0B0B0C]/90 backdrop-blur-md border-b border-white/5 px-4 py-3 sm:px-6">
@@ -115,7 +117,8 @@ export const Header: React.FC = () => {
 
           {/* SVJ Plus Upgrade Button */}
           {!user.isPremium ? (
-            <motion.button
+            !isAndroid && (
+              <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsPaywallOpen(true)}
@@ -123,7 +126,8 @@ export const Header: React.FC = () => {
             >
               <Crown className="w-3.5 h-3.5" />
               <span>Plus</span>
-            </motion.button>
+              </motion.button>
+            )
           ) : (
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
               <Crown className="w-3 h-3" />

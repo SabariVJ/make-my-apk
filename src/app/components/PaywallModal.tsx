@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Crown, Check, ShieldCheck, Sparkles, ArrowRight, Zap, Flame, Lock } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
@@ -25,7 +26,7 @@ export const PaywallModal: React.FC = () => {
     useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
 
-  if (!isPaywallOpen) return null;
+  if (!isPaywallOpen || Capacitor.getPlatform() === "android") return null;
 
   // ── Server-authoritative membership classification (display only) ──────────
   const hasActivePlus = user.isPremium === true;

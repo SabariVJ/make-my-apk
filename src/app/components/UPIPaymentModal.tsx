@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -21,7 +22,7 @@ export const UPIPaymentModal: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
 
-  if (!isUPIModalOpen) return null;
+  if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 
   const handleSimulatePayment = () => {
     setIsProcessing(true);

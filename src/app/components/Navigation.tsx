@@ -1,4 +1,5 @@
 import React from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import {
   Flame,
@@ -39,6 +40,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   restricted = false,
 }) => {
   const { user } = useSVJ();
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const allNavItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
@@ -58,7 +60,9 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "profile", label: "Profile", icon: User },
     { id: "signout", label: "Sign Out", icon: LogOut },
   ];
-  const navItems = restricted ? restrictedNavItems : allNavItems;
+  const navItems = restricted
+    ? restrictedNavItems
+    : allNavItems.filter((item) => !(isAndroid && item.id === "plus"));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">

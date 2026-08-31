@@ -116,9 +116,8 @@ export const Header: React.FC = () => {
           </motion.div>
 
           {/* SVJ Plus Upgrade Button */}
-          {!user.isPremium ? (
-            !isAndroid && (
-              <motion.button
+          {!user.isPremium && !isAndroid && (
+            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsPaywallOpen(true)}
@@ -126,9 +125,9 @@ export const Header: React.FC = () => {
             >
               <Crown className="w-3.5 h-3.5" />
               <span>Plus</span>
-              </motion.button>
-            )
-          ) : (
+            </motion.button>
+          )}
+          {user.isPremium && (
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
               <Crown className="w-3 h-3" />
               <span>{user.isFounder ? "FOUNDER" : "VIP ACTIVE"}</span>

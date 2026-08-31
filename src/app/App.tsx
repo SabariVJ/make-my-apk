@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
@@ -53,6 +54,7 @@ const AppContent: React.FC<{
 }> = ({ locked = false, lockEmail = null }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   useEffect(() => {
     setShowTrialNotice(locked);
@@ -94,7 +96,8 @@ const AppContent: React.FC<{
       return;
     }
     if (tab === "plus") {
-      setIsPaywallOpen(true);
+      // Google Play release: external UPI purchasing is unavailable on Android.
+      if (!isAndroid) setIsPaywallOpen(true);
     } else if (locked && tab !== "sixty" && tab !== "redeem" && tab !== "profile") {
       // Restricted shell: only sixty, redeem, and profile are allowed.
       return;
@@ -125,20 +128,23 @@ const AppContent: React.FC<{
                 Your 7-Day Trial Has Ended
               </h2>
               <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
-                Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a
-                reward code, manage your profile, or upgrade to SVJ Plus.
+                {isAndroid
+                  ? "Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a reward code, or manage your profile."
+                  : "Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a reward code, manage your profile, or upgrade to SVJ Plus."}
               </p>
               <div className="space-y-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTrialNotice(false);
-                    setIsPaywallOpen(true);
-                  }}
-                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
-                >
-                  Explore SVJ Plus
-                </button>
+                {!isAndroid && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTrialNotice(false);
+                      setIsPaywallOpen(true);
+                    }}
+                    className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                  >
+                    Explore SVJ Plus
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowTrialNotice(false)}
@@ -179,8 +185,12 @@ const AppContent: React.FC<{
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
 
         {/* Global Modals still available in restricted shell */}
-        <UPIPaymentModal />
-        <PaywallModal />
+        {!isAndroid && (
+          <>
+            <UPIPaymentModal />
+            <PaywallModal />
+          </>
+        )}
         <EditProfileModal />
         <GoogleAuthModal />
 
@@ -222,8 +232,12 @@ const AppContent: React.FC<{
 
       <EditProfileModal />
       <LevelUpModal />
-      <UPIPaymentModal />
-      <PaywallModal />
+      {!isAndroid && (
+        <>
+          <UPIPaymentModal />
+          <PaywallModal />
+        </>
+      )}
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
       <DarkCinematicOnboardingModal

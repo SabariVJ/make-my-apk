@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import {
   User,
@@ -39,6 +40,7 @@ export const ProfileView: React.FC = () => {
   const { friends, loading: friendsLoading } = useFriends();
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -368,7 +370,7 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {/* Upgrade Banner */}
-          {!user.isPremium && (
+          {!user.isPremium && !isAndroid && (
             <div
               onClick={() => setIsPaywallOpen(true)}
               className="p-5 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-amber-500/10 border border-[#C81E3A]/40 flex items-center justify-between cursor-pointer group"

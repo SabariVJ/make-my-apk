@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { showPrivacyChoices } from "../components/NativeBannerAd";
 import { motion } from "motion/react";
 import {
   User,
@@ -461,7 +462,17 @@ export const ProfileView: React.FC = () => {
       )}
 
       {/* Account actions */}
-      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4">
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+        {isAndroid && (
+          <button
+            type="button"
+            onClick={() => void showPrivacyChoices()}
+            className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Shield className="w-4 h-4" />
+            Privacy Choices
+          </button>
+        )}
         <button
           type="button"
           onClick={handleSignOut}
@@ -471,6 +482,19 @@ export const ProfileView: React.FC = () => {
           <LogOut className="w-4 h-4" />
           {signingOut ? "Signing out…" : "Log out"}
         </button>
+        <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
+          <a href="/delete-account" className="text-[#C81E3A] hover:text-[#A0182E]">
+            Delete Account
+          </a>
+          <span>•</span>
+          <a href="/privacy" className="hover:text-white">
+            Privacy
+          </a>
+          <span>•</span>
+          <a href="/terms" className="hover:text-white">
+            Terms
+          </a>
+        </div>
       </div>
     </div>
   );

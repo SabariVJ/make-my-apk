@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "tsx --test src/integrations/supabase/client.server.test.ts",
-    "cap:sync": "mkdir -p android/app/src/main/assets && cap sync android"
+    "cap:sync": "node -e \"require('fs').mkdirSync('android/app/src/main/assets',{recursive:true})\" && cap sync android"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

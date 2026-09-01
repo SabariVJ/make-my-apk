@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { showPrivacyChoices } from "../components/NativeBannerAd";
+import { showPrivacyChoices, reconcileAfterPrivacyChoices } from "../components/NativeBannerAd";
 import { motion } from "motion/react";
 import {
   User,
@@ -41,10 +41,15 @@ export const ProfileView: React.FC = () => {
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
-  const { friends, loading: friendsLoading } = useFriends();
+  const { friends, loading: friendsLoading } = useFriends(undefined, !isAndroid);
 
-  // Privacy choices handler — after consent form closes, the NativeBannerAd
-  // will re-read consent on its next enabled transition.
+  const handlePrivacyChoices = async () => {
+    const updated = await showPrivacyChoices();
+    if (updated) {
+      // Reconcile banner immediately based on the new consent state.
+      await reconcileAfterPrivacyChoices();
+    }
+  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -131,12 +136,9 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Digital Membership Card Section */}
-      <MembershipCard user={user} />
-
-      {/* Friends List — hidden on Android Play release */}
-      {!isAndroid && (
+      <MembershipCard user={user} /> {/* Friends List — hidden on Android Play release */}
+      {!isAndroid && friends.length > 0 && (
         <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
@@ -188,7 +190,6 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
-
       {/* Navigation Sub-Tabs */}
       <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
         <button
@@ -222,7 +223,6 @@ export const ProfileView: React.FC = () => {
           Achievements
         </button>
       </div>
-
       {activeTab === "analytics" && (
         /* ANALYTICS TAB */
         <div className="space-y-4">
@@ -266,7 +266,8 @@ export const ProfileView: React.FC = () => {
                 </span>
               </div>
               <span className="text-[#C81E3A] font-bold">
-                LEVEL {user.level || 1} ({user.leagueRank || "APPRENTICE I"})
+                LEVEL {user.level || 1}
+                {!isAndroid && <> ({user.leagueRank || "APPRENTICE I"})</>}
               </span>
             </div>
 
@@ -397,7 +398,6 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
-
       {activeTab === "badges" && (
         /* BADGES TAB */
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -428,7 +428,6 @@ export const ProfileView: React.FC = () => {
           ))}
         </div>
       )}
-
       {activeTab === "achievements" && (
         /* ACHIEVEMENTS TAB */
         <div className="space-y-3">
@@ -465,13 +464,12 @@ export const ProfileView: React.FC = () => {
           ))}
         </div>
       )}
-
       {/* Account actions */}
       <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
         {isAndroid && (
           <button
             type="button"
-            onClick={() => void showPrivacyChoices()}
+            onClick={() => void handlePrivacyChoices()}
             className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Shield className="w-4 h-4" />

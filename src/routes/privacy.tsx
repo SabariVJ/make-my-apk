@@ -164,6 +164,9 @@ function PrivacyPage() {
               </a>
               .
             </p>
+            <p className="text-[10px] text-[#8C8C90] font-mono italic">
+              ⚠ Contact address pending owner confirmation before publication.
+            </p>
           </div>
         </section>
 

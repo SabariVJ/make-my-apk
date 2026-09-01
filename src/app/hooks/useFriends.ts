@@ -34,7 +34,7 @@ interface SyncInput {
   currentStreak: number;
 }
 
-export function useFriends(sync?: SyncInput) {
+export function useFriends(sync?: SyncInput, enabled = true) {
   const [userId, setUserId] = useState<string | null>(null);
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [requests, setRequests] = useState<FriendRequestRow[]>([]);
@@ -43,6 +43,12 @@ export function useFriends(sync?: SyncInput) {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!enabled) {
+      setFriends([]);
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
     const { data: auth } = await supabase.auth.getUser();
     const uid = auth.user?.id ?? null;
     setUserId(uid);
@@ -61,7 +67,7 @@ export function useFriends(sync?: SyncInput) {
     setFriends((f.data as FriendRow[] | null) ?? []);
     setRequests((r.data as FriendRequestRow[] | null) ?? []);
     setLoading(false);
-  }, []);
+  }, [enabled]);
 
   // Keep the signed-in user's public card (username / xp / streak) up to date so
   // other members can find them and see live stats.

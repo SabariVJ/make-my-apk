@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, release/*]
+  pull_request:
+    branches: [main, release/*]
+
+permissions:
+  contents: read
+
+jobs:
+  web-checks:
+    name: Web Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tests
+        run: npm test
+      - name: ESLint
+        run: npx eslint src/
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Prettier check
+        run: npx prettier --check "src/**/*.{ts,tsx,css}"
+      - name: Build
+        run: npm run build
+      - name: Git clean
+        run: git diff --check
+
+  android-debug:
+    name: Android Debug Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web assets
+        run: npm run build
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Capacitor sync
+        run: npx cap sync android
+      - name: Android lint
+        run: cd android && ./gradlew lintDebug
+      - name: Android assembleDebug
+        run: cd android && ./gradlew assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore

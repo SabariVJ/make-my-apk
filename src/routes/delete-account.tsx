@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteAccount } from "@/lib/account.functions";
+import { deleteAccount, requestDeletionChallenge } from "@/lib/account.functions";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/delete-account")({
@@ -15,11 +15,6 @@ export const Route = createFileRoute("/delete-account")({
   component: DeleteAccountPage,
 });
 
-/**
- * Determine the best reauthentication step for the current session.
- * - If the user already has an active session, skip reauth and go straight to confirm.
- * - Otherwise, offer both email/password and Google sign-in.
- */
 function DeleteAccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,13 +22,22 @@ function DeleteAccountPage() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"check" | "login" | "confirm">("check");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
 
-  // On mount, check if the user is already signed in.
+  // On mount, check session and request a challenge token if signed in.
   useEffect(() => {
     void (async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        setStep("confirm");
+        // Request a deletion challenge from the server (proves recent auth)
+        try {
+          const res = await requestDeletionChallenge();
+          setChallengeToken(res.challengeToken);
+          setStep("confirm");
+        } catch {
+          // Challenge failed — show login instead
+          setStep("login");
+        }
       } else {
         setStep("login");
       }
@@ -56,7 +60,14 @@ function DeleteAccountPage() {
         return;
       }
 
-      setStep("confirm");
+      // After successful reauth, request a fresh challenge token
+      try {
+        const res = await requestDeletionChallenge();
+        setChallengeToken(res.challengeToken);
+        setStep("confirm");
+      } catch {
+        setResult({ ok: false, message: "Failed to verify session. Please try again." });
+      }
     } catch {
       setResult({ ok: false, message: "Connection error. Please try again." });
     } finally {
@@ -78,7 +89,8 @@ function DeleteAccountPage() {
         setResult({ ok: false, message: error.message || "Google sign-in failed." });
         setLoading(false);
       }
-      // On success the browser redirects to Google and back
+      // On success the browser redirects to Google and back;
+      // the mount useEffect will detect the session and request a challenge.
     } catch {
       setResult({ ok: false, message: "Google sign-in failed. Please try again." });
       setLoading(false);
@@ -87,11 +99,15 @@ function DeleteAccountPage() {
 
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!challengeToken) {
+      setResult({ ok: false, message: "Missing challenge token. Please refresh and try again." });
+      return;
+    }
     setLoading(true);
     setResult(null);
 
     try {
-      const res = await deleteAccount({ data: { confirmation } });
+      const res = await deleteAccount({ data: { confirmation, challengeToken } });
       setResult(res);
 
       if (res.ok) {
@@ -112,7 +128,7 @@ function DeleteAccountPage() {
         </div>
         <h1 className="font-anton text-2xl uppercase tracking-wider">Account Deleted</h1>
         <p className="text-sm text-[#8C8C90] max-w-sm font-mono">
-          Your account and all associated data have been permanently removed.
+          Your account and all associated data have been removed.
         </p>
         <a
           href="/"
@@ -144,8 +160,9 @@ function DeleteAccountPage() {
           </div>
           <h1 className="font-anton text-2xl uppercase tracking-wider">Delete Account</h1>
           <p className="text-xs text-[#8C8C90] font-mono leading-relaxed">
-            This action is permanent and cannot be undone. All your data, including profile,
-            challenge progress, XP, and rewards will be permanently deleted.
+            This action is permanent. All your data, including profile, challenge progress, XP, and
+            rewards will be removed. Some data may persist briefly in automated backups before being
+            purged.
           </p>
         </div>
 
@@ -247,7 +264,7 @@ function DeleteAccountPage() {
 
             <button
               type="submit"
-              disabled={loading || confirmation.toUpperCase() !== "DELETE"}
+              disabled={loading || confirmation.toUpperCase() !== "DELETE" || !challengeToken}
               className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
@@ -260,6 +277,7 @@ function DeleteAccountPage() {
                 setStep("login");
                 setConfirmation("");
                 setResult(null);
+                setChallengeToken(null);
               }}
               className="w-full text-center text-xs text-[#8C8C90] hover:text-white font-mono"
             >

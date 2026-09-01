@@ -49,8 +49,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - name: Prepare Capacitor assets directory
+        run: mkdir -p android/app/src/main/assets
       - name: Capacitor sync
-        run: npx cap sync android
+        run: npm run cap:sync
       - name: Android lint
         run: cd android && ./gradlew lintDebug
       - name: Android assembleDebug

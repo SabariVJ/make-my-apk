@@ -44,12 +44,21 @@ android {
             def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
             def signingReady = keystorePath && keystorePassword && keyAlias && keyPassword
             project.gradle.taskGraph.whenReady { graph ->
-                def releaseTasks = graph.allTasks.findAll { it.name.toLowerCase().contains('release') && it.name.toLowerCase().contains('assemble') || it.name.toLowerCase().contains('bundle') }
-                if (releaseTasks && !signingReady) {
+                if (signingReady) return
+                // Match only the app project's release artifact tasks.
+                // Debug, help, sync, lint, install, test tasks must not require credentials.
+                def needsReleaseSigning = graph.allTasks.any { task ->
+                    def path = task.projectPath ?: ''
+                    def name = task.name
+                    (path.endsWith(':app') || path == ':app') &&
+                    (name == 'assembleRelease' || name == 'bundleRelease' ||
+                     name ==~ 'assembleRelease.*' || name ==~ 'bundleRelease.*')
+                }
+                if (needsReleaseSigning) {
                     throw new GradleException(
                         'Release signing requires SVJ_KEYSTORE_PATH, SVJ_KEYSTORE_PASSWORD, ' +
                         'SVJ_KEY_ALIAS, and SVJ_KEY_PASSWORD environment variables. ' +
-                        'Set them before building: ./gradlew ' + releaseTasks.collect { it.name }.join(' ')
+                        'Set them before building a release artifact.'
                     )
                 }
             }

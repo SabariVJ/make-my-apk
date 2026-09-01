@@ -58,8 +58,9 @@ function PrivacyPage() {
               leaderboard and friend comparisons.
             </p>
             <p>
-              We do not sell your personal data to third parties. We do not use your data for
-              advertising targeting.
+              We do not sell your personal data to third parties. We do not directly use your data
+              for advertising targeting. The Android app uses Google AdMob, which may use your
+              Advertising ID to serve ads based on your consent choices.
             </p>
           </div>
         </section>
@@ -163,9 +164,6 @@ function PrivacyPage() {
                 sabarivj777@gmail.com
               </a>
               .
-            </p>
-            <p className="text-[10px] text-[#8C8C90] font-mono italic">
-              ⚠ Contact address pending owner confirmation before publication.
             </p>
           </div>
         </section>

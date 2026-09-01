@@ -9,17 +9,15 @@ import {
 import type { AdmobConsentInfo } from "@capacitor-community/admob";
 
 /**
- * AdMob banner with proper UMP consent flow:
- * 1. Initialize AdMob once
- * 2. On every banner request: re-read consent info, show form if REQUIRED
- * 3. Only showBanner when canRequestAds is true
- * 4. Serialize all async AdMob operations to prevent races
- * 5. Handle privacy choices by re-reading consent and updating the banner
+ * AdMob banner with proper UMP consent flow — single unified lifecycle:
  *
- * Cancellation ordering:
- *   - An old show operation must NOT remove a banner placed by a newer call.
- *   - We use a generation counter so stale cleanups skip if a newer show
- *     started.
+ * - One serialized operation queue (enqueue).
+ * - One generation counter that increments on every enabled→true transition.
+ * - One desired-enabled flag so privacy-choice reconciliation respects
+ *   the current mounted state.
+ *
+ * All operations (init, consent, show, hide, remove) go through the same
+ * serialized path. No external function may directly hide/show banners.
  *
  * Renders null — side-effect-only component.
  * Must be placed inside AppContent AFTER profileLoaded is true.
@@ -29,7 +27,7 @@ const AD_UNIT_ID = "ca-app-pub-1475355973043918/9002240668";
 
 let admobInitialized = false;
 
-/** Serializes all AdMob async operations to prevent duplicate init/show/remove races. */
+// ── Serialized operation queue ──────────────────────────────────────────────
 let pendingChain: Promise<unknown> = Promise.resolve();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
@@ -38,42 +36,25 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
-/**
- * Show the Google privacy options form so the user can modify ad consent.
- * Serialized through the same queue as banner operations.
- * After the form closes, re-read consent and update banner.
- */
-/**
- * Trigger a consent re-read and banner update after the privacy form closes.
- * Hides the current banner, re-reads consent, and shows a new banner only
- * if consent still permits it.
- */
-export async function reconcileAfterPrivacyChoices(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
-  // Use a unique generation so any stale in-flight show knows it's superseded.
-  const gen = 0; // reconciliation uses its own ad-hoc generation
-  void enqueue(async () => {
-    await cleanupBanner();
-    const canRequest = await resolveConsent();
-    if (canRequest) {
-      try {
-        await AdMob.showBanner({
-          adId: AD_UNIT_ID,
-          adSize: BannerAdSize.ADAPTIVE_BANNER,
-          position: BannerAdPosition.BOTTOM_CENTER,
-          margin: 72,
-        });
-      } catch {
-        /* banner not shown */
-      }
-    }
-  });
-}
+// ── Privacy-choices notification ────────────────────────────────────────────
+// When the Profile "Privacy Choices" button is tapped, the user may revoke
+// or grant consent. We notify the currently mounted banner controller so it
+// can re-run its consent→show/hide logic through the normal lifecycle.
+// No external function may directly show/hide/remove banners.
+let _privacyChoicesVersion = 0;
+let _privacyChoicesListeners: Array<() => void> = [];
 
+/**
+ * Called by Profile after showPrivacyOptionsForm closes.
+ * Notifies the currently mounted NativeBannerAd to re-read consent.
+ */
 export async function showPrivacyChoices(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false;
   try {
-    await enqueue(() => AdMob.showPrivacyOptionsForm());
+    await AdMob.showPrivacyOptionsForm();
+    // Notify all mounted listeners that consent may have changed.
+    _privacyChoicesVersion++;
+    for (const listener of _privacyChoicesListeners) listener();
     return true;
   } catch (err) {
     console.warn("[NativeBannerAd] privacy options form failed:", err);
@@ -81,19 +62,15 @@ export async function showPrivacyChoices(): Promise<boolean> {
   }
 }
 
-/**
- * Read current consent state and show the form if required.
- * Returns the updated canRequestAds result.
- */
+// ── Internal helpers ────────────────────────────────────────────────────────
+
 async function resolveConsent(): Promise<boolean> {
   try {
     const info: AdmobConsentInfo = await AdMob.requestConsentInfo();
-
     if (info.status === AdmobConsentStatus.REQUIRED && info.isConsentFormAvailable) {
       const afterConsent = await AdMob.showConsentForm();
       return afterConsent.canRequestAds;
     }
-
     return info.canRequestAds;
   } catch (err) {
     console.warn("[NativeBannerAd] consent flow failed:", err);
@@ -101,7 +78,6 @@ async function resolveConsent(): Promise<boolean> {
   }
 }
 
-/** Safely hide and remove any existing banner. */
 async function cleanupBanner(): Promise<void> {
   try {
     await AdMob.hideBanner();
@@ -115,34 +91,51 @@ async function cleanupBanner(): Promise<void> {
   }
 }
 
+// ── Banner lifecycle ────────────────────────────────────────────────────────
+
 /**
- * Canonical show-banner flow, called inside enqueue() for serialization.
- * `myGeneration` is incremented each time this flow is started by a new
- * effect run. Stale cleanups skip if a newer generation has started.
+ * The full banner show/hide lifecycle, serialized through enqueue().
+ * Returns true if a banner was placed, false otherwise.
+ *
+ * @param gen  The generation counter when this call was started.
+ * @param getGen  Returns the current generation (may have advanced).
+ * @param desiredEnabled  Whether the banner should be shown.
  */
-async function showBannerFlow(myGeneration: number, getGeneration: () => number): Promise<boolean> {
+async function bannerLifecycle(
+  gen: number,
+  getGen: () => number,
+  desiredEnabled: boolean,
+): Promise<boolean> {
+  // If the desired state changed during the async flow, abort.
+  if (gen !== getGen()) return false;
+
+  if (!desiredEnabled) {
+    await cleanupBanner();
+    return false;
+  }
+
   if (!admobInitialized) {
     await AdMob.initialize({});
     admobInitialized = true;
   }
 
-  if (myGeneration !== getGeneration()) return false;
+  if (gen !== getGen()) return false;
 
-  // Always re-read consent — no cached bypass.
   const canRequest = await resolveConsent();
-  if (!canRequest || myGeneration !== getGeneration()) {
+  if (!canRequest || gen !== getGen()) {
     console.info("[NativeBannerAd] consent not granted — no banner shown");
+    // If consent was denied, clean up any stale banner.
+    if (gen === getGen()) await cleanupBanner();
     return false;
   }
 
-  // Clean up any stale banner before showing a new one.
-  // Only if we're still the current generation.
-  if (myGeneration === getGeneration()) {
-    await cleanupBanner();
-  }
+  if (gen !== getGen()) return false;
 
-  // Recheck AFTER cleanup — cleanup is async, a newer show may have started.
-  if (myGeneration !== getGeneration()) return false;
+  // Clean up before showing new banner.
+  await cleanupBanner();
+
+  // Recheck after async cleanup.
+  if (gen !== getGen()) return false;
 
   await AdMob.showBanner({
     adId: AD_UNIT_ID,
@@ -151,47 +144,54 @@ async function showBannerFlow(myGeneration: number, getGeneration: () => number)
     margin: 72,
   });
 
-  return myGeneration === getGeneration();
+  return gen === getGen();
 }
 
+// ── Component ───────────────────────────────────────────────────────────────
+
 export function NativeBannerAd({ enabled }: { enabled: boolean }) {
-  const bannerActiveRef = useRef(false);
   const generationRef = useRef(0);
+  const bannerActiveRef = useRef(false);
+  const desiredEnabledRef = useRef(enabled);
+
+  // Keep desiredEnabled in sync with the prop.
+  desiredEnabledRef.current = enabled;
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    if (!enabled) {
-      if (bannerActiveRef.current) {
-        bannerActiveRef.current = false;
-        void enqueue(() => cleanupBanner());
-      }
-      return;
-    }
-
-    // Increment generation so any in-flight show from a prior effect
-    // knows it is stale and must not set bannerActiveRef or remove
-    // the banner that the NEW effect will show.
     const gen = ++generationRef.current;
     const getGen = () => generationRef.current;
 
     const run = async () => {
       try {
-        const placed = await showBannerFlow(gen, getGen);
-        if (placed) {
-          bannerActiveRef.current = true;
-        }
+        const placed = await bannerLifecycle(gen, getGen, desiredEnabledRef.current);
+        bannerActiveRef.current = placed;
       } catch (err) {
-        console.warn("[NativeBannerAd] AdMob init/show failed:", err);
+        console.warn("[NativeBannerAd] lifecycle failed:", err);
       }
     };
 
     void enqueue(run);
 
+    // Subscribe to privacy-choices changes while this effect is active.
+    const onPrivacyChange = () => {
+      // Only reconcile if this generation is still current and banner is enabled.
+      if (gen === getGen() && desiredEnabledRef.current) {
+        const reconcileGen = gen;
+        void enqueue(async () => {
+          const placed = await bannerLifecycle(reconcileGen, getGen, true);
+          bannerActiveRef.current = placed;
+        });
+      }
+    };
+    _privacyChoicesListeners.push(onPrivacyChange);
+
     return () => {
-      // Only clean up if this generation is still the current one.
-      // If a newer effect started, the newer showBannerFlow will manage
-      // its own banner and this cleanup must not remove it.
+      // Remove listener.
+      _privacyChoicesListeners = _privacyChoicesListeners.filter((l) => l !== onPrivacyChange);
+
+      // Only clean up if this generation is still current.
       if (gen === getGen()) {
         bannerActiveRef.current = false;
         void enqueue(() => cleanupBanner());

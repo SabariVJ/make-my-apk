@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { showPrivacyChoices, reconcileAfterPrivacyChoices } from "../components/NativeBannerAd";
+import { showPrivacyChoices } from "../components/NativeBannerAd";
 import { motion } from "motion/react";
 import {
   User,
@@ -42,14 +42,6 @@ export const ProfileView: React.FC = () => {
   const [signingOut, setSigningOut] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   const { friends, loading: friendsLoading } = useFriends(undefined, !isAndroid);
-
-  const handlePrivacyChoices = async () => {
-    const updated = await showPrivacyChoices();
-    if (updated) {
-      // Reconcile banner immediately based on the new consent state.
-      await reconcileAfterPrivacyChoices();
-    }
-  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -469,7 +461,7 @@ export const ProfileView: React.FC = () => {
         {isAndroid && (
           <button
             type="button"
-            onClick={() => void handlePrivacyChoices()}
+            onClick={() => void showPrivacyChoices()}
             className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Shield className="w-4 h-4" />

@@ -49,8 +49,7 @@ function TermsPage() {
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               SVJ Plus is an optional membership that unlocks additional features. Membership may be
-              obtained through reward codes earned by completing the 60-Day Challenge or through
-              manual payment arrangements.
+              obtained through reward codes earned by completing the 60-Day Challenge.
             </p>
             <p>
               Membership is non-transferable and locked to your account. Lifetime membership
@@ -116,8 +115,8 @@ function TermsPage() {
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For questions about these terms, contact us at{" "}
-              <a href="mailto:sabarivj777@gmail.com" className="text-[#C81E3A] underline">
-                sabarivj777@gmail.com
+              <a href="mailto:support@svjfitness.com" className="text-[#C81E3A] underline">
+                support@svjfitness.com
               </a>
               .
             </p>

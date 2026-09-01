@@ -23,7 +23,8 @@ android {
             def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
             def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
 
-            if (keystorePath && keystorePassword && keyAlias && keyPassword) {
+            def allPresent = keystorePath && keystorePassword && keyAlias && keyPassword
+            if (allPresent) {
                 storeFile file(keystorePath)
                 storePassword keystorePassword
                 keyAlias keyAlias
@@ -34,7 +35,16 @@ android {
 
     buildTypes {
         release {
+            // Fail explicitly when signing credentials are missing so an
+            // unsigned release AAB is never silently produced.
             signingConfig signingConfigs.release
+            def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
+            def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
+            def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+            if (!(keystorePath && keystorePassword && keyAlias && keyPassword)) {
+                logger.error('ERROR: bundleRelease requires SVJ_KEYSTORE_PATH, SVJ_KEYSTORE_PASSWORD, SVJ_KEY_ALIAS, and SVJ_KEY_PASSWORD env vars. Set them before building a release bundle.')
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

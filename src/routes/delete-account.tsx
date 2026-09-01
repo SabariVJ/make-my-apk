@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteAccount } from "@/lib/account.functions";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
@@ -15,15 +15,32 @@ export const Route = createFileRoute("/delete-account")({
   component: DeleteAccountPage,
 });
 
+/**
+ * Determine the best reauthentication step for the current session.
+ * - If the user already has an active session, skip reauth and go straight to confirm.
+ * - Otherwise, offer both email/password and Google sign-in.
+ */
 function DeleteAccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"login" | "confirm">("login");
+  const [step, setStep] = useState<"check" | "login" | "confirm">("check");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  const handleReauth = async (e: React.FormEvent) => {
+  // On mount, check if the user is already signed in.
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setStep("confirm");
+      } else {
+        setStep("login");
+      }
+    })();
+  }, []);
+
+  const handleReauthEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
@@ -43,6 +60,27 @@ function DeleteAccountPage() {
     } catch {
       setResult({ ok: false, message: "Connection error. Please try again." });
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReauthGoogle = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/delete-account",
+        },
+      });
+      if (error) {
+        setResult({ ok: false, message: error.message || "Google sign-in failed." });
+        setLoading(false);
+      }
+      // On success the browser redirects to Google and back
+    } catch {
+      setResult({ ok: false, message: "Google sign-in failed. Please try again." });
       setLoading(false);
     }
   };
@@ -86,6 +124,17 @@ function DeleteAccountPage() {
     );
   }
 
+  if (step === "check") {
+    return (
+      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
+        <p className="text-[11px] font-mono text-[#8C8C90] uppercase tracking-wider">
+          Checking session…
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6">
       <div className="w-full max-w-sm space-y-6">
@@ -101,47 +150,68 @@ function DeleteAccountPage() {
         </div>
 
         {step === "login" ? (
-          <form onSubmit={handleReauth} className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
-                placeholder="••••••••"
-              />
-            </div>
+          <>
+            <form onSubmit={handleReauthEmail} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            {result && !result.ok && (
-              <p className="text-xs text-[#C81E3A] font-mono">{result.message}</p>
-            )}
+              {result && !result.ok && (
+                <p className="text-xs text-[#C81E3A] font-mono">{result.message}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !email || !password}
+                className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Continue
+              </button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-[#0B0B0C] px-3 text-[#8C8C90] font-mono">or</span>
+              </div>
+            </div>
 
             <button
-              type="submit"
-              disabled={loading || !email || !password}
-              className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              type="button"
+              onClick={() => void handleReauthGoogle()}
+              disabled={loading}
+              className="w-full py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Continue
+              Continue with Google
             </button>
 
             <a
@@ -150,7 +220,7 @@ function DeleteAccountPage() {
             >
               Cancel
             </a>
-          </form>
+          </>
         ) : (
           <form onSubmit={handleDelete} className="space-y-4">
             <div className="p-4 rounded-xl bg-[#C81E3A]/10 border border-[#C81E3A]/30">

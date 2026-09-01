@@ -90,9 +90,11 @@ function PrivacyPage() {
             </p>
             <p>
               <strong className="text-white">Google AdMob:</strong> The Android app displays
-              advertisements through Google AdMob. AdMob may collect device identifiers (Advertising
-              ID) and use them to serve ads. You can opt out of personalized ads through your device
-              settings. AdMob's data practices are governed by{" "}
+              advertisements through Google AdMob. When you consent to personalized advertising,
+              AdMob may collect device identifiers (Advertising ID) and use them to serve relevant
+              ads. If you do not consent, non-personalized ads may still be shown. You can opt out
+              of personalized ads through your device settings. AdMob's data practices are governed
+              by{" "}
               <a
                 href="https://policies.google.com/privacy"
                 target="_blank"
@@ -157,8 +159,8 @@ function PrivacyPage() {
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For privacy-related questions or requests, contact us at{" "}
-              <a href="mailto:sabarivj777@gmail.com" className="text-[#C81E3A] underline">
-                sabarivj777@gmail.com
+              <a href="mailto:support@svjfitness.com" className="text-[#C81E3A] underline">
+                support@svjfitness.com
               </a>
               .
             </p>

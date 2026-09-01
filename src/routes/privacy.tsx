@@ -159,8 +159,8 @@ function PrivacyPage() {
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For privacy-related questions or requests, contact us at{" "}
-              <a href="mailto:support@svjfitness.com" className="text-[#C81E3A] underline">
-                support@svjfitness.com
+              <a href="mailto:sabarivj777@gmail.com" className="text-[#C81E3A] underline">
+                sabarivj777@gmail.com
               </a>
               .
             </p>

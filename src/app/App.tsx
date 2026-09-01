@@ -52,13 +52,28 @@ const AppContent: React.FC<{
   locked?: boolean;
   lockEmail?: string | null;
 }> = ({ locked = false, lockEmail = null }) => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const isAndroid = Capacitor.getPlatform() === "android";
+  // Android Play: prevent stale tabs (community/leaderboard hidden on native)
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (locked) return "sixty";
+    if (isAndroid) return "challenges";
+    return "challenges";
+  });
 
   useEffect(() => {
     setShowTrialNotice(locked);
   }, [locked]);
+
+  // Android Play: reset hidden tabs if they somehow become active
+  useEffect(() => {
+    if (
+      isAndroid &&
+      (activeTab === "community" || activeTab === "leaderboard" || activeTab === "plus")
+    ) {
+      setActiveTab("challenges");
+    }
+  }, [activeTab, isAndroid]);
 
   const {
     user,
@@ -212,8 +227,8 @@ const AppContent: React.FC<{
         )}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
-        {activeTab === "community" && <CommunityView />}
-        {activeTab === "leaderboard" && <LeaderboardView />}
+        {activeTab === "community" && !isAndroid && <CommunityView />}
+        {activeTab === "leaderboard" && !isAndroid && <LeaderboardView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
         {activeTab === "profile" && <ProfileView />}
       </main>

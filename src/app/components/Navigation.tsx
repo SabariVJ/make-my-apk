@@ -62,7 +62,16 @@ export const Navigation: React.FC<NavigationProps> = ({
   ];
   const navItems = restricted
     ? restrictedNavItems
-    : allNavItems.filter((item) => !(isAndroid && item.id === "plus"));
+    : allNavItems.filter((item) => {
+        // Android Play: hide Plus (no purchase), Community, and Leaderboard
+        if (
+          isAndroid &&
+          (item.id === "plus" || item.id === "community" || item.id === "leaderboard")
+        ) {
+          return false;
+        }
+        return true;
+      });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">

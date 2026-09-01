@@ -39,9 +39,7 @@ function getSupabaseConfig() {
       (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined),
     publishableKey:
       import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-      (typeof process !== "undefined"
-        ? process.env["SUPABASE_PUBLISHABLE_KEY"]
-        : undefined),
+      (typeof process !== "undefined" ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined),
   };
 }
 
@@ -61,8 +59,7 @@ export function hasSupabaseConfig(): boolean {
 }
 
 function createSupabaseClient() {
-  const { url: SUPABASE_URL, publishableKey: SUPABASE_PUBLISHABLE_KEY } =
-    getSupabaseConfig();
+  const { url: SUPABASE_URL, publishableKey: SUPABASE_PUBLISHABLE_KEY } = getSupabaseConfig();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

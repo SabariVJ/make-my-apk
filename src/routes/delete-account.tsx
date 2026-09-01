@@ -108,8 +108,8 @@ function DeleteAccountPage() {
         </div>
         <h1 className="font-anton text-2xl uppercase tracking-wider">Account Deleted</h1>
         <p className="text-sm text-[#8C8C90] max-w-sm font-mono">
-          Your account has been removed. Some data may persist briefly in
-          automated backups before being purged.
+          Your account has been removed. Some data may persist briefly in automated backups before
+          being purged.
         </p>
         <a
           href="/"
@@ -141,8 +141,8 @@ function DeleteAccountPage() {
           </div>
           <h1 className="font-anton text-2xl uppercase tracking-wider">Delete Account</h1>
           <p className="text-xs text-[#8C8C90] font-mono leading-relaxed">
-            This action is permanent. All your data, including profile,
-            challenge progress, XP, and rewards will be removed.
+            This action is permanent. All your data, including profile, challenge progress, XP, and
+            rewards will be removed.
           </p>
         </div>
 

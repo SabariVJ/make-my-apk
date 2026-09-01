@@ -5,8 +5,7 @@ import { useSVJ } from "../context/SVJContext";
 import { signInWithGoogle } from "@/lib/googleAuth";
 
 export const GoogleAuthModal: React.FC = () => {
-  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } =
-    useSVJ();
+  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } = useSVJ();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [succeeded, setSucceeded] = useState(false);

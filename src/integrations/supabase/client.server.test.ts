@@ -12,8 +12,9 @@
  * 6. Privileged operations must fail closed when no admin key exists
  * 7. REGRESSION: whitespace-only preferred key falls through to valid legacy key
  */
-import { describe, it } from "node:test";
+import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { hasAdminKey, requireAdminKey } from "./client.server";
 
 // ── helpers ──────────────────────────────────────────────────────────
 // Mirrors the normalizeKey + resolution logic in client.server.ts.
@@ -204,5 +205,107 @@ describe("Privileged operations must fail closed", () => {
         `Disagreement for [${svj}, ${legacy}]: resolveAdminKey=${key}, hasAdminKey=${isAdmin}`,
       );
     }
+  });
+});
+
+// ── Integration tests: actual requireAdminKey / hasAdminKey from the module ──
+
+const SVJ_KEY = "SVJ_SUPABASE_SECRET_KEY";
+const LEGACY_KEY = "SUPABASE_SERVICE_ROLE_KEY";
+
+function clearKeys() {
+  delete process.env[SVJ_KEY];
+  delete process.env[LEGACY_KEY];
+}
+
+describe("requireAdminKey — actual module import", () => {
+  afterEach(clearKeys);
+
+  it("throws when neither key is configured", () => {
+    clearKeys();
+    assert.throws(() => requireAdminKey(), /Privileged operation requires/);
+  });
+
+  it("throws when both keys are whitespace-only", () => {
+    process.env[SVJ_KEY] = "   ";
+    process.env[LEGACY_KEY] = "  \t\n ";
+    assert.throws(() => requireAdminKey(), /Privileged operation requires/);
+  });
+
+  it("throws when preferred is whitespace-only and legacy is empty", () => {
+    process.env[SVJ_KEY] = "   ";
+    process.env[LEGACY_KEY] = "";
+    assert.throws(() => requireAdminKey(), /Privileged operation requires/);
+  });
+
+  it("does NOT throw when SVJ key is valid", () => {
+    process.env[SVJ_KEY] = "svj-secret-valid";
+    assert.doesNotThrow(() => requireAdminKey());
+  });
+
+  it("does NOT throw when legacy key is valid", () => {
+    process.env[LEGACY_KEY] = "legacy-role-valid";
+    assert.doesNotThrow(() => requireAdminKey());
+  });
+
+  it("does NOT throw when both keys are valid (prefers SVJ)", () => {
+    process.env[SVJ_KEY] = "svj-secret";
+    process.env[LEGACY_KEY] = "legacy-role";
+    assert.doesNotThrow(() => requireAdminKey());
+  });
+
+  it("does NOT throw when SVJ key has surrounding whitespace but is non-empty", () => {
+    process.env[SVJ_KEY] = "  svj-secret  ";
+    assert.doesNotThrow(() => requireAdminKey());
+  });
+});
+
+describe("hasAdminKey — actual module import consistency", () => {
+  afterEach(clearKeys);
+
+  it("returns false when both keys are missing", () => {
+    clearKeys();
+    assert.equal(hasAdminKey(), false);
+  });
+
+  it("returns true when SVJ key is set", () => {
+    process.env[SVJ_KEY] = "test-key";
+    assert.equal(hasAdminKey(), true);
+  });
+
+  it("returns true when legacy key is set", () => {
+    process.env[LEGACY_KEY] = "test-key";
+    assert.equal(hasAdminKey(), true);
+  });
+
+  it("returns false when both are whitespace-only", () => {
+    process.env[SVJ_KEY] = "   ";
+    process.env[LEGACY_KEY] = "  ";
+    assert.equal(hasAdminKey(), false);
+  });
+
+  it("whitespace-only SVJ falls through to valid legacy in hasAdminKey", () => {
+    process.env[SVJ_KEY] = "   ";
+    process.env[LEGACY_KEY] = "legacy-valid";
+    assert.equal(hasAdminKey(), true);
+  });
+});
+
+describe("Publishable key cannot authorize privileged operations", () => {
+  afterEach(clearKeys);
+
+  it("requireAdminKey rejects even when only publishable key is set", () => {
+    clearKeys();
+    // Publishable key is not an admin key — must still throw
+    assert.throws(() => requireAdminKey(), /Privileged operation requires/);
+  });
+
+  it("hasAdminKey returns false when only non-admin env vars are set", () => {
+    clearKeys();
+    // Simulate: SUPABASE_URL and publishable key exist but no admin key
+    process.env["SUPABASE_URL"] = "https://test.supabase.co";
+    process.env["SUPABASE_PUBLISHABLE_KEY"] = "sb_publishable_test";
+    assert.equal(hasAdminKey(), false);
+    assert.throws(() => requireAdminKey(), /Privileged operation requires/);
   });
 });

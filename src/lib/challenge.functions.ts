@@ -16,6 +16,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminKey } from "@/integrations/supabase/client.server";
 import { CHALLENGE_DAYS, TOTAL_DAYS, DAY_MS, getDayDef } from "./challengeDays";
 
 const FOUNDER_EMAIL = "sabarivj777@gmail.com";
@@ -353,6 +354,7 @@ async function grantCompletionCode(
 export const getChallengeState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const now = await getDbNow(admin);
@@ -381,6 +383,7 @@ export const getChallengeState = createServerFn({ method: "GET" })
 export const startChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const now = await getDbNow(admin);
@@ -412,6 +415,7 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }): Promise<ChallengeState> => {
     const input = data as CompleteDayInput;
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const now = await getDbNow(admin);
@@ -534,6 +538,7 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
 export const resumeChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const now = await getDbNow(admin);
@@ -577,6 +582,7 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
     const raw = typeof input?.code === "string" ? input.code.trim().toUpperCase() : "";
     if (!raw) return { ok: false, message: "This code is invalid or has already been redeemed." };
 
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as Admin;
     const now = await getDbNow(admin);

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminKey } from "@/integrations/supabase/client.server";
 
 export const TRIAL_DAYS = 7;
 
@@ -55,6 +56,7 @@ function buildStatus(row: {
 export const getTrialStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TrialStatus> => {
+    requireAdminKey();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase() || null;

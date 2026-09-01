@@ -102,6 +102,25 @@ export function hasAdminKey(): boolean {
   );
 }
 
+/**
+ * Throw a controlled error when no privileged key is configured.
+ * Call this at the top of every server function that performs writes
+ * requiring service_role bypass (Plus grants, code consumption, profile
+ * mutations, account deletion).
+ *
+ * This is defence-in-depth: RLS and column-level triggers provide a
+ * second safety net, but failing early with a clear message avoids
+ * confusing database errors and makes misconfiguration obvious.
+ */
+export function requireAdminKey(): void {
+  if (!hasAdminKey()) {
+    throw new Error(
+      "[Supabase] Privileged operation requires SVJ_SUPABASE_SECRET_KEY or " +
+        "SUPABASE_SERVICE_ROLE_KEY. Neither is configured. Operation refused.",
+    );
+  }
+}
+
 let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;
 
 // Server-side Supabase client with service role - bypasses RLS

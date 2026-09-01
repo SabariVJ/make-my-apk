@@ -47,12 +47,12 @@ android {
                 if (signingReady) return
                 // Match only the app project's release artifact tasks.
                 // Debug, help, sync, lint, install, test tasks must not require credentials.
+                // `task.path` is the fully-qualified task path (e.g. ':app:assembleRelease').
+                // Task has no `projectPath` property, so match on the supported
+                // `path` / `name` properties instead.
                 def needsReleaseSigning = graph.allTasks.any { task ->
-                    def path = task.projectPath ?: ''
-                    def name = task.name
-                    (path.endsWith(':app') || path == ':app') &&
-                    (name == 'assembleRelease' || name == 'bundleRelease' ||
-                     name ==~ 'assembleRelease.*' || name ==~ 'bundleRelease.*')
+                    task.path.startsWith(':app:') &&
+                    (task.name ==~ /assembleRelease.*/ || task.name ==~ /bundleRelease.*/)
                 }
                 if (needsReleaseSigning) {
                     throw new GradleException(

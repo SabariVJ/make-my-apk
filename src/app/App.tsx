@@ -17,7 +17,6 @@ import { LevelUpModal } from "./components/LevelUpModal";
 import { UPIPaymentModal } from "./components/UPIPaymentModal";
 import { PaywallModal } from "./components/PaywallModal";
 import { FirstTimeOnboardingModal } from "./components/FirstTimeOnboardingModal";
-import { DarkCinematicOnboardingModal } from "./components/DarkCinematicOnboardingModal";
 import { GoogleAuthModal } from "./components/GoogleAuthModal";
 import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
@@ -83,8 +82,7 @@ const AppContent: React.FC<{
     selectedMemberModal,
     setSelectedMemberModal,
     setIsPaywallOpen,
-    isDarkOnboardingOpen,
-    setIsDarkOnboardingOpen,
+    storageError,
   } = useSVJ();
   const queryClient = useQueryClient();
 
@@ -173,6 +171,14 @@ const AppContent: React.FC<{
         )}
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+          {storageError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+            >
+              {storageError}
+            </p>
+          )}
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">
             <p className="font-anton text-sm uppercase tracking-wider text-amber-300">
               Your 7-Day Trial Has Ended
@@ -222,6 +228,14 @@ const AppContent: React.FC<{
 
       {/* Main View Area */}
       <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+        {storageError && (
+          <p
+            role="alert"
+            className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+          >
+            {storageError}
+          </p>
+        )}
         {activeTab === "challenges" && (
           <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
         )}
@@ -255,10 +269,6 @@ const AppContent: React.FC<{
       )}
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
-      <DarkCinematicOnboardingModal
-        isOpen={isDarkOnboardingOpen}
-        onClose={() => setIsDarkOnboardingOpen(false)}
-      />
 
       {/* Bottom Sticky Navigation Bar */}
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />

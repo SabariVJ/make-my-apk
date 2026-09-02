@@ -28,7 +28,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSVJ } from "../context/SVJContext";
 import { MembershipCard } from "../components/MembershipCard";
-import { EVOLUTION_THEMES } from "../components/DarkCinematicOnboardingModal";
 import { AvatarFrame } from "../components/AvatarFrame";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { UserStats } from "../types";
@@ -54,9 +53,6 @@ export const ProfileView: React.FC = () => {
       setSigningOut(false);
     }
   };
-
-  const currentTheme =
-    EVOLUTION_THEMES.find((t) => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 
   return (
     <div className="space-y-6 pb-24">
@@ -218,33 +214,6 @@ export const ProfileView: React.FC = () => {
       {activeTab === "analytics" && (
         /* ANALYTICS TAB */
         <div className="space-y-4">
-          {/* Evolution Theme Banner Card */}
-          <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-5 overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#C81E3A] flex-shrink-0">
-                <img
-                  src={currentTheme.image}
-                  alt={currentTheme.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{currentTheme.icon}</span>
-                  <span className="font-anton text-xl text-white uppercase tracking-wider">
-                    {currentTheme.name}
-                  </span>
-                </div>
-                <div className="text-[10px] font-mono text-[#C81E3A] uppercase font-bold tracking-wider">
-                  {currentTheme.tagline}
-                </div>
-                <p className="text-xs text-[#8C8C90] mt-1 font-inter italic">
-                  "{currentTheme.desc}"
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* 6 Dynamic Character Stat Attributes Hexagon Radar */}
           <div className="p-6 rounded-3xl bg-[#17171A] border border-white/10 space-y-4 shadow-2xl overflow-hidden relative">
             <div className="flex items-center justify-between text-xs font-mono">

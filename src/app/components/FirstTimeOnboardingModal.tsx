@@ -86,10 +86,10 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           <div className="relative z-10 text-center mb-6 space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Welcome to SVJ Guild</span>
+              <span>Your SVJ Profile</span>
             </div>
             <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
-              Initialize Your Identity
+              Set Up Your Profile
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-sm mx-auto leading-relaxed">
               Set up your personal member profile to start tracking daily challenges, earning XP,
@@ -232,7 +232,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Initialize Profile & Claim +100 XP</span>
+                <span>Save Profile</span>
               </button>
             </div>
           </form>

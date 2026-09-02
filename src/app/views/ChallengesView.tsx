@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,15 +14,24 @@ import {
   Sparkles,
   Filter,
   ChevronDown,
+  Pencil,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { TaskEditorDialog } from "../components/TaskEditorDialog";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 
 export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOpenSixtyDay }) => {
-  const { challenges, toggleChallenge, addCustomChallenge, removeChallenge, user, leaderboard } =
-    useSVJ();
+  const {
+    challenges,
+    toggleChallenge,
+    addCustomChallenge,
+    updateCustomChallenge,
+    removeChallenge,
+    user,
+    leaderboard,
+  } = useSVJ();
 
   // Fetch server-authoritative challenge state to hide 60-Day CTA when completed
   const callGetState = useServerFn(getChallengeState);
@@ -41,18 +50,19 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
   const sixtyDayCompleted = sixtyDayQuery.data?.status === "completed";
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
+  const editorTrigger = useRef<HTMLButtonElement | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const handleToggle = (id: string) => {
+    const result = toggleChallenge(id);
+    setActionError(result.ok ? null : result.error);
+  };
 
   const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalXP - a.totalXP);
   const myIndexInSorted = sortedLeaderboard.findIndex(
     (l) => l.id === user.id || l.id === "user-me",
   );
   const userRank = myIndexInSorted !== -1 ? myIndexInSorted + 1 : sortedLeaderboard.length;
-
-  // New Custom Challenge form state
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState<ChallengeCategory>("Physical");
-  const [newDifficulty, setNewDifficulty] = useState<DailyChallenge["difficulty"]>("Medium");
-  const [newXP, setNewXP] = useState(80);
 
   const filteredChallenges =
     selectedCategory === "All"
@@ -72,14 +82,6 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
     "Mindset",
     "Nutrition",
   ];
-
-  const handleCreateCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    addCustomChallenge(newTitle.trim(), newCategory, newDifficulty, newXP);
-    setNewTitle("");
-    setIsAddModalOpen(false);
-  };
 
   const getDifficultyBadge = (diff: DailyChallenge["difficulty"]) => {
     switch (diff) {
@@ -263,7 +265,11 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={(event) => {
+            editorTrigger.current = event.currentTarget;
+            setEditingTask(null);
+            setIsAddModalOpen(true);
+          }}
           className="px-3.5 py-1.5 rounded-xl bg-[#17171A] hover:bg-white/10 text-white border border-white/10 text-xs font-mono font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 text-[#C81E3A]" />
@@ -271,6 +277,11 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </button>
       </div>
 
+      {actionError && (
+        <p role="alert" className="text-sm text-rose-300">
+          {actionError}
+        </p>
+      )}
       {/* Challenges List */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
@@ -281,7 +292,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onClick={() => toggleChallenge(challenge.id)}
+              onClick={() => handleToggle(challenge.id)}
               className={`group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                 challenge.completed
                   ? "bg-[#17171A]/40 border-white/5 opacity-75"
@@ -290,7 +301,15 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
             >
               <div className="flex items-start gap-3.5">
                 {/* Custom Checkbox */}
-                <div
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={challenge.completed}
+                  aria-label={`Complete ${challenge.title}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleToggle(challenge.id);
+                  }}
                   className={`mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
@@ -298,7 +317,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
                   }`}
                 >
                   {challenge.completed && <CheckCircle2 className="w-4 h-4" />}
-                </div>
+                </button>
 
                 <div>
                   <div className="flex items-center gap-2">
@@ -341,6 +360,21 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
 
               {/* XP Value Pill */}
               <div className="flex items-center gap-2 shrink-0">
+                {challenge.isCustom && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      editorTrigger.current = event.currentTarget;
+                      setEditingTask(challenge);
+                      setIsAddModalOpen(true);
+                    }}
+                    aria-label={`Edit ${challenge.title}`}
+                    className="p-1.5 rounded-lg text-[#A6A6AD] hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#C81E3A]"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -367,121 +401,17 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </AnimatePresence>
       </div>
 
-      {/* Bonus Elite Mission */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-[#17171A] to-[#0B0B0C] border border-amber-500/30 flex items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs font-mono text-amber-400 font-bold uppercase mb-1">
-            <Sparkles className="w-4 h-4" />
-            Bonus Streak Multiplier
-          </div>
-          <p className="text-xs text-[#8C8C90]">
-            Complete all daily challenges to unlock +200 Bonus XP & maintain daily streak status.
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <span className="font-anton text-xl text-amber-400">+200 XP</span>
-        </div>
-      </div>
-
-      {/* Add Custom Challenge Modal */}
-      <AnimatePresence>
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-                <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                  Add Custom Task
-                </h2>
-                <button
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="p-1 rounded-full bg-white/5 text-[#8C8C90] hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateCustom} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                    Task Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. 100 Kettlebell Swings"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as ChallengeCategory)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
-                    >
-                      {categories
-                        .filter((c) => c !== "All")
-                        .map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                      Difficulty
-                    </label>
-                    <select
-                      value={newDifficulty}
-                      onChange={(e) => {
-                        const diff = e.target.value as DailyChallenge["difficulty"];
-                        setNewDifficulty(diff);
-                        setNewXP(
-                          diff === "Easy"
-                            ? 50
-                            : diff === "Medium"
-                              ? 80
-                              : diff === "Hard"
-                                ? 120
-                                : 180,
-                        );
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
-                    >
-                      <option value="Easy">Easy (50 XP)</option>
-                      <option value="Medium">Medium (80 XP)</option>
-                      <option value="Hard">Hard (120 XP)</option>
-                      <option value="Elite">Elite (180 XP)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase cursor-pointer"
-                  >
-                    Add Task to Mission
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <TaskEditorDialog
+        open={isAddModalOpen}
+        task={editingTask}
+        onOpenChange={setIsAddModalOpen}
+        returnFocus={editorTrigger.current}
+        onSave={(fields) =>
+          editingTask
+            ? updateCustomChallenge(editingTask.id, fields)
+            : addCustomChallenge(fields.title, fields.category, fields.difficulty)
+        }
+      />
     </div>
   );
 };

@@ -25,6 +25,9 @@ export interface DailyChallenge {
   completed: boolean;
   completedAt?: string;
   isCustom?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  earnedXP?: number;
 }
 
 export interface Achievement {
@@ -153,7 +156,7 @@ export interface UserProfile {
 
   // Stats breakdown
   habitCompletionRate: number; // e.g. 92%
-  xpHistory: { date: string; xp: number }[]; // 30 day history
+  xpHistory: { date: string; dayKey?: string; xp: number }[]; // 30 day history
   weeklyHistory: { week: string; xp: number }[];
 
   achievements: Achievement[];

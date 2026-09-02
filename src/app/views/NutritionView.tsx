@@ -14,6 +14,7 @@ export const NutritionView: React.FC = () => {
   const [mealType, setMealType] = useState<MealEntry["mealType"]>("Breakfast");
   const [goalDraft, setGoalDraft] = useState(String(calorieGoal));
   const [editingGoal, setEditingGoal] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const todayKey = new Date().toDateString();
 
@@ -60,7 +61,12 @@ export const NutritionView: React.FC = () => {
     e.preventDefault();
     const kcal = parseInt(calories, 10);
     if (!name.trim() || !kcal || kcal <= 0) return;
-    logMeal(name, kcal, mealType);
+    const result = logMeal(name, kcal, mealType);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setSaveError(null);
     setName("");
     setCalories("");
   };
@@ -158,12 +164,14 @@ export const NutritionView: React.FC = () => {
 
         <div className="flex gap-2">
           <input
+            aria-label="Meal name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Grilled chicken & rice"
-            className="flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
           <input
+            aria-label="Calories"
             type="number"
             inputMode="numeric"
             value={calories}
@@ -203,6 +211,11 @@ export const NutritionView: React.FC = () => {
           First log each day: <span className="text-[#C81E3A] font-medium">+60 XP</span>, Discipline
           +2, Physical +1. Extra entries +10 XP.
         </p>
+        {saveError && (
+          <p role="alert" className="text-sm text-rose-300">
+            {saveError}
+          </p>
+        )}
       </form>
 
       {/* Today's entries */}

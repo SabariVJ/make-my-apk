@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -24,12 +24,25 @@ import {
   TIERS,
 } from "../data/initialData";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  applyActivityXp,
+  CHALLENGE_XP,
+  CHALLENGE_CATEGORIES,
+  editCustomChallenge,
+  getChallengeStat,
+  getTierForXP,
+  normalizeUserProfile,
+  summarizeWorkout,
+  type SaveResult,
+} from "../lib/activity";
+import { appStorage, readStoredArray, readStoredJson, writeStoredJson } from "../lib/storage";
 
 interface SVJContextType {
   user: UserProfile;
   /** True once the user profile has been synced from localStorage or Supabase
    *  auth — prevents a flash of INITIAL_USER while the session is loading. */
   profileLoaded: boolean;
+  storageError: string | null;
   /** Server-authoritative: whether the user has a Plus membership row. */
   isPlusMember: boolean | null;
   /** Server-authoritative: ISO expiry timestamp for timed Plus, null for lifetime. */
@@ -49,28 +62,30 @@ interface SVJContextType {
   isEditProfileOpen: boolean;
   isUPIModalOpen: boolean;
   isFirstTimeOnboardingOpen: boolean;
-  isDarkOnboardingOpen: boolean;
   isGoogleAuthModalOpen: boolean;
 
   // Actions
-  toggleChallenge: (id: string) => void;
+  toggleChallenge: (id: string) => SaveResult;
   /** Apply a server-confirmed XP grant to the user's profile (60-day challenge). */
   awardXp: (xp: number) => void;
   addCustomChallenge: (
     title: string,
     category: DailyChallenge["category"],
     difficulty: DailyChallenge["difficulty"],
-    xp: number,
-  ) => void;
+  ) => SaveResult;
+  updateCustomChallenge: (
+    id: string,
+    updates: Pick<DailyChallenge, "title" | "category" | "difficulty">,
+  ) => SaveResult;
   removeChallenge: (id: string) => void;
   toggleReaction: (activityId: string, reaction: ReactionType) => void;
   addComment: (activityId: string, text: string) => void;
   redeemReward: (rewardId: string) => void;
-  logWorkout: (name: string, exercises: WorkoutExercise[]) => void;
+  logWorkout: (name: string, exercises: WorkoutExercise[]) => SaveResult;
   deleteWorkout: (id: string) => void;
   saveWorkoutTemplate: (name: string, exercises: WorkoutExercise[]) => void;
   deleteWorkoutTemplate: (id: string) => void;
-  logMeal: (name: string, calories: number, mealType: MealEntry["mealType"]) => void;
+  logMeal: (name: string, calories: number, mealType: MealEntry["mealType"]) => SaveResult;
   deleteMeal: (id: string) => void;
   setCalorieGoal: (goal: number) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => void;
@@ -90,7 +105,6 @@ interface SVJContextType {
   setIsEditProfileOpen: (open: boolean) => void;
   setIsUPIModalOpen: (open: boolean) => void;
   setIsFirstTimeOnboardingOpen: (open: boolean) => void;
-  setIsDarkOnboardingOpen: (open: boolean) => void;
   setIsGoogleAuthModalOpen: (open: boolean) => void;
   triggerConfetti: () => void;
 }
@@ -140,34 +154,30 @@ export const SVJProvider: React.FC<{
   isPlusMember: isPlusMemberProp = null,
   plusExpiresAt: plusExpiresAtProp = null,
 }) => {
-  const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_user`);
-    if (!saved) return INITIAL_USER;
-    try {
-      const parsed = JSON.parse(saved) as UserProfile;
-      // Never trust a persisted isPremium — the server-side check is the only authority.
-      parsed.isPremium = false;
-      return parsed;
-    } catch {
-      return INITIAL_USER;
-    }
-  });
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const persist = useCallback((key: string, value: unknown): SaveResult => {
+    const result = writeStoredJson(key, value);
+    if (!result.ok) setStorageError(result.error);
+    return result;
+  }, []);
+
+  const [user, setUser] = useState<UserProfile>(() =>
+    normalizeUserProfile(readStoredJson(`${LOCAL_STORAGE_KEY}_user`, INITIAL_USER)),
+  );
 
   const [challenges, setChallenges] = useState<DailyChallenge[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_challenges`);
-    if (saved) return JSON.parse(saved);
-    // Filter out previously removed IDs from defaults
-    const removedRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_removed_challenges`);
-    const removed: string[] = removedRaw ? JSON.parse(removedRaw) : [];
-    if (removed.length === 0) return INITIAL_CHALLENGES;
-    return INITIAL_CHALLENGES.filter((c) => !removed.includes(c.id));
+    const removed = readStoredArray<string>(`${LOCAL_STORAGE_KEY}_removed_challenges`, []);
+    return readStoredArray<DailyChallenge>(
+      `${LOCAL_STORAGE_KEY}_challenges`,
+      INITIAL_CHALLENGES,
+    ).filter((challenge) => !removed.includes(challenge.id));
   });
 
   const [feed, setFeed] = useState<FeedActivity[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_feed`);
+    const saved = appStorage.getItem(`${LOCAL_STORAGE_KEY}_feed`);
     if (!saved) return INITIAL_FEED;
     try {
-      const parsed: FeedActivity[] = JSON.parse(saved);
+      const parsed = readStoredArray<FeedActivity>(`${LOCAL_STORAGE_KEY}_feed`, INITIAL_FEED);
       const seenIds = new Set<string>();
       return parsed.map((item, idx) => {
         if (!item.id || seenIds.has(item.id)) {
@@ -184,35 +194,32 @@ export const SVJProvider: React.FC<{
   });
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
-    if (saved) return JSON.parse(saved);
-    // Static demo users are only shown in development; production starts empty.
-    return import.meta.env.DEV ? LEADERBOARD_USERS : [];
+    return readStoredArray<LeaderboardEntry>(
+      `${LOCAL_STORAGE_KEY}_leaderboard`,
+      import.meta.env.DEV ? LEADERBOARD_USERS : [],
+    );
   });
 
   const [rewards, setRewards] = useState<RewardItem[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_rewards`);
-    return saved ? JSON.parse(saved) : INITIAL_REWARDS;
+    return readStoredArray<RewardItem>(`${LOCAL_STORAGE_KEY}_rewards`, INITIAL_REWARDS);
   });
 
   const [workouts, setWorkouts] = useState<WorkoutEntry[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workouts`);
-    return saved ? JSON.parse(saved) : [];
+    return readStoredArray<WorkoutEntry>(`${LOCAL_STORAGE_KEY}_workouts`, []);
   });
 
   const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_workout_templates`);
-    return saved ? JSON.parse(saved) : [];
+    return readStoredArray<WorkoutTemplate>(`${LOCAL_STORAGE_KEY}_workout_templates`, []);
   });
 
   const [meals, setMeals] = useState<MealEntry[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_meals`);
-    return saved ? JSON.parse(saved) : [];
+    return readStoredArray<MealEntry>(`${LOCAL_STORAGE_KEY}_meals`, []);
   });
 
   const [calorieGoal, setCalorieGoalState] = useState<number>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_calorie_goal`);
-    return saved ? Number(saved) : 2200;
+    const saved = appStorage.getItem(`${LOCAL_STORAGE_KEY}_calorie_goal`);
+    const value = Number(saved);
+    return Number.isFinite(value) && value >= 500 && value <= 10000 ? value : 2200;
   });
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
@@ -225,10 +232,6 @@ export const SVJProvider: React.FC<{
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isUPIModalOpen, setIsUPIModalOpen] = useState<boolean>(false);
   const [isFirstTimeOnboardingOpen, setIsFirstTimeOnboardingOpen] = useState<boolean>(false);
-  const [isDarkOnboardingOpen, setIsDarkOnboardingOpen] = useState<boolean>(() => {
-    const onboarded = localStorage.getItem(`${LOCAL_STORAGE_KEY}_has_dark_onboarded`);
-    return !onboarded;
-  });
   const [isGoogleAuthModalOpen, setIsGoogleAuthModalOpen] = useState<boolean>(false);
 
   // Tracks whether the user profile has been synced from localStorage or the
@@ -240,13 +243,12 @@ export const SVJProvider: React.FC<{
   // Only marks profileLoaded when data was actually restored — the auth-sync
   // effect handles the cross-device case where localStorage is empty.
   useEffect(() => {
-    const activeEmail = localStorage.getItem(`${LOCAL_STORAGE_KEY}_active_email`);
+    const activeEmail = appStorage.getItem(`${LOCAL_STORAGE_KEY}_active_email`);
     if (activeEmail) {
-      const savedAcc = localStorage.getItem(`svj_user_account_${activeEmail.toLowerCase()}`);
+      const savedAcc = appStorage.getItem(`svj_user_account_${activeEmail.toLowerCase()}`);
       if (savedAcc) {
         try {
-          const parsed = JSON.parse(savedAcc) as UserProfile;
-          parsed.isPremium = false; // server-side check is the only authority
+          const parsed = normalizeUserProfile(JSON.parse(savedAcc));
           setUser(parsed);
           setProfileLoaded(true);
         } catch (e) {
@@ -314,7 +316,7 @@ export const SVJProvider: React.FC<{
       syncedEmailRef.current = lower;
 
       // Check whether we already have a cached profile for this email.
-      const hasLocalProfile = localStorage.getItem(`svj_user_account_${lower}`) !== null;
+      const hasLocalProfile = appStorage.getItem(`svj_user_account_${lower}`) !== null;
 
       // Cross-device: if localStorage is empty, query the server profile
       // so we can restore XP, streak, username, etc. from the database
@@ -356,12 +358,6 @@ export const SVJProvider: React.FC<{
 
       // Mark profile as loaded so the splash disappears and the real app renders.
       setProfileLoaded(true);
-
-      // If this is a returning user (cached locally or has a server profile),
-      // suppress the dark cinematic onboarding — they've already completed it.
-      if (hasLocalProfile || serverProfile) {
-        setIsDarkOnboardingOpen(false);
-      }
     });
 
     return () => sub.subscription.unsubscribe();
@@ -435,7 +431,7 @@ export const SVJProvider: React.FC<{
         ];
       }
     });
-  }, [user]);
+  }, [user, persist]);
 
   useEffect(() => {
     safeSetItem(`${LOCAL_STORAGE_KEY}_challenges`, JSON.stringify(challenges));
@@ -476,274 +472,48 @@ export const SVJProvider: React.FC<{
   }, [calorieGoal]);
 
   const triggerConfetti = () => {
-    // Canvas-confetti creates a full-screen canvas that causes white flashing
-    // on Android WebView. Disable it entirely in native builds.
     if (Capacitor.isNativePlatform()) return;
-
-    void confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#C81E3A", "#D4AF37", "#F4F2ED", "#E62846"],
-      disableForReducedMotion: true,
-    });
-  };
-
-  const getTierForXP = (xp: number): TierLevel => {
-    if (xp >= 60000) return "Obsidian";
-    if (xp >= 35000) return "Diamond";
-    if (xp >= 20000) return "Platinum";
-    if (xp >= 12000) return "Gold";
-    if (xp >= 6000) return "Silver";
-    if (xp >= 2500) return "Bronze";
-    return "Initiate";
-  };
-
-  // Server-confirmed XP grant (e.g. 60-Day Challenge day completion). The amount
-  // is validated server-side (increment_total_xp on profiles.total_xp) and only
-  // surfaced here after the server confirms the grant, so the client can never
-  // mint XP on its own. Mirrors the existing toggleChallenge/logWorkout XP math.
-  const awardXp = (xp: number) => {
-    const amount = Math.max(0, Math.round(xp) || 0);
-    if (amount <= 0) return;
-    setUser((prevUser) => {
-      const oldTier = prevUser.tier;
-      const newXP = prevUser.totalXP + amount;
-      const newTier = getTierForXP(newXP);
-      if (
-        newTier !== oldTier &&
-        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
-      ) {
-        setLevelUpModalData({ oldTier, newTier });
-      }
-      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
-      const updatedHistory = [...prevUser.xpHistory];
-      const lastIdx = updatedHistory.length - 1;
-      if (lastIdx >= 0) {
-        updatedHistory[lastIdx] = {
-          date: todayStr,
-          xp: Math.max(0, updatedHistory[lastIdx].xp + amount),
-        };
-      }
-      return {
-        ...prevUser,
-        totalXP: newXP,
-        weeklyXP: prevUser.weeklyXP + amount,
-        monthlyXP: prevUser.monthlyXP + amount,
-        tier: newTier,
-        xpHistory: updatedHistory,
-      };
-    });
-  };
-
-  const toggleChallenge = (id: string) => {
-    // Capture whether the task is being completed before state update
-    let completing = false;
-    const current = challenges.find((c) => c.id === id);
-    if (current && !current.completed) completing = true;
-
-    setChallenges((prev) => {
-      let xpDelta = 0;
-      let completedItem: DailyChallenge | undefined;
-
-      const updated = prev.map((ch) => {
-        if (ch.id === id) {
-          const nextState = !ch.completed;
-          xpDelta = nextState ? ch.xp : -ch.xp;
-          completedItem = {
-            ...ch,
-            completed: nextState,
-            completedAt: nextState
-              ? new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : undefined,
-          };
-          return completedItem;
-        }
-        return ch;
+    // Celebration must never turn a successful save into a failed page.
+    try {
+      const animation = confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#C81E3A", "#D4AF37", "#F4F2ED", "#E62846"],
+        disableForReducedMotion: true,
       });
-
-      if (completedItem) {
-        // Update User XP & Check Tier Progression
-        setUser((prevUser) => {
-          const oldXP = prevUser.totalXP;
-          const newXP = Math.max(0, oldXP + xpDelta);
-          const oldTier = prevUser.tier;
-          const newTier = getTierForXP(newXP);
-
-          if (
-            completedItem?.completed &&
-            newTier !== oldTier &&
-            TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
-          ) {
-            setLevelUpModalData({ oldTier, newTier });
-          }
-
-          // Also update 30-day XP history
-          const todayStr = new Date().toLocaleDateString("en-US", {
-            day: "2-digit",
-            month: "short",
-          });
-          const updatedHistory = [...prevUser.xpHistory];
-          const lastIdx = updatedHistory.length - 1;
-          if (lastIdx >= 0) {
-            updatedHistory[lastIdx] = {
-              date: todayStr,
-              xp: Math.max(0, updatedHistory[lastIdx].xp + xpDelta),
-            };
-          }
-
-          // Dynamically adjust category attribute stats
-          const categoryStatMap: Record<string, keyof UserStats> = {
-            Physical: "physical",
-            Nutrition: "physical",
-            Discipline: "discipline",
-            Mental: "mental",
-            Mindset: "mental",
-            Social: "social",
-            Community: "social",
-            Intellect: "intellect",
-            Guide: "intellect",
-            Ambition: "ambition",
-            Goal: "ambition",
-          };
-
-          const statKey = categoryStatMap[completedItem!.category] || "discipline";
-          const currentStats = prevUser.stats || {
-            physical: 12,
-            social: 10,
-            discipline: 15,
-            mental: 14,
-            intellect: 12,
-            ambition: 20,
-          };
-          const statChange = completedItem!.completed ? 3 : -3;
-          const updatedStats: UserStats = {
-            ...currentStats,
-            [statKey]: Math.min(100, Math.max(0, (currentStats[statKey] || 10) + statChange)),
-          };
-
-          return {
-            ...prevUser,
-            totalXP: newXP,
-            weeklyXP: Math.max(0, prevUser.weeklyXP + xpDelta),
-            monthlyXP: Math.max(0, prevUser.monthlyXP + xpDelta),
-            totalChallengesCompleted: Math.max(
-              0,
-              prevUser.totalChallengesCompleted + (completedItem!.completed ? 1 : -1),
-            ),
-            tier: newTier,
-            stats: updatedStats,
-            xpHistory: updatedHistory,
-          };
-        });
-
-        if (completedItem.completed) {
-          // Add activity post to Feed
-          const newFeedItem: FeedActivity = {
-            id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            userId: user.id,
-            username: user.username,
-            userAvatar: user.avatar,
-            userTier: user.tier,
-            isVerified: user.verifiedIcon,
-            isVIP: user.vipIcon,
-            actionType: "completed_challenge",
-            title: `⚡ Completed Challenge: ${completedItem.title}`,
-            details: `Earned +${completedItem.xp} XP in ${completedItem!.category}. Daily discipline on point!`,
-            xpEarned: completedItem.xp,
-            timestamp: "Just now",
-            reactions: { fire: 1, crown: 0, hundred: 1, bolt: 1, wolf: 0 },
-            userReactions: { [user.id]: "fire" },
-            comments: [],
-          };
-
-          setFeed((f) => [newFeedItem, ...f]);
-        }
-      }
-
-      return updated;
-    });
-
-    // Confetti side-effect moved outside the state updater.
-    // Triggered only when a task transitions from incomplete → complete.
-    if (completing) {
-      triggerConfetti();
+      void animation?.catch(() => {});
+    } catch {
+      /* Canvas may be unavailable in an embedded browser. */
     }
   };
 
-  const logWorkout = (name: string, exercises: WorkoutExercise[]) => {
-    const cleaned = exercises
-      .map((ex) => ({ ...ex, sets: ex.sets.filter((st) => st.reps > 0) }))
-      .filter((ex) => ex.name.trim() && ex.sets.length > 0);
+  // React may replay state updaters. Notify only after a committed tier change.
+  const previousTier = useRef({ id: user.id, tier: user.tier, xp: user.totalXP });
+  useEffect(() => {
+    const previous = previousTier.current;
+    previousTier.current = { id: user.id, tier: user.tier, xp: user.totalXP };
+    if (
+      previous.id === user.id &&
+      user.totalXP > previous.xp &&
+      TIERS.findIndex((t) => t.name === user.tier) >
+        TIERS.findIndex((t) => t.name === previous.tier)
+    ) {
+      setLevelUpModalData({ oldTier: previous.tier, newTier: user.tier });
+    }
+  }, [user.id, user.tier, user.totalXP]);
 
-    if (cleaned.length === 0) return;
+  // This only mirrors grants already confirmed by the 60-day server endpoint.
+  // Ordinary device-only activity XP is not eligible for membership redemption.
+  const awardXp = (xp: number) => {
+    if (!Number.isFinite(xp) || xp <= 0) return;
+    const now = new Date();
+    setUser((previous) => applyActivityXp(previous, xp, now));
+  };
 
-    const totalSets = cleaned.reduce((sum, ex) => sum + ex.sets.length, 0);
-    const totalVolume = cleaned.reduce(
-      (sum, ex) => sum + ex.sets.reduce((s, st) => s + st.reps * st.weight, 0),
-      0,
-    );
-    const xpEarned = Math.max(25, Math.min(400, totalSets * 15 + Math.round(totalVolume / 100)));
-
-    const entry: WorkoutEntry = {
-      id: `wo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: name.trim() || "Training Session",
-      date: new Date().toISOString(),
-      exercises: cleaned,
-      totalVolume,
-      xpEarned,
-    };
-
-    setWorkouts((prev) => [entry, ...prev]);
-    triggerConfetti();
-
-    setUser((prevUser) => {
-      const oldTier = prevUser.tier;
-      const newXP = prevUser.totalXP + xpEarned;
-      const newTier = getTierForXP(newXP);
-      if (
-        newTier !== oldTier &&
-        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
-      ) {
-        setLevelUpModalData({ oldTier, newTier });
-      }
-
-      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
-      const updatedHistory = [...prevUser.xpHistory];
-      const lastIdx = updatedHistory.length - 1;
-      if (lastIdx >= 0) {
-        updatedHistory[lastIdx] = {
-          date: todayStr,
-          xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned),
-        };
-      }
-
-      const currentStats = prevUser.stats || {
-        physical: 12,
-        social: 10,
-        discipline: 15,
-        mental: 14,
-        intellect: 12,
-        ambition: 20,
-      };
-      const updatedStats: UserStats = {
-        ...currentStats,
-        physical: Math.min(100, (currentStats.physical || 10) + 3),
-      };
-
-      return {
-        ...prevUser,
-        totalXP: newXP,
-        weeklyXP: prevUser.weeklyXP + xpEarned,
-        monthlyXP: prevUser.monthlyXP + xpEarned,
-        tier: newTier,
-        stats: updatedStats,
-        xpHistory: updatedHistory,
-      };
-    });
-
-    const newFeedItem: FeedActivity = {
-      id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+  const addActivity = (title: string, details: string, xpEarned: number) => {
+    const item: FeedActivity = {
+      id: crypto.randomUUID(),
       userId: user.id,
       username: user.username,
       userAvatar: user.avatar,
@@ -751,19 +521,93 @@ export const SVJProvider: React.FC<{
       isVerified: user.verifiedIcon,
       isVIP: user.vipIcon,
       actionType: "completed_challenge",
-      title: `\ud83c\udfcb\ufe0f Logged Workout: ${entry.name}`,
-      details: `${totalSets} sets \u2022 ${Math.round(totalVolume).toLocaleString()} kg total volume. Physical +3.`,
+      title,
+      details,
       xpEarned,
       timestamp: "Just now",
-      reactions: { fire: 1, crown: 0, hundred: 0, bolt: 1, wolf: 0 },
-      userReactions: { [user.id]: "fire" },
+      reactions: { fire: 0, crown: 0, hundred: 0, bolt: 0, wolf: 0 },
+      userReactions: {},
       comments: [],
     };
-    setFeed((f) => [newFeedItem, ...f]);
+    setFeed((previous) => [item, ...previous]);
+  };
+
+  const toggleChallenge = (id: string): SaveResult => {
+    const current = challenges.find((challenge) => challenge.id === id);
+    if (!current) return { ok: false, error: "This task is no longer available." };
+    const now = new Date();
+    const completed = !current.completed;
+    const earnedXP = current.earnedXP ?? current.xp;
+    const updated = challenges.map((challenge) =>
+      challenge.id !== id
+        ? challenge
+        : {
+            ...challenge,
+            completed,
+            earnedXP: completed ? challenge.xp : undefined,
+            completedAt: completed
+              ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : undefined,
+          },
+    );
+    const saved = persist(`${LOCAL_STORAGE_KEY}_challenges`, updated);
+    if (!saved.ok) return saved;
+    setChallenges(updated);
+    setStorageError(null);
+    setUser((previous) =>
+      applyActivityXp(previous, completed ? current.xp : -earnedXP, now, {
+        stats: { [getChallengeStat(current.category)]: completed ? 3 : -3 },
+        challengeDelta: completed ? 1 : -1,
+      }),
+    );
+    if (completed) {
+      addActivity(
+        `Completed Challenge: ${current.title}`,
+        `Earned +${current.xp} XP in ${current.category}.`,
+        current.xp,
+      );
+      triggerConfetti();
+    }
+    return { ok: true };
+  };
+
+  const logWorkout = (name: string, exercises: WorkoutExercise[]): SaveResult => {
+    const summary = summarizeWorkout(exercises);
+    if (!summary.valid)
+      return {
+        ok: false,
+        error:
+          "Enter an exercise name, positive whole-number reps, and a valid weight for each set.",
+      };
+    const now = new Date();
+    const entry: WorkoutEntry = {
+      id: crypto.randomUUID(),
+      name: name.trim() || "Training Session",
+      date: now.toISOString(),
+      exercises: summary.exercises,
+      totalVolume: summary.volume,
+      xpEarned: summary.xp,
+    };
+    const updated = [entry, ...workouts];
+    const saved = persist(`${LOCAL_STORAGE_KEY}_workouts`, updated);
+    if (!saved.ok) return saved;
+    setWorkouts(updated);
+    setStorageError(null);
+    setUser((previous) =>
+      applyActivityXp(previous, entry.xpEarned, now, { stats: { physical: 3 } }),
+    );
+    addActivity(
+      `Logged Workout: ${entry.name}`,
+      `${summary.sets} sets · ${Math.round(summary.volume).toLocaleString()} kg total volume.`,
+      entry.xpEarned,
+    );
+    triggerConfetti();
+    return { ok: true };
   };
 
   const deleteWorkout = (id: string) => {
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
+    const updated = workouts.filter((workout) => workout.id !== id);
+    if (persist(`${LOCAL_STORAGE_KEY}_workouts`, updated).ok) setWorkouts(updated);
   };
 
   const saveWorkoutTemplate = (name: string, exercises: WorkoutExercise[]) => {
@@ -787,130 +631,113 @@ export const SVJProvider: React.FC<{
   };
 
   const deleteMeal = (id: string) => {
-    setMeals((prev) => prev.filter((m) => m.id !== id));
+    const updated = meals.filter((meal) => meal.id !== id);
+    if (persist(`${LOCAL_STORAGE_KEY}_meals`, updated).ok) setMeals(updated);
   };
 
-  const logMeal = (name: string, calories: number, mealType: MealEntry["mealType"]) => {
+  const logMeal = (name: string, calories: number, mealType: MealEntry["mealType"]): SaveResult => {
     const cleanName = name.trim();
-    const kcal = Math.max(0, Math.round(calories) || 0);
-    if (!cleanName || kcal <= 0) return;
-
-    const todayKey = new Date().toDateString();
-    const isFirstToday = !meals.some((m) => new Date(m.date).toDateString() === todayKey);
-
-    // Consistency bonus: first log of the day is worth far more than extra entries
+    const kcal = Math.round(calories);
+    if (
+      !cleanName ||
+      !Number.isSafeInteger(kcal) ||
+      kcal <= 0 ||
+      !["Breakfast", "Lunch", "Dinner", "Snack"].includes(mealType)
+    ) {
+      return { ok: false, error: "Enter a meal name and a positive calorie amount." };
+    }
+    const now = new Date();
+    const isFirstToday = !meals.some(
+      (meal) => new Date(meal.date).toDateString() === now.toDateString(),
+    );
     const xpEarned = isFirstToday ? 60 : 10;
-
     const entry: MealEntry = {
-      id: `meal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: crypto.randomUUID(),
       name: cleanName,
       calories: kcal,
       mealType,
-      date: new Date().toISOString(),
+      date: now.toISOString(),
       xpEarned,
     };
-
-    setMeals((prev) => [entry, ...prev]);
-
-    setUser((prevUser) => {
-      const oldTier = prevUser.tier;
-      const newXP = prevUser.totalXP + xpEarned;
-      const newTier = getTierForXP(newXP);
-      if (
-        newTier !== oldTier &&
-        TIERS.findIndex((t) => t.name === newTier) > TIERS.findIndex((t) => t.name === oldTier)
-      ) {
-        setLevelUpModalData({ oldTier, newTier });
-      }
-
-      const todayStr = new Date().toLocaleDateString("en-US", { day: "2-digit", month: "short" });
-      const updatedHistory = [...prevUser.xpHistory];
-      const lastIdx = updatedHistory.length - 1;
-      if (lastIdx >= 0) {
-        updatedHistory[lastIdx] = {
-          date: todayStr,
-          xp: Math.max(0, updatedHistory[lastIdx].xp + xpEarned),
-        };
-      }
-
-      const currentStats = prevUser.stats || {
-        physical: 12,
-        social: 10,
-        discipline: 15,
-        mental: 14,
-        intellect: 12,
-        ambition: 20,
-      };
-      const updatedStats: UserStats = isFirstToday
-        ? {
-            ...currentStats,
-            discipline: Math.min(100, (currentStats.discipline || 10) + 2),
-            physical: Math.min(100, (currentStats.physical || 10) + 1),
-          }
-        : currentStats;
-
-      return {
-        ...prevUser,
-        totalXP: newXP,
-        weeklyXP: prevUser.weeklyXP + xpEarned,
-        monthlyXP: prevUser.monthlyXP + xpEarned,
-        tier: newTier,
-        stats: updatedStats,
-        xpHistory: updatedHistory,
-      };
-    });
-
+    const updated = [entry, ...meals];
+    const saved = persist(`${LOCAL_STORAGE_KEY}_meals`, updated);
+    if (!saved.ok) return saved;
+    setMeals(updated);
+    setStorageError(null);
+    setUser((previous) =>
+      applyActivityXp(previous, xpEarned, now, {
+        stats: isFirstToday ? { discipline: 2, physical: 1 } : {},
+      }),
+    );
     if (isFirstToday) {
+      addActivity("Nutrition logged for today", `${cleanName} (${kcal} kcal).`, xpEarned);
       triggerConfetti();
-      const newFeedItem: FeedActivity = {
-        id: `feed-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        userId: user.id,
-        username: user.username,
-        userAvatar: user.avatar,
-        userTier: user.tier,
-        isVerified: user.verifiedIcon,
-        isVIP: user.vipIcon,
-        actionType: "completed_challenge",
-        title: `\ud83c\udf7d\ufe0f Nutrition logged for today`,
-        details: `Started tracking intake with ${cleanName} (${kcal} kcal). Discipline +2, Physical +1.`,
-        xpEarned,
-        timestamp: "Just now",
-        reactions: { fire: 1, crown: 0, hundred: 0, bolt: 0, wolf: 0 },
-        userReactions: { [user.id]: "fire" },
-        comments: [],
-      };
-      setFeed((f) => [newFeedItem, ...f]);
     }
+    return { ok: true };
   };
 
   const addCustomChallenge = (
     title: string,
     category: DailyChallenge["category"],
     difficulty: DailyChallenge["difficulty"],
-    xp: number,
-  ) => {
-    const newCh: DailyChallenge = {
-      id: `ch-custom-${Date.now()}`,
-      title,
+  ): SaveResult => {
+    if (
+      !title.trim() ||
+      title.trim().length > 120 ||
+      !CHALLENGE_CATEGORIES.includes(category) ||
+      !Object.hasOwn(CHALLENGE_XP, difficulty)
+    ) {
+      return { ok: false, error: "Enter a task title, category, and difficulty." };
+    }
+    const newChallenge: DailyChallenge = {
+      id: `ch-custom-${crypto.randomUUID()}`,
+      title: title.trim(),
       category,
       difficulty,
-      xp,
+      xp: CHALLENGE_XP[difficulty],
       durationMinutes: 20,
-      description: "Custom user task designed for daily excellence.",
+      description: "Custom task",
       completed: false,
       isCustom: true,
+      createdAt: new Date().toISOString(),
     };
-    setChallenges((prev) => [newCh, ...prev]);
+    const updated = [newChallenge, ...challenges];
+    const saved = persist(`${LOCAL_STORAGE_KEY}_challenges`, updated);
+    if (!saved.ok) return saved;
+    setChallenges(updated);
+    setStorageError(null);
+    return { ok: true };
+  };
+
+  const updateCustomChallenge = (
+    id: string,
+    updates: Pick<DailyChallenge, "title" | "category" | "difficulty">,
+  ): SaveResult => {
+    const current = challenges.find((challenge) => challenge.id === id);
+    const edited = current ? editCustomChallenge(current, updates, new Date()) : null;
+    if (!edited)
+      return {
+        ok: false,
+        error:
+          "Completed tasks can only be renamed. Mark the task incomplete before changing its category or difficulty.",
+      };
+    const updated = challenges.map((challenge) => (challenge.id === id ? edited : challenge));
+    const saved = persist(`${LOCAL_STORAGE_KEY}_challenges`, updated);
+    if (!saved.ok) return saved;
+    setChallenges(updated);
+    setStorageError(null);
+    return { ok: true };
   };
 
   const removeChallenge = (id: string) => {
     setChallenges((prev) => prev.filter((c) => c.id !== id));
     // Track removed IDs so they stay hidden even if localStorage resets
-    const removedRaw = localStorage.getItem(`${LOCAL_STORAGE_KEY}_removed_challenges`);
-    const removed: string[] = removedRaw ? JSON.parse(removedRaw) : [];
+    const removed = readStoredArray<string>(`${LOCAL_STORAGE_KEY}_removed_challenges`, []);
     if (!removed.includes(id)) {
-      removed.push(id);
-      safeSetItem(`${LOCAL_STORAGE_KEY}_removed_challenges`, JSON.stringify(removed));
+      safeSetItem(
+        `${LOCAL_STORAGE_KEY}_removed_challenges`,
+        JSON.stringify([...removed, id]),
+      );
     }
   };
 
@@ -1020,8 +847,7 @@ export const SVJProvider: React.FC<{
     triggerConfetti();
     safeSetItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
 
-    // Idempotent onboarding baseline: ensure totalXP is at least 100 without
-    // reducing existing XP or allowing repeated grants from cleared localStorage.
+    // Profile setup does not mint XP or reset existing progress.
     setUser((prev) => ({
       ...prev,
       name: data.name,
@@ -1029,13 +855,9 @@ export const SVJProvider: React.FC<{
       bio: data.bio,
       location: data.location,
       avatar: data.avatar,
-      totalXP: Math.max(prev.totalXP, 100),
-      weeklyXP: Math.max(prev.weeklyXP, 100),
-      monthlyXP: Math.max(prev.monthlyXP, 100),
-      xpHistory: prev.totalXP >= 100 ? prev.xpHistory : [{ date: "31 Jul", xp: 100 }],
     }));
 
-    // Update user on leaderboard (preserve existing XP, add onboarding bonus)
+    // Update display information without a welcome grant.
     setLeaderboard((prev) =>
       prev.map((item) =>
         item.id === "user-me"
@@ -1080,12 +902,12 @@ export const SVJProvider: React.FC<{
 
     // ── Resolve base profile ───────────────────────────────────────────────
     // Priority: localStorage cache > server profile > current state (INITIAL_USER)
-    const savedAccount = localStorage.getItem(`svj_user_account_${cleanEmail}`);
+    const savedAccount = appStorage.getItem(`svj_user_account_${cleanEmail}`);
     let baseUser: UserProfile = user;
 
     if (savedAccount) {
       try {
-        baseUser = JSON.parse(savedAccount);
+        baseUser = normalizeUserProfile(JSON.parse(savedAccount));
       } catch (e) {
         console.error(e);
       }
@@ -1111,11 +933,7 @@ export const SVJProvider: React.FC<{
 
     if (isOwnerEmail) {
       // Unlock all rewards vault items
-      setRewards((prev) => {
-        const allUnlocked = prev.map((r) => ({ ...r, unlocked: true }));
-        safeSetItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(allUnlocked));
-        return allUnlocked;
-      });
+      setRewards((prev) => prev.map((reward) => ({ ...reward, unlocked: true })));
     }
 
     const updatedUser: UserProfile = {
@@ -1139,13 +957,12 @@ export const SVJProvider: React.FC<{
       verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
       vipIcon: isOwnerEmail ? true : baseUser.vipIcon,
       tier: isOwnerEmail ? "Obsidian" : baseUser.tier,
-      totalXP: isOwnerEmail ? Math.max(baseUser.totalXP, 100000) : baseUser.totalXP,
-      weeklyXP: isOwnerEmail ? Math.max(baseUser.weeklyXP, 15000) : baseUser.weeklyXP,
-      monthlyXP: isOwnerEmail ? Math.max(baseUser.monthlyXP, 50000) : baseUser.monthlyXP,
+      totalXP: baseUser.totalXP,
+      weeklyXP: baseUser.weeklyXP,
+      monthlyXP: baseUser.monthlyXP,
       leagueRank: isOwnerEmail ? "FOUNDER #1" : baseUser.leagueRank,
       equippedFrame: isOwnerEmail ? "frame-crimson" : baseUser.equippedFrame,
       equippedBadge: isOwnerEmail ? "bdg-top1" : baseUser.equippedBadge,
-      evolutionTheme: isOwnerEmail ? "samurai" : baseUser.evolutionTheme,
       stats: isOwnerEmail
         ? {
             physical: 93,
@@ -1184,7 +1001,7 @@ export const SVJProvider: React.FC<{
   loginWithGmailRef.current = loginWithGmail;
 
   const logoutGmail = () => {
-    localStorage.removeItem(`${LOCAL_STORAGE_KEY}_active_email`);
+    appStorage.removeItem(`${LOCAL_STORAGE_KEY}_active_email`);
     setUser((prev) => {
       const nextUser = {
         ...prev,
@@ -1203,6 +1020,7 @@ export const SVJProvider: React.FC<{
       value={{
         user,
         profileLoaded,
+        storageError,
         isPlusMember: isPlusMemberProp,
         plusExpiresAt: plusExpiresAtProp,
         challenges,
@@ -1220,11 +1038,11 @@ export const SVJProvider: React.FC<{
         isEditProfileOpen,
         isUPIModalOpen,
         isFirstTimeOnboardingOpen,
-        isDarkOnboardingOpen,
         isGoogleAuthModalOpen,
         toggleChallenge,
         awardXp,
         addCustomChallenge,
+        updateCustomChallenge,
         removeChallenge,
         toggleReaction,
         addComment,
@@ -1247,7 +1065,6 @@ export const SVJProvider: React.FC<{
         setIsEditProfileOpen,
         setIsUPIModalOpen,
         setIsFirstTimeOnboardingOpen,
-        setIsDarkOnboardingOpen,
         setIsGoogleAuthModalOpen,
         triggerConfetti,
       }}

@@ -147,6 +147,8 @@ before(async () => {
     await execScript(await readFile("supabase/migrations/" + name, "utf8"));
   }
   await execScript(schema);
+  // Applied policy amendment: 7 qualifying days, account age still 21 days.
+  await execScript(qualifyingDaysAmendment);
 });
 after(async () => {
   if (native) await database.end();

@@ -81,7 +81,9 @@ async function makeReady(assignmentId) {
     "UPDATE public.reward_mission_sessions s SET started_at=clock_timestamp()-make_interval(secs=>a.minimum_seconds+5),eligible_at=clock_timestamp()-interval '5 seconds' FROM public.reward_mission_assignments a WHERE a.id=s.assignment_id AND a.id=$1",
     [assignmentId]);
 }
-async function seedEligibility(id, { days = 21, balance = 3000 } = {}) {
+// The policy requires 7 qualifying days, but the 150 XP daily cap means a real
+// 3,000 Reward XP balance still spans at least 20 mission days.
+async function seedEligibility(id, { days = 20, balance = 3000 } = {}) {
   // Synthetic historical receipts, never a live account or a public mint API.
   assert.ok(Number.isInteger(days) && days > 0 && days <= 365);
   assert.ok(Number.isInteger(balance) && balance >= days * 50 && balance <= days * 150 && balance % 50 === 0,

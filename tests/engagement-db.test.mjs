@@ -30,6 +30,10 @@ const database = native ? new pg.Pool({ connectionString, max: 16 }) : new PGlit
 const execute = (sql, args = []) => database.query(sql, args);
 const execScript = async (sql) => (native ? database.query(sql) : database.exec(sql));
 const schema = await readFile("supabase/pending/20260902_earned_plus.sql", "utf8");
+const qualifyingDaysAmendment = await readFile(
+  "supabase/pending/20260903_earned_plus_qualifying_days_7.sql",
+  "utf8",
+);
 const confirmation = "I completed the planned activity and wrote down my next useful step.";
 const campaign = "earned-plus-launch-v1";
 

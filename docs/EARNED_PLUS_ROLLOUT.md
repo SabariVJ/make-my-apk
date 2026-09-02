@@ -1,10 +1,24 @@
 # Earned Plus rollout checklist
 
-Status: code and disposable-database checks complete; live activation pending owner approval, 2 September 2026.
+Status: owner-approved earning pilot ACTIVE; Plus claims DISABLED, 2 September 2026.
 
 Target project: `oltmnrkceodpyqznfhjb`
 Target branch: `release/play-v1-compliance`
 Campaign: `earned-plus-launch-v1`
+
+## Live activation record
+
+- Activated earning on 2 September 2026 at 16:51:48 UTC (22:21:48 Asia/Kolkata).
+- Applied the reviewed schema to the existing SVJ Lovable Cloud database through project `33b1119f-3051-482e-90aa-488c5d0681b3`. No database was created, replaced, or migrated to the separate Supabase dashboard project.
+- Active policy: `enabled = true`, `claims_enabled = false`; 3,000 Reward XP, 21 qualifying days, 21-day account age, 150 Reward XP daily cap, and a one-time 30-day Plus reward. Claims require a separate release decision.
+- Source application commit: `577ad2ad30ccc2352a42408fe823c863d3261789`. Schema SHA-256: `24cdce2120f9492f7b813c8dc686d52d76f6dade8f4ec8d55ccc48799e0e6924`.
+- The schema request returned a cancelled acknowledgement, but read-only reconciliation confirmed that the entire transaction committed. The schema was not resubmitted.
+- Verified all nine reward tables have RLS, no anonymous table reads, no authenticated direct writes, and no anonymous/authenticated execution of the reward functions. Existing profile protection triggers were preserved.
+- Before/after fingerprints matched for existing profile data (excluding the newly added counter), challenge progress/enrollments, redemption codes, and friendships. Existing XP and memberships were not reset or converted into Reward XP.
+- A service-role read-only transaction returned `status = ready`, all three reward missions, and `canClaim = false`; the response passed the frontend's Zod schema validation. No test check-in, wallet, reward receipt, or Plus grant was created for an existing user.
+- Requested a PostgREST schema-cache reload. The existing Earn Plus screen can now load the active progress state after **Refresh rewards**.
+
+Remaining verification: sign in to the Lovable preview with a disposable verified account and smoke-test a real timed mission, refresh/resume, and daily check-in. Database readback and isolated tests are verified; a signed-in browser smoke test is not yet recorded. Do not enable Plus claims or publish as part of that check.
 
 ## What is ready
 
@@ -19,9 +33,11 @@ Campaign: `earned-plus-launch-v1`
 
 `npm test` passes 90 tests: 88 passed and two native-only concurrency checks are skipped when no local PostgreSQL service is available. The isolated PostgreSQL/WASM suite passes 18 functional/security checks, including disabled-by-default behavior, server-day time, idempotent check-ins, streaks, minimum mission time, daily caps, RLS, assignment freezing, claim requirements, ledger mismatch refusal, atomic rollback, verified-identity uniqueness, Founder preservation, timed extension and account-deletion cascades.
 
-The native concurrency cases run in CI against a disposable PostgreSQL 17 service. They are not run against Supabase or any production credential.
+The native concurrency cases passed in CI against a disposable PostgreSQL 17 service (20/20 database checks, [run 33642924733](https://github.com/SabariVJ/make-my-apk/actions/runs/33642924733)). The activation preflight also reran the local isolated suite: 18 passed, with the two native-only checks skipped locally. These tests do not use Supabase or production credentials.
 
-## Apply only after review
+## Initial rollout / recovery procedure
+
+The earning-only activation above is already complete. Do not repeat these steps or change backend connections merely because an older preview still shows a pending state. Confirm the current policy and refresh the preview first. Keep the source SQL under `supabase/pending/`; it must not become an automatic claims activation.
 
 1. Confirm Lovable is connected to repository `SabariVJ/make-my-apk`, branch `release/play-v1-compliance`, and Supabase project `oltmnrkceodpyqznfhjb`.
 2. Export or snapshot the project configuration and confirm the current service-role secret is valid. Never paste a secret into chat or commit it.
@@ -35,4 +51,4 @@ The native concurrency cases run in CI against a disposable PostgreSQL 17 servic
 
 If a problem appears, first set both policy flags to false. Do not drop the tables: receipts and deduplication history are needed to prevent replayed grants. Existing membership and profile data are independent of the reward wallet. Investigate failed receipts and restore the policy only after the native transaction tests and a disposable smoke test pass again.
 
-No live schema, live data, account, secret or publication was changed as part of this implementation. The staged files are intentionally review-only until the owner performs the steps above.
+The original code push did not activate the database. The separate, owner-approved action recorded above applied the reward schema and enabled earning only. No secrets, auth configuration, existing account data, Plus claims, or publication settings were changed.

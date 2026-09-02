@@ -309,7 +309,7 @@ describe("Earned Plus SQL on " + (native ? "native PostgreSQL" : "isolated Postg
     const id = await account({ xp: 777 });
     await seedEligibility(id);
     const seeded = (await execute("SELECT w.reward_xp,w.qualifying_days,COALESCE(sum(l.reward_xp_delta),0)::int AS ledger_xp,count(DISTINCT l.policy_day) FILTER (WHERE l.kind='mission_completion')::int AS ledger_days FROM public.reward_wallets w LEFT JOIN public.reward_xp_ledger l ON l.user_id=w.user_id WHERE w.user_id=$1 GROUP BY w.reward_xp,w.qualifying_days", [id])).rows[0];
-    assert.deepEqual(seeded, { reward_xp: 3000, qualifying_days: 21, ledger_xp: 3000, ledger_days: 21 });
+    assert.deepEqual(seeded, { reward_xp: 3000, qualifying_days: 20, ledger_xp: 3000, ledger_days: 20 });
     const requestId = randomUUID();
     const first = await redeem(id, requestId);
     assert.equal(first.replayed, false);

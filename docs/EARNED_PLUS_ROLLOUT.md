@@ -10,7 +10,8 @@ Campaign: `earned-plus-launch-v1`
 
 - Activated earning on 2 September 2026 at 16:51:48 UTC (22:21:48 Asia/Kolkata).
 - Applied the reviewed schema to the existing SVJ Lovable Cloud database through project `33b1119f-3051-482e-90aa-488c5d0681b3`. No database was created, replaced, or migrated to the separate Supabase dashboard project.
-- Active policy: `enabled = true`, `claims_enabled = false`; 3,000 Reward XP, 21 qualifying days, 21-day account age, 150 Reward XP daily cap, and a one-time 30-day Plus reward. Claims require a separate release decision.
+- Active policy: `enabled = true`, `claims_enabled = false`; 3,000 Reward XP, 7 qualifying days, 21-day account age, 150 Reward XP daily cap, and a one-time 30-day Plus reward. Claims require a separate release decision.
+- Amendment, 2 September 2026: `required_qualifying_days` lowered from 21 to 7 by the owner-approved guarded update in `supabase/pending/20260903_earned_plus_qualifying_days_7.sql`. The 21-day account age, the 3,000 Reward XP cost, the 150 Reward XP daily cap and `claims_enabled = false` are unchanged. A qualifying day still requires at least one completed server-timed mission; daily check-ins never count. Because of the daily cap, a real 3,000 Reward XP balance still takes at least 20 mission days, so the XP requirement — not the day count — is now the binding constraint.
 - Source application commit: `577ad2ad30ccc2352a42408fe823c863d3261789`. Schema SHA-256: `24cdce2120f9492f7b813c8dc686d52d76f6dade8f4ec8d55ccc48799e0e6924`.
 - The schema request returned a cancelled acknowledgement, but read-only reconciliation confirmed that the entire transaction committed. The schema was not resubmitted.
 - Verified all nine reward tables have RLS, no anonymous table reads, no authenticated direct writes, and no anonymous/authenticated execution of the reward functions. Existing profile protection triggers were preserved.

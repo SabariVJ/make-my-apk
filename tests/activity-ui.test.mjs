@@ -97,6 +97,10 @@ before(async () => {
             path: "challenge",
             namespace: "mock",
           }));
+          builder.onResolve({ filter: /^@\/lib\/engagement.functions$/ }, () => ({
+            path: "engagement",
+            namespace: "mock",
+          }));
           builder.onResolve({ filter: /^@tanstack\/react-start$/ }, () => ({
             path: "start",
             namespace: "mock",
@@ -110,6 +114,8 @@ before(async () => {
             contents: {
               auth: "export const supabase={auth:{getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};",
               challenge: "export const getChallengeState=async()=>null;",
+              engagement:
+                "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",
               start: "export const useServerFn=fn=>fn;",
               confetti: `export default function(){if(document.body.dataset.canvasFault==='throw')throw Error('Canvas unavailable');if(document.body.dataset.canvasFault==='reject')return Promise.reject(Error('Canvas failed'));return Promise.resolve();}`,
             }[target],

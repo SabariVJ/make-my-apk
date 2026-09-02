@@ -13,7 +13,7 @@ Starting commit: `3ad1f4799b4a80b73b3c52f27de88eefaa3ce09f`
 - Removes automatic cinematic welcome/personalization, the Samurai profile banner and the +100 welcome grant. Signing in no longer tops up Founder XP counters. Existing cached progress is preserved.
 - Removes the displayed +200 “all tasks” bonus because that bonus had no corresponding award implementation.
 
-The new earn-a-month economy is a **plan**, in `docs/XP_RETENTION_PLAN.md`. This patch does not grant free subscriptions, add a fake wallet, run a database migration or publish production.
+The earned-Plus economy is implemented as a review-only server design in `docs/XP_RETENTION_PLAN.md` and `docs/EARNED_PLUS_ROLLOUT.md`. The pending SQL is outside `supabase/migrations`, defaults to disabled, and this patch does not grant free subscriptions, add a client-controlled wallet, run a live database migration or publish production.
 
 ## Use the correct Lovable branch
 
@@ -48,11 +48,12 @@ First verify the prepared fixes in your preview using a disposable test account:
    console errors from the exact preview; do not label a code-only check as a
    live-device pass. Do not clear an existing member's data to hide a crash.
 
-Then prepare the server implementation described in XP_RETENTION_PLAN.md:
-daily login XP, a capped and idempotent mission ledger, 3,000 Reward XP plus 21
-qualifying days for one 30-day Plus grant, and a usable free earning path after
-the original seven-day trial expires. Personal tasks and manual logs cannot
-mint redeemable credit. Existing XP is not redeemable automatically.
+Then review the server implementation described in XP_RETENTION_PLAN.md and
+EARNED_PLUS_ROLLOUT.md: daily login XP, a capped and idempotent mission ledger,
+3,000 Reward XP plus 21 qualifying days for one 30-day Plus grant, and a usable
+free earning path after the original seven-day trial expires. Personal tasks
+and manual logs cannot mint redeemable credit. Existing XP is not redeemable
+automatically. Keep claims disabled until the owner approves a live pilot.
 
 Build this in the documented phases, validate RLS and transactions in an
 isolated database, and keep the reward feature disabled until the tests pass.
@@ -72,13 +73,13 @@ Ordinary activity persistence remains device-local until the planned server migr
 
 | Check                                         | Result                                             |
 | --------------------------------------------- | -------------------------------------------------- |
-| JavaScript/TypeScript tests                   | 65 passed, including 10 real React component tests |
+| JavaScript/TypeScript/reward tests             | 90 tests: 88 passed, 2 native-only concurrency checks skipped locally |
 | Android theme regression checks               | 8 passed                                           |
 | TypeScript                                    | Passed                                             |
-| ESLint                                        | 0 errors; 9 existing warnings                      |
+| ESLint                                        | 0 errors; 10 non-blocking warnings                 |
 | Source formatting and whitespace              | Passed                                             |
 | Production client and server build            | Passed                                             |
 | Lovable preview / physical Android smoke test | Pending in the selected connected project/device   |
 | Production deployment / live DB mutation      | Not performed                                      |
 
-The npm lockfile was repaired to include missing platform-specific optional packages and the new test tools, and the Bun lockfile was synchronized. Existing runtime dependency versions were preserved. Both npm's clean-install dry run and Bun's frozen lockfile check passed. The test runner uses Node's `--import tsx` entry point so it does not require the tsx command-line IPC socket.
+The npm lockfile includes the isolated PostgreSQL/WASM test engine and native PostgreSQL driver. Bun's lockfile still needs a normal package-manager regeneration before a Bun-based deployment; no workaround was used after the environment blocked that fetch. Existing runtime dependency versions were preserved. The test runner uses Node's `--import tsx` entry point so it does not require the tsx command-line IPC socket.

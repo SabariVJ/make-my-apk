@@ -219,12 +219,6 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Welcome Bonus Notice */}
-            <div className="p-3 rounded-xl bg-[#C81E3A]/10 border border-[#C81E3A]/30 flex items-center justify-between text-xs font-mono">
-              <span className="text-[#F4F2ED]">🎁 Welcome Bonus Included:</span>
-              <span className="font-bold text-[#C81E3A]">+100 Initiation XP</span>
-            </div>
-
             {/* Submit Button */}
             <div className="pt-2">
               <button

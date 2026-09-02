@@ -1,6 +1,8 @@
 # SVJ: daily streaks and earned Plus
 
-Status: proposed implementation plan, 2 September 2026. The crash fixes and task editor are code changes in this release. Daily check-in XP and XP-to-Plus redemption are **not enabled** by this change. No live database migration or membership change has been performed.
+Status: implementation staged for review, 2 September 2026. The crash fixes, task editor, server-validated reward code and Earn Plus UI are in this release. Daily check-in XP and XP-to-Plus redemption remain **disabled** until the pending SQL is reviewed and applied to the intended project. No live database migration or membership change has been performed.
+
+The implementation is in `supabase/pending/20260902_earned_plus.sql`, with earning-only activation prepared in `supabase/pending/20260902_enable_earned_plus.sql`. These files are deliberately outside `supabase/migrations`; Lovable will not apply them automatically.
 
 ## Product goal
 
@@ -121,7 +123,7 @@ Keep SVJ's charcoal, white and crimson style. Add one compact card to Challenges
 
 The “Earn Plus” detail screen should show the exact cost, eligibility, ledger history, next reset and a single claim button. A disabled button must state the actual missing requirement. Show the confirmed expiry only after a successful receipt. Preserve the user's form on errors and provide retry without duplicate grants.
 
-After this foundation, useful follow-ups are a resumable daily focus session, a weekly progress review and the previously requested accepted-rivalry flow. Implement each against real persisted activity. Avoid adding decorative engagement counters or claiming that a friend is progressing when no event exists.
+After this foundation, useful follow-ups are a weekly progress review and the previously requested accepted-rivalry flow. Implement each against real persisted activity. Avoid adding decorative engagement counters or claiming that a friend is progressing when no event exists.
 
 ## Delivery order and acceptance gates
 

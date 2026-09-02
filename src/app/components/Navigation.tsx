@@ -12,11 +12,13 @@ import {
   CalendarCheck,
   KeyRound,
   LogOut,
+  Gift,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export type ActiveTab =
   | "challenges"
+  | "earn"
   | "workouts"
   | "nutrition"
   | "community"
@@ -53,8 +55,9 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  // Restricted shell: 60-Day Challenge, Redeem Code, Profile, Sign Out
+  // The free earning path must outlive the seven-day introductory trial.
   const restrictedNavItems: typeof allNavItems = [
+    { id: "earn", label: "Earn Plus", icon: Gift },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "redeem", label: "Redeem Code", icon: KeyRound },
     { id: "profile", label: "Profile", icon: User },
@@ -78,7 +81,8 @@ export const Navigation: React.FC<NavigationProps> = ({
       <div className="max-w-2xl mx-auto flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive =
+            activeTab === item.id || (activeTab === "earn" && item.id === "challenges");
 
           return (
             <button

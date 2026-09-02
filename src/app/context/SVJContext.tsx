@@ -36,6 +36,7 @@ import {
   type SaveResult,
 } from "../lib/activity";
 import { appStorage, readStoredArray, readStoredJson, writeStoredJson } from "../lib/storage";
+import { reconcileEngagementProfile } from "../lib/engagementProfile";
 
 interface SVJContextType {
   user: UserProfile;
@@ -68,6 +69,7 @@ interface SVJContextType {
   toggleChallenge: (id: string) => SaveResult;
   /** Apply a server-confirmed XP grant to the user's profile (60-day challenge). */
   awardXp: (xp: number) => void;
+  syncEngagementProfile: (userId: string, earnedProfileXp: number, serverNow: string) => void;
   addCustomChallenge: (
     title: string,
     category: DailyChallenge["category"],
@@ -296,6 +298,7 @@ export const SVJProvider: React.FC<{
       serverProfile?: {
         id: string;
         total_xp: number;
+        engagement_profile_xp?: number;
         current_streak: number;
         username: string | null;
         display_name: string | null;
@@ -324,6 +327,7 @@ export const SVJProvider: React.FC<{
       let serverProfile: {
         id: string;
         total_xp: number;
+        engagement_profile_xp?: number;
         current_streak: number;
         username: string | null;
         display_name: string | null;
@@ -335,9 +339,9 @@ export const SVJProvider: React.FC<{
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select(
-              "id, total_xp, current_streak, username, display_name, avatar_url, is_plus_member",
-            )
+            // SELECT * works both before and after the pending reward column
+            // exists. Only this authenticated account's profile is read.
+            .select("*")
             .eq("id", session.user.id)
             .maybeSingle();
           if (!error && data) {
@@ -510,6 +514,15 @@ export const SVJProvider: React.FC<{
     const now = new Date();
     setUser((previous) => applyActivityXp(previous, xp, now));
   };
+
+  const syncEngagementProfile = useCallback(
+    (userId: string, earnedProfileXp: number, serverNow: string) => {
+      setUser((previous) =>
+        reconcileEngagementProfile(previous, userId, earnedProfileXp, serverNow),
+      );
+    },
+    [],
+  );
 
   const addActivity = (title: string, details: string, xpEarned: number) => {
     const item: FeedActivity = {
@@ -882,6 +895,7 @@ export const SVJProvider: React.FC<{
     serverProfile?: {
       id: string;
       total_xp: number;
+      engagement_profile_xp?: number;
       current_streak: number;
       username: string | null;
       display_name: string | null;
@@ -923,6 +937,8 @@ export const SVJProvider: React.FC<{
         username: serverProfile.username || INITIAL_USER.username,
         avatar: serverProfile.avatar_url || INITIAL_USER.avatar,
         totalXP: serverProfile.total_xp,
+        engagementProfileXp: serverProfile.engagement_profile_xp ?? 0,
+        engagementXpUserId: userId || INITIAL_USER.id,
         currentStreak: serverProfile.current_streak,
         bestStreak: serverProfile.current_streak,
         tier: getTierForXP(serverProfile.total_xp),
@@ -1020,6 +1036,7 @@ export const SVJProvider: React.FC<{
       value={{
         user,
         profileLoaded,
+        syncEngagementProfile,
         storageError,
         isPlusMember: isPlusMemberProp,
         plusExpiresAt: plusExpiresAtProp,

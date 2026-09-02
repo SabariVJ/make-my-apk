@@ -124,6 +124,9 @@ export interface UserProfile {
   coverImage?: string;
   tier: TierLevel;
   totalXP: number;
+  /** Display-only receipt watermark. Never used for Reward XP or entitlements. */
+  engagementProfileXp?: number;
+  engagementXpUserId?: string;
   weeklyXP: number;
   monthlyXP: number;
   currentStreak: number;

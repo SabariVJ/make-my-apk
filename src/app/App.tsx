@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
+import { EngagementProvider } from "./context/EngagementContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
 import { ChallengesView } from "./views/ChallengesView";
+import { EarnPlusView } from "./views/EarnPlusView";
 import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
@@ -111,8 +113,14 @@ const AppContent: React.FC<{
     if (tab === "plus") {
       // Google Play release: external UPI purchasing is unavailable on Android.
       if (!isAndroid) setIsPaywallOpen(true);
-    } else if (locked && tab !== "sixty" && tab !== "redeem" && tab !== "profile") {
-      // Restricted shell: only sixty, redeem, and profile are allowed.
+    } else if (
+      locked &&
+      tab !== "sixty" &&
+      tab !== "redeem" &&
+      tab !== "profile" &&
+      tab !== "earn"
+    ) {
+      // Free reward missions remain available after the trial, not premium tabs.
       return;
     } else {
       setActiveTab(tab);
@@ -142,10 +150,20 @@ const AppContent: React.FC<{
               </h2>
               <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
                 {isAndroid
-                  ? "Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a reward code, or manage your profile."
-                  : "Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a reward code, manage your profile, or upgrade to SVJ Plus."}
+                  ? "You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and your profile."
+                  : "You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and your profile, or upgrade to SVJ Plus."}
               </p>
               <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrialNotice(false);
+                    setActiveTab("earn");
+                  }}
+                  className="w-full rounded-xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
+                >
+                  Open Earn Plus
+                </button>
                 {!isAndroid && (
                   <button
                     type="button"
@@ -184,11 +202,12 @@ const AppContent: React.FC<{
               Your 7-Day Trial Has Ended
             </p>
             <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
-              Full SVJ access is locked. You can still complete the 60-Day Challenge, redeem a
+              You can still use Earn Plus daily missions, complete the 60-Day Challenge, redeem a
               reward code, manage your profile or sign out.
             </p>
           </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
             <div className="space-y-4">
               <h2 className="font-anton text-xl uppercase tracking-wider text-white">
@@ -237,8 +256,12 @@ const AppContent: React.FC<{
           </p>
         )}
         {activeTab === "challenges" && (
-          <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
+          <ChallengesView
+            onOpenSixtyDay={() => handleTabChange("sixty")}
+            onOpenEarnPlus={() => handleTabChange("earn")}
+          />
         )}
+        {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
         {activeTab === "community" && !isAndroid && <CommunityView />}
@@ -292,7 +315,9 @@ export default function App() {
           isPlusMember={status?.isPlusMember ?? null}
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
-          <AppContent locked={status?.locked} lockEmail={status?.email} />
+          <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
+            <AppContent locked={status?.locked} lockEmail={status?.email} />
+          </EngagementProvider>
         </SVJProvider>
       )}
     </TrialGate>

@@ -18,11 +18,15 @@ import {
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
+import { EarnPlusCard } from "../components/EarnPlusCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 
-export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOpenSixtyDay }) => {
+export const ChallengesView: React.FC<{
+  onOpenSixtyDay?: () => void;
+  onOpenEarnPlus?: () => void;
+}> = ({ onOpenSixtyDay, onOpenEarnPlus }) => {
   const {
     challenges,
     toggleChallenge,
@@ -98,6 +102,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
 
   return (
     <div className="space-y-6 pb-24">
+      {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} />}
       {/* 60-Day Gauntlet CTA — hidden when server confirms completion */}
       {onOpenSixtyDay && !sixtyDayCompleted && !sixtyDayQuery.isLoading && (
         <button

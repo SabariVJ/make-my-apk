@@ -291,11 +291,11 @@ describe("Earned Plus SQL on " + (native ? "native PostgreSQL" : "isolated Postg
     await assert.rejects(redeem(tooNew), /SVJ_REWARD_ACCOUNT_TOO_NEW/);
 
     const tooFewDays = await account();
-    await seedEligibility(tooFewDays, { days: 20, balance: 3000 });
+    await seedEligibility(tooFewDays, { days: 6, balance: 900 });
     await assert.rejects(redeem(tooFewDays), /SVJ_REWARD_QUALIFYING_DAYS_REQUIRED/);
 
     const tooFewXp = await account();
-    await seedEligibility(tooFewXp, { days: 21, balance: 2950 });
+    await seedEligibility(tooFewXp, { days: 20, balance: 2950 });
     await assert.rejects(redeem(tooFewXp), /SVJ_REWARD_XP_REQUIRED/);
 
     for (const id of [tooNew, tooFewDays, tooFewXp]) {

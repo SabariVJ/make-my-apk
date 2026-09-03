@@ -451,7 +451,6 @@ export const ProfileView: React.FC = () => {
           Body & Nutrition
         </button>
       </div>
-
       {/* Assessment overlay */}
       {showAssessment && (
         <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
@@ -465,7 +464,6 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       )}
-
       {/* Body Profile overlay */}
       {showBodyProfile && (
         <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
@@ -479,7 +477,6 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       )}
-
       {/* Account actions */}
       <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
         {isAndroid && (

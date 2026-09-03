@@ -17,7 +17,11 @@ import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
 import {
   resolveWhatsAppUrl,
+  buildWhatsAppAppUrl,
+  buildWhatsAppWebUrl,
+  buildActivationMailto,
   buildPaymentConfirmationMessage,
+  formatWhatsAppNumber,
   SVJ_WHATSAPP_NUMBER,
 } from "@/lib/whatsapp";
 
@@ -28,10 +32,15 @@ export const UPIPaymentModal: React.FC = () => {
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
   const [showContactFallback, setShowContactFallback] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [numberCopied, setNumberCopied] = useState(false);
 
   const supportMessage = buildPaymentConfirmationMessage();
   const isNative = Capacitor.isNativePlatform();
   const supportUrl = resolveWhatsAppUrl(supportMessage, isNative);
+  const appUrl = buildWhatsAppAppUrl(supportMessage);
+  const webUrl = buildWhatsAppWebUrl(supportMessage);
+  const mailtoUrl = buildActivationMailto(supportMessage);
+
 
   if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 

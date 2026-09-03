@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Lock, ShieldCheck, LogOut, ExternalLink } from "lucide-react";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
+import { buildWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
 
 type Props = {
   email: string | null;
@@ -11,7 +12,7 @@ type Props = {
 export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
   const handleContactSupport = () => {
     window.open(
-      `https://wa.me/919790833416?text=${encodeURIComponent(`Hi! I've paid for SVJ Plus. My email: ${email ?? "(not signed in)"}. Please activate my account.`)}`,
+      buildWhatsAppUrl(buildPaymentConfirmationMessage(email)),
       "_blank",
       "noopener,noreferrer",
     );

@@ -170,9 +170,16 @@ CREATE TABLE IF NOT EXISTS public.rivalries (
   expires_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT rivalries_not_self CHECK (challenger_id <> opponent_id),
-  CONSTRAINT rivalries_unique_active UNIQUE (challenger_id, opponent_id)
+  CONSTRAINT rivalries_not_self CHECK (challenger_id <> opponent_id)
 );
+-- Canonical unordered pair index: prevents A->B AND B->A from existing
+-- simultaneously. Uses LEAST/GREATEST so {A,B} always maps to the same key.
+-- Only enforced for live rivalries; declined/cancelled/completed allow re-challenge.
+DROP CONSTRAINT IF EXISTS rivalries_unique_active ON public.rivalries;
+DROP INDEX IF EXISTS rivalries_no_pending_or_active_dupes ON public.rivalries;
+CREATE UNIQUE INDEX IF NOT EXISTS rivalries_no_live_pair_dupes
+  ON public.rivalries (LEAST(challenger_id, opponent_id), GREATEST(challenger_id, opponent_id))
+  WHERE status IN ('pending', 'accepted', 'active');
 
 ALTER TABLE public.rivalries ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.rivalries FROM PUBLIC, anon, authenticated;
@@ -205,10 +212,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS rivalry_events_no_dupe ON public.rivalry_event
 ALTER TABLE public.rivalry_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.rivalry_events FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.rivalry_events TO service_role;
-GRANT SELECT ON public.rivalry_events TO authenticated;
+GRANT SELECT, INSERT ON public.rivalry_events TO authenticated;
 CREATE POLICY "Users can read own rivalry events"
   ON public.rivalry_events FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own rivalry events"
+  ON public.rivalry_events FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 -- ── 7) ANTI-ABUSE ELIGIBILITY LEDGER ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.promotion_eligibility (
@@ -286,5 +296,106 @@ BEGIN
     );
   END LOOP;
 END $$;
+
+-- ── 11) IN-APP NOTIFICATIONS ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.in_app_notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('rivalry_request','rivalry_accepted','rivalry_declined','friend_request','friend_accepted')),
+  from_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  reference_id uuid,
+  title text NOT NULL,
+  body text NOT NULL DEFAULT '',
+  read boolean NOT NULL DEFAULT false,
+  handled boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS in_app_notifications_user_idx ON public.in_app_notifications (user_id, read, created_at DESC);
+
+ALTER TABLE public.in_app_notifications ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.in_app_notifications FROM PUBLIC, anon, authenticated;
+GRANT ALL ON public.in_app_notifications TO service_role;
+GRANT SELECT, UPDATE ON public.in_app_notifications TO authenticated;
+CREATE POLICY "Users can read own notifications"
+  ON public.in_app_notifications FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+CREATE POLICY "Users can mark own notifications read"
+  ON public.in_app_notifications FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- ── 12) SECURITY DEFINER RPC: trusted notification creation ─────────────────
+-- Authenticated users call this RPC to create rivalry notifications.
+-- The function runs as its owner (service_role) and bypasses RLS,
+-- allowing cross-user notification delivery without granting INSERT.
+-- Authorization: caller must be a participant in the rivalry.
+-- The RPC resolves the recipient and sender from the rivalry table,
+-- so the caller cannot forge any notification field.
+
+CREATE OR REPLACE FUNCTION public.create_rivalry_notification(
+  p_rivalry_id uuid,
+  p_notification_type text,
+  p_title text,
+  p_body text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  caller_id uuid := auth.uid();
+  is_participant boolean;
+  recipient_id uuid;
+BEGIN
+  -- Caller must be authenticated
+  IF caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  -- Validate notification type (whitelist)
+  IF p_notification_type NOT IN ('rivalry_request', 'rivalry_accepted', 'rivalry_declined') THEN
+    RAISE EXCEPTION 'Invalid notification type: %', p_notification_type;
+  END IF;
+
+  -- Caller must be a participant in the rivalry
+  SELECT EXISTS (
+    SELECT 1 FROM public.rivalries
+    WHERE id = p_rivalry_id
+      AND (challenger_id = caller_id OR opponent_id = caller_id)
+  ) INTO is_participant;
+
+  IF NOT is_participant THEN
+    RAISE EXCEPTION 'Not a participant in this rivalry';
+  END IF;
+
+  -- Resolve recipient (the OTHER participant)
+  SELECT CASE
+    WHEN challenger_id = caller_id THEN opponent_id
+    ELSE challenger_id
+  END INTO recipient_id
+  FROM public.rivalries
+  WHERE id = p_rivalry_id;
+
+  -- Create notification — runs as service_role, bypasses RLS
+  INSERT INTO public.in_app_notifications (
+    user_id, type, from_user_id, reference_id, title, body
+  ) VALUES (
+    recipient_id,
+    p_notification_type,
+    caller_id,
+    p_rivalry_id,
+    p_title,
+    p_body
+  );
+END;
+$$;
+
+-- Only the function owner (or superuser) can execute this RPC.
+-- Authenticated users access it through the Supabase RPC endpoint,
+-- which routes through PostgREST and respects SECURITY DEFINER.
+REVOKE ALL ON FUNCTION public.create_rivalry_notification(uuid, text, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_rivalry_notification(uuid, text, text, text) TO authenticated;
 
 COMMIT;

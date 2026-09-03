@@ -15,6 +15,7 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
+import { buildWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
@@ -30,7 +31,7 @@ export const UPIPaymentModal: React.FC = () => {
       setIsProcessing(false);
       setIsUPIModalOpen(false);
       window.open(
-        `https://wa.me/919790833416?text=${encodeURIComponent("Hi! I've paid for SVJ Plus. Please activate my account.")}`,
+        buildWhatsAppUrl(buildPaymentConfirmationMessage()),
         "_blank",
         "noopener,noreferrer",
       );

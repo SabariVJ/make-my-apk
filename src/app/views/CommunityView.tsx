@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -11,17 +11,26 @@ import {
   Heart,
   UserPlus,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
 import { FriendsPanel } from "../components/FriendsPanel";
 import { useFriends } from "../hooks/useFriends";
+import {
+  createRivalry,
+  getRivalries,
+  cancelRivalry,
+  type RivalryData,
+} from "@/lib/rivalry.functions";
 
 export const CommunityView: React.FC = () => {
   const { feed, toggleReaction, addComment, setSelectedMemberModal, leaderboard, user } = useSVJ();
   const [activeSubTab, setActiveSubTab] = useState<"feed" | "directory" | "friends">("feed");
   const [searchQuery, setSearchQuery] = useState("");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [rivalries, setRivalries] = useState<RivalryData[]>([]);
+  const [sendingId, setSendingId] = useState<string | null>(null);
   const friendsApi = useFriends({
     username: user.username,
     displayName: user.name,
@@ -29,6 +38,36 @@ export const CommunityView: React.FC = () => {
     totalXP: user.totalXP,
     currentStreak: user.currentStreak,
   });
+
+  const loadRivalries = useCallback(async () => {
+    const res = await getRivalries();
+    if (Array.isArray(res)) setRivalries(res);
+  }, []);
+
+  useEffect(() => {
+    void loadRivalries();
+  }, [loadRivalries]);
+
+  /** Get rivalry state between current user and another member */
+  const getRivalryState = (
+    otherId: string,
+  ): "none" | "outgoing_pending" | "incoming_pending" | "active" => {
+    for (const r of rivalries) {
+      if (
+        r.status === "cancelled" ||
+        r.status === "declined" ||
+        r.status === "completed" ||
+        r.status === "expired"
+      )
+        continue;
+      const isChallenger = r.challengerId === user.id && r.opponentId === otherId;
+      const isOpponent = r.opponentId === user.id && r.challengerId === otherId;
+      if (isChallenger && r.status === "pending") return "outgoing_pending";
+      if (isOpponent && r.status === "pending") return "incoming_pending";
+      if ((isChallenger || isOpponent) && r.status === "active") return "active";
+    }
+    return "none";
+  };
 
   const reactionEmojis: { type: ReactionType; emoji: string; label: string }[] = [
     { type: "fire", emoji: "🔥", label: "Fire" },
@@ -49,6 +88,26 @@ export const CommunityView: React.FC = () => {
     if (text) {
       addComment(activityId, text);
       setCommentInputs((prev) => ({ ...prev, [activityId]: "" }));
+    }
+  };
+
+  const handleSendRivalry = async (opponentId: string) => {
+    setSendingId(opponentId);
+    try {
+      const res = await createRivalry({ data: { opponentId } });
+      if (res?.error) {
+        alert(res.error);
+      } else if (res?.ok) {
+        // Optimistically add the new pending rivalry
+        if (res?.rivalry) {
+          setRivalries((prev) => [res.rivalry!, ...prev]);
+        } else {
+          void loadRivalries();
+        }
+        alert("Outperform request sent!");
+      }
+    } finally {
+      setSendingId(null);
     }
   };
 
@@ -261,38 +320,74 @@ export const CommunityView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredMembers.map((m) => (
-              <motion.div
-                key={m.id}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => setSelectedMemberModal(m)}
-                className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
-                    <img src={m.avatar} alt={m.username} className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-anton text-sm text-white uppercase">{m.username}</span>
-                      {m.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
-                    </div>
-                    <div className="text-[10px] font-mono text-[#8C8C90]">
-                      {m.tier} • {m.totalXP.toLocaleString()} XP
-                    </div>
-                    <div className="text-[10px] font-mono text-orange-400 mt-0.5">
-                      🔥 {m.streak} day streak
-                    </div>
-                  </div>
-                </div>
+            {filteredMembers.map((m) => {
+              const isSelf = m.id === user.id;
+              const rivalryState = isSelf ? "none" : getRivalryState(m.id);
 
-                <div className="text-right">
-                  <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
-                    Rank #{m.rank}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+              return (
+                <motion.div
+                  key={m.id}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setSelectedMemberModal(m)}
+                  className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
+                      <img src={m.avatar} alt={m.username} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-anton text-sm text-white uppercase">
+                          {m.username}
+                        </span>
+                        {m.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
+                      </div>
+                      <div className="text-[10px] font-mono text-[#8C8C90]">
+                        {m.tier} • {m.totalXP.toLocaleString()} XP
+                      </div>
+                      <div className="text-[10px] font-mono text-orange-400 mt-0.5">
+                        🔥 {m.streak} day streak
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
+                      Rank #{m.rank}
+                    </span>
+                    {/* Outperform button states */}
+                    {!isSelf && rivalryState === "none" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleSendRivalry(m.id);
+                        }}
+                        disabled={sendingId === m.id}
+                        className="px-3 py-1.5 rounded-xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {sendingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        OUTPERFORM
+                      </button>
+                    )}
+                    {rivalryState === "outgoing_pending" && (
+                      <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold">
+                        REQUEST SENT
+                      </span>
+                    )}
+                    {rivalryState === "incoming_pending" && (
+                      <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] font-mono font-bold">
+                        PENDING
+                      </span>
+                    )}
+                    {rivalryState === "active" && (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold">
+                        COMPETITION ACTIVE
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       )}

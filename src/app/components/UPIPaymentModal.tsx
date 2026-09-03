@@ -228,7 +228,7 @@ export const UPIPaymentModal: React.FC = () => {
                   className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <span>Opening WhatsApp...</span>
+                    <span>Preparing contact options...</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
@@ -241,16 +241,22 @@ export const UPIPaymentModal: React.FC = () => {
               {showContactFallback && (
                 <div className="mt-3 p-3 rounded-xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
                   <p className="text-[11px] text-[#8C8C90] leading-relaxed">
-                    If WhatsApp didn&apos;t open (some browsers block it), use one of these:
+                    Send us your payment details to activate SVJ Plus:
                   </p>
                   <a
-                    href={supportUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={isNative ? supportUrl : appUrl}
                     className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
-                    Open WhatsApp
+                    Open WhatsApp app
+                  </a>
+                  <a
+                    href={webUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Open in browser instead
                   </a>
                   <button
                     onClick={handleCopyMessage}
@@ -258,11 +264,26 @@ export const UPIPaymentModal: React.FC = () => {
                   >
                     {copied ? "Message copied" : "Copy verification message"}
                   </button>
-                  <p className="text-[11px] text-[#8C8C90] font-mono">
-                    Or message support manually: +{SVJ_WHATSAPP_NUMBER}
+                  <button
+                    onClick={handleCopyNumber}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                  >
+                    {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
+                  </button>
+                  <a
+                    href={mailtoUrl}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Email us instead
+                  </a>
+                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                    If WhatsApp doesn&apos;t open, message{" "}
+                    <span className="font-mono text-white select-all">{formatWhatsAppNumber()}</span>{" "}
+                    from your phone with the copied text.
                   </p>
                 </div>
               )}
+
             </div>
           )}
         </motion.div>

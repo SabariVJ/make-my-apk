@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import {
-  Calculator,
-  Scale,
-  Flame,
-  Target,
-  Apple,
-  Loader2,
-  ChevronRight,
-  Info,
-} from "lucide-react";
+import { Calculator, Scale, Flame, Target, Apple, Loader2, ChevronRight, Info } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
-import { saveBodyProfile, getBodyProfile, type BodyProfileData } from "@/lib/personalization.functions";
+import {
+  saveBodyProfile,
+  getBodyProfile,
+  type BodyProfileData,
+} from "@/lib/personalization.functions";
 
 // ── Food suggestions by diet + goal ───────────────────────────────────────
 
@@ -19,73 +14,217 @@ const FOOD_SUGGESTIONS: Record<string, Record<string, { label: string; items: st
   vegetarian: {
     lose_fat: {
       label: "Low-calorie, high-protein vegetarian options",
-      items: ["Moong dal", "Sprouts", "Curd/Raita", "Paneer tikka (grilled)", "Vegetable soup", "Fruits (papaya, apple)", "Buttermilk", " salads with paneer"],
+      items: [
+        "Moong dal",
+        "Sprouts",
+        "Curd/Raita",
+        "Paneer tikka (grilled)",
+        "Vegetable soup",
+        "Fruits (papaya, apple)",
+        "Buttermilk",
+        " salads with paneer",
+      ],
     },
     maintain: {
       label: "Balanced vegetarian options",
-      items: ["Chapati + dal", "Rice + sambar", "Paneer curry", "Curd rice", "Vegetable pulao", "Idli + sambar", "Dosa", "Poha"],
+      items: [
+        "Chapati + dal",
+        "Rice + sambar",
+        "Paneer curry",
+        "Curd rice",
+        "Vegetable pulao",
+        "Idli + sambar",
+        "Dosa",
+        "Poha",
+      ],
     },
     gain_muscle: {
       label: "High-protein vegetarian options",
-      items: ["Paneer bhurji", "Soya chunks curry", "Paneer tikka", "Rajma + rice", "Chana masala", "Sprouts salad", "Dal makhani", "Milk + banana shake"],
+      items: [
+        "Paneer bhurji",
+        "Soya chunks curry",
+        "Paneer tikka",
+        "Rajma + rice",
+        "Chana masala",
+        "Sprouts salad",
+        "Dal makhani",
+        "Milk + banana shake",
+      ],
     },
     improve_fitness: {
       label: "Performance-focused vegetarian options",
-      items: ["Oats + nuts", "Banana", "Peanut butter toast", "Moong dal chilla", "Fruit smoothie", "Trail mix", "Sweet potato", "Brown rice + dal"],
+      items: [
+        "Oats + nuts",
+        "Banana",
+        "Peanut butter toast",
+        "Moong dal chilla",
+        "Fruit smoothie",
+        "Trail mix",
+        "Sweet potato",
+        "Brown rice + dal",
+      ],
     },
   },
   eggetarian: {
     lose_fat: {
       label: "Low-calorie, high-protein eggetarian options",
-      items: ["Boiled eggs (2-3)", "Egg white omelette", "Curd", "Sprouts", "Vegetable soup", "Fruits", "Buttermilk", "Moong dal"],
+      items: [
+        "Boiled eggs (2-3)",
+        "Egg white omelette",
+        "Curd",
+        "Sprouts",
+        "Vegetable soup",
+        "Fruits",
+        "Buttermilk",
+        "Moong dal",
+      ],
     },
     maintain: {
       label: "Balanced eggetarian options",
-      items: ["Egg curry + roti", "Egg bhurji + chapati", "Rice + dal + egg", "Omelette + toast", "Idli + egg", "Dosa + egg", "Poha + egg", "Curd rice + egg"],
+      items: [
+        "Egg curry + roti",
+        "Egg bhurji + chapati",
+        "Rice + dal + egg",
+        "Omelette + toast",
+        "Idli + egg",
+        "Dosa + egg",
+        "Poha + egg",
+        "Curd rice + egg",
+      ],
     },
     gain_muscle: {
       label: "High-protein eggetarian options",
-      items: ["4 egg whites + 2 yolks", "Egg bhurji (3 eggs)", "Paneer + egg combo", "Egg curry (2 eggs)", "Omelette (3 eggs)", "Boiled eggs + sprouts", "Egg + milk shake", "Rajma + egg"],
+      items: [
+        "4 egg whites + 2 yolks",
+        "Egg bhurji (3 eggs)",
+        "Paneer + egg combo",
+        "Egg curry (2 eggs)",
+        "Omelette (3 eggs)",
+        "Boiled eggs + sprouts",
+        "Egg + milk shake",
+        "Rajma + egg",
+      ],
     },
     improve_fitness: {
       label: "Performance-focused eggetarian options",
-      items: ["Oats + boiled egg", "Banana + egg", "Peanut butter + egg toast", "Egg + fruit smoothie", "Trail mix + egg", "Sweet potato + egg", "Brown rice + egg curry", "Sprouts + egg"],
+      items: [
+        "Oats + boiled egg",
+        "Banana + egg",
+        "Peanut butter + egg toast",
+        "Egg + fruit smoothie",
+        "Trail mix + egg",
+        "Sweet potato + egg",
+        "Brown rice + egg curry",
+        "Sprouts + egg",
+      ],
     },
   },
   non_vegetarian: {
     lose_fat: {
       label: "Low-calorie, high-protein non-veg options",
-      items: ["Grilled chicken breast", "Fish curry (light)", "Chicken soup", "Boiled eggs", "Tandoori chicken", "Fish tikka", "Chicken salad", "Egg white omelette"],
+      items: [
+        "Grilled chicken breast",
+        "Fish curry (light)",
+        "Chicken soup",
+        "Boiled eggs",
+        "Tandoori chicken",
+        "Fish tikka",
+        "Chicken salad",
+        "Egg white omelette",
+      ],
     },
     maintain: {
       label: "Balanced non-veg options",
-      items: ["Chicken curry + rice", "Fish fry + chapati", "Egg curry + roti", "Chicken biryani (moderate)", "Mutton soup", "Grilled fish + veggies", "Chicken tikka + salad", "Prawn curry + rice"],
+      items: [
+        "Chicken curry + rice",
+        "Fish fry + chapati",
+        "Egg curry + roti",
+        "Chicken biryani (moderate)",
+        "Mutton soup",
+        "Grilled fish + veggies",
+        "Chicken tikka + salad",
+        "Prawn curry + rice",
+      ],
     },
     gain_muscle: {
       label: "High-protein non-veg options",
-      items: ["Chicken breast (200g)", "Fish (200g)", "Eggs (4-5)", "Mutton curry", "Chicken keema", "Tuna salad", "Chicken + paneer combo", "Fish + egg combo"],
+      items: [
+        "Chicken breast (200g)",
+        "Fish (200g)",
+        "Eggs (4-5)",
+        "Mutton curry",
+        "Chicken keema",
+        "Tuna salad",
+        "Chicken + paneer combo",
+        "Fish + egg combo",
+      ],
     },
     improve_fitness: {
       label: "Performance-focused non-veg options",
-      items: ["Grilled chicken + oats", "Fish + sweet potato", "Egg + banana shake", "Chicken wrap", "Fish + brown rice", "Egg + peanut butter", "Chicken + fruit salad", "Lean meat + veggies"],
+      items: [
+        "Grilled chicken + oats",
+        "Fish + sweet potato",
+        "Egg + banana shake",
+        "Chicken wrap",
+        "Fish + brown rice",
+        "Egg + peanut butter",
+        "Chicken + fruit salad",
+        "Lean meat + veggies",
+      ],
     },
   },
   vegan: {
     lose_fat: {
       label: "Low-calorie, high-protein vegan options",
-      items: ["Moong dal", "Sprouts", "Tofu stir-fry", "Vegetable soup", "Fruits", "Soya chunks", "Chana salad", "Green smoothie"],
+      items: [
+        "Moong dal",
+        "Sprouts",
+        "Tofu stir-fry",
+        "Vegetable soup",
+        "Fruits",
+        "Soya chunks",
+        "Chana salad",
+        "Green smoothie",
+      ],
     },
     maintain: {
       label: "Balanced vegan options",
-      items: ["Rice + dal", "Chapati + sabzi", "Soya curry", "Poha", "Idli + sambar", "Vegetable pulao", "Chana curry", "Peanut chutney + dosa"],
+      items: [
+        "Rice + dal",
+        "Chapati + sabzi",
+        "Soya curry",
+        "Poha",
+        "Idli + sambar",
+        "Vegetable pulao",
+        "Chana curry",
+        "Peanut chutney + dosa",
+      ],
     },
     gain_muscle: {
       label: "High-protein vegan options",
-      items: ["Soya chunks (100g)", "Tofu bhurji", "Rajma + rice", "Chana masala", "Moong dal + paneer alt", "Peanut butter + banana", "Sprouts salad", "Soya milk + oats"],
+      items: [
+        "Soya chunks (100g)",
+        "Tofu bhurji",
+        "Rajma + rice",
+        "Chana masala",
+        "Moong dal + paneer alt",
+        "Peanut butter + banana",
+        "Sprouts salad",
+        "Soya milk + oats",
+      ],
     },
     improve_fitness: {
       label: "Performance-focused vegan options",
-      items: ["Oats + banana + peanut butter", "Tofu scramble", "Fruit smoothie + nuts", "Sweet potato + dal", "Trail mix", "Banana + dates", "Brown rice + chana", "Soya milk shake"],
+      items: [
+        "Oats + banana + peanut butter",
+        "Tofu scramble",
+        "Fruit smoothie + nuts",
+        "Sweet potato + dal",
+        "Trail mix",
+        "Banana + dates",
+        "Brown rice + chana",
+        "Soya milk shake",
+      ],
     },
   },
 };
@@ -303,7 +442,9 @@ export const BodyProfileView: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Target Weight (kg, optional)</label>
+          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+            Target Weight (kg, optional)
+          </label>
           <input
             type="number"
             value={targetWeight}
@@ -319,7 +460,11 @@ export const BodyProfileView: React.FC = () => {
           disabled={saving}
           className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Calculator className="w-4 h-4" />
+          )}
           {saving ? "Calculating..." : "Calculate & Save"}
         </button>
       </div>
@@ -336,7 +481,9 @@ export const BodyProfileView: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
               <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">BMI</div>
-              <div className={`text-2xl font-mono font-bold ${bmiCategoryColor(profile.bmiCategory)}`}>
+              <div
+                className={`text-2xl font-mono font-bold ${bmiCategoryColor(profile.bmiCategory)}`}
+              >
                 {profile.bmi}
               </div>
               <div className={`text-[10px] font-mono ${bmiCategoryColor(profile.bmiCategory)}`}>
@@ -358,7 +505,9 @@ export const BodyProfileView: React.FC = () => {
               <div className="text-[10px] font-mono text-[#8C8C90]">kcal/day</div>
             </div>
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Daily Target</div>
+              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                Daily Target
+              </div>
               <div className="text-2xl font-mono font-bold text-emerald-400">
                 {Math.round(profile.dailyCalorieTarget || 0)}
               </div>
@@ -369,8 +518,8 @@ export const BodyProfileView: React.FC = () => {
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
             <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <p className="text-[10px] font-mono text-amber-300/80 leading-relaxed">
-              These are estimates based on the Mifflin-St Jeor equation. They are not medical prescriptions.
-              Consult a healthcare professional for personalized dietary advice.
+              These are estimates based on the Mifflin-St Jeor equation. They are not medical
+              prescriptions. Consult a healthcare professional for personalized dietary advice.
             </p>
           </div>
         </motion.div>

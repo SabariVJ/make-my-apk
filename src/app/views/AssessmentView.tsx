@@ -135,18 +135,74 @@ interface Step {
   title: string;
   subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
-  section: "goals" | "social" | "confidence" | "discipline" | "focus" | "fitness" | "recovery" | "nutrition";
+  section:
+    | "goals"
+    | "social"
+    | "confidence"
+    | "discipline"
+    | "focus"
+    | "fitness"
+    | "recovery"
+    | "nutrition";
 }
 
 const STEPS: Step[] = [
-  { id: "goals", title: "Your Goals", subtitle: "What do you want SVJ to help you improve?", icon: Target, section: "goals" },
-  { id: "social", title: "Social Assessment", subtitle: "How comfortable are you in social situations?", icon: Users, section: "social" },
-  { id: "confidence", title: "Confidence Assessment", subtitle: "How confident do you feel in daily life?", icon: Shield, section: "confidence" },
-  { id: "discipline", title: "Discipline Assessment", subtitle: "How consistent are you with routines and commitments?", icon: Clock, section: "discipline" },
-  { id: "focus", title: "Focus & Productivity", subtitle: "How well can you concentrate and manage time?", icon: Brain, section: "focus" },
-  { id: "fitness", title: "Fitness Assessment", subtitle: "What is your current activity level?", icon: Dumbbell, section: "fitness" },
-  { id: "recovery", title: "Recovery Assessment", subtitle: "How well do you sleep and recover?", icon: Moon, section: "recovery" },
-  { id: "nutrition", title: "Nutrition Assessment", subtitle: "Tell us about your eating habits.", icon: Apple, section: "nutrition" },
+  {
+    id: "goals",
+    title: "Your Goals",
+    subtitle: "What do you want SVJ to help you improve?",
+    icon: Target,
+    section: "goals",
+  },
+  {
+    id: "social",
+    title: "Social Assessment",
+    subtitle: "How comfortable are you in social situations?",
+    icon: Users,
+    section: "social",
+  },
+  {
+    id: "confidence",
+    title: "Confidence Assessment",
+    subtitle: "How confident do you feel in daily life?",
+    icon: Shield,
+    section: "confidence",
+  },
+  {
+    id: "discipline",
+    title: "Discipline Assessment",
+    subtitle: "How consistent are you with routines and commitments?",
+    icon: Clock,
+    section: "discipline",
+  },
+  {
+    id: "focus",
+    title: "Focus & Productivity",
+    subtitle: "How well can you concentrate and manage time?",
+    icon: Brain,
+    section: "focus",
+  },
+  {
+    id: "fitness",
+    title: "Fitness Assessment",
+    subtitle: "What is your current activity level?",
+    icon: Dumbbell,
+    section: "fitness",
+  },
+  {
+    id: "recovery",
+    title: "Recovery Assessment",
+    subtitle: "How well do you sleep and recover?",
+    icon: Moon,
+    section: "recovery",
+  },
+  {
+    id: "nutrition",
+    title: "Nutrition Assessment",
+    subtitle: "Tell us about your eating habits.",
+    icon: Apple,
+    section: "nutrition",
+  },
 ];
 
 // ── Scale slider component ────────────────────────────────────────────────
@@ -318,19 +374,36 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             {step.section === "social" && (
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How comfortable are you meeting new people?</label>
-                  <ScaleSlider value={answers.socialComfortNewPeople} onChange={(v) => updateAnswer("socialComfortNewPeople", v)} />
+                  <label className="text-xs font-mono text-white">
+                    How comfortable are you meeting new people?
+                  </label>
+                  <ScaleSlider
+                    value={answers.socialComfortNewPeople}
+                    onChange={(v) => updateAnswer("socialComfortNewPeople", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How comfortable are you starting conversations?</label>
-                  <ScaleSlider value={answers.socialComfortConversations} onChange={(v) => updateAnswer("socialComfortConversations", v)} />
+                  <label className="text-xs font-mono text-white">
+                    How comfortable are you starting conversations?
+                  </label>
+                  <ScaleSlider
+                    value={answers.socialComfortConversations}
+                    onChange={(v) => updateAnswer("socialComfortConversations", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How comfortable are you speaking in groups?</label>
-                  <ScaleSlider value={answers.socialComfortGroups} onChange={(v) => updateAnswer("socialComfortGroups", v)} />
+                  <label className="text-xs font-mono text-white">
+                    How comfortable are you speaking in groups?
+                  </label>
+                  <ScaleSlider
+                    value={answers.socialComfortGroups}
+                    onChange={(v) => updateAnswer("socialComfortGroups", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How often do you avoid social situations you want?</label>
+                  <label className="text-xs font-mono text-white">
+                    How often do you avoid social situations you want?
+                  </label>
                   <ScaleSlider
                     value={answers.socialAvoidanceFrequency}
                     onChange={(v) => updateAnswer("socialAvoidanceFrequency", v)}
@@ -338,9 +411,17 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-mono text-white">How would you describe yourself?</label>
+                  <label className="text-xs font-mono text-white">
+                    How would you describe yourself?
+                  </label>
                   <div className="flex gap-2 flex-wrap">
-                    {["very_introverted", "introverted", "balanced", "extroverted", "very_extroverted"].map((desc) => (
+                    {[
+                      "very_introverted",
+                      "introverted",
+                      "balanced",
+                      "extroverted",
+                      "very_extroverted",
+                    ].map((desc) => (
                       <button
                         key={desc}
                         type="button"
@@ -363,27 +444,49 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
               <div className="space-y-5">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">General self-confidence</label>
-                  <ScaleSlider value={answers.confidenceGeneral} onChange={(v) => updateAnswer("confidenceGeneral", v)} />
+                  <ScaleSlider
+                    value={answers.confidenceGeneral}
+                    onChange={(v) => updateAnswer("confidenceGeneral", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Comfort taking initiative</label>
-                  <ScaleSlider value={answers.confidenceInitiative} onChange={(v) => updateAnswer("confidenceInitiative", v)} />
+                  <ScaleSlider
+                    value={answers.confidenceInitiative}
+                    onChange={(v) => updateAnswer("confidenceInitiative", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Comfort trying unfamiliar things</label>
-                  <ScaleSlider value={answers.confidenceUnfamiliar} onChange={(v) => updateAnswer("confidenceUnfamiliar", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Comfort trying unfamiliar things
+                  </label>
+                  <ScaleSlider
+                    value={answers.confidenceUnfamiliar}
+                    onChange={(v) => updateAnswer("confidenceUnfamiliar", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Ability to handle setbacks</label>
-                  <ScaleSlider value={answers.confidenceSetbacks} onChange={(v) => updateAnswer("confidenceSetbacks", v)} />
+                  <ScaleSlider
+                    value={answers.confidenceSetbacks}
+                    onChange={(v) => updateAnswer("confidenceSetbacks", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Comfort speaking up</label>
-                  <ScaleSlider value={answers.confidenceSpeakingUp} onChange={(v) => updateAnswer("confidenceSpeakingUp", v)} />
+                  <ScaleSlider
+                    value={answers.confidenceSpeakingUp}
+                    onChange={(v) => updateAnswer("confidenceSpeakingUp", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Confidence in achieving personal goals</label>
-                  <ScaleSlider value={answers.confidenceGoals} onChange={(v) => updateAnswer("confidenceGoals", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Confidence in achieving personal goals
+                  </label>
+                  <ScaleSlider
+                    value={answers.confidenceGoals}
+                    onChange={(v) => updateAnswer("confidenceGoals", v)}
+                  />
                 </div>
               </div>
             )}
@@ -391,11 +494,18 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             {step.section === "discipline" && (
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Task completion consistency</label>
-                  <ScaleSlider value={answers.disciplineTaskCompletion} onChange={(v) => updateAnswer("disciplineTaskCompletion", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Task completion consistency
+                  </label>
+                  <ScaleSlider
+                    value={answers.disciplineTaskCompletion}
+                    onChange={(v) => updateAnswer("disciplineTaskCompletion", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How often do you procrastinate?</label>
+                  <label className="text-xs font-mono text-white">
+                    How often do you procrastinate?
+                  </label>
                   <ScaleSlider
                     value={answers.disciplineProcrastination}
                     onChange={(v) => updateAnswer("disciplineProcrastination", v)}
@@ -404,14 +514,24 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Routine consistency</label>
-                  <ScaleSlider value={answers.disciplineRoutine} onChange={(v) => updateAnswer("disciplineRoutine", v)} />
+                  <ScaleSlider
+                    value={answers.disciplineRoutine}
+                    onChange={(v) => updateAnswer("disciplineRoutine", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Ability to follow commitments</label>
-                  <ScaleSlider value={answers.disciplineCommitments} onChange={(v) => updateAnswer("disciplineCommitments", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Ability to follow commitments
+                  </label>
+                  <ScaleSlider
+                    value={answers.disciplineCommitments}
+                    onChange={(v) => updateAnswer("disciplineCommitments", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How easily distracted are you?</label>
+                  <label className="text-xs font-mono text-white">
+                    How easily distracted are you?
+                  </label>
                   <ScaleSlider
                     value={answers.disciplineDistractibility}
                     onChange={(v) => updateAnswer("disciplineDistractibility", v)}
@@ -420,7 +540,10 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Habit consistency</label>
-                  <ScaleSlider value={answers.disciplineHabits} onChange={(v) => updateAnswer("disciplineHabits", v)} />
+                  <ScaleSlider
+                    value={answers.disciplineHabits}
+                    onChange={(v) => updateAnswer("disciplineHabits", v)}
+                  />
                 </div>
               </div>
             )}
@@ -428,23 +551,39 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             {step.section === "focus" && (
               <div className="space-y-5">
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Ability to focus without checking phone</label>
-                  <ScaleSlider value={answers.focusPhoneResistance} onChange={(v) => updateAnswer("focusPhoneResistance", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Ability to focus without checking phone
+                  </label>
+                  <ScaleSlider
+                    value={answers.focusPhoneResistance}
+                    onChange={(v) => updateAnswer("focusPhoneResistance", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Study/work consistency</label>
-                  <ScaleSlider value={answers.focusStudyConsistency} onChange={(v) => updateAnswer("focusStudyConsistency", v)} />
+                  <ScaleSlider
+                    value={answers.focusStudyConsistency}
+                    onChange={(v) => updateAnswer("focusStudyConsistency", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Time management</label>
-                  <ScaleSlider value={answers.focusTimeManagement} onChange={(v) => updateAnswer("focusTimeManagement", v)} />
+                  <ScaleSlider
+                    value={answers.focusTimeManagement}
+                    onChange={(v) => updateAnswer("focusTimeManagement", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Deep-work ability</label>
-                  <ScaleSlider value={answers.focusDeepWork} onChange={(v) => updateAnswer("focusDeepWork", v)} />
+                  <ScaleSlider
+                    value={answers.focusDeepWork}
+                    onChange={(v) => updateAnswer("focusDeepWork", v)}
+                  />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">How frequently are you distracted?</label>
+                  <label className="text-xs font-mono text-white">
+                    How frequently are you distracted?
+                  </label>
                   <ScaleSlider
                     value={answers.focusDistractionFrequency}
                     onChange={(v) => updateAnswer("focusDistractionFrequency", v)}
@@ -452,8 +591,13 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Ability to complete planned work</label>
-                  <ScaleSlider value={answers.focusPlannedCompletion} onChange={(v) => updateAnswer("focusPlannedCompletion", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Ability to complete planned work
+                  </label>
+                  <ScaleSlider
+                    value={answers.focusPlannedCompletion}
+                    onChange={(v) => updateAnswer("focusPlannedCompletion", v)}
+                  />
                 </div>
               </div>
             )}
@@ -507,11 +651,17 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Fitness confidence</label>
-                  <ScaleSlider value={answers.fitnessConfidence} onChange={(v) => updateAnswer("fitnessConfidence", v)} />
+                  <ScaleSlider
+                    value={answers.fitnessConfidence}
+                    onChange={(v) => updateAnswer("fitnessConfidence", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Training consistency</label>
-                  <ScaleSlider value={answers.fitnessConsistency} onChange={(v) => updateAnswer("fitnessConsistency", v)} />
+                  <ScaleSlider
+                    value={answers.fitnessConsistency}
+                    onChange={(v) => updateAnswer("fitnessConsistency", v)}
+                  />
                 </div>
               </div>
             )}
@@ -519,7 +669,9 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             {step.section === "recovery" && (
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-xs font-mono text-white">Typical sleep duration (hours)</label>
+                  <label className="text-xs font-mono text-white">
+                    Typical sleep duration (hours)
+                  </label>
                   <div className="flex gap-1.5">
                     {[5, 6, 7, 8, 9, 10].map((h) => (
                       <button
@@ -539,15 +691,24 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Sleep consistency</label>
-                  <ScaleSlider value={answers.recoverySleepConsistency} onChange={(v) => updateAnswer("recoverySleepConsistency", v)} />
+                  <ScaleSlider
+                    value={answers.recoverySleepConsistency}
+                    onChange={(v) => updateAnswer("recoverySleepConsistency", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Morning energy level</label>
-                  <ScaleSlider value={answers.recoveryMorningEnergy} onChange={(v) => updateAnswer("recoveryMorningEnergy", v)} />
+                  <ScaleSlider
+                    value={answers.recoveryMorningEnergy}
+                    onChange={(v) => updateAnswer("recoveryMorningEnergy", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Recovery perception</label>
-                  <ScaleSlider value={answers.recoveryPerception} onChange={(v) => updateAnswer("recoveryPerception", v)} />
+                  <ScaleSlider
+                    value={answers.recoveryPerception}
+                    onChange={(v) => updateAnswer("recoveryPerception", v)}
+                  />
                 </div>
               </div>
             )}
@@ -579,16 +740,27 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-white">Eating schedule consistency</label>
-                  <ScaleSlider value={answers.nutritionEatingSchedule} onChange={(v) => updateAnswer("nutritionEatingSchedule", v)} />
+                  <label className="text-xs font-mono text-white">
+                    Eating schedule consistency
+                  </label>
+                  <ScaleSlider
+                    value={answers.nutritionEatingSchedule}
+                    onChange={(v) => updateAnswer("nutritionEatingSchedule", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">General food quality</label>
-                  <ScaleSlider value={answers.nutritionFoodQuality} onChange={(v) => updateAnswer("nutritionFoodQuality", v)} />
+                  <ScaleSlider
+                    value={answers.nutritionFoodQuality}
+                    onChange={(v) => updateAnswer("nutritionFoodQuality", v)}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">Protein-food consistency</label>
-                  <ScaleSlider value={answers.nutritionProteinConsistency} onChange={(v) => updateAnswer("nutritionProteinConsistency", v)} />
+                  <ScaleSlider
+                    value={answers.nutritionProteinConsistency}
+                    onChange={(v) => updateAnswer("nutritionProteinConsistency", v)}
+                  />
                 </div>
               </div>
             )}

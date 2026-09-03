@@ -37,80 +37,82 @@ async function getClient() {
 export const createRivalry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: { opponentId: string }) => input)
-  .handler(async ({ context, data }): Promise<{ ok: boolean; rivalry?: RivalryData; error?: string }> => {
-    requireAdminKey();
-    const client = await getClient();
-    const challengerId = context.userId;
-    const opponentId = data.opponentId;
+  .handler(
+    async ({ context, data }): Promise<{ ok: boolean; rivalry?: RivalryData; error?: string }> => {
+      requireAdminKey();
+      const client = await getClient();
+      const challengerId = context.userId;
+      const opponentId = data.opponentId;
 
-    if (challengerId === opponentId) {
-      return { ok: false, error: "You cannot challenge yourself." };
-    }
-
-    // Check for existing active rivalry between these users
-    const { data: existing } = await client
-      .from("rivalries")
-      .select("id, status")
-      .or(
-        `and(challenger_id.eq.${challengerId},opponent_id.eq.${opponentId}),and(challenger_id.eq.${opponentId},opponent_id.eq.${challengerId})`,
-      )
-      .in("status", ["pending", "accepted", "active"])
-      .maybeSingle();
-
-    if (existing) {
-      return { ok: false, error: "An active rivalry already exists with this user." };
-    }
-
-    // Get challenger's current lifetime XP for baseline
-    const { data: challengerProfile } = await client
-      .from("profiles")
-      .select("total_xp")
-      .eq("id", challengerId)
-      .maybeSingle();
-
-    // Get opponent's current lifetime XP for baseline
-    const { data: opponentProfile } = await client
-      .from("profiles")
-      .select("total_xp")
-      .eq("id", opponentId)
-      .maybeSingle();
-
-    const challengerBaseline = challengerProfile?.total_xp ?? 0;
-    const opponentBaseline = opponentProfile?.total_xp ?? 0;
-
-    // Create rivalry
-    const { data: rivalry, error } = await client
-      .from("rivalries")
-      .insert({
-        challenger_id: challengerId,
-        opponent_id: opponentId,
-        status: "pending",
-        challenger_baseline_xp: challengerBaseline,
-        opponent_baseline_xp: opponentBaseline,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "23505") {
-        return { ok: false, error: "A rivalry request already exists." };
+      if (challengerId === opponentId) {
+        return { ok: false, error: "You cannot challenge yourself." };
       }
-      throw error;
-    }
 
-    return {
-      ok: true,
-      rivalry: {
-        id: rivalry.id,
-        challengerId: rivalry.challenger_id,
-        opponentId: rivalry.opponent_id,
-        status: rivalry.status,
-        challengerBaselineXp: rivalry.challenger_baseline_xp,
-        opponentBaselineXp: rivalry.opponent_baseline_xp,
-        createdAt: rivalry.created_at,
-      },
-    };
-  });
+      // Check for existing active rivalry between these users
+      const { data: existing } = await client
+        .from("rivalries")
+        .select("id, status")
+        .or(
+          `and(challenger_id.eq.${challengerId},opponent_id.eq.${opponentId}),and(challenger_id.eq.${opponentId},opponent_id.eq.${challengerId})`,
+        )
+        .in("status", ["pending", "accepted", "active"])
+        .maybeSingle();
+
+      if (existing) {
+        return { ok: false, error: "An active rivalry already exists with this user." };
+      }
+
+      // Get challenger's current lifetime XP for baseline
+      const { data: challengerProfile } = await client
+        .from("profiles")
+        .select("total_xp")
+        .eq("id", challengerId)
+        .maybeSingle();
+
+      // Get opponent's current lifetime XP for baseline
+      const { data: opponentProfile } = await client
+        .from("profiles")
+        .select("total_xp")
+        .eq("id", opponentId)
+        .maybeSingle();
+
+      const challengerBaseline = challengerProfile?.total_xp ?? 0;
+      const opponentBaseline = opponentProfile?.total_xp ?? 0;
+
+      // Create rivalry
+      const { data: rivalry, error } = await client
+        .from("rivalries")
+        .insert({
+          challenger_id: challengerId,
+          opponent_id: opponentId,
+          status: "pending",
+          challenger_baseline_xp: challengerBaseline,
+          opponent_baseline_xp: opponentBaseline,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return { ok: false, error: "A rivalry request already exists." };
+        }
+        throw error;
+      }
+
+      return {
+        ok: true,
+        rivalry: {
+          id: rivalry.id,
+          challengerId: rivalry.challenger_id,
+          opponentId: rivalry.opponent_id,
+          status: rivalry.status,
+          challengerBaselineXp: rivalry.challenger_baseline_xp,
+          opponentBaselineXp: rivalry.opponent_baseline_xp,
+          createdAt: rivalry.created_at,
+        },
+      };
+    },
+  );
 
 /** Accept a rivalry challenge */
 export const acceptRivalry = createServerFn({ method: "POST" })
@@ -191,6 +193,7 @@ export const getRivalries = createServerFn({ method: "GET" })
 
     if (error || !data) return [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- new tables not yet in generated types
     return data.map((r: any) => ({
       id: r.id,
       challengerId: r.challenger_id,
@@ -209,7 +212,9 @@ export const getRivalries = createServerFn({ method: "GET" })
 /** Record a rivalry event (progress since rivalry start) */
 export const recordRivalryEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: { rivalryId: string; xpDelta: number; eventType: string; sourceId?: string }) => input)
+  .validator(
+    (input: { rivalryId: string; xpDelta: number; eventType: string; sourceId?: string }) => input,
+  )
   .handler(async ({ context, data }): Promise<{ ok: boolean; error?: string }> => {
     requireAdminKey();
     const client = await getClient();
@@ -227,15 +232,13 @@ export const recordRivalryEvent = createServerFn({ method: "POST" })
       return { ok: false, error: "No active rivalry found." };
     }
 
-    const { error } = await client
-      .from("rivalry_events")
-      .insert({
-        rivalry_id: data.rivalryId,
-        user_id: context.userId,
-        xp_delta: data.xpDelta,
-        event_type: data.eventType,
-        source_id: data.sourceId,
-      });
+    const { error } = await client.from("rivalry_events").insert({
+      rivalry_id: data.rivalryId,
+      user_id: context.userId,
+      xp_delta: data.xpDelta,
+      event_type: data.eventType,
+      source_id: data.sourceId,
+    });
 
     if (error) {
       if (error.code === "23505") {

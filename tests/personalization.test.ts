@@ -1,6 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeBaselineStats, type PersonalizationData } from "../src/lib/personalization.functions";
+import {
+  computeBaselineStats,
+  type PersonalizationData,
+} from "../src/lib/personalization.functions";
 
 // ── Baseline stat computation tests ────────────────────────────────────────
 
@@ -64,7 +67,10 @@ describe("computeBaselineStats", () => {
     assert.ok(stats.social >= 1 && stats.social <= 100, `social=${stats.social}`);
     assert.ok(stats.nutrition >= 1 && stats.nutrition <= 100, `nutrition=${stats.nutrition}`);
     assert.ok(stats.recovery >= 1 && stats.recovery <= 100, `recovery=${stats.recovery}`);
-    assert.ok(stats.consistency >= 1 && stats.consistency <= 100, `consistency=${stats.consistency}`);
+    assert.ok(
+      stats.consistency >= 1 && stats.consistency <= 100,
+      `consistency=${stats.consistency}`,
+    );
   });
 
   it("sets baseline values equal to initial stats", () => {
@@ -94,7 +100,10 @@ describe("computeBaselineStats", () => {
       socialComfortGroups: 1,
       socialAvoidanceFrequency: 5,
     });
-    assert.ok(highSocial.social > lowSocial.social, `high=${highSocial.social} should be > low=${lowSocial.social}`);
+    assert.ok(
+      highSocial.social > lowSocial.social,
+      `high=${highSocial.social} should be > low=${lowSocial.social}`,
+    );
   });
 
   it("high discipline produces higher discipline stat", () => {
@@ -116,7 +125,10 @@ describe("computeBaselineStats", () => {
       disciplineDistractibility: 5,
       disciplineHabits: 1,
     });
-    assert.ok(high.discipline > low.discipline, `high=${high.discipline} should be > low=${low.discipline}`);
+    assert.ok(
+      high.discipline > low.discipline,
+      `high=${high.discipline} should be > low=${low.discipline}`,
+    );
   });
 
   it("active fitness level produces higher fitness stat", () => {
@@ -134,7 +146,10 @@ describe("computeBaselineStats", () => {
       fitnessConfidence: 1,
       fitnessConsistency: 1,
     });
-    assert.ok(active.fitness > sedentary.fitness, `active=${active.fitness} should be > sedentary=${sedentary.fitness}`);
+    assert.ok(
+      active.fitness > sedentary.fitness,
+      `active=${active.fitness} should be > sedentary=${sedentary.fitness}`,
+    );
   });
 
   it("returns reasonable defaults for minimal assessment", () => {
@@ -153,7 +168,10 @@ describe("computeBaselineStats", () => {
     assert.ok(stats.social >= 40 && stats.social <= 65, `social=${stats.social}`);
     assert.ok(stats.nutrition >= 40 && stats.nutrition <= 65, `nutrition=${stats.nutrition}`);
     assert.ok(stats.recovery >= 40 && stats.recovery <= 65, `recovery=${stats.recovery}`);
-    assert.ok(stats.consistency >= 40 && stats.consistency <= 65, `consistency=${stats.consistency}`);
+    assert.ok(
+      stats.consistency >= 40 && stats.consistency <= 65,
+      `consistency=${stats.consistency}`,
+    );
   });
 
   it("clamps values between 1 and 100", () => {
@@ -189,7 +207,10 @@ describe("computeBaselineStats", () => {
       socialAvoidanceFrequency: 5, // high = bad
       focusDistractionFrequency: 5, // high = bad
     });
-    assert.ok(lowBad.discipline > highBad.discipline, "low procrastination should give higher discipline");
+    assert.ok(
+      lowBad.discipline > highBad.discipline,
+      "low procrastination should give higher discipline",
+    );
     assert.ok(lowBad.social > highBad.social, "low avoidance should give higher social");
   });
 });

@@ -112,12 +112,7 @@ function getBMICategory(bmi: number): string {
   return "Obese";
 }
 
-function calculateBMR(
-  weightKg: number,
-  heightCm: number,
-  ageYears: number,
-  sex: string,
-): number {
+function calculateBMR(weightKg: number, heightCm: number, ageYears: number, sex: string): number {
   // Mifflin-St Jeor
   if (sex === "male") {
     return Math.round(10 * weightKg + 6.25 * heightCm - 5 * ageYears + 5);
@@ -366,83 +361,79 @@ export const savePersonalization = createServerFn({ method: "POST" })
     // Upsert personalization
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = supabaseAdmin as any;
-    const { error } = await client
-      .from("user_personalization")
-      .upsert(
-        {
-          user_id: context.userId,
-          assessment_completed: data.assessmentCompleted,
-          goals_selected: data.goalsSelected,
-          goals: data.goals,
-          social_comfort_new_people: data.socialComfortNewPeople,
-          social_comfort_conversations: data.socialComfortConversations,
-          social_comfort_groups: data.socialComfortGroups,
-          social_avoidance_frequency: data.socialAvoidanceFrequency,
-          social_self_description: data.socialSelfDescription,
-          confidence_general: data.confidenceGeneral,
-          confidence_initiative: data.confidenceInitiative,
-          confidence_unfamiliar: data.confidenceUnfamiliar,
-          confidence_setbacks: data.confidenceSetbacks,
-          confidence_speaking_up: data.confidenceSpeakingUp,
-          confidence_goals: data.confidenceGoals,
-          discipline_task_completion: data.disciplineTaskCompletion,
-          discipline_procrastination: data.disciplineProcrastination,
-          discipline_routine: data.disciplineRoutine,
-          discipline_commitments: data.disciplineCommitments,
-          discipline_distractibility: data.disciplineDistractibility,
-          discipline_habits: data.disciplineHabits,
-          focus_phone_resistance: data.focusPhoneResistance,
-          focus_study_consistency: data.focusStudyConsistency,
-          focus_time_management: data.focusTimeManagement,
-          focus_deep_work: data.focusDeepWork,
-          focus_distraction_frequency: data.focusDistractionFrequency,
-          focus_planned_completion: data.focusPlannedCompletion,
-          fitness_activity_level: data.fitnessActivityLevel,
-          fitness_days_per_week: data.fitnessDaysPerWeek,
-          fitness_confidence: data.fitnessConfidence,
-          fitness_primary_goal: data.fitnessPrimaryGoal,
-          fitness_consistency: data.fitnessConsistency,
-          recovery_sleep_hours: data.recoverySleepHours,
-          recovery_sleep_consistency: data.recoverySleepConsistency,
-          recovery_morning_energy: data.recoveryMorningEnergy,
-          recovery_perception: data.recoveryPerception,
-          nutrition_dietary_preference: data.nutritionDietaryPreference,
-          nutrition_allergies: data.nutritionAllergies,
-          nutrition_eating_schedule: data.nutritionEatingSchedule,
-          nutrition_food_quality: data.nutritionFoodQuality,
-          nutrition_protein_consistency: data.nutritionProteinConsistency,
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await client.from("user_personalization").upsert(
+      {
+        user_id: context.userId,
+        assessment_completed: data.assessmentCompleted,
+        goals_selected: data.goalsSelected,
+        goals: data.goals,
+        social_comfort_new_people: data.socialComfortNewPeople,
+        social_comfort_conversations: data.socialComfortConversations,
+        social_comfort_groups: data.socialComfortGroups,
+        social_avoidance_frequency: data.socialAvoidanceFrequency,
+        social_self_description: data.socialSelfDescription,
+        confidence_general: data.confidenceGeneral,
+        confidence_initiative: data.confidenceInitiative,
+        confidence_unfamiliar: data.confidenceUnfamiliar,
+        confidence_setbacks: data.confidenceSetbacks,
+        confidence_speaking_up: data.confidenceSpeakingUp,
+        confidence_goals: data.confidenceGoals,
+        discipline_task_completion: data.disciplineTaskCompletion,
+        discipline_procrastination: data.disciplineProcrastination,
+        discipline_routine: data.disciplineRoutine,
+        discipline_commitments: data.disciplineCommitments,
+        discipline_distractibility: data.disciplineDistractibility,
+        discipline_habits: data.disciplineHabits,
+        focus_phone_resistance: data.focusPhoneResistance,
+        focus_study_consistency: data.focusStudyConsistency,
+        focus_time_management: data.focusTimeManagement,
+        focus_deep_work: data.focusDeepWork,
+        focus_distraction_frequency: data.focusDistractionFrequency,
+        focus_planned_completion: data.focusPlannedCompletion,
+        fitness_activity_level: data.fitnessActivityLevel,
+        fitness_days_per_week: data.fitnessDaysPerWeek,
+        fitness_confidence: data.fitnessConfidence,
+        fitness_primary_goal: data.fitnessPrimaryGoal,
+        fitness_consistency: data.fitnessConsistency,
+        recovery_sleep_hours: data.recoverySleepHours,
+        recovery_sleep_consistency: data.recoverySleepConsistency,
+        recovery_morning_energy: data.recoveryMorningEnergy,
+        recovery_perception: data.recoveryPerception,
+        nutrition_dietary_preference: data.nutritionDietaryPreference,
+        nutrition_allergies: data.nutritionAllergies,
+        nutrition_eating_schedule: data.nutritionEatingSchedule,
+        nutrition_food_quality: data.nutritionFoodQuality,
+        nutrition_protein_consistency: data.nutritionProteinConsistency,
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw error;
 
     // Compute and save baseline stats
     if (data.assessmentCompleted) {
       const stats = computeBaselineStats(data);
-      const { error: statsError } = await client
-        .from("user_stats")
-        .upsert(
-          {
-            user_id: context.userId,
-            fitness: stats.fitness,
-            discipline: stats.discipline,
-            focus: stats.focus,
-            confidence: stats.confidence,
-            social: stats.social,
-            nutrition: stats.nutrition,
-            recovery: stats.recovery,
-            consistency: stats.consistency,
-            baseline_fitness: stats.baselineFitness,
-            baseline_discipline: stats.baselineDiscipline,
-            baseline_focus: stats.baselineFocus,
-            baseline_confidence: stats.baselineConfidence,
-            baseline_social: stats.baselineSocial,
-            baseline_nutrition: stats.baselineNutrition,
-            baseline_recovery: stats.baselineRecovery,
-            baseline_consistency: stats.baselineConsistency,
-          },
-          { onConflict: "user_id" },
-        );
+      const { error: statsError } = await client.from("user_stats").upsert(
+        {
+          user_id: context.userId,
+          fitness: stats.fitness,
+          discipline: stats.discipline,
+          focus: stats.focus,
+          confidence: stats.confidence,
+          social: stats.social,
+          nutrition: stats.nutrition,
+          recovery: stats.recovery,
+          consistency: stats.consistency,
+          baseline_fitness: stats.baselineFitness,
+          baseline_discipline: stats.baselineDiscipline,
+          baseline_focus: stats.baselineFocus,
+          baseline_confidence: stats.baselineConfidence,
+          baseline_social: stats.baselineSocial,
+          baseline_nutrition: stats.baselineNutrition,
+          baseline_recovery: stats.baselineRecovery,
+          baseline_consistency: stats.baselineConsistency,
+        },
+        { onConflict: "user_id" },
+      );
       if (statsError) throw statsError;
       return { ok: true, stats };
     }
@@ -517,26 +508,24 @@ export const saveBodyProfile = createServerFn({ method: "POST" })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = supabaseAdmin as any;
-    const { error } = await client
-      .from("user_body_profiles")
-      .upsert(
-        {
-          user_id: context.userId,
-          date_of_birth: data.dateOfBirth,
-          sex: data.sex,
-          height_cm: data.heightCm,
-          weight_kg: data.weightKg,
-          activity_level: data.activityLevel,
-          body_goal: data.bodyGoal,
-          target_weight_kg: data.targetWeightKg,
-          bmi,
-          bmi_category: bmiCategory,
-          bmr,
-          tdee,
-          daily_calorie_target: dailyCalorieTarget,
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await client.from("user_body_profiles").upsert(
+      {
+        user_id: context.userId,
+        date_of_birth: data.dateOfBirth,
+        sex: data.sex,
+        height_cm: data.heightCm,
+        weight_kg: data.weightKg,
+        activity_level: data.activityLevel,
+        body_goal: data.bodyGoal,
+        target_weight_kg: data.targetWeightKg,
+        bmi,
+        bmi_category: bmiCategory,
+        bmr,
+        tdee,
+        daily_calorie_target: dailyCalorieTarget,
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw error;
 
     return {

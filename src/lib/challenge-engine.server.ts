@@ -9,10 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ChallengeDifficulty } from "../app/types";
 import type { UserStatsData } from "./personalization.functions";
-import {
-  selectPersonalizedChallenges,
-  getChallengeInsights,
-} from "./challenge-engine";
+import { selectPersonalizedChallenges, getChallengeInsights } from "./challenge-engine";
 
 /**
  * Server function: reads the user's personalization + stats and returns

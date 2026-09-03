@@ -58,6 +58,7 @@ export const ChallengesView: React.FC<{
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
   const editorTrigger = useRef<HTMLButtonElement | null>(null);
+
   // Fetch personalized challenges from the server when assessment data exists
   const callGetPersonalized = useServerFn(getPersonalizedChallenges);
   const personalizedQuery = useQuery<{

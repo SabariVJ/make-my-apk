@@ -13,6 +13,8 @@ import {
   KeyRound,
   LogOut,
   Gift,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
@@ -27,7 +29,9 @@ export type ActiveTab =
   | "plus"
   | "redeem"
   | "signout"
-  | "profile";
+  | "profile"
+  | "plan"
+  | "transform";
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -51,6 +55,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "community", label: "Community", icon: Users },
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
+    { id: "plan", label: "My Plan", icon: Sparkles, highlight: !user.isPremium },
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
     { id: "profile", label: "Profile", icon: User },
   ];
@@ -67,7 +72,12 @@ export const Navigation: React.FC<NavigationProps> = ({
     ? restrictedNavItems
     : allNavItems.filter((item) => {
         // Android Play: hide Leaderboard (unfinished social claim)
+        // Android Play: hide Leaderboard (unfinished social claim)
         if (isAndroid && item.id === "leaderboard") {
+          return false;
+        }
+        // Hide transform tab from nav — accessible only from Profile
+        if (item.id === "transform") {
           return false;
         }
         return true;

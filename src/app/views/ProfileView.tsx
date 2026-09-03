@@ -36,6 +36,7 @@ import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
 import { AssessmentView } from "./AssessmentView";
 import { BodyProfileView } from "./BodyProfileView";
+import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
 
 export const ProfileView: React.FC = () => {
@@ -43,6 +44,7 @@ export const ProfileView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"analytics" | "badges" | "achievements">("analytics");
   const [showAssessment, setShowAssessment] = useState(false);
   const [showBodyProfile, setShowBodyProfile] = useState(false);
+  const [showTransformation, setShowTransformation] = useState(false);
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
@@ -450,6 +452,14 @@ export const ProfileView: React.FC = () => {
           <Scale className="w-4 h-4" />
           Body & Nutrition
         </button>
+        <button
+          type="button"
+          onClick={() => setShowTransformation(true)}
+          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Transformation Report
+        </button>
       </div>
       {/* Assessment overlay */}
       {showAssessment && (
@@ -471,6 +481,19 @@ export const ProfileView: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowBodyProfile(false)}
+            className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {/* Transformation Report overlay */}
+      {showTransformation && (
+        <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
+          <TransformationReportView />
+          <button
+            type="button"
+            onClick={() => setShowTransformation(false)}
             className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
           >
             ✕

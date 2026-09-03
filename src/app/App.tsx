@@ -11,6 +11,8 @@ import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
 import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
+import { SvjPlanView } from "./views/SvjPlanView";
+import { TransformationReportView } from "./views/TransformationReportView";
 import { ProfileView } from "./views/ProfileView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
@@ -58,7 +60,6 @@ const AppContent: React.FC<{
   // Android Play: prevent stale tabs (community/leaderboard hidden on native)
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     if (locked) return "sixty";
-    if (isAndroid) return "challenges";
     return "challenges";
   });
 
@@ -66,7 +67,7 @@ const AppContent: React.FC<{
     setShowTrialNotice(locked);
   }, [locked]);
 
-  // Android Play: reset hidden leaderboard tab if it somehow becomes active
+  // Android Play: reset hidden tabs if they somehow become active
   useEffect(() => {
     if (isAndroid && activeTab === "leaderboard") {
       setActiveTab("challenges");
@@ -200,6 +201,8 @@ const AppContent: React.FC<{
             </p>
           </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "plan" && <SvjPlanView />}
+          {activeTab === "transform" && <TransformationReportView />}
           {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
             <div className="space-y-4">
@@ -256,6 +259,8 @@ const AppContent: React.FC<{
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
+        {activeTab === "plan" && <SvjPlanView />}
+        {activeTab === "transform" && <TransformationReportView />}
         {activeTab === "profile" && <ProfileView />}
       </main>
 

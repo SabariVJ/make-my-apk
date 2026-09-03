@@ -66,11 +66,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   const navItems = restricted
     ? restrictedNavItems
     : allNavItems.filter((item) => {
-        // Android Play: hide Plus (no purchase), Community, and Leaderboard
-        if (
-          isAndroid &&
-          (item.id === "plus" || item.id === "community" || item.id === "leaderboard")
-        ) {
+        // Android Play: hide Leaderboard (unfinished social claim)
+        if (isAndroid && item.id === "leaderboard") {
           return false;
         }
         return true;

@@ -66,12 +66,9 @@ const AppContent: React.FC<{
     setShowTrialNotice(locked);
   }, [locked]);
 
-  // Android Play: reset hidden tabs if they somehow become active
+  // Android Play: reset hidden leaderboard tab if it somehow becomes active
   useEffect(() => {
-    if (
-      isAndroid &&
-      (activeTab === "community" || activeTab === "leaderboard" || activeTab === "plus")
-    ) {
+    if (isAndroid && activeTab === "leaderboard") {
       setActiveTab("challenges");
     }
   }, [activeTab, isAndroid]);
@@ -111,8 +108,7 @@ const AppContent: React.FC<{
       return;
     }
     if (tab === "plus") {
-      // Google Play release: external UPI purchasing is unavailable on Android.
-      if (!isAndroid) setIsPaywallOpen(true);
+      setIsPaywallOpen(true);
     } else if (
       locked &&
       tab !== "sixty" &&
@@ -149,9 +145,8 @@ const AppContent: React.FC<{
                 Your 7-Day Trial Has Ended
               </h2>
               <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
-                {isAndroid
-                  ? "You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and your profile."
-                  : "You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and your profile, or upgrade to SVJ Plus."}
+                You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and
+                your profile, or view SVJ Plus membership details.
               </p>
               <div className="space-y-2.5">
                 <button
@@ -164,18 +159,16 @@ const AppContent: React.FC<{
                 >
                   Open Earn Plus
                 </button>
-                {!isAndroid && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTrialNotice(false);
-                      setIsPaywallOpen(true);
-                    }}
-                    className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
-                  >
-                    Explore SVJ Plus
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrialNotice(false);
+                    setIsPaywallOpen(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                >
+                  Explore SVJ Plus
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowTrialNotice(false)}
@@ -225,12 +218,8 @@ const AppContent: React.FC<{
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
 
         {/* Global Modals still available in restricted shell */}
-        {!isAndroid && (
-          <>
-            <UPIPaymentModal />
-            <PaywallModal />
-          </>
-        )}
+        {!isAndroid && <UPIPaymentModal />}
+        <PaywallModal />
         <EditProfileModal />
         <GoogleAuthModal />
 
@@ -264,8 +253,8 @@ const AppContent: React.FC<{
         {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
-        {activeTab === "community" && !isAndroid && <CommunityView />}
-        {activeTab === "leaderboard" && !isAndroid && <LeaderboardView />}
+        {activeTab === "community" && <CommunityView />}
+        {activeTab === "leaderboard" && <LeaderboardView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
         {activeTab === "profile" && <ProfileView />}
       </main>
@@ -284,12 +273,8 @@ const AppContent: React.FC<{
 
       <EditProfileModal />
       <LevelUpModal />
-      {!isAndroid && (
-        <>
-          <UPIPaymentModal />
-          <PaywallModal />
-        </>
-      )}
+      {!isAndroid && <UPIPaymentModal />}
+      <PaywallModal />
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
 

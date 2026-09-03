@@ -26,7 +26,9 @@ export const PaywallModal: React.FC = () => {
     useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
 
-  if (!isPaywallOpen || Capacitor.getPlatform() === "android") return null;
+  const isAndroid = Capacitor.getPlatform() === "android";
+
+  if (!isPaywallOpen) return null;
 
   // ── Server-authoritative membership classification (display only) ──────────
   const hasActivePlus = user.isPremium === true;
@@ -70,6 +72,7 @@ export const PaywallModal: React.FC = () => {
   ];
 
   const handleStartTrial = () => {
+    if (isAndroid) return; // No external payment on Google Play
     setIsPaywallOpen(false);
     setIsUPIModalOpen(true);
   };
@@ -278,7 +281,7 @@ export const PaywallModal: React.FC = () => {
                     Monthly
                   </div>
                   <div className="text-2xl font-anton text-white">
-                    ₹149
+                    ₹99
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / month</span>
                   </div>
                   <p className="text-[10px] font-mono text-[#8C8C90] mt-1">Billed every month</p>
@@ -300,11 +303,14 @@ export const PaywallModal: React.FC = () => {
                     Yearly
                   </div>
                   <div className="text-2xl font-anton text-white flex items-baseline gap-1">
-                    ₹999
+                    <span className="text-xs font-mono text-[#8C8C90] line-through font-normal">
+                      ₹1,200
+                    </span>
+                    ₹599
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / year</span>
                   </div>
                   <p className="text-[10px] font-mono text-emerald-400 mt-1 font-semibold">
-                    Save ₹689 vs monthly
+                    50% OFF — Save ₹600 vs monthly
                   </p>
                 </div>
               </div>
@@ -339,26 +345,43 @@ export const PaywallModal: React.FC = () => {
 
               {/* CTA & Guarantees */}
               <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleStartTrial}
-                  className="w-full py-4 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl shadow-[#C81E3A]/40 cursor-pointer"
-                >
-                  <span>Upgrade to SVJ Plus</span>
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                {isAndroid ? (
+                  <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 text-center space-y-2">
+                    <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
+                      In-app purchases are not available on Google Play. Visit{" "}
+                      <a
+                        href="https://svjfitness.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#C81E3A] underline"
+                      >
+                        svjfitness.com
+                      </a>{" "}
+                      to upgrade to SVJ Plus.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleStartTrial}
+                      className="w-full py-4 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl shadow-[#C81E3A]/40 cursor-pointer"
+                    >
+                      <span>Upgrade to SVJ Plus</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </motion.button>
 
-                <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    Secure Payment
-                  </span>
-                  <span>•</span>
-                  <span>Instant Access</span>
-                  <span>•</span>
-                  <span>Cancel Anytime</span>
-                </div>
+                    <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
+                      <span className="flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        Secure Payment
+                      </span>
+                      <span>•</span>
+                      <span>Cancel Anytime</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

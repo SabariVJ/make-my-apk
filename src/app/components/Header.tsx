@@ -116,7 +116,7 @@ export const Header: React.FC = () => {
           </motion.div>
 
           {/* SVJ Plus Upgrade Button */}
-          {!user.isPremium && !isAndroid && (
+          {!user.isPremium && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -23,7 +23,7 @@ import { EarnPlusCard } from "../components/EarnPlusCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
-import { getPersonalizedChallenges } from "@/lib/challenge-engine";
+import { getPersonalizedChallenges } from "@/lib/challenge-engine.server";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;

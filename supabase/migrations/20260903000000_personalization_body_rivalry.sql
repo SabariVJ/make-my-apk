@@ -175,8 +175,8 @@ CREATE TABLE IF NOT EXISTS public.rivalries (
 -- Canonical unordered pair index: prevents A->B AND B->A from existing
 -- simultaneously. Uses LEAST/GREATEST so {A,B} always maps to the same key.
 -- Only enforced for live rivalries; declined/cancelled/completed allow re-challenge.
-DROP CONSTRAINT IF EXISTS rivalries_unique_active ON public.rivalries;
-DROP INDEX IF EXISTS rivalries_no_pending_or_active_dupes ON public.rivalries;
+ALTER TABLE public.rivalries DROP CONSTRAINT IF EXISTS rivalries_unique_active;
+DROP INDEX IF EXISTS rivalries_no_pending_or_active_dupes;
 CREATE UNIQUE INDEX IF NOT EXISTS rivalries_no_live_pair_dupes
   ON public.rivalries (LEAST(challenger_id, opponent_id), GREATEST(challenger_id, opponent_id))
   WHERE status IN ('pending', 'accepted', 'active');

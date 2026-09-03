@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Lock, ShieldCheck, LogOut, ExternalLink } from "lucide-react";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
-import { buildWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
+import { resolveWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
 
 type Props = {
   email: string | null;
@@ -12,7 +12,7 @@ type Props = {
 export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
   const handleContactSupport = () => {
     window.open(
-      buildWhatsAppUrl(buildPaymentConfirmationMessage(email)),
+      resolveWhatsAppUrl(buildPaymentConfirmationMessage(email)),
       "_blank",
       "noopener,noreferrer",
     );

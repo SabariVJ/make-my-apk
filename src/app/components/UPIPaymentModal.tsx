@@ -15,13 +15,23 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
-import { buildWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
+import {
+  resolveWhatsAppUrl,
+  buildPaymentConfirmationMessage,
+  SVJ_WHATSAPP_NUMBER,
+} from "@/lib/whatsapp";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
+  const [showContactFallback, setShowContactFallback] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const supportMessage = buildPaymentConfirmationMessage();
+  const isNative = Capacitor.isNativePlatform();
+  const supportUrl = resolveWhatsAppUrl(supportMessage, isNative);
 
   if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 
@@ -29,13 +39,31 @@ export const UPIPaymentModal: React.FC = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      setIsUPIModalOpen(false);
-      window.open(
-        buildWhatsAppUrl(buildPaymentConfirmationMessage()),
-        "_blank",
-        "noopener,noreferrer",
-      );
-    }, 1500);
+      // Always reveal the manual fallback first: popups and cross-origin
+      // navigations can be blocked inside embedded/preview windows.
+      setShowContactFallback(true);
+      try {
+        if (isNative) {
+          void import("@capacitor/browser").then(({ Browser }) =>
+            Browser.open({ url: supportUrl }),
+          );
+        } else {
+          window.open(supportUrl, "_blank", "noopener,noreferrer");
+        }
+      } catch {
+        /* fallback panel already shown */
+      }
+    }, 1200);
+  };
+
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(supportMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (

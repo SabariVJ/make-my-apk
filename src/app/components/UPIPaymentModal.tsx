@@ -48,21 +48,19 @@ export const UPIPaymentModal: React.FC = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      // Always reveal the manual fallback first: popups and cross-origin
-      // navigations can be blocked inside embedded/preview windows.
+      // Never auto-navigate on the web: popups and WhatsApp web can be blocked
+      // by extensions, filters or embedded frames, leaving a dead tab.
       setShowContactFallback(true);
-      try {
-        if (isNative) {
+      if (isNative) {
+        try {
           void import("@capacitor/browser").then(({ Browser }) =>
             Browser.open({ url: supportUrl }),
           );
-        } else {
-          window.open(supportUrl, "_blank", "noopener,noreferrer");
+        } catch {
+          /* fallback panel already shown */
         }
-      } catch {
-        /* fallback panel already shown */
       }
-    }, 1200);
+    }, 900);
   };
 
   const handleCopyMessage = async () => {
@@ -74,6 +72,17 @@ export const UPIPaymentModal: React.FC = () => {
       setCopied(false);
     }
   };
+
+  const handleCopyNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(`+${SVJ_WHATSAPP_NUMBER}`);
+      setNumberCopied(true);
+      setTimeout(() => setNumberCopied(false), 2000);
+    } catch {
+      setNumberCopied(false);
+    }
+  };
+
 
   return (
     <AnimatePresence>

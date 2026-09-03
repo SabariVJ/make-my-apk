@@ -61,3 +61,16 @@ export function buildPlusActivationMessage(user: {
 export function buildPaymentConfirmationMessage(email?: string | null): string {
   return `Hi SVJ Founder, I have completed my SVJ Plus payment and would like to verify and activate my subscription.\n\nEmail: ${email || "(not signed in)"}\n\nPlease verify my payment and activate SVJ Plus.`;
 }
+
+/** Support email fallback when WhatsApp is unreachable. */
+export const SVJ_SUPPORT_EMAIL = "sabarivj777@gmail.com";
+
+/** Human-readable support number, e.g. "+91 76396 62008". */
+export function formatWhatsAppNumber(): string {
+  return `+${SVJ_WHATSAPP_NUMBER.slice(0, 2)} ${SVJ_WHATSAPP_NUMBER.slice(2, 7)} ${SVJ_WHATSAPP_NUMBER.slice(7)}`;
+}
+
+/** Email fallback with the same activation details prefilled. */
+export function buildActivationMailto(message: string): string {
+  return `mailto:${SVJ_SUPPORT_EMAIL}?subject=${encodeURIComponent("SVJ Plus activation request")}&body=${encodeURIComponent(message)}`;
+}

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -77,6 +78,8 @@ export const ChallengesView: React.FC<{
   const totalCount = challenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const todayXP = challenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const categories: (ChallengeCategory | "All")[] = [
     "All",
@@ -159,7 +162,7 @@ export const ChallengesView: React.FC<{
         </div>
 
         {/* Progress Metrics Row */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className={`grid gap-3 mb-6 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
           <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
             <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
               <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
@@ -179,13 +182,15 @@ export const ChallengesView: React.FC<{
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Global Rank
+          {!isAndroid && (
+            <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                Global Rank
+              </div>
+              <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
             </div>
-            <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
-          </div>
+          )}
         </div>
 
         {/* Progress Bar */}

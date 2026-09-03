@@ -115,9 +115,7 @@ before(async () => {
               auth: "export const supabase={auth:{getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};",
               challenge: "export const getChallengeState=async()=>null;",
               engagement:
-                "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",
-              start:
-                "export const useServerFn=fn=>fn; export const createServerFn=(opts)=>({middleware:()=>({handler:(h)=>h}),validator:()=>({middleware:()=>({handler:(h)=>h})})});",
+                "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",              start: "export const useServerFn=fn=>fn; export const createServerFn=(opts)=>({middleware:()=>({handler:(h)=>h}),validator:()=>({middleware:()=>({handler:(h)=>h})})}); export const createMiddleware=(opts)=>({validator:(v)=>({middleware:(m)=>({handler:(h)=>h})})});",
               confetti: `export default function(){if(document.body.dataset.canvasFault==='throw')throw Error('Canvas unavailable');if(document.body.dataset.canvasFault==='reject')return Promise.reject(Error('Canvas failed'));return Promise.resolve();}`,
             }[target],
           }));

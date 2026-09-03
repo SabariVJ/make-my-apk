@@ -23,6 +23,7 @@ import { EarnPlusCard } from "../components/EarnPlusCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
+import { getPersonalizedChallenges } from "@/lib/challenge-engine";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
@@ -57,6 +58,70 @@ export const ChallengesView: React.FC<{
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
   const editorTrigger = useRef<HTMLButtonElement | null>(null);
+  // Fetch personalized challenges from the server when assessment data exists
+  const callGetPersonalized = useServerFn(getPersonalizedChallenges);
+  const personalizedQuery = useQuery<{
+    challenges: Array<{
+      id: string;
+      title: string;
+      description: string;
+      category: string;
+      difficulty: string;
+      xp: number;
+      durationMinutes: number;
+    }>;
+    focusAreas: string[];
+    reason: string;
+  } | null>({
+    queryKey: ["personalized-challenges"],
+    queryFn: async () => {
+      try {
+        return (await callGetPersonalized({})) as {
+          challenges: Array<{
+            id: string;
+            title: string;
+            description: string;
+            category: string;
+            difficulty: string;
+            xp: number;
+            durationMinutes: number;
+          }>;
+          focusAreas: string[];
+          reason: string;
+        };
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  // Merge personalized challenges with user's existing challenges
+  const displayChallenges = React.useMemo(() => {
+    const personalized = personalizedQuery.data?.challenges;
+    if (!personalized || personalized.length === 0) return challenges;
+
+    // Convert personalized templates to DailyChallenge format and prepend
+    const personalizedChallenges: DailyChallenge[] = personalized.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      category: p.category as ChallengeCategory,
+      difficulty: p.difficulty as DailyChallenge["difficulty"],
+      xp: p.xp,
+      durationMinutes: p.durationMinutes,
+      completed: false,
+      isCustom: false,
+    }));
+
+    // Deduplicate: keep personalized + user's custom challenges, skip duplicates by title
+    const personalizedTitles = new Set(personalizedChallenges.map((c) => c.title));
+    const userCustom = challenges.filter((c) => c.isCustom || !personalizedTitles.has(c.title));
+
+    return [...personalizedChallenges, ...userCustom];
+  }, [challenges, personalizedQuery.data]);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const handleToggle = (id: string) => {
     const result = toggleChallenge(id);
@@ -71,13 +136,13 @@ export const ChallengesView: React.FC<{
 
   const filteredChallenges =
     selectedCategory === "All"
-      ? challenges
-      : challenges.filter((c) => c.category === selectedCategory);
+      ? displayChallenges
+      : displayChallenges.filter((c) => c.category === selectedCategory);
 
-  const completedCount = challenges.filter((c) => c.completed).length;
-  const totalCount = challenges.length;
+  const completedCount = displayChallenges.filter((c) => c.completed).length;
+  const totalCount = displayChallenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const todayXP = challenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  const todayXP = displayChallenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
 
   const isAndroid = Capacitor.getPlatform() === "android";
 
@@ -292,6 +357,26 @@ export const ChallengesView: React.FC<{
           {actionError}
         </p>
       )}
+
+      {/* Personalized challenge insight */}
+      {personalizedQuery.data && (
+        <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/20">
+          <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
+          <div className="flex-1">
+            <p className="text-[11px] font-mono text-[#8C8C90]">
+              <span className="text-[#C81E3A] font-bold">Personalized</span> —{" "}
+              {personalizedQuery.data.reason}
+            </p>
+          </div>
+          <button
+            onClick={() => personalizedQuery.refetch()}
+            className="px-2.5 py-1 rounded-lg bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#C81E3A] text-[10px] font-mono font-bold shrink-0 cursor-pointer hover:bg-[#C81E3A]/25 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
+
       {/* Challenges List */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">

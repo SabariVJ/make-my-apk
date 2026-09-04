@@ -23,8 +23,6 @@ import {
   BookOpen,
   X,
   LogOut,
-  Target,
-  Scale,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,16 +32,12 @@ import { AvatarFrame } from "../components/AvatarFrame";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
-import { AssessmentView } from "./AssessmentView";
-import { BodyProfileView } from "./BodyProfileView";
 import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
 
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const [activeTab, setActiveTab] = useState<"analytics" | "badges" | "achievements">("analytics");
-  const [showAssessment, setShowAssessment] = useState(false);
-  const [showBodyProfile, setShowBodyProfile] = useState(false);
   const [showTransformation, setShowTransformation] = useState(false);
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
@@ -433,25 +427,9 @@ export const ProfileView: React.FC = () => {
           ))}
         </div>
       )}
-      {/* Personalization & Body Profile */}
+      {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
       <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
-        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Personalization</h3>
-        <button
-          type="button"
-          onClick={() => setShowAssessment(true)}
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
-        >
-          <Target className="w-4 h-4" />
-          Personal Assessment
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowBodyProfile(true)}
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
-        >
-          <Scale className="w-4 h-4" />
-          Body & Nutrition
-        </button>
+        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Progress</h3>
         <button
           type="button"
           onClick={() => setShowTransformation(true)}
@@ -461,32 +439,6 @@ export const ProfileView: React.FC = () => {
           Transformation Report
         </button>
       </div>
-      {/* Assessment overlay */}
-      {showAssessment && (
-        <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
-          <AssessmentView onComplete={() => setShowAssessment(false)} />
-          <button
-            type="button"
-            onClick={() => setShowAssessment(false)}
-            className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-      {/* Body Profile overlay */}
-      {showBodyProfile && (
-        <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
-          <BodyProfileView />
-          <button
-            type="button"
-            onClick={() => setShowBodyProfile(false)}
-            className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
       {/* Transformation Report overlay */}
       {showTransformation && (
         <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">

@@ -216,6 +216,30 @@
 
 ---
 
+## 2A. Phase 02 — Navigation and Feature Placement
+
+**Status:** COMPLETE (code and local regression checks)
+
+- Removed the standalone `My Plan` bottom-navigation item; MY SVJ PLAN remains implemented for its later placement inside Plus.
+- Kept Community and Plus visible in the full navigation, including Community on Android; preserved the existing Android-only Leaderboard restriction.
+- Removed Personal Assessment and Body & Nutrition entry points from Profile.
+- Added the existing server-backed Body Profile flow to Fuel. Profile now exposes only Transformation Report from this initiative.
+- No schema, RLS, RPC, auth, XP, entitlement, payment, or Android configuration was changed.
+
+**Verification:**
+
+| Check | Result |
+|---|---|
+| `./node_modules/.bin/tsc -b --noEmit` | PASS |
+| `node --test tests/android-features.test.mjs` | PASS — 11/11 |
+| targeted ESLint | PASS — 0 errors |
+| `npm run build` | PASS |
+| `git diff --check` | PASS |
+
+**Not verified:** real Android device navigation and native visual smoke test. No production migration, deployment, merge, payment, claim, ad, reward, or data mutation was performed.
+
+---
+
 ## 3. Database / Migration Inventory
 
 ### Supabase project

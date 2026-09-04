@@ -115,7 +115,9 @@ before(async () => {
               auth: "export const supabase={auth:{getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};",
               challenge: "export const getChallengeState=async()=>null;",
               engagement:
-                "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",              start: "export const useServerFn=fn=>fn; export const createServerFn=(opts)=>({middleware:()=>({handler:(h)=>h}),validator:()=>({middleware:()=>({handler:(h)=>h})})}); export const createMiddleware=(opts)=>({server:(h)=>({__middleware:true,handler:h}),validator:(v)=>({middleware:(m)=>({handler:(h)=>h})})}); export const getRequest=()=>({headers:{get:()=>null}});",
+                "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",
+              start:
+                "export const useServerFn=fn=>fn; const chain={handler:(h)=>h,middleware:()=>chain,validator:()=>chain,inputValidator:()=>chain}; export const createServerFn=()=>chain; export const createMiddleware=()=>({server:(h)=>({__middleware:true,handler:h}),validator:()=>({middleware:()=>({handler:(h)=>h})})}); export const getRequest=()=>({headers:{get:()=>null}});",
               confetti: `export default function(){if(document.body.dataset.canvasFault==='throw')throw Error('Canvas unavailable');if(document.body.dataset.canvasFault==='reject')return Promise.reject(Error('Canvas failed'));return Promise.resolve();}`,
             }[target],
           }));

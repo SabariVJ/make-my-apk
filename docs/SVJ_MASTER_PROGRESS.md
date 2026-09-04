@@ -240,6 +240,22 @@
 
 ---
 
+## 2B. Phase 03 — Durable Activity Foundation
+
+**Status:** COMPLETE IN CODE; production migration NOT APPLIED.
+
+- Added private immutable `activity_events` with authenticated ownership, stable event identity, source class/type, occurrence/server timestamps, safe JSON metadata, and separate lifetime, qualifying, rivalry, and stat deltas.
+- Duplicate `(user_id, event_key)` writes are rejected; update/delete is blocked; authenticated users can only read their own rows and cannot insert reward-bearing events directly.
+- No unverifiable historical data was backfilled and no existing XP, streak, 60-Day, membership, or activity row was changed.
+- Added shared event identity types and a deterministic key helper which deliberately accepts no reward amount.
+- Repaired the isolated UI test server-function mock so its chain matches the current TanStack API and all activity tests execute instead of cancelling.
+
+**Verification:** `npm test` PASS (181 total, 179 pass, 0 fail/cancelled, 2 native-concurrency skips); TypeScript PASS; targeted ESLint PASS; production web build PASS; migration/static security tests PASS (3/3); `git diff --check` PASS. Cross-device and live RLS behavior are NOT VERIFIED until the migration is reviewed/applied in a non-production test environment.
+
+**Migration:** `20260904010000_activity_ledger.sql` created; NOT applied. No production deployment, data mutation, reward, claim, billing, ad, auth, entitlement, or Android configuration action was taken.
+
+---
+
 ## 3. Database / Migration Inventory
 
 ### Supabase project

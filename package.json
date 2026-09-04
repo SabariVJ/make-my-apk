@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "node --import tsx --test src/integrations/supabase/client.server.test.ts src/app/lib/*.test.ts tests/activity-ui.test.mjs tests/engagement-profile.test.ts tests/engagement-ui.test.mjs tests/engagement-db.test.mjs tests/personalization.test.ts tests/challenge-engine.test.ts tests/android-features.test.mjs tests/outperform-security.test.ts",
+    "test": "node --import tsx --test src/integrations/supabase/client.server.test.ts src/app/lib/*.test.ts tests/activity-ledger.test.ts tests/activity-ui.test.mjs tests/engagement-profile.test.ts tests/engagement-ui.test.mjs tests/engagement-db.test.mjs tests/personalization.test.ts tests/challenge-engine.test.ts tests/android-features.test.mjs tests/outperform-security.test.ts",
     "test:rewards": "node --import tsx --test tests/engagement-db.test.mjs",
     "test:rewards:postgres": "node scripts/test-rewards-postgres.mjs",
     "cap:sync": "node -e \"require('fs').mkdirSync('android/app/src/main/assets',{recursive:true})\" && cap sync android"

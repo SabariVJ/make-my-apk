@@ -18,6 +18,8 @@ export interface PersonalizationData {
   assessmentCompleted: boolean;
   goalsSelected: boolean;
   goals: string[];
+  assessmentStep?: number;
+  assessmentVersion?: number;
   // Social
   socialComfortNewPeople?: number;
   socialComfortConversations?: number;
@@ -96,6 +98,11 @@ export interface BodyProfileData {
   bmr?: number;
   tdee?: number;
   dailyCalorieTarget?: number;
+}
+
+export interface AssessmentEntryState {
+  personalization: PersonalizationData | null;
+  shouldAutoOpen: boolean;
 }
 
 // ── BMI/BMR/TDEE Calculations ─────────────────────────────────────────────
@@ -296,10 +303,9 @@ function sleepHoursToScore(hours?: number): number {
 export const getPersonalization = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PersonalizationData | null> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Generated database types are updated after the prepared migration is applied.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabaseAdmin as any;
+    const client = context.supabase as any;
     const { data, error } = await client
       .from("user_personalization")
       .select("*")
@@ -310,6 +316,8 @@ export const getPersonalization = createServerFn({ method: "GET" })
       assessmentCompleted: data.assessment_completed,
       goalsSelected: data.goals_selected,
       goals: data.goals ?? [],
+      assessmentStep: data.assessment_step ?? 0,
+      assessmentVersion: data.assessment_version ?? 1,
       socialComfortNewPeople: data.social_comfort_new_people,
       socialComfortConversations: data.social_comfort_conversations,
       socialComfortGroups: data.social_comfort_groups,
@@ -350,23 +358,56 @@ export const getPersonalization = createServerFn({ method: "GET" })
     };
   });
 
+/** Decide first-signup presentation from server rows, never device storage. */
+export const getAssessmentEntryState = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AssessmentEntryState> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
+    const [{ data: personalization, error: personalizationError }, { data: profile }] =
+      await Promise.all([
+        client.from("user_personalization").select("*").eq("user_id", context.userId).maybeSingle(),
+        client.from("profiles").select("signup_date").eq("id", context.userId).maybeSingle(),
+      ]);
+    if (personalizationError) throw personalizationError;
+
+    const mapped = personalization
+      ? ({
+          assessmentCompleted: personalization.assessment_completed,
+          goalsSelected: personalization.goals_selected,
+          goals: personalization.goals ?? [],
+          assessmentStep: personalization.assessment_step ?? 0,
+          assessmentVersion: personalization.assessment_version ?? 1,
+        } as PersonalizationData)
+      : null;
+    const signupMs = profile?.signup_date ? new Date(profile.signup_date).getTime() : Number.NaN;
+    const isGenuineFirstSignup =
+      Number.isFinite(signupMs) &&
+      Date.now() - signupMs >= 0 &&
+      Date.now() - signupMs <= 24 * 60 * 60 * 1000;
+
+    return {
+      personalization: mapped,
+      shouldAutoOpen:
+        !mapped?.assessmentCompleted && (isGenuineFirstSignup || (mapped?.assessmentStep ?? 0) > 0),
+    };
+  });
+
 /** Save personalization data and compute baseline stats */
 export const savePersonalization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: PersonalizationData) => input)
   .handler(async ({ context, data }): Promise<{ ok: boolean; stats?: UserStatsData }> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Upsert personalization
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabaseAdmin as any;
+    const client = context.supabase as any;
     const { error } = await client.from("user_personalization").upsert(
       {
         user_id: context.userId,
         assessment_completed: data.assessmentCompleted,
         goals_selected: data.goalsSelected,
         goals: data.goals,
+        assessment_step: Math.max(0, Math.min(20, data.assessmentStep ?? 0)),
+        assessment_version: Math.max(1, data.assessmentVersion ?? 1),
         social_comfort_new_people: data.socialComfortNewPeople,
         social_comfort_conversations: data.socialComfortConversations,
         social_comfort_groups: data.socialComfortGroups,
@@ -409,32 +450,12 @@ export const savePersonalization = createServerFn({ method: "POST" })
     );
     if (error) throw error;
 
-    // Compute and save baseline stats
+    // Phase 05 persists the deterministic baseline through a dedicated,
+    // server-authoritative database function. Keeping that privileged write
+    // out of this RLS-owned mutation prevents missing service secrets from
+    // breaking assessment persistence.
     if (data.assessmentCompleted) {
       const stats = computeBaselineStats(data);
-      const { error: statsError } = await client.from("user_stats").upsert(
-        {
-          user_id: context.userId,
-          fitness: stats.fitness,
-          discipline: stats.discipline,
-          focus: stats.focus,
-          confidence: stats.confidence,
-          social: stats.social,
-          nutrition: stats.nutrition,
-          recovery: stats.recovery,
-          consistency: stats.consistency,
-          baseline_fitness: stats.baselineFitness,
-          baseline_discipline: stats.baselineDiscipline,
-          baseline_focus: stats.baselineFocus,
-          baseline_confidence: stats.baselineConfidence,
-          baseline_social: stats.baselineSocial,
-          baseline_nutrition: stats.baselineNutrition,
-          baseline_recovery: stats.baselineRecovery,
-          baseline_consistency: stats.baselineConsistency,
-        },
-        { onConflict: "user_id" },
-      );
-      if (statsError) throw statsError;
       return { ok: true, stats };
     }
     return { ok: true };
@@ -444,10 +465,8 @@ export const savePersonalization = createServerFn({ method: "POST" })
 export const getUserStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<UserStatsData | null> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabaseAdmin as any;
+    const client = context.supabase as any;
     const { data, error } = await client
       .from("user_stats")
       .select("*")

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import {
   Filter,
   ChevronDown,
   Pencil,
+  ClipboardCheck,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
@@ -24,6 +25,11 @@ import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 import { getPersonalizedChallenges } from "@/lib/challenge-engine.server";
+import {
+  getAssessmentEntryState,
+  type AssessmentEntryState,
+} from "@/lib/personalization.functions";
+import { AssessmentView } from "./AssessmentView";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
@@ -57,10 +63,24 @@ export const ChallengesView: React.FC<{
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
+  const [showAssessment, setShowAssessment] = useState(false);
   const editorTrigger = useRef<HTMLButtonElement | null>(null);
 
   // Fetch personalized challenges from the server when assessment data exists
   const callGetPersonalized = useServerFn(getPersonalizedChallenges);
+  const callGetAssessmentEntryState = useServerFn(getAssessmentEntryState);
+  const personalizationQuery = useQuery<AssessmentEntryState>({
+    queryKey: ["assessment-entry-state"],
+    queryFn: () => callGetAssessmentEntryState({}) as Promise<AssessmentEntryState>,
+    retry: false,
+  });
+
+  useEffect(() => {
+    const saved = personalizationQuery.data;
+    if (saved?.shouldAutoOpen) {
+      setShowAssessment(true);
+    }
+  }, [personalizationQuery.data]);
   const personalizedQuery = useQuery<{
     challenges: Array<{
       id: string;
@@ -171,6 +191,40 @@ export const ChallengesView: React.FC<{
 
   return (
     <div className="space-y-6 pb-24">
+      {!personalizationQuery.isLoading &&
+        !personalizationQuery.data?.personalization?.assessmentCompleted && (
+          <button
+            type="button"
+            onClick={() => setShowAssessment(true)}
+            className="w-full rounded-3xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-5 text-left"
+          >
+            <span className="flex items-center gap-2 font-anton text-base uppercase tracking-wide text-white">
+              <ClipboardCheck className="h-5 w-5 text-[#C81E3A]" /> Complete Your SVJ Assessment
+            </span>
+            <span className="mt-1 block text-xs text-[#8C8C90]">
+              Personalize challenges around your goals, interests and improvement areas.
+            </span>
+          </button>
+        )}
+      {showAssessment && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C]">
+          <AssessmentView
+            onComplete={() => {
+              setShowAssessment(false);
+              void personalizationQuery.refetch();
+              void personalizedQuery.refetch();
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowAssessment(false)}
+            className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            aria-label="Close assessment"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
       {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} />}
       {/* 60-Day Gauntlet CTA — hidden when server confirms completion */}
       {onOpenSixtyDay && !sixtyDayCompleted && !sixtyDayQuery.isLoading && (

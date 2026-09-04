@@ -16,7 +16,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
-import { savePersonalization } from "@/lib/personalization.functions";
+import { getPersonalization, savePersonalization } from "@/lib/personalization.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 // ── Goal options ──────────────────────────────────────────────────────────
 
@@ -250,6 +251,24 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
   const [answers, setAnswers] = useState<AssessmentAnswers>(INITIAL_ANSWERS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const callGetPersonalization = useServerFn(getPersonalization);
+  const callSavePersonalization = useServerFn(savePersonalization);
+
+  React.useEffect(() => {
+    let active = true;
+    void callGetPersonalization({})
+      .then((saved) => {
+        if (!active || !saved) return;
+        setAnswers((previous) => ({ ...previous, ...saved }));
+        if (!saved.assessmentCompleted && saved.assessmentStep) {
+          setCurrentStep(Math.min(saved.assessmentStep, STEPS.length - 1));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [callGetPersonalization]);
 
   const step = STEPS[currentStep];
   const isFirst = currentStep === 0;
@@ -276,11 +295,29 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
     return true; // All other steps have defaults
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLast) {
-      handleSubmit();
+      await handleSubmit();
     } else {
-      setCurrentStep((s) => s + 1);
+      const nextStep = currentStep + 1;
+      setSaving(true);
+      setError(null);
+      try {
+        await callSavePersonalization({
+          data: {
+            ...answers,
+            assessmentCompleted: false,
+            goalsSelected: answers.goals.length > 0,
+            assessmentStep: nextStep,
+            assessmentVersion: 1,
+          },
+        });
+        setCurrentStep(nextStep);
+      } catch {
+        setError("We couldn't save this step. Your answers are still here—try again.");
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -288,13 +325,16 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
     setSaving(true);
     setError(null);
     try {
-      await savePersonalization({
+      const result = await callSavePersonalization({
         data: {
           ...answers,
           assessmentCompleted: true,
           goalsSelected: true,
+          assessmentStep: STEPS.length - 1,
+          assessmentVersion: 1,
         },
       });
+      if (!result.ok) throw new Error("Assessment was not saved.");
       onComplete();
     } catch (e) {
       setError("Failed to save assessment. Please try again.");

@@ -256,6 +256,22 @@
 
 ---
 
+## 2C. Phase 04 — First-sign-up Assessment and Save Repair
+
+**Status:** COMPLETE IN CODE; live persistence NOT VERIFIED because prepared personalization migrations are not applied.
+
+- Assessment save/read now uses the authenticated user's RLS-scoped Supabase client; it no longer fails merely because a service-role environment secret is absent.
+- Removed the protected `user_stats` write from the assessment mutation. Phase 05 owns the server-authoritative baseline transaction.
+- Added server-backed draft step/version state, per-step autosave, retry-safe form retention, and relogin resume.
+- Challenges now owns the assessment CTA and overlay. Genuine accounts within their first 24 hours auto-open from server `profiles.signup_date`; existing users get a nonblocking CTA; completed users are not reopened.
+- Profile remains free of Assessment/Personalization controls. All selection controls use the existing dark custom button/slider UI.
+
+**Verification:** TypeScript PASS; targeted ESLint PASS; `npm test` PASS (181 total, 179 pass, 0 fail/cancelled, 2 native PostgreSQL skips); production web build PASS; `git diff --check` PASS. Disposable-account, live RLS, cross-user, relogin and Android device checks are NOT VERIFIED until migrations are reviewed and applied to a test/deployed environment.
+
+**Migration:** `20260904020000_assessment_resume.sql` created; NOT applied. No production data, auth, XP, entitlement, reward, claim, billing, ads, deployment, or Android configuration was changed.
+
+---
+
 ## 3. Database / Migration Inventory
 
 ### Supabase project

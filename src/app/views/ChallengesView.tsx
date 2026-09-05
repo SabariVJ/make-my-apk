@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Pencil,
   ClipboardCheck,
+  Loader2,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
@@ -24,7 +25,10 @@ import { EarnPlusCard } from "../components/EarnPlusCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
-import { getPersonalizedChallenges } from "@/lib/challenge-engine.server";
+import {
+  getPersonalizedChallenges,
+  refreshPersonalizedChallenges,
+} from "@/lib/challenge-engine.server";
 import {
   getAssessmentEntryState,
   getUserStats,
@@ -70,6 +74,7 @@ export const ChallengesView: React.FC<{
 
   // Fetch personalized challenges from the server when assessment data exists
   const callGetPersonalized = useServerFn(getPersonalizedChallenges);
+  const callRefreshPersonalized = useServerFn(refreshPersonalizedChallenges);
   const callGetAssessmentEntryState = useServerFn(getAssessmentEntryState);
   const callGetUserStats = useServerFn(getUserStats);
   const personalizationQuery = useQuery<AssessmentEntryState>({
@@ -84,6 +89,15 @@ export const ChallengesView: React.FC<{
       setShowAssessment(true);
     }
   }, [personalizationQuery.data]);
+
+  const [refreshState, setRefreshState] = useState<
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "cooldown"; remainingMs: number }
+    | { status: "error"; message: string }
+    | { status: "success" }
+  >({ status: "idle" });
+
   const personalizedQuery = useQuery<{
     challenges: Array<{
       id: string;
@@ -120,6 +134,62 @@ export const ChallengesView: React.FC<{
     staleTime: 5 * 60_000,
     retry: false,
   });
+
+  const handleRefreshPersonalized = async () => {
+    setRefreshState({ status: "loading" });
+    try {
+      const result = (await callRefreshPersonalized({})) as {
+        ok: boolean;
+        cooldownRemainingMs: number;
+        challenges?: Array<{
+          id: string;
+          title: string;
+          description: string;
+          category: string;
+          difficulty: string;
+          xp: number;
+          durationMinutes: number;
+        }>;
+        focusAreas?: string[];
+        reason?: string;
+        error?: string;
+      };
+
+      if (!result.ok) {
+        if (result.cooldownRemainingMs > 0) {
+          setRefreshState({
+            status: "cooldown",
+            remainingMs: result.cooldownRemainingMs,
+          });
+        } else {
+          setRefreshState({ status: "error", message: result.error ?? "Refresh failed." });
+        }
+        return;
+      }
+
+      // Inject the refreshed set directly into the query cache so the UI
+      // updates immediately. The new IDs differ from the previous set, so the
+      // client merge layer (which deduplicates by title) will not re-add stale
+      // tasks.
+      // @ts-expect-error TanStack Query v5 exposes setData on the query observer,
+      // which is not surfaced through the shared UseQueryResult type in this
+      // project's generated types.
+      personalizedQuery.setData(
+        {
+          challenges: result.challenges ?? [],
+          focusAreas: result.focusAreas ?? [],
+          reason: result.reason ?? "",
+        },
+        { updatedAt: Date.now() },
+      );
+      // Also reload in the background so the cache is reconciled with the
+      // server after the refresh timestamp has been recorded.
+      void personalizedQuery.refetch({ cancelRefetch: false });
+      setRefreshState({ status: "success" });
+    } catch {
+      setRefreshState({ status: "error", message: "Could not refresh personalized tasks." });
+    }
+  };
 
   const statsQuery = useQuery<UserStatsData | null>({
     queryKey: ["user-stats"],
@@ -432,24 +502,24 @@ export const ChallengesView: React.FC<{
         </p>
       )}
 
-      {/* Personalized challenge insight */}
-      {personalizedQuery.data && (
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/20">
-          <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
-          <div className="flex-1">
-            <p className="text-[11px] font-mono text-[#8C8C90]">
-              <span className="text-[#C81E3A] font-bold">Personalized</span> —{" "}
-              {personalizedQuery.data.reason}
-            </p>
+      {/* Personalized challenge insight — only for users who have completed the assessment */}
+      {personalizationQuery.data?.personalization?.assessmentCompleted &&
+        personalizedQuery.data && (
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/20">
+            <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
+            <div className="flex-1">
+              <p className="text-[11px] font-mono text-[#8C8C90]">
+                <span className="text-[#C81E3A] font-bold">Personalized</span> —{" "}
+                {personalizedQuery.data.reason}
+              </p>
+            </div>
+            <RefreshButton
+              onClick={handleRefreshPersonalized}
+              refreshState={refreshState}
+              disabled={refreshState.status === "loading"}
+            />
           </div>
-          <button
-            onClick={() => personalizedQuery.refetch()}
-            className="px-2.5 py-1 rounded-lg bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#C81E3A] text-[10px] font-mono font-bold shrink-0 cursor-pointer hover:bg-[#C81E3A]/25 transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      )}
+        )}
 
       {/* Challenges List */}
       <div className="space-y-3">
@@ -584,3 +654,60 @@ export const ChallengesView: React.FC<{
     </div>
   );
 };
+
+/** Minimal refresh control for the personalized task section.
+ *
+ * Only a Renewal / cooldown UI is shown. There is no "Retake Assessment" or
+ * infinite regeneration path — the server enforces the one-time assessment
+ * gate and the refresh cooldown.
+ */
+function RefreshButton({
+  onClick,
+  refreshState,
+  disabled,
+}: {
+  onClick: () => void;
+  refreshState: {
+    status: "idle" | "loading" | "cooldown" | "error" | "success";
+    remainingMs?: number;
+    message?: string;
+  };
+  disabled: boolean;
+}) {
+  const isCooldown = refreshState.status === "cooldown" && refreshState.remainingMs != null;
+  const cooldownLabel = isCooldown ? formatCooldown(refreshState.remainingMs!) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || refreshState.status === "loading" || isCooldown}
+      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold shrink-0 cursor-pointer transition-colors ${
+        disabled || refreshState.status === "loading"
+          ? "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#8C8C90] cursor-not-allowed"
+          : refreshState.status === "success"
+            ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+            : isCooldown
+              ? "bg-amber-500/15 border border-amber-500/30 text-amber-400 cursor-not-allowed"
+              : "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#C81E3A] hover:bg-[#C81E3A]/25"
+      }`}
+      aria-label={cooldownLabel ?? "Renew personalized tasks"}
+    >
+      {refreshState.status === "loading" && (
+        <Loader2 className="h-3 w-3 animate-spin inline-block" />
+      )}
+      {refreshState.status === "success" && "Renewed"}
+      {refreshState.status === "error" && "Error"}
+      {isCooldown && cooldownLabel}
+      {refreshState.status === "idle" && "Refresh"}
+    </button>
+  );
+}
+
+function formatCooldown(ms: number): string {
+  const seconds = Math.ceil(ms / 1000);
+  if (seconds < 60) return `Cooldown ${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `Cooldown ${minutes}m ${secs}s` : `Cooldown ${minutes}m`;
+}

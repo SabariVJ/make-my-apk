@@ -469,11 +469,9 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
 
     const isFinalDay = day === TOTAL_DAYS;
 
-    // Exactly-once completion: ON CONFLICT DO NOTHING (ignoreDuplicates) means a
-    // replayed/double-clicked completion of an already-stored day matches zero
-    // rows, so `.select("id")` returns an entry ONLY when this call created the
-    // day row for the first time. That single atomic statement is the guard that
-    // makes the XP award below exactly-once even under concurrent requests.
+    // The day row itself is sequential and replay-safe. XP, activity ledger,
+    // stat growth and rivalry contribution are then awarded together by the
+    // service-only RPC below, keyed by this enrollment/day combination.
     const { data: inserted, error: progressError } = await admin
       .from("challenge_day_progress")
       .upsert(
@@ -491,18 +489,41 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
       .select("id");
     if (progressError) throw progressError;
 
-    // XP is awarded only for a genuinely new completion, server-side, via the
-    // atomic increment_total_xp RPC on the existing profiles.total_xp column.
-    // Replays return lastGrantedXp = 0 so the client can never double-apply XP.
-    const isNewCompletion = (inserted?.length ?? 0) > 0;
+    // One immutable activity-event key is the server-side idempotency guard.
+    // A double click/replay can read the completed day but cannot add lifetime
+    // XP, stats or rivalry score a second time.
+    const { data: award, error: awardError } = await admin.rpc(
+      "svj_record_verified_60_day_completion",
+      {
+        p_user_id: context.userId,
+        p_enrollment_id: enrollment.id,
+        p_day_number: day,
+        p_xp: def.xp,
+        p_focus: def.focus,
+      },
+    );
     let lastGrantedXp = 0;
-    if (isNewCompletion) {
-      const { error: xpError } = await admin.rpc("increment_total_xp", {
-        target_user: context.userId,
-        amount: def.xp,
-      });
-      if (xpError) throw xpError;
-      lastGrantedXp = def.xp;
+    if (!awardError) {
+      lastGrantedXp = award?.xp_awarded === true ? def.xp : 0;
+    } else {
+      // Deploys can briefly serve the new application code before its additive
+      // database migration is available. Preserve the previously working,
+      // server-only exactly-once XP path in that narrow compatibility window;
+      // any other RPC failure remains a visible error and never mints XP.
+      const missingVerifiedActivityRpc =
+        awardError.code === "PGRST202" ||
+        /svj_record_verified_60_day_completion|could not find the function/i.test(
+          String(awardError.message ?? ""),
+        );
+      if (!missingVerifiedActivityRpc) throw awardError;
+      if ((inserted?.length ?? 0) > 0) {
+        const { error: legacyXpError } = await admin.rpc("increment_total_xp", {
+          target_user: context.userId,
+          amount: def.xp,
+        });
+        if (legacyXpError) throw legacyXpError;
+        lastGrantedXp = def.xp;
+      }
     }
 
     const nextStreak = Math.max(enrollment.current_streak, day);

@@ -80,6 +80,23 @@ export function useFriends(enabled = true) {
     void refresh();
   }, [refresh]);
 
+  // Public member fields are always resolved from the canonical profiles source
+  // through the RPC above. A small, account-scoped refetch keeps a friend's
+  // renamed username/avatar current without subscribing every client to global
+  // profile changes or requiring a browser reload.
+  useEffect(() => {
+    if (!enabled) return;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const interval = window.setInterval(refreshWhenVisible, 20_000);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [enabled, refresh]);
+
   const search = useCallback(async (query: string): Promise<SearchRow[]> => {
     const q = query.trim();
     if (!q) return [];

@@ -201,7 +201,9 @@ const AppContent: React.FC<{
             </p>
           </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
-          {activeTab === "plan" && <SvjPlanView />}
+          {activeTab === "plan" && (
+            <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+          )}
           {activeTab === "transform" && <TransformationReportView />}
           {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
@@ -222,7 +224,12 @@ const AppContent: React.FC<{
 
         {/* Global Modals still available in restricted shell */}
         {!isAndroid && <UPIPaymentModal />}
-        <PaywallModal />
+        <PaywallModal
+          onOpenPlan={() => {
+            setIsPaywallOpen(false);
+            setActiveTab("plan");
+          }}
+        />
         <EditProfileModal />
         <GoogleAuthModal />
 
@@ -259,7 +266,9 @@ const AppContent: React.FC<{
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
-        {activeTab === "plan" && <SvjPlanView />}
+        {activeTab === "plan" && (
+          <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+        )}
         {activeTab === "transform" && <TransformationReportView />}
         {activeTab === "profile" && <ProfileView />}
       </main>
@@ -279,7 +288,12 @@ const AppContent: React.FC<{
       <EditProfileModal />
       <LevelUpModal />
       {!isAndroid && <UPIPaymentModal />}
-      <PaywallModal />
+      <PaywallModal
+        onOpenPlan={() => {
+          setIsPaywallOpen(false);
+          setActiveTab("plan");
+        }}
+      />
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
 

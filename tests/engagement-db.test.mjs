@@ -595,6 +595,68 @@ describe(
       );
     });
 
+    it("records a verified 60-Day completion once and scores only its active rivalry", async () => {
+      const userId = await account({ xp: 500 });
+      const opponentId = await account({ xp: 50 });
+      const enrollmentId = randomUUID();
+      const rivalryId = randomUUID();
+      await execute(
+        "INSERT INTO public.challenge_enrollments(id,user_id,status,started_at) VALUES ($1,$2,'active',now())",
+        [enrollmentId, userId],
+      );
+      await execute(
+        "INSERT INTO public.challenge_day_progress(enrollment_id,day_number,status,completed_at,tasks_completed) VALUES ($1,1,'completed',now(),'[]'::jsonb)",
+        [enrollmentId],
+      );
+      await execute(
+        "INSERT INTO public.rivalries(id,challenger_id,opponent_id,status,started_at,expires_at) VALUES ($1,$2,$3,'active',now(),now()+interval '7 days')",
+        [rivalryId, userId, opponentId],
+      );
+
+      const callVerified = () =>
+        asRole(
+          "service_role",
+          null,
+          "SELECT public.svj_record_verified_60_day_completion($1,$2,1,100,'Physical') AS result",
+          [userId, enrollmentId],
+        );
+      const first = (await callVerified()).rows[0].result;
+      const replay = (await callVerified()).rows[0].result;
+      assert.equal(first.xp_awarded, true);
+      assert.equal(replay.xp_awarded, false);
+      assert.equal(
+        (await execute("SELECT total_xp FROM public.profiles WHERE id=$1", [userId])).rows[0]
+          .total_xp,
+        600,
+      );
+      assert.equal(
+        (
+          await execute("SELECT count(*)::int AS n FROM public.activity_events WHERE user_id=$1", [
+            userId,
+          ])
+        ).rows[0].n,
+        1,
+      );
+      assert.equal(
+        (
+          await execute(
+            "SELECT count(*)::int AS n FROM public.rivalry_events WHERE rivalry_id=$1",
+            [rivalryId],
+          )
+        ).rows[0].n,
+        1,
+      );
+      await assert.rejects(
+        asRole(
+          "authenticated",
+          userId,
+          "SELECT public.svj_record_verified_60_day_completion($1,$2,1,100,'Physical')",
+          [userId, enrollmentId],
+        ),
+        /permission denied|function/i,
+      );
+    });
+
     it(
       "serializes same-user redemption retries on native PostgreSQL",
       { skip: !native },

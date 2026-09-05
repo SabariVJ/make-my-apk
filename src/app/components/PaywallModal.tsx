@@ -22,7 +22,7 @@ function safeFormatDate(iso: string | null): string | null {
   }
 }
 
-export const PaywallModal: React.FC = () => {
+export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const { user, isPlusMember, plusExpiresAt, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen } =
     useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
@@ -161,6 +161,13 @@ export const PaywallModal: React.FC = () => {
                   })}
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={onOpenPlan}
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+              >
+                Open MY SVJ PLAN
+              </button>
             </div>
           )}
 
@@ -201,6 +208,13 @@ export const PaywallModal: React.FC = () => {
                 </p>
                 <RedeemPlusCodeForm />
               </div>
+              <button
+                type="button"
+                onClick={onOpenPlan}
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+              >
+                Open MY SVJ PLAN
+              </button>
             </div>
           )}
 

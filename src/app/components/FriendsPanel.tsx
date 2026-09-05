@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   Search,
@@ -49,6 +49,15 @@ const StatLine: React.FC<{ xp: number; streak: number }> = ({ xp, streak }) => (
   </div>
 );
 
+function remainingRivalryTime(expiresAt?: string): string {
+  if (!expiresAt) return "No end time set";
+  const remaining = new Date(expiresAt).getTime() - Date.now();
+  if (!Number.isFinite(remaining) || remaining <= 0) return "Finishing now";
+  const hours = Math.floor(remaining / 3_600_000);
+  const days = Math.floor(hours / 24);
+  return days > 0 ? `${days}d ${hours % 24}h remaining` : `${Math.max(hours, 1)}h remaining`;
+}
+
 export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> }> = ({
   friendsApi,
 }) => {
@@ -74,16 +83,23 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
   const [rivalries, setRivalries] = useState<RivalryData[]>([]);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [rivalryBusy, setRivalryBusy] = useState<string | null>(null);
+  const [rivalryError, setRivalryError] = useState<string | null>(null);
+  const [selectedRivalry, setSelectedRivalry] = useState<RivalryData | null>(null);
 
-  // Load rivalries and notifications
-  useEffect(() => {
-    void getRivalries().then((res) => {
-      if (Array.isArray(res)) setRivalries(res);
-    });
-    void getNotifications().then((res) => {
-      if (Array.isArray(res)) setNotifications(res);
-    });
+  // These server-side reads are scoped to the current account. Polling only
+  // while this panel is mounted avoids a broad profile subscription but still
+  // delivers requests, acceptance and verified score changes without a reload.
+  const refreshRivalryData = useCallback(async () => {
+    const [rivalryRows, notificationRows] = await Promise.all([getRivalries(), getNotifications()]);
+    if (Array.isArray(rivalryRows)) setRivalries(rivalryRows);
+    if (Array.isArray(notificationRows)) setNotifications(notificationRows);
   }, []);
+
+  useEffect(() => {
+    void refreshRivalryData();
+    const interval = window.setInterval(() => void refreshRivalryData(), 15_000);
+    return () => window.clearInterval(interval);
+  }, [refreshRivalryData]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const incomingRivalries = rivalries.filter(
@@ -96,25 +112,28 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
   const handleAcceptRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
+    setRivalryError(null);
     const result = await acceptRivalry({ data: { rivalryId } });
-    if (result.ok && result.rivalry)
-      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
+    if (result.ok && result.rivalry) await refreshRivalryData();
+    else setRivalryError(result.error ?? "Could not accept that rivalry request.");
     setRivalryBusy(null);
   };
 
   const handleDeclineRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
+    setRivalryError(null);
     const result = await declineRivalry({ data: { rivalryId } });
-    if (result.ok && result.rivalry)
-      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
+    if (result.ok && result.rivalry) await refreshRivalryData();
+    else setRivalryError(result.error ?? "Could not decline that rivalry request.");
     setRivalryBusy(null);
   };
 
   const handleCancelRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
+    setRivalryError(null);
     const result = await cancelRivalry({ data: { rivalryId } });
-    if (result.ok && result.rivalry)
-      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
+    if (result.ok && result.rivalry) await refreshRivalryData();
+    else setRivalryError(result.error ?? "Could not cancel that rivalry request.");
     setRivalryBusy(null);
   };
 
@@ -200,7 +219,9 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
         )}
       </div>
 
-      {error && <p className="text-xs font-mono text-red-400 px-1">{error}</p>}
+      {(error || rivalryError) && (
+        <p className="text-xs font-mono text-red-400 px-1">{error ?? rivalryError}</p>
+      )}
 
       {/* Section Tabs */}
       <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
@@ -331,18 +352,25 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   key={r.id}
                   className="p-4 rounded-2xl bg-[#17171A] border border-emerald-500/30 flex items-center justify-between gap-3"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-anton text-sm text-emerald-400 uppercase">
-                      Competition Active
+                      Vs @{r.opponentUsername || r.opponentDisplayName || "member"}
                     </p>
                     <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                      Baseline: {r.challengerBaselineXp.toLocaleString()} XP vs{" "}
-                      {r.opponentBaselineXp.toLocaleString()} XP
+                      Verified rivalry score: {r.myScore ?? 0} XP vs {r.opponentScore ?? 0} XP
+                    </p>
+                    <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                      {remainingRivalryTime(r.expiresAt)} • {r.myEvents ?? 0} vs{" "}
+                      {r.opponentEvents ?? 0} activities
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold">
-                    LIVE
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRivalry(r)}
+                    className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                  >
+                    View Rivalry
+                  </button>
                 </div>
               ))}
             </section>
@@ -521,6 +549,66 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             )}
           </section>
         </>
+      )}
+
+      {selectedRivalry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#17171A] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">
+                  Active Outperform Rivalry
+                </p>
+                <h3 className="mt-1 font-anton text-xl uppercase text-white">
+                  You vs @
+                  {selectedRivalry.opponentUsername ||
+                    selectedRivalry.opponentDisplayName ||
+                    "Member"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRivalry(null)}
+                className="rounded-full bg-white/5 p-2 text-white transition-colors hover:bg-white/10"
+                aria-label="Close rivalry dashboard"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 text-center">
+              <div className="rounded-xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-4">
+                <p className="text-[10px] font-mono uppercase text-[#8C8C90]">Your verified XP</p>
+                <p className="mt-1 font-mono text-2xl font-bold text-[#C81E3A]">
+                  +{selectedRivalry.myScore ?? 0}
+                </p>
+                <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                  {selectedRivalry.myEvents ?? 0} activities
+                </p>
+              </div>
+              <div className="rounded-xl border border-amber-500/30 bg-[#0B0B0C] p-4">
+                <p className="text-[10px] font-mono uppercase text-[#8C8C90]">
+                  Opponent verified XP
+                </p>
+                <p className="mt-1 font-mono text-2xl font-bold text-amber-400">
+                  +{selectedRivalry.opponentScore ?? 0}
+                </p>
+                <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                  {selectedRivalry.opponentEvents ?? 0} activities
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-[#B8B8C0]">
+              {(selectedRivalry.myScore ?? 0) === (selectedRivalry.opponentScore ?? 0)
+                ? "The rivalry is tied. Complete a verified SVJ activity to take the lead."
+                : (selectedRivalry.myScore ?? 0) > (selectedRivalry.opponentScore ?? 0)
+                  ? "You are leading. Scores include only verified activity completed during this rivalry."
+                  : "Your opponent leads. Scores include only verified activity completed during this rivalry."}
+              <span className="block mt-1 text-[#8C8C90]">
+                {remainingRivalryTime(selectedRivalry.expiresAt)}. Lifetime XP is not used here.
+              </span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

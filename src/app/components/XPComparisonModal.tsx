@@ -25,17 +25,23 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
   const [rivalry, setRivalry] = useState<RivalryData | null>(null);
   const [sending, setSending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showRivalry, setShowRivalry] = useState(false);
 
   useEffect(() => {
     if (!member) return;
-    void getRivalries().then((items) => {
-      const match = items.find(
-        (item) =>
-          (item.challengerId === user.id && item.opponentId === member.id) ||
-          (item.challengerId === member.id && item.opponentId === user.id),
-      );
-      setRivalry(match ?? null);
-    });
+    const refreshRivalry = () =>
+      void getRivalries().then((items) => {
+        const match = items.find(
+          (item) =>
+            (item.challengerId === user.id && item.opponentId === member.id) ||
+            (item.challengerId === member.id && item.opponentId === user.id),
+        );
+        setRivalry(match ?? null);
+      });
+    setShowRivalry(false);
+    refreshRivalry();
+    const interval = window.setInterval(refreshRivalry, 15_000);
+    return () => window.clearInterval(interval);
   }, [member, user.id]);
 
   if (!member) return null;
@@ -54,15 +60,11 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
       : rivalry?.status === "pending"
         ? rivalry.challengerId === user.id
           ? "Request Sent ✓"
-          : "Waiting for Response"
+          : "Respond in Community"
         : "Lock In & Outperform";
 
   const xpDiff = Math.abs(user.totalXP - member.totalXP);
   const isUserAhead = user.totalXP >= member.totalXP;
-
-  // Daily average XP rate estimated from history or default ~380 XP
-  const dailyRate = 380;
-  const daysToCatchUp = xpDiff > 0 ? Math.ceil(xpDiff / dailyRate) : 0;
 
   const userMax = Math.max(user.totalXP, member.totalXP, 1);
   const userPercent = Math.round((user.totalXP / userMax) * 100);
@@ -137,7 +139,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
                 <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
-                XP Gap Difference
+                Current Lifetime XP Gap
               </span>
               <span className="font-mono font-bold text-sm text-white">
                 {xpDiff.toLocaleString()} XP
@@ -147,12 +149,12 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
-                Est. Catch-up Pace
+                Current Comparison
               </span>
               <span className="font-mono font-bold text-xs text-emerald-400">
                 {isUserAhead
                   ? "You lead by " + xpDiff.toLocaleString() + " XP"
-                  : `~${daysToCatchUp} Days at average pace`}
+                  : `${member.username} currently leads by ${xpDiff.toLocaleString()} XP`}
               </span>
             </div>
           </div>
@@ -222,12 +224,60 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             </div>
           </div>
 
+          {showRivalry && rivalry?.status === "active" && (
+            <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-anton text-sm uppercase text-emerald-400">
+                    Live Rivalry Score
+                  </p>
+                  <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                    Only verified SVJ activity recorded after the rivalry started counts here.
+                  </p>
+                </div>
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-mono font-bold text-emerald-400">
+                  LIVE
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-center">
+                <div className="rounded-xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-3">
+                  <p className="text-[10px] font-mono uppercase text-[#8C8C90]">You</p>
+                  <p className="mt-1 font-mono text-xl font-bold text-[#C81E3A]">
+                    +{rivalry.myScore ?? 0}
+                  </p>
+                  <p className="text-[10px] font-mono text-[#8C8C90]">
+                    {rivalry.myEvents ?? 0} activities
+                  </p>
+                </div>
+                <div className="rounded-xl border border-amber-500/30 bg-[#0B0B0C] p-3">
+                  <p className="text-[10px] font-mono uppercase text-[#8C8C90]">
+                    {member.username}
+                  </p>
+                  <p className="mt-1 font-mono text-xl font-bold text-amber-400">
+                    +{rivalry.opponentScore ?? 0}
+                  </p>
+                  <p className="text-[10px] font-mono text-[#8C8C90]">
+                    {rivalry.opponentEvents ?? 0} activities
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-center text-[10px] font-mono text-[#8C8C90]">
+                {rivalry.expiresAt
+                  ? `Ends ${new Date(rivalry.expiresAt).toLocaleString("en-IN")}`
+                  : "End time is being set"}
+              </p>
+            </div>
+          )}
+
           {/* Action CTA */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => void handleLockIn()}
-            disabled={sending || rivalry?.status === "pending" || rivalry?.status === "active"}
+            onClick={() => {
+              if (rivalry?.status === "active") setShowRivalry(true);
+              else void handleLockIn();
+            }}
+            disabled={sending || rivalry?.status === "pending"}
             className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
           >
             <span>{sending ? "Sending…" : actionLabel}</span>

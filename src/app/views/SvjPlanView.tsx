@@ -129,17 +129,16 @@ function getWeekLabel(): string {
 
 function StatCard({
   stat,
+  value,
   baseline,
   index,
 }: {
   stat: StatDisplay;
+  value: number;
   baseline?: number;
   index: number;
 }) {
-  const { user } = useSVJ();
-  const currentValue =
-    user.stats?.[stat.key.replace(/([A-Z])/g, "_$1").toLowerCase() as keyof typeof user.stats] ??
-    50;
+  const currentValue = value;
   const baselineVal = baseline ?? currentValue;
   const delta = currentValue - baselineVal;
   const Icon = stat.icon;
@@ -305,7 +304,9 @@ function MissionCard({
 
 // ── Main View ────────────────────────────────────────────────────────────
 
-export const SvjPlanView: React.FC = () => {
+export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
+  onNavigateToChallenges,
+}) => {
   const { user, isPlusMember } = useSVJ();
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month">("week");
   const [selectedMission, setSelectedMission] = useState<{
@@ -345,18 +346,29 @@ export const SvjPlanView: React.FC = () => {
     retry: false,
   });
 
-  const stats = serverStats ?? {
-    fitness: user.stats?.physical ?? 50,
-    discipline: user.stats?.discipline ?? 50,
-    focus: user.stats?.mental ?? 50,
-    confidence: user.stats?.intellect ?? 50,
-    social: user.stats?.social ?? 50,
-    nutrition: 50,
-    recovery: 50,
-    consistency: 50,
-  };
+  const stats = useMemo<UserStatsData>(
+    () =>
+      serverStats ?? {
+        fitness: user.stats?.physical ?? 50,
+        discipline: user.stats?.discipline ?? 50,
+        focus: user.stats?.mental ?? 50,
+        confidence: user.stats?.intellect ?? 50,
+        social: user.stats?.social ?? 50,
+        nutrition: 50,
+        recovery: 50,
+        consistency: 50,
+      },
+    [
+      serverStats,
+      user.stats?.discipline,
+      user.stats?.intellect,
+      user.stats?.mental,
+      user.stats?.physical,
+      user.stats?.social,
+    ],
+  );
 
-  const goals = personalization?.goals ?? [];
+  const goals = useMemo(() => personalization?.goals ?? [], [personalization?.goals]);
   const insights = useMemo(() => getChallengeInsights(stats, goals), [stats, goals]);
   const weeklyChallenges = useMemo(
     () => selectPersonalizedChallenges(stats, goals, [], 6),
@@ -487,10 +499,11 @@ export const SvjPlanView: React.FC = () => {
                 <StatCard
                   key={stat.key}
                   stat={stat}
+                  value={stats[stat.key] ?? 50}
                   baseline={
                     serverStats
-                      ? ((serverStats as unknown as Record<string, number>)[
-                          `baseline_${stat.key}`
+                      ? (serverStats[
+                          `baseline${stat.key.charAt(0).toUpperCase()}${stat.key.slice(1)}` as keyof UserStatsData
                         ] as number | undefined)
                       : undefined
                   }
@@ -609,7 +622,10 @@ export const SvjPlanView: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => setSelectedMission(null)}
+              onClick={() => {
+                setSelectedMission(null);
+                onNavigateToChallenges?.();
+              }}
               className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
             >
               Go to Challenges

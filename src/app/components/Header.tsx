@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
               )}
             </div>
             <p className="text-[10px] text-[#8C8C90] font-mono tracking-tight uppercase">
-              {user.isFounder ? "FOUNDER OWNER" : `${user.tier} Tier`} • #{user.memberId}
+              {user.isFounder ? "FOUNDER" : `${user.tier} Tier`} • #{user.memberId}
             </p>
           </div>
         </div>
@@ -50,18 +50,16 @@ export const Header: React.FC = () => {
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsGoogleAuthModalOpen(true)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold cursor-pointer border transition-all ${
-              user.isFounder
-                ? "bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10"
-                : user.email
-                  ? "bg-white/5 border-emerald-500/30 text-emerald-400"
-                  : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
+              user.email
+                ? "bg-white/5 border-emerald-500/30 text-emerald-400"
+                : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
             }`}
             title="Google / Gmail Account Settings"
           >
             {user.isFounder ? (
               <>
-                <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span className="hidden sm:inline text-[11px]">Owner Account</span>
+                <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline text-[11px]">Account</span>
               </>
             ) : user.email ? (
               <>

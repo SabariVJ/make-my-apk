@@ -42,9 +42,12 @@ export const ProfileView: React.FC = () => {
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
-  const { friends, loading: friendsLoading } = useFriends(undefined, !isAndroid);
+  const { friends, loading: friendsLoading } = useFriends(!isAndroid);
 
   const handleSignOut = async () => {
+    if (!window.confirm("Log out of SVJ on this device? Your progress and account remain safe.")) {
+      return;
+    }
     setSigningOut(true);
     try {
       await queryClient.cancelQueries();
@@ -473,6 +476,16 @@ export const ProfileView: React.FC = () => {
           <LogOut className="w-4 h-4" />
           {signingOut ? "Signing out…" : "Log out"}
         </button>
+        <a
+          href="mailto:sabarivj777@gmail.com?subject=SVJ%20Support%20%2F%20Account%20Verification"
+          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          <Mail className="w-4 h-4" />
+          Email Us
+        </a>
+        <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
+          Opens a draft addressed to SVJ Support. You choose what to paste and send.
+        </p>
         <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
           <a href="/delete-account" className="text-[#C81E3A] hover:text-[#A0182E]">
             Delete Account

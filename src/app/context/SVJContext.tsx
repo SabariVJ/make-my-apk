@@ -303,6 +303,8 @@ export const SVJProvider: React.FC<{
         username: string | null;
         display_name: string | null;
         avatar_url: string | null;
+        bio?: string | null;
+        location?: string | null;
         is_plus_member: boolean;
       } | null,
     ) => void
@@ -318,12 +320,9 @@ export const SVJProvider: React.FC<{
       if (syncedEmailRef.current === lower) return;
       syncedEmailRef.current = lower;
 
-      // Check whether we already have a cached profile for this email.
-      const hasLocalProfile = appStorage.getItem(`svj_user_account_${lower}`) !== null;
-
-      // Cross-device: if localStorage is empty, query the server profile
-      // so we can restore XP, streak, username, etc. from the database
-      // instead of falling back to INITIAL_USER.
+      // Identity fields are always re-read from the server. Local storage is a
+      // fast UI cache only; it must not resurrect a replaced avatar or old
+      // username on a returning device.
       let serverProfile: {
         id: string;
         total_xp: number;
@@ -332,24 +331,24 @@ export const SVJProvider: React.FC<{
         username: string | null;
         display_name: string | null;
         avatar_url: string | null;
+        bio?: string | null;
+        location?: string | null;
         is_plus_member: boolean;
       } | null = null;
 
-      if (!hasLocalProfile) {
-        try {
-          const { data, error } = await supabase
-            .from("profiles")
-            // SELECT * works both before and after the pending reward column
-            // exists. Only this authenticated account's profile is read.
-            .select("*")
-            .eq("id", session.user.id)
-            .maybeSingle();
-          if (!error && data) {
-            serverProfile = data;
-          }
-        } catch (e) {
-          console.error("[SVJ] Failed to fetch server profile for cross-device restore:", e);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          // SELECT * works both before and after additive profile fields are
+          // deployed. RLS limits this read to the authenticated account.
+          .select("*")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (!error && data) {
+          serverProfile = data;
         }
+      } catch (e) {
+        console.error("[SVJ] Failed to fetch server profile for cross-device restore:", e);
       }
 
       loginWithGmailRef.current(
@@ -900,6 +899,8 @@ export const SVJProvider: React.FC<{
       username: string | null;
       display_name: string | null;
       avatar_url: string | null;
+      bio?: string | null;
+      location?: string | null;
       is_plus_member: boolean;
     } | null,
   ) => {
@@ -936,6 +937,8 @@ export const SVJProvider: React.FC<{
         name: serverProfile.display_name || INITIAL_USER.name,
         username: serverProfile.username || INITIAL_USER.username,
         avatar: serverProfile.avatar_url || INITIAL_USER.avatar,
+        bio: serverProfile.bio ?? INITIAL_USER.bio,
+        location: serverProfile.location ?? INITIAL_USER.location,
         totalXP: serverProfile.total_xp,
         engagementProfileXp: serverProfile.engagement_profile_xp ?? 0,
         engagementXpUserId: userId || INITIAL_USER.id,
@@ -958,15 +961,20 @@ export const SVJProvider: React.FC<{
       email: cleanEmail,
       name: isOwnerEmail
         ? "Sabari (Founder & Owner)"
-        : name || (baseUser.name !== "New Voyager" ? baseUser.name : cleanEmail.split("@")[0]),
+        : serverProfile?.display_name ||
+          name ||
+          (baseUser.name !== "New Voyager" ? baseUser.name : cleanEmail.split("@")[0]),
       username:
-        baseUser.username !== "initiate_svj"
+        serverProfile?.username ||
+        (baseUser.username !== "initiate_svj"
           ? baseUser.username
           : cleanEmail
               .split("@")[0]
               .toLowerCase()
-              .replace(/[^a-z0-9_]/g, "_"),
-      avatar: avatar || baseUser.avatar,
+              .replace(/[^a-z0-9_]/g, "_")),
+      avatar: serverProfile?.avatar_url || avatar || baseUser.avatar,
+      bio: serverProfile?.bio ?? baseUser.bio,
+      location: serverProfile?.location ?? baseUser.location,
       isFounder: isOwnerEmail || baseUser.isFounder || false,
       isOwner: isOwnerEmail || baseUser.isOwner || false,
       isPremium: isOwnerEmail ? true : false, // otherwise server check decides

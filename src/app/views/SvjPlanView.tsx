@@ -16,6 +16,7 @@ import {
   Calendar,
   ArrowRight,
   BarChart3,
+  X,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { useQuery } from "@tanstack/react-query";
@@ -252,6 +253,7 @@ function MissionCard({
   difficulty,
   xp,
   index,
+  onOpen,
 }: {
   title: string;
   description: string;
@@ -259,6 +261,7 @@ function MissionCard({
   difficulty: string;
   xp: number;
   index: number;
+  onOpen: () => void;
 }) {
   const diffColor =
     difficulty === "Easy"
@@ -270,11 +273,13 @@ function MissionCard({
           : "bg-purple-950/80 text-purple-300 border-purple-800";
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onOpen}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.08 }}
-      className="flex items-center gap-4 p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-white/20 transition-colors"
+      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-white/20 transition-colors text-left cursor-pointer"
     >
       <div className="w-10 h-10 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center shrink-0">
         <span className="text-lg">🎯</span>
@@ -294,7 +299,7 @@ function MissionCard({
         </div>
       </div>
       <ChevronRight className="w-4 h-4 text-[#8C8C90] shrink-0" />
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -303,6 +308,13 @@ function MissionCard({
 export const SvjPlanView: React.FC = () => {
   const { user, isPlusMember } = useSVJ();
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month">("week");
+  const [selectedMission, setSelectedMission] = useState<{
+    title: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    xp: number;
+  } | null>(null);
 
   const callGetStats = useServerFn(getUserStats);
   const callGetPersonalization = useServerFn(getPersonalization);
@@ -514,6 +526,22 @@ export const SvjPlanView: React.FC = () => {
                           : 180
                   }
                   index={i}
+                  onOpen={() =>
+                    setSelectedMission({
+                      title: challenge.title,
+                      description: challenge.description,
+                      category: challenge.category,
+                      difficulty: challenge.difficulty,
+                      xp:
+                        challenge.difficulty === "Easy"
+                          ? 50
+                          : challenge.difficulty === "Medium"
+                            ? 80
+                            : challenge.difficulty === "Hard"
+                              ? 120
+                              : 180,
+                    })
+                  }
                 />
               ))}
             </div>
@@ -553,6 +581,41 @@ export const SvjPlanView: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+      {selectedMission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-mono uppercase text-[#C81E3A]">
+                  {selectedMission.category} • {selectedMission.difficulty}
+                </p>
+                <h3 className="mt-1 font-anton text-xl uppercase text-white">
+                  {selectedMission.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedMission(null)}
+                className="rounded-full bg-white/5 p-2 text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-4 text-sm text-[#B8B8C0]">{selectedMission.description}</p>
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-white">
+              +{selectedMission.xp} XP • Start or continue this mission from Challenges. Opening
+              this detail does not complete it.
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedMission(null)}
+              className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
+            >
+              Go to Challenges
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

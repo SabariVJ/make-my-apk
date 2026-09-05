@@ -25,19 +25,15 @@ export interface SearchRow extends FriendProfile {
   friendship_status: "pending" | "accepted" | "declined" | null;
   is_incoming: boolean;
 }
-
-interface SyncInput {
-  username: string;
-  displayName: string;
-  avatar: string;
-  totalXP: number;
-  currentStreak: number;
+export interface PublicMember extends FriendProfile {
+  rank: number;
 }
 
-export function useFriends(sync?: SyncInput, enabled = true) {
+export function useFriends(enabled = true) {
   const [userId, setUserId] = useState<string | null>(null);
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [requests, setRequests] = useState<FriendRequestRow[]>([]);
+  const [members, setMembers] = useState<PublicMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -46,6 +42,7 @@ export function useFriends(sync?: SyncInput, enabled = true) {
     if (!enabled) {
       setFriends([]);
       setRequests([]);
+      setMembers([]);
       setLoading(false);
       return;
     }
@@ -55,43 +52,29 @@ export function useFriends(sync?: SyncInput, enabled = true) {
     if (!uid) {
       setFriends([]);
       setRequests([]);
+      setMembers([]);
       setLoading(false);
       return;
     }
-    const [f, r] = await Promise.all([
+    const [f, r, m] = await Promise.all([
       supabase.rpc("get_friends"),
       supabase.rpc("get_friend_requests"),
+      // Generated types are refreshed after the additive migration is applied.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).rpc("svj_list_public_profiles", {
+        p_query: "",
+        p_limit: 100,
+        p_include_self: true,
+      }),
     ]);
-    if (f.error || r.error) setError(f.error?.message ?? r.error?.message ?? null);
+    if (f.error || r.error || m.error)
+      setError(f.error?.message ?? r.error?.message ?? m.error?.message ?? null);
     else setError(null);
     setFriends((f.data as FriendRow[] | null) ?? []);
     setRequests((r.data as FriendRequestRow[] | null) ?? []);
+    setMembers((m.data as PublicMember[] | null) ?? []);
     setLoading(false);
   }, [enabled]);
-
-  // Keep the signed-in user's public card (username / xp / streak) up to date so
-  // other members can find them and see live stats.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
-      if (!uid || cancelled || !sync) return;
-      await supabase
-        .from("profiles")
-        .update({
-          username: sync.username,
-          display_name: sync.displayName,
-          avatar_url: sync.avatar,
-          total_xp: sync.totalXP,
-          current_streak: sync.currentStreak,
-        })
-        .eq("id", uid);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [sync?.username, sync?.displayName, sync?.avatar, sync?.totalXP, sync?.currentStreak]);
 
   useEffect(() => {
     void refresh();
@@ -153,6 +136,7 @@ export function useFriends(sync?: SyncInput, enabled = true) {
   return {
     userId,
     friends,
+    members,
     requests,
     incoming: requests.filter((r) => r.direction === "incoming"),
     outgoing: requests.filter((r) => r.direction === "outgoing"),

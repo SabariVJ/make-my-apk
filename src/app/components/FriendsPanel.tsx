@@ -59,6 +59,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
     loading,
     error,
     busyId,
+    userId,
     search,
     sendRequest,
     respond,
@@ -86,35 +87,34 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const incomingRivalries = rivalries.filter(
-    (r) => r.status === "pending" && r.opponentId !== undefined,
+    (r) => r.status === "pending" && r.opponentId === userId,
   );
   const outgoingRivalries = rivalries.filter(
-    (r) => r.status === "pending" && r.challengerId !== undefined,
+    (r) => r.status === "pending" && r.challengerId === userId,
   );
   const activeRivalries = rivalries.filter((r) => r.status === "active");
 
   const handleAcceptRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
-    await acceptRivalry({ data: { rivalryId } });
-    setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? { ...r, status: "active" } : r)));
+    const result = await acceptRivalry({ data: { rivalryId } });
+    if (result.ok && result.rivalry)
+      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
     setRivalryBusy(null);
   };
 
   const handleDeclineRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
-    await declineRivalry({ data: { rivalryId } });
-    setRivalries((prev) =>
-      prev.map((r) => (r.id === rivalryId ? { ...r, status: "declined" } : r)),
-    );
+    const result = await declineRivalry({ data: { rivalryId } });
+    if (result.ok && result.rivalry)
+      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
     setRivalryBusy(null);
   };
 
   const handleCancelRivalry = async (rivalryId: string) => {
     setRivalryBusy(rivalryId);
-    await cancelRivalry({ data: { rivalryId } });
-    setRivalries((prev) =>
-      prev.map((r) => (r.id === rivalryId ? { ...r, status: "cancelled" } : r)),
-    );
+    const result = await cancelRivalry({ data: { rivalryId } });
+    if (result.ok && result.rivalry)
+      setRivalries((prev) => prev.map((r) => (r.id === rivalryId ? result.rivalry! : r)));
     setRivalryBusy(null);
   };
 

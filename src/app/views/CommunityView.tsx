@@ -31,13 +31,7 @@ export const CommunityView: React.FC = () => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [rivalries, setRivalries] = useState<RivalryData[]>([]);
   const [sendingId, setSendingId] = useState<string | null>(null);
-  const friendsApi = useFriends({
-    username: user.username,
-    displayName: user.name,
-    avatar: user.avatar,
-    totalXP: user.totalXP,
-    currentStreak: user.currentStreak,
-  });
+  const friendsApi = useFriends();
 
   const loadRivalries = useCallback(async () => {
     const res = await getRivalries();
@@ -77,7 +71,21 @@ export const CommunityView: React.FC = () => {
     { type: "wolf", emoji: "🐺", label: "Apex" },
   ];
 
-  const filteredMembers = leaderboard.filter(
+  const directoryMembers: LeaderboardEntry[] = friendsApi.members.map((member) => ({
+    id: member.id,
+    username: member.username || member.display_name || "member",
+    avatar: member.avatar_url || "",
+    totalXP: member.total_xp,
+    weeklyXP: 0,
+    monthlyXP: 0,
+    streak: member.current_streak,
+    rank: member.rank,
+    rankDelta: 0,
+    tier: "Initiate",
+    country: "",
+    bio: "",
+  }));
+  const filteredMembers = directoryMembers.filter(
     (m) =>
       m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.tier.toLowerCase().includes(searchQuery.toLowerCase()),

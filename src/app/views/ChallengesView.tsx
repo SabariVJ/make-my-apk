@@ -27,7 +27,9 @@ import { getChallengeState, type ChallengeState } from "@/lib/challenge.function
 import { getPersonalizedChallenges } from "@/lib/challenge-engine.server";
 import {
   getAssessmentEntryState,
+  getUserStats,
   type AssessmentEntryState,
+  type UserStatsData,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
 
@@ -69,6 +71,7 @@ export const ChallengesView: React.FC<{
   // Fetch personalized challenges from the server when assessment data exists
   const callGetPersonalized = useServerFn(getPersonalizedChallenges);
   const callGetAssessmentEntryState = useServerFn(getAssessmentEntryState);
+  const callGetUserStats = useServerFn(getUserStats);
   const personalizationQuery = useQuery<AssessmentEntryState>({
     queryKey: ["assessment-entry-state"],
     queryFn: () => callGetAssessmentEntryState({}) as Promise<AssessmentEntryState>,
@@ -117,6 +120,30 @@ export const ChallengesView: React.FC<{
     staleTime: 5 * 60_000,
     retry: false,
   });
+
+  const statsQuery = useQuery<UserStatsData | null>({
+    queryKey: ["user-stats"],
+    queryFn: async () => {
+      try {
+        return (await callGetUserStats({})) as UserStatsData | null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  const radarStats = statsQuery.data
+    ? {
+        physical: statsQuery.data.fitness,
+        ambition: statsQuery.data.confidence,
+        intellect: statsQuery.data.consistency,
+        mental: statsQuery.data.focus,
+        social: statsQuery.data.social,
+        discipline: statsQuery.data.discipline,
+      }
+    : user.stats;
 
   // Merge personalized challenges with user's existing challenges
   const displayChallenges = React.useMemo(() => {
@@ -213,6 +240,7 @@ export const ChallengesView: React.FC<{
               setShowAssessment(false);
               void personalizationQuery.refetch();
               void personalizedQuery.refetch();
+              void statsQuery.refetch();
             }}
           />
           <button
@@ -347,16 +375,7 @@ export const ChallengesView: React.FC<{
           </div>
 
           <HexagonRadarChart
-            stats={
-              user.stats || {
-                physical: 93,
-                mental: 91,
-                social: 87,
-                intellect: 84,
-                discipline: 93,
-                ambition: 95,
-              }
-            }
+            stats={radarStats}
             level={user.level}
             onStatClick={(statKey) => {
               // Quick filter by clicked attribute's category!

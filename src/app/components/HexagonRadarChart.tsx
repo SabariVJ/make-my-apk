@@ -116,7 +116,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
   const size = 320;
   const center = size / 2;
   const maxRadius = 112; // Max radius for 100 stat value
-  const minRadius = 46; // Safe min radius so dots never overlap central OVR badge (box size ~35px radius)
+  const minRadius = 42; // Smaller OVR overlay leaves the inner stat points visible.
 
   // Helper function to get XY coordinates from angle and distance
   const getCoordinates = (angleInDegrees: number, valueRadius: number) => {
@@ -279,13 +279,13 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative px-5 py-3 rounded-2xl bg-[#0B0B0D]/90 border border-white/20 shadow-[0_0_25px_rgba(0,0,0,0.8)] backdrop-blur-md flex flex-col items-center justify-center text-center border-t-white/40"
+            className="relative px-3 py-1.5 rounded-xl bg-[#0B0B0D]/90 border border-white/20 shadow-[0_0_18px_rgba(0,0,0,0.72)] backdrop-blur-md flex flex-col items-center justify-center text-center border-t-white/40"
           >
-            <div className="font-anton text-3xl text-white tracking-tight leading-none drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            <div className="font-anton text-xl text-white tracking-tight leading-none drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]">
               {ovrRating}
             </div>
-            <div className="text-[9px] font-mono font-bold tracking-widest text-[#A0A0A5] uppercase mt-0.5">
-              OVR RATING
+            <div className="text-[7px] font-mono font-bold tracking-[0.16em] text-[#A0A0A5] uppercase mt-0.5">
+              OVR
             </div>
           </motion.div>
         </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
+import { createRivalry, getRivalries, type RivalryData } from "@/lib/rivalry.functions";
 
 interface XPComparisonModalProps {
   member: LeaderboardEntry | null;
@@ -21,8 +22,40 @@ interface XPComparisonModalProps {
 
 export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, onClose }) => {
   const { user } = useSVJ();
+  const [rivalry, setRivalry] = useState<RivalryData | null>(null);
+  const [sending, setSending] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!member) return;
+    void getRivalries().then((items) => {
+      const match = items.find(
+        (item) =>
+          (item.challengerId === user.id && item.opponentId === member.id) ||
+          (item.challengerId === member.id && item.opponentId === user.id),
+      );
+      setRivalry(match ?? null);
+    });
+  }, [member, user.id]);
 
   if (!member) return null;
+
+  const handleLockIn = async () => {
+    setSending(true);
+    setActionError(null);
+    const result = await createRivalry({ data: { opponentId: member.id } });
+    if (result.ok && result.rivalry) setRivalry(result.rivalry);
+    else setActionError(result.error || "Could not send the rivalry request.");
+    setSending(false);
+  };
+  const actionLabel =
+    rivalry?.status === "active"
+      ? "View Rivalry"
+      : rivalry?.status === "pending"
+        ? rivalry.challengerId === user.id
+          ? "Request Sent ✓"
+          : "Waiting for Response"
+        : "Lock In & Outperform";
 
   const xpDiff = Math.abs(user.totalXP - member.totalXP);
   const isUserAhead = user.totalXP >= member.totalXP;
@@ -193,12 +226,18 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onClose}
-            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer"
+            onClick={() => void handleLockIn()}
+            disabled={sending || rivalry?.status === "pending" || rivalry?.status === "active"}
+            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
           >
-            <span>Lock In & Outperform</span>
+            <span>{sending ? "Sending…" : actionLabel}</span>
             <ArrowRight className="w-4 h-4" />
           </motion.button>
+          {actionError && (
+            <p role="alert" className="mt-2 text-center text-xs font-mono text-rose-400">
+              {actionError}
+            </p>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>

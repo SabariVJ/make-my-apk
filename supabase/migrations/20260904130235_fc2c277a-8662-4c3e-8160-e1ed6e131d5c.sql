@@ -66,6 +66,7 @@ ALTER TABLE public.user_personalization ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.user_personalization FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.user_personalization TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.user_personalization TO authenticated;
+DROP POLICY IF EXISTS "Users can manage own personalization" ON public.user_personalization;
 CREATE POLICY "Users can manage own personalization"
   ON public.user_personalization FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
@@ -101,6 +102,7 @@ ALTER TABLE public.user_stats ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.user_stats FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.user_stats TO service_role;
 GRANT SELECT ON public.user_stats TO authenticated;
+DROP POLICY IF EXISTS "Users can read own stats" ON public.user_stats;
 CREATE POLICY "Users can read own stats"
   ON public.user_stats FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
@@ -121,6 +123,7 @@ ALTER TABLE public.stat_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.stat_events FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.stat_events TO service_role;
 GRANT SELECT ON public.stat_events TO authenticated;
+DROP POLICY IF EXISTS "Users can read own stat events" ON public.stat_events;
 CREATE POLICY "Users can read own stat events"
   ON public.stat_events FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
@@ -149,6 +152,7 @@ ALTER TABLE public.user_body_profiles ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.user_body_profiles FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.user_body_profiles TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.user_body_profiles TO authenticated;
+DROP POLICY IF EXISTS "Users can manage own body profile" ON public.user_body_profiles;
 CREATE POLICY "Users can manage own body profile"
   ON public.user_body_profiles FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
@@ -183,12 +187,15 @@ ALTER TABLE public.rivalries ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.rivalries FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.rivalries TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.rivalries TO authenticated;
+DROP POLICY IF EXISTS "Users can see own rivalries" ON public.rivalries;
 CREATE POLICY "Users can see own rivalries"
   ON public.rivalries FOR SELECT TO authenticated
   USING (auth.uid() = challenger_id OR auth.uid() = opponent_id);
+DROP POLICY IF EXISTS "Users can create rivalries as challenger" ON public.rivalries;
 CREATE POLICY "Users can create rivalries as challenger"
   ON public.rivalries FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = challenger_id);
+DROP POLICY IF EXISTS "Users can update own rivalries" ON public.rivalries;
 CREATE POLICY "Users can update own rivalries"
   ON public.rivalries FOR UPDATE TO authenticated
   USING (auth.uid() = challenger_id OR auth.uid() = opponent_id)
@@ -211,9 +218,11 @@ ALTER TABLE public.rivalry_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.rivalry_events FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.rivalry_events TO service_role;
 GRANT SELECT, INSERT ON public.rivalry_events TO authenticated;
+DROP POLICY IF EXISTS "Users can read own rivalry events" ON public.rivalry_events;
 CREATE POLICY "Users can read own rivalry events"
   ON public.rivalry_events FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert own rivalry events" ON public.rivalry_events;
 CREATE POLICY "Users can insert own rivalry events"
   ON public.rivalry_events FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
@@ -315,9 +324,11 @@ ALTER TABLE public.in_app_notifications ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.in_app_notifications FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.in_app_notifications TO service_role;
 GRANT SELECT, UPDATE ON public.in_app_notifications TO authenticated;
+DROP POLICY IF EXISTS "Users can read own notifications" ON public.in_app_notifications;
 CREATE POLICY "Users can read own notifications"
   ON public.in_app_notifications FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can mark own notifications read" ON public.in_app_notifications;
 CREATE POLICY "Users can mark own notifications read"
   ON public.in_app_notifications FOR UPDATE TO authenticated
   USING (auth.uid() = user_id)

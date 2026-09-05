@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { motion } from "motion/react";
 import { Calculator, Scale, Flame, Target, Apple, Loader2, ChevronRight, Info } from "lucide-react";
-import { useSVJ } from "../context/SVJContext";
 import {
   saveBodyProfile,
   getBodyProfile,
+  getPersonalization,
   type BodyProfileData,
 } from "@/lib/personalization.functions";
 
@@ -247,10 +248,15 @@ function bmiCategoryColor(cat?: string): string {
 }
 
 export const BodyProfileView: React.FC = () => {
-  const { user } = useSVJ();
   const [profile, setProfile] = useState<BodyProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dietaryPref, setDietaryPref] = useState("non_vegetarian");
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const callGetBodyProfile = useServerFn(getBodyProfile);
+  const callSaveBodyProfile = useServerFn(saveBodyProfile);
+  const callGetPersonalization = useServerFn(getPersonalization);
 
   // Form state
   const [dob, setDob] = useState("");
@@ -264,7 +270,10 @@ export const BodyProfileView: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getBodyProfile({ data: undefined });
+        const [data, personalization] = await Promise.all([
+          callGetBodyProfile({}),
+          callGetPersonalization({}).catch(() => null),
+        ]);
         if (data) {
           setProfile(data);
           setDob(data.dateOfBirth || "");
@@ -275,8 +284,13 @@ export const BodyProfileView: React.FC = () => {
           setBodyGoal(data.bodyGoal || "maintain");
           setTargetWeight(data.targetWeightKg?.toString() || "");
         }
+        if (personalization?.nutritionDietaryPreference) {
+          setDietaryPref(personalization.nutritionDietaryPreference);
+        }
+        setAllergies(personalization?.nutritionAllergies ?? []);
       } catch (e) {
         console.error("Failed to load body profile:", e);
+        setError("Your body profile could not be loaded. Try again shortly.");
       } finally {
         setLoading(false);
       }
@@ -285,8 +299,9 @@ export const BodyProfileView: React.FC = () => {
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
-      const result = await saveBodyProfile({
+      const result = await callSaveBodyProfile({
         data: {
           dateOfBirth: dob || undefined,
           sex: sex || undefined,
@@ -300,13 +315,16 @@ export const BodyProfileView: React.FC = () => {
       setProfile(result.profile);
     } catch (e) {
       console.error("Failed to save body profile:", e);
+      setError(e instanceof Error ? e.message : "Could not save your body profile. Please retry.");
     } finally {
       setSaving(false);
     }
   };
 
-  const dietaryPref = "non_vegetarian"; // Could come from assessment
   const foodSuggestions = FOOD_SUGGESTIONS[dietaryPref]?.[bodyGoal];
+  const filteredSuggestions = foodSuggestions?.items.filter(
+    (food) => !allergies.some((allergy) => food.toLowerCase().includes(allergy.toLowerCase())),
+  );
 
   if (loading) {
     return (
@@ -349,7 +367,7 @@ export const BodyProfileView: React.FC = () => {
           <div className="space-y-1">
             <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Sex</label>
             <div className="flex gap-1.5">
-              {["male", "female"].map((s) => (
+              {["male", "female", "other"].map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -360,7 +378,7 @@ export const BodyProfileView: React.FC = () => {
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
                   }`}
                 >
-                  {s === "male" ? "Male" : "Female"}
+                  {s === "male" ? "Male" : s === "female" ? "Female" : "Other"}
                 </button>
               ))}
             </div>
@@ -469,6 +487,15 @@ export const BodyProfileView: React.FC = () => {
         </button>
       </div>
 
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-3 text-xs font-mono text-rose-300"
+        >
+          {error}
+        </p>
+      )}
+
       {/* Results */}
       {profile?.bmi && (
         <motion.div
@@ -536,14 +563,16 @@ export const BodyProfileView: React.FC = () => {
           </div>
           <p className="text-[10px] font-mono text-[#8C8C90]">{foodSuggestions.label}</p>
           <div className="grid grid-cols-2 gap-2">
-            {foodSuggestions.items.map((food, i) => (
-              <div
-                key={i}
-                className="px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/5 text-xs font-mono text-white"
-              >
-                {food}
-              </div>
-            ))}
+            {(filteredSuggestions?.length ? filteredSuggestions : foodSuggestions.items).map(
+              (food, i) => (
+                <div
+                  key={i}
+                  className="px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/5 text-xs font-mono text-white"
+                >
+                  {food}
+                </div>
+              ),
+            )}
           </div>
         </div>
       )}

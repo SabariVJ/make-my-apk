@@ -10,7 +10,6 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdminKey } from "@/integrations/supabase/client.server";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -149,16 +148,45 @@ function calculateTDEE(bmr: number, activityLevel: string): number {
 }
 
 function calorieTarget(tdee: number, goal: string): number {
+  let target: number;
   switch (goal) {
     case "lose_fat":
-      return Math.round(tdee * 0.8); // 20% deficit
+      target = Math.round(tdee * 0.8); // conservative 20% deficit
+      break;
     case "gain_muscle":
-      return Math.round(tdee * 1.1); // 10% surplus
+      target = Math.round(tdee * 1.1); // modest 10% surplus
+      break;
     case "improve_fitness":
-      return Math.round(tdee * 1.0); // maintenance
+      target = Math.round(tdee); // maintenance
+      break;
     default:
-      return tdee; // maintain
+      target = tdee; // maintain
   }
+  // This is an estimate, not a prescription. Do not surface an extreme target
+  // from a low or malformed input profile.
+  return Math.max(1200, target);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapUserStats(row: any): UserStatsData {
+  return {
+    fitness: row.fitness,
+    discipline: row.discipline,
+    focus: row.focus,
+    confidence: row.confidence,
+    social: row.social,
+    nutrition: row.nutrition,
+    recovery: row.recovery,
+    consistency: row.consistency,
+    baselineFitness: row.baseline_fitness,
+    baselineDiscipline: row.baseline_discipline,
+    baselineFocus: row.baseline_focus,
+    baselineConfidence: row.baseline_confidence,
+    baselineSocial: row.baseline_social,
+    baselineNutrition: row.baseline_nutrition,
+    baselineRecovery: row.baseline_recovery,
+    baselineConsistency: row.baseline_consistency,
+  };
 }
 
 // ── Compute baseline stats from assessment ──────────────────────────────────
@@ -393,7 +421,7 @@ export const getAssessmentEntryState = createServerFn({ method: "GET" })
     };
   });
 
-/** Save personalization data and compute baseline stats */
+/** Save private assessment answers and finalize the first server baseline. */
 export const savePersonalization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: PersonalizationData) => input)
@@ -450,13 +478,13 @@ export const savePersonalization = createServerFn({ method: "POST" })
     );
     if (error) throw error;
 
-    // Phase 05 persists the deterministic baseline through a dedicated,
-    // server-authoritative database function. Keeping that privileged write
-    // out of this RLS-owned mutation prevents missing service secrets from
-    // breaking assessment persistence.
     if (data.assessmentCompleted) {
-      const stats = computeBaselineStats(data);
-      return { ok: true, stats };
+      const { data: rows, error: baselineError } = await client.rpc(
+        "svj_finalize_assessment_baseline",
+      );
+      if (baselineError) throw baselineError;
+      const row = Array.isArray(rows) ? rows[0] : rows;
+      return { ok: true, stats: row ? mapUserStats(row) : undefined };
     }
     return { ok: true };
   });
@@ -473,24 +501,7 @@ export const getUserStats = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error || !data) return null;
-    return {
-      fitness: data.fitness,
-      discipline: data.discipline,
-      focus: data.focus,
-      confidence: data.confidence,
-      social: data.social,
-      nutrition: data.nutrition,
-      recovery: data.recovery,
-      consistency: data.consistency,
-      baselineFitness: data.baseline_fitness,
-      baselineDiscipline: data.baseline_discipline,
-      baselineFocus: data.baseline_focus,
-      baselineConfidence: data.baseline_confidence,
-      baselineSocial: data.baseline_social,
-      baselineNutrition: data.baseline_nutrition,
-      baselineRecovery: data.baseline_recovery,
-      baselineConsistency: data.baseline_consistency,
-    };
+    return mapUserStats(data);
   });
 
 /** Save/update body profile with computed BMI/BMR/TDEE */
@@ -498,8 +509,41 @@ export const saveBodyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: BodyProfileData) => input)
   .handler(async ({ context, data }): Promise<{ ok: boolean; profile: BodyProfileData }> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (
+      data.heightCm !== undefined &&
+      (!Number.isFinite(data.heightCm) || data.heightCm < 100 || data.heightCm > 250)
+    ) {
+      throw new Error("Enter a height between 100 and 250 cm.");
+    }
+    if (
+      data.weightKg !== undefined &&
+      (!Number.isFinite(data.weightKg) || data.weightKg < 25 || data.weightKg > 400)
+    ) {
+      throw new Error("Enter a weight between 25 and 400 kg.");
+    }
+    if (
+      data.targetWeightKg !== undefined &&
+      (!Number.isFinite(data.targetWeightKg) ||
+        data.targetWeightKg < 25 ||
+        data.targetWeightKg > 400)
+    ) {
+      throw new Error("Enter a target weight between 25 and 400 kg.");
+    }
+    if (
+      data.activityLevel &&
+      !["sedentary", "light", "moderate", "active", "very_active"].includes(data.activityLevel)
+    ) {
+      throw new Error("Choose a valid activity level.");
+    }
+    if (
+      data.bodyGoal &&
+      !["lose_fat", "maintain", "gain_muscle", "improve_fitness"].includes(data.bodyGoal)
+    ) {
+      throw new Error("Choose a valid body goal.");
+    }
+    if (data.sex && !["male", "female", "other"].includes(data.sex)) {
+      throw new Error("Choose a valid sex value.");
+    }
 
     let bmi: number | undefined;
     let bmiCategory: string | undefined;
@@ -513,9 +557,11 @@ export const saveBodyProfile = createServerFn({ method: "POST" })
     }
 
     if (data.weightKg && data.heightCm && data.dateOfBirth && data.sex) {
-      const age = Math.floor(
-        (Date.now() - new Date(data.dateOfBirth).getTime()) / (365.25 * 86400000),
-      );
+      const birthMs = new Date(data.dateOfBirth).getTime();
+      const age = Math.floor((Date.now() - birthMs) / (365.25 * 86400000));
+      if (!Number.isFinite(birthMs) || age < 13 || age > 120) {
+        throw new Error("Enter a valid date of birth for an adult/teen profile.");
+      }
       bmr = calculateBMR(data.weightKg, data.heightCm, age, data.sex);
       if (data.activityLevel) {
         tdee = calculateTDEE(bmr, data.activityLevel);
@@ -525,8 +571,10 @@ export const saveBodyProfile = createServerFn({ method: "POST" })
       }
     }
 
+    // Own-row RLS allows this authenticated persistence; calorie/BMR fields are
+    // calculated here, not accepted from the client.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabaseAdmin as any;
+    const client = context.supabase as any;
     const { error } = await client.from("user_body_profiles").upsert(
       {
         user_id: context.userId,
@@ -564,10 +612,8 @@ export const saveBodyProfile = createServerFn({ method: "POST" })
 export const getBodyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<BodyProfileData | null> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabaseAdmin as any;
+    const client = context.supabase as any;
     const { data, error } = await client
       .from("user_body_profiles")
       .select("*")

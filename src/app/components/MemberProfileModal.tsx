@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
+import { AvatarImage } from "./AvatarImage";
 
 interface MemberProfileModalProps {
   member: LeaderboardEntry | null;
@@ -57,9 +58,9 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           <div className="px-6 pb-6 relative">
             <div className="-mt-14 mb-3 flex items-end justify-between">
               <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-4 border-[#17171A] bg-[#0B0B0C] shadow-xl">
-                <img
+                <AvatarImage
                   src={member.avatar}
-                  alt={member.username}
+                  name={member.username}
                   className="w-full h-full object-cover"
                 />
               </div>

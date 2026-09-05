@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSVJ } from "../context/SVJContext";
 import { MembershipCard } from "../components/MembershipCard";
 import { AvatarFrame } from "../components/AvatarFrame";
+import { AvatarImage } from "../components/AvatarImage";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
@@ -153,17 +154,11 @@ export const ProfileView: React.FC = () => {
                   key={f.friendship_id}
                   className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
                 >
-                  {f.avatar_url ? (
-                    <img
-                      src={f.avatar_url}
-                      alt={f.username ?? "friend"}
-                      className="w-10 h-10 rounded-xl object-cover border border-white/10"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-[#17171A] border border-white/10 flex items-center justify-center font-anton text-white uppercase">
-                      {(f.username ?? f.display_name ?? "V").slice(0, 1)}
-                    </div>
-                  )}
+                  <AvatarImage
+                    src={f.avatar_url}
+                    name={f.username ?? f.display_name}
+                    className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                  />
                   <div className="min-w-0">
                     <p className="font-anton text-sm text-white uppercase truncate">
                       @{f.username ?? f.display_name ?? "Voyager"}

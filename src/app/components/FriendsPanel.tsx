@@ -14,6 +14,7 @@ import {
   Bell,
 } from "lucide-react";
 import { useFriends, SearchRow } from "../hooks/useFriends";
+import { AvatarImage } from "./AvatarImage";
 import {
   getRivalries,
   acceptRivalry,
@@ -25,18 +26,13 @@ import {
   NotificationData,
 } from "@/lib/rivalry.functions";
 
-const Avatar: React.FC<{ src: string | null; name: string }> = ({ src, name }) =>
-  src ? (
-    <img
-      src={src}
-      alt={name}
-      className="w-11 h-11 rounded-xl object-cover border border-white/10"
-    />
-  ) : (
-    <div className="w-11 h-11 rounded-xl bg-[#0B0B0C] border border-white/10 flex items-center justify-center font-anton text-white uppercase">
-      {name.slice(0, 1)}
-    </div>
-  );
+const Avatar: React.FC<{ src: string | null; name: string }> = ({ src, name }) => (
+  <AvatarImage
+    src={src}
+    name={name}
+    className="w-11 h-11 rounded-xl object-cover border border-white/10"
+  />
+);
 
 const StatLine: React.FC<{ xp: number; streak: number }> = ({ xp, streak }) => (
   <div className="flex items-center gap-3 text-[10px] font-mono text-[#8C8C90] mt-0.5">
@@ -281,11 +277,20 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   animate={{ opacity: 1, y: 0 }}
                   className="p-4 rounded-2xl bg-[#17171A] border border-[#C81E3A]/30 flex items-center justify-between gap-3"
                 >
-                  <div>
-                    <p className="font-anton text-sm text-white uppercase">Outperform Challenge</p>
-                    <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                      Someone challenged you to outperform them!
-                    </p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <AvatarImage
+                      src={r.opponentAvatarUrl}
+                      name={r.opponentUsername || r.opponentDisplayName}
+                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-anton text-sm text-white uppercase truncate">
+                        {r.opponentUsername || r.opponentDisplayName || "A member"} challenged you
+                      </p>
+                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                        Outperform competition — accept to begin.
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -322,13 +327,23 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   key={r.id}
                   className="p-3 rounded-2xl bg-[#17171A]/60 border border-white/5 flex items-center justify-between gap-3"
                 >
-                  <div>
-                    <p className="font-anton text-sm text-white uppercase">
-                      Outperform Request Sent
-                    </p>
-                    <p className="text-[10px] font-mono text-[#8C8C90] flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" /> Waiting for response
-                    </p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <AvatarImage
+                      src={r.opponentAvatarUrl}
+                      name={r.opponentUsername || r.opponentDisplayName}
+                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-anton text-sm text-white uppercase truncate">
+                        Outperform Request Sent
+                      </p>
+                      <p className="text-[10px] font-mono text-[#8C8C90] flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3" /> Waiting for{" "}
+                        {r.opponentUsername || r.opponentDisplayName
+                          ? `@${r.opponentUsername || r.opponentDisplayName}`
+                          : "response"}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => void handleCancelRivalry(r.id)}
@@ -352,17 +367,24 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   key={r.id}
                   className="p-4 rounded-2xl bg-[#17171A] border border-emerald-500/30 flex items-center justify-between gap-3"
                 >
-                  <div className="min-w-0">
-                    <p className="font-anton text-sm text-emerald-400 uppercase">
-                      Vs @{r.opponentUsername || r.opponentDisplayName || "member"}
-                    </p>
-                    <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                      Verified rivalry score: {r.myScore ?? 0} XP vs {r.opponentScore ?? 0} XP
-                    </p>
-                    <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                      {remainingRivalryTime(r.expiresAt)} • {r.myEvents ?? 0} vs{" "}
-                      {r.opponentEvents ?? 0} activities
-                    </p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <AvatarImage
+                      src={r.opponentAvatarUrl}
+                      name={r.opponentUsername || r.opponentDisplayName}
+                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-anton text-sm text-emerald-400 uppercase">
+                        Vs @{r.opponentUsername || r.opponentDisplayName || "member"}
+                      </p>
+                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                        Verified rivalry score: {r.myScore ?? 0} XP vs {r.opponentScore ?? 0} XP
+                      </p>
+                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
+                        {remainingRivalryTime(r.expiresAt)} • {r.myEvents ?? 0} vs{" "}
+                        {r.opponentEvents ?? 0} activities
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"

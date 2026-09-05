@@ -16,6 +16,7 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
 import { FriendsPanel } from "../components/FriendsPanel";
+import { AvatarImage } from "../components/AvatarImage";
 import { useFriends } from "../hooks/useFriends";
 import {
   createRivalry,
@@ -196,9 +197,9 @@ export const CommunityView: React.FC = () => {
                     }}
                   >
                     <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
-                      <img
+                      <AvatarImage
                         src={item.userAvatar}
-                        alt={item.username}
+                        name={item.username}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -267,9 +268,9 @@ export const CommunityView: React.FC = () => {
                           key={`${c.id}-${cIdx}`}
                           className="p-2.5 rounded-xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2.5"
                         >
-                          <img
+                          <AvatarImage
                             src={c.avatar}
-                            alt={c.username}
+                            name={c.username}
                             className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
                           />
                           <div className="flex-1">
@@ -341,7 +342,11 @@ export const CommunityView: React.FC = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
-                      <img src={m.avatar} alt={m.username} className="w-full h-full object-cover" />
+                      <AvatarImage
+                        src={m.avatar}
+                        name={m.username}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">

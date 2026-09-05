@@ -5,6 +5,8 @@ import { X, Check, Crown, User, MapPin, Camera, Upload, Trash2, Mail, Loader2 } 
 import { useSVJ } from "../context/SVJContext";
 import { INITIAL_USER } from "../data/initialData";
 import { AvatarCropEditor } from "./AvatarCropEditor";
+import { AvatarImage } from "./AvatarImage";
+import { bumpAvatarRevision } from "../hooks/useAvatarUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { saveMyProfile } from "@/lib/profile.functions";
 
@@ -119,6 +121,9 @@ export const EditProfileModal: React.FC = () => {
         location: saved.location || "",
         avatar: nextAvatar,
       });
+      // New avatar must appear immediately on every surface: drop cached signed
+      // URLs so all mounted avatar components re-resolve.
+      if (avatarChanged) bumpAvatarRevision();
       if (
         avatarChanged &&
         oldOwnedPath &&
@@ -172,9 +177,9 @@ export const EditProfileModal: React.FC = () => {
               />
               <div className="relative group">
                 <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#C81E3A] bg-[#0B0B0C] p-0.5 shadow-lg shadow-[#C81E3A]/20">
-                  <img
+                  <AvatarImage
                     src={avatarPreview || INITIAL_USER.avatar}
-                    alt="Profile avatar"
+                    name={name}
                     className="h-full w-full rounded-full object-cover"
                   />
                 </div>

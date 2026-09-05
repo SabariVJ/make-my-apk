@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle2, ShieldCheck, Mail, Crown, LogOut, Loader2 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { AvatarImage } from "./AvatarImage";
 
 export const GoogleAuthModal: React.FC = () => {
   const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } = useSVJ();
@@ -104,9 +105,9 @@ export const GoogleAuthModal: React.FC = () => {
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
                   <div className="flex items-center gap-3">
-                    <img
+                    <AvatarImage
                       src={user.avatar}
-                      alt={user.name}
+                      name={user.name}
                       className="w-12 h-12 rounded-xl object-cover border-2 border-[#C81E3A]"
                     />
                     <div className="flex-1 min-w-0">

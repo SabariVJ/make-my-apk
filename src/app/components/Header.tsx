@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import { Flame, Zap, Crown, Shield, Mail } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { AvatarImage } from "./AvatarImage";
 
 export const Header: React.FC = () => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
@@ -139,7 +140,11 @@ export const Header: React.FC = () => {
             onClick={() => setIsEditProfileOpen(true)}
             className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-[#C81E3A]/80 cursor-pointer shadow-md"
           >
-            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            <AvatarImage
+              src={user.avatar}
+              name={user.name}
+              className="w-full h-full object-cover"
+            />
           </motion.button>
         </div>
       </div>

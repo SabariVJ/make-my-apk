@@ -14,6 +14,7 @@ import {
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
 import { createRivalry, getRivalries, type RivalryData } from "@/lib/rivalry.functions";
+import { AvatarImage } from "./AvatarImage";
 
 interface XPComparisonModalProps {
   member: LeaderboardEntry | null;
@@ -106,7 +107,11 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             {/* YOU Box */}
             <div className="p-4 rounded-xl bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#C81E3A] mb-2">
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                <AvatarImage
+                  src={user.avatar}
+                  name={user.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-anton text-sm text-white uppercase">{user.name}</span>
               <span className="text-[10px] font-mono text-[#8C8C90]">
@@ -120,9 +125,9 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             {/* TARGET MEMBER Box */}
             <div className="p-4 rounded-xl bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 mb-2">
-                <img
+                <AvatarImage
                   src={member.avatar}
-                  alt={member.username}
+                  name={member.username}
                   className="w-full h-full object-cover"
                 />
               </div>

@@ -95,3 +95,26 @@ export function avatarInitials(name: string | null | undefined): string {
   if (!clean) return "V";
   return clean.slice(0, 1).toUpperCase();
 }
+
+/**
+ * Pick the avatar shown after a sign-in, in authority order:
+ *
+ *   1. server-stored avatar (source of truth — custom uploads, removals)
+ *   2. cached account avatar (last-known state on this device)
+ *   3. Google OAuth metadata (only when there is no device cache at all)
+ *
+ * Google's picture must never replace a custom avatar when the server profile
+ * lookup fails or lags: the cached account avatar is preferred over Google
+ * metadata whenever a cached account exists.
+ */
+export function resolveLoginAvatar(opts: {
+  serverAvatarUrl: string | null | undefined;
+  cachedAvatar: string | null | undefined;
+  googleAvatar: string | null | undefined;
+  hasCachedAccount: boolean;
+  defaultAvatar: string;
+}): string {
+  if (opts.serverAvatarUrl) return opts.serverAvatarUrl;
+  if (opts.hasCachedAccount) return opts.cachedAvatar || opts.defaultAvatar;
+  return opts.googleAvatar || opts.cachedAvatar || opts.defaultAvatar;
+}

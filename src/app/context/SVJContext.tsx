@@ -24,6 +24,7 @@ import {
   TIERS,
 } from "../data/initialData";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveLoginAvatar } from "@/lib/avatar";
 import {
   applyActivityXp,
   CHALLENGE_XP,
@@ -311,7 +312,15 @@ export const SVJProvider: React.FC<{
   >(() => {});
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        // Drop session-scoped state so the next sign-in (even the same
+        // account) re-fetches the server profile instead of trusting memory
+        // or stale cache — the avatar must restore from the server.
+        syncedEmailRef.current = null;
+        setUser(INITIAL_USER);
+        return;
+      }
       const sessionEmail = session?.user?.email;
       if (!sessionEmail) return;
       const lower = sessionEmail.toLowerCase();
@@ -972,7 +981,13 @@ export const SVJProvider: React.FC<{
               .split("@")[0]
               .toLowerCase()
               .replace(/[^a-z0-9_]/g, "_")),
-      avatar: serverProfile?.avatar_url || avatar || baseUser.avatar,
+      avatar: resolveLoginAvatar({
+        serverAvatarUrl: serverProfile?.avatar_url,
+        cachedAvatar: baseUser.avatar,
+        googleAvatar: avatar,
+        hasCachedAccount: !!savedAccount,
+        defaultAvatar: INITIAL_USER.avatar,
+      }),
       bio: serverProfile?.bio ?? baseUser.bio,
       location: serverProfile?.location ?? baseUser.location,
       isFounder: isOwnerEmail || baseUser.isFounder || false,

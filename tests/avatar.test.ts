@@ -10,7 +10,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { avatarInitials, classifyAvatarRef } from "../src/lib/avatar";
+import { avatarInitials, classifyAvatarRef, resolveLoginAvatar } from "../src/lib/avatar";
 
 const UID = "11111111-2222-3333-4444-555555555555";
 
@@ -102,5 +102,66 @@ describe("avatarInitials", () => {
   it("falls back to V for missing names", () => {
     assert.equal(avatarInitials(null), "V");
     assert.equal(avatarInitials(""), "V");
+  });
+});
+
+describe("resolveLoginAvatar — server is authoritative", () => {
+  const serverAvatar = "https://x.supabase.co/storage/v1/object/public/avatars/uid/avatar.webp";
+  const cachedAvatar = "https://images.unsplash.com/photo-cached";
+  const googleAvatar = "https://lh3.googleusercontent.com/photo-google";
+
+  it("prefers the server-stored avatar over cache and Google metadata", () => {
+    const result = resolveLoginAvatar({
+      serverAvatarUrl: serverAvatar,
+      cachedAvatar,
+      googleAvatar,
+      hasCachedAccount: true,
+      defaultAvatar: "default",
+    });
+    assert.equal(result, serverAvatar);
+  });
+
+  it("does not let Google metadata overwrite a cached custom avatar when the server lookup fails", () => {
+    const result = resolveLoginAvatar({
+      serverAvatarUrl: null,
+      cachedAvatar,
+      googleAvatar,
+      hasCachedAccount: true,
+      defaultAvatar: "default",
+    });
+    assert.equal(result, cachedAvatar);
+  });
+
+  it("uses Google metadata only when there is no cached account at all", () => {
+    const result = resolveLoginAvatar({
+      serverAvatarUrl: null,
+      cachedAvatar: "default",
+      googleAvatar,
+      hasCachedAccount: false,
+      defaultAvatar: "default",
+    });
+    assert.equal(result, googleAvatar);
+  });
+
+  it("falls back to the default placeholder when nothing else exists", () => {
+    const result = resolveLoginAvatar({
+      serverAvatarUrl: null,
+      cachedAvatar: null,
+      googleAvatar: null,
+      hasCachedAccount: false,
+      defaultAvatar: "default",
+    });
+    assert.equal(result, "default");
+  });
+
+  it("uses the default placeholder for a cached account with no avatar instead of resurrecting Google", () => {
+    const result = resolveLoginAvatar({
+      serverAvatarUrl: null,
+      cachedAvatar: null,
+      googleAvatar,
+      hasCachedAccount: true,
+      defaultAvatar: "default",
+    });
+    assert.equal(result, "default");
   });
 });

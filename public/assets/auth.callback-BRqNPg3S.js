@@ -1,0 +1,1 @@
+import{I as e,M as t}from"./index-5NGUmJSI.js";var n=e(t());function r(){return(0,n.useEffect)(()=>{window.location.href=`app.lovable.svj://auth/callback`+window.location.search+window.location.hash},[]),null}export{r as component};

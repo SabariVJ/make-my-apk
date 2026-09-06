@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="SVJ is a self-improvement platform for daily challenges, training, nutrition, progress tracking, and a 60-day commitment."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://savaje-com.lovable.app/landing.html" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="preload" as="image" href="/landing-assets/screenshots/daily-challenges.jpg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SVJ" />
+    <meta property="og:title" content="SVJ — Build a life that shows." />
+    <meta
+      property="og:description"
+      content="A disciplined daily system for challenges, training, nutrition, progress, and community."
+    />
+    <meta property="og:url" content="https://savaje-com.lovable.app/landing.html" />
+    <meta
+      property="og:image"
+      content="https://savaje-com.lovable.app/landing-assets/social/svj-share.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="SVJ — Build a life that shows." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SVJ — Build a life that shows." />
+    <meta
+      name="twitter:description"
+      content="Daily discipline, measurable progress, and a 60-day commitment inside SVJ."
+    />
+    <meta
+      name="twitter:image"
+      content="https://savaje-com.lovable.app/landing-assets/social/svj-share.png"
+    />
+    <meta name="twitter:image:alt" content="SVJ — Build a life that shows." />
+
+    <title>SVJ — Self-Improvement Platform</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "SVJ",
+            "url": "https://savaje-com.lovable.app/landing.html",
+            "logo": "https://savaje-com.lovable.app/icon-512.png"
+          },
+          {
+            "@type": "WebSite",
+            "name": "SVJ",
+            "url": "https://savaje-com.lovable.app/landing.html",
+            "publisher": { "@type": "Organization", "name": "SVJ" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "SVJ",
+            "applicationCategory": "HealthApplication",
+            "operatingSystem": "Android, Web",
+            "url": "https://savaje-com.lovable.app/landing.html",
+            "downloadUrl": "https://savaje-com.lovable.app/downloads/SVJ-latest.apk",
+            "description": "A self-improvement platform for daily challenges, training, nutrition, progress tracking, and community."
+          }
+        ]
+      }
+    </script>
+
+    <style>
+      :root {
+        --ink: #0b0b0c;
+        --panel: #141416;
+        --panel-strong: #1a1a1d;
+        --line: #2a2a2e;
+        --line-light: #3a3a40;
+        --paper: #f4f2ed;
+        --muted: #8e8e96;
+        --crimson: #c81e3a;
+        --crimson-dark: #8f1329;
+        --acid: #d7c11f;
+        --display: "Anton", "Arial Narrow", Impact, sans-serif;
+        --body: Inter, Arial, sans-serif;
+        --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        background: var(--ink);
+      }
+      body {
+        margin: 0;
+        min-width: 320px;
+        overflow-x: hidden;
+        color: var(--paper);
+        background: var(--ink);
+        font-family: var(--body);
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      :focus-visible {
+        outline: 3px solid var(--acid);
+        outline-offset: 4px;
+      }
+      .skip-link {
+        position: fixed;
+        z-index: 100;
+        top: -80px;
+        left: 1rem;
+        padding: 0.75rem 1rem;
+        color: var(--ink);
+        background: var(--paper);
+        font: 600 0.75rem/1 var(--mono);
+      }
+      .skip-link:focus {
+        top: 1rem;
+      }
+      .shell {
+        width: min(1440px, calc(100% - 2rem));
+        margin: 0 auto;
+      }
+      .eyebrow,
+      .kicker,
+      .breadcrumb,
+      .nav-link,
+      .micro,
+      .footer-label {
+        margin: 0;
+        color: var(--muted);
+        font: 500 clamp(0.6rem, 0.72vw, 0.7rem)/1.4 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .eyebrow {
+        color: var(--crimson);
+      }
+      .section-title,
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: var(--display);
+        font-weight: 400;
+        letter-spacing: 0.015em;
+        text-transform: uppercase;
+      }
+      .section-title {
+        font-size: clamp(2.7rem, 8vw, 7.4rem);
+        line-height: 0.87;
+      }
+      .prose {
+        color: #bebec5;
+        font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+        line-height: 1.7;
+      }
+
+      .site-header {
+        position: sticky;
+        z-index: 20;
+        top: 0;
+        border-bottom: 1px solid var(--line);
+        background: rgba(11, 11, 12, 0.94);
+        backdrop-filter: blur(14px);
+      }
+      .site-header__inner {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        min-height: 68px;
+      }
+      .wordmark {
+        font: 400 1.55rem/1 var(--display);
+        letter-spacing: 0.02em;
+      }
+      .main-nav {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(1rem, 2vw, 2rem);
+      }
+      .nav-link {
+        color: #c5c5ca;
+        transition: color 0.18s ease;
+      }
+      .nav-link:hover {
+        color: var(--paper);
+      }
+      .download-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--crimson);
+        color: var(--paper);
+        background: var(--crimson);
+        box-shadow: 3px 3px 0 var(--crimson-dark);
+        font: 600 0.61rem/1 var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          background 0.18s ease;
+      }
+      .download-button:hover {
+        background: #dc2948;
+        box-shadow: 1px 1px 0 var(--crimson-dark);
+        transform: translate(2px, 2px);
+      }
+
+      .hero {
+        position: relative;
+        isolation: isolate;
+        min-height: min(820px, calc(100svh - 68px));
+        border-bottom: 1px solid var(--line);
+        overflow: hidden;
+      }
+      .hero::before,
+      .hero::after {
+        content: "";
+        position: absolute;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .hero::before {
+        top: 9%;
+        right: -8%;
+        width: min(58vw, 730px);
+        aspect-ratio: 1;
+        border: 1px solid #2a1d22;
+        transform: rotate(45deg);
+      }
+      .hero::after {
+        right: 20%;
+        bottom: 0;
+        width: 1px;
+        height: 78%;
+        background: var(--line);
+      }
+      .hero-grid {
+        display: grid;
+        gap: 2.5rem;
+        align-items: center;
+        min-height: inherit;
+        padding: clamp(3.5rem, 8vw, 7rem) 0;
+      }
+      .breadcrumb {
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+        margin-bottom: 1.4rem;
+      }
+      .breadcrumb a {
+        color: #d8d8dc;
+      }
+      .breadcrumb li {
+        list-style: none;
+      }
+      .breadcrumb ol {
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+        padding: 0;
+        margin: 0;
+      }
+      .breadcrumb li + li::before {
+        content: "/";
+        margin-right: 0.55rem;
+        color: var(--muted);
+      }
+      h1 {
+        max-width: 11ch;
+        font-size: clamp(4.5rem, 13.2vw, 12rem);
+        line-height: 0.79;
+      }
+      .hero h1 span {
+        color: var(--crimson);
+      }
+      .hero-lede {
+        max-width: 48ch;
+        margin: 1.65rem 0 0;
+        color: #c7c7cc;
+        font-size: clamp(1rem, 1.55vw, 1.16rem);
+        line-height: 1.65;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2rem;
+      }
+      .button-link {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 48px;
+        padding: 0.8rem 1.1rem;
+        border: 1px solid var(--line-light);
+        font: 600 0.68rem/1 var(--mono);
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        transition:
+          color 0.18s ease,
+          background 0.18s ease,
+          border-color 0.18s ease;
+      }
+      .button-link--primary {
+        border-color: var(--crimson);
+        background: var(--crimson);
+      }
+      .button-link--primary:hover {
+        background: #dc2948;
+      }
+      .button-link--secondary:hover {
+        border-color: var(--paper);
+        color: var(--paper);
+      }
+      .hero-caption {
+        max-width: 56ch;
+        margin: 3.3rem 0 0;
+        color: var(--muted);
+        font: 0.65rem/1.6 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .hero-art {
+        position: relative;
+        min-height: 335px;
+        display: grid;
+        place-items: center;
+      }
+      .hero-art__field {
+        position: absolute;
+        inset: 0;
+        border: 1px solid var(--line);
+        background: #0e0e10;
+      }
+      .hero-art__field::before,
+      .hero-art__field::after {
+        content: "";
+        position: absolute;
+        inset: 13%;
+        border: 1px solid #2d1b21;
+        transform: rotate(45deg);
+      }
+      .hero-art__field::after {
+        inset: 26%;
+        border-color: #3d222b;
+      }
+      .hero-art__signal {
+        position: relative;
+        width: min(72%, 380px);
+        aspect-ratio: 1;
+        animation: signal-shift 6s ease-in-out infinite;
+      }
+      .signal-glow {
+        fill: rgba(200, 30, 58, 0.13);
+        stroke: var(--crimson);
+        stroke-width: 2;
+      }
+      .signal-wire {
+        fill: none;
+        stroke: #f4f2ed;
+        stroke-opacity: 0.64;
+        stroke-width: 1.4;
+      }
+      .signal-core {
+        fill: var(--crimson);
+      }
+      .signal-node {
+        fill: var(--paper);
+        stroke: var(--crimson);
+        stroke-width: 2;
+      }
+      .hero-art__label {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        text-align: right;
+      }
+      .hero-art__label strong {
+        display: block;
+        color: var(--paper);
+        font: 500 0.73rem/1.2 var(--mono);
+        letter-spacing: 0.08em;
+      }
+      .hero-art__label span {
+        color: var(--muted);
+        font: 0.58rem/1.5 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .ticker {
+        overflow: hidden;
+        border-bottom: 1px solid var(--line);
+        background: var(--crimson);
+      }
+      .ticker__track {
+        display: flex;
+        width: max-content;
+        gap: 2.4rem;
+        padding: 0.65rem 0;
+        color: var(--paper);
+        font: 500 0.64rem/1.2 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        animation: ticker-shift 26s linear infinite;
+      }
+      .ticker__track span::after {
+        content: "✦";
+        margin-left: 2.4rem;
+        color: #0b0b0c;
+      }
+
+      .section {
+        padding: clamp(4rem, 9vw, 9rem) 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .section-intro {
+        display: grid;
+        gap: 1.5rem;
+        align-items: end;
+        margin-bottom: clamp(2.25rem, 6vw, 5rem);
+      }
+      .section-intro .prose {
+        max-width: 49ch;
+        margin: 0;
+      }
+      .method-grid {
+        display: grid;
+        gap: 1px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+      .method-card {
+        min-height: 220px;
+        padding: 1.35rem;
+        background: var(--panel);
+      }
+      .method-card__index {
+        display: block;
+        margin-bottom: 2.8rem;
+        color: var(--crimson);
+        font: 500 0.62rem/1 var(--mono);
+        letter-spacing: 0.1em;
+      }
+      .method-card h3 {
+        font-size: clamp(2rem, 3vw, 3.5rem);
+        line-height: 0.92;
+      }
+      .method-card p {
+        max-width: 31ch;
+        margin: 1rem 0 0;
+        color: #aaaab1;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      .method-card--accent {
+        background: var(--crimson);
+      }
+      .method-card--accent .method-card__index,
+      .method-card--accent p {
+        color: #f9d6dd;
+      }
+      .method-card--accent h3 {
+        color: var(--paper);
+      }
+
+      .product-stage {
+        display: grid;
+        gap: 1px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+      .stage-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 310px;
+        padding: clamp(1.35rem, 4vw, 3rem);
+        background: var(--panel);
+      }
+      .stage-copy h3 {
+        max-width: 9ch;
+        font-size: clamp(3rem, 5.5vw, 5.9rem);
+        line-height: 0.85;
+      }
+      .stage-copy p {
+        max-width: 44ch;
+        margin: 1.3rem 0 0;
+      }
+      .stage-list {
+        display: grid;
+        gap: 0;
+        padding: 0;
+        margin: 2.2rem 0 0;
+        border-top: 1px solid var(--line);
+      }
+      .stage-list li {
+        display: grid;
+        grid-template-columns: 2.8rem 1fr;
+        gap: 0.8rem;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--line);
+        color: #c6c6cb;
+        font: 0.66rem/1.4 var(--mono);
+        letter-spacing: 0.06em;
+        list-style: none;
+        text-transform: uppercase;
+      }
+      .stage-list span {
+        color: var(--crimson);
+      }
+      .stage-shot {
+        position: relative;
+        min-height: 350px;
+        overflow: hidden;
+        background: #080809;
+      }
+      .stage-shot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 20%;
+        filter: saturate(0.84) contrast(1.06);
+      }
+      .stage-shot::after {
+        content: "LIVE SVJ INTERFACE";
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid rgba(244, 242, 237, 0.28);
+        color: var(--paper);
+        background: rgba(11, 11, 12, 0.78);
+        font: 0.55rem/1 var(--mono);
+        letter-spacing: 0.09em;
+      }
+
+      .gallery-grid {
+        display: grid;
+        gap: 1rem;
+      }
+      .gallery-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 360px;
+        margin: 0;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .gallery-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        filter: saturate(0.82) contrast(1.05);
+        transition:
+          transform 0.4s ease,
+          filter 0.4s ease;
+      }
+      .gallery-card:hover img {
+        transform: scale(1.025);
+        filter: saturate(1) contrast(1.04);
+      }
+      .gallery-card figcaption {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 0.9rem 1rem;
+        border-top: 1px solid rgba(244, 242, 237, 0.18);
+        color: var(--paper);
+        background: rgba(11, 11, 12, 0.86);
+        font: 500 0.64rem/1.45 var(--mono);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+      .gallery-card--wide {
+        min-height: 420px;
+      }
+
+      .commitment-grid {
+        display: grid;
+        gap: 1px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+      .commitment-copy {
+        padding: clamp(1.5rem, 4vw, 3rem);
+        background: var(--panel);
+      }
+      .commitment-copy .section-title {
+        max-width: 7ch;
+        margin-top: 1.1rem;
+      }
+      .commitment-copy .prose {
+        max-width: 45ch;
+        margin: 1.5rem 0 0;
+      }
+      .commitment-facts {
+        display: grid;
+        margin-top: 2rem;
+        border-top: 1px solid var(--line);
+      }
+      .commitment-facts div {
+        display: grid;
+        grid-template-columns: 2rem 1fr;
+        gap: 0.8rem;
+        padding: 0.85rem 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .commitment-facts b {
+        color: var(--crimson);
+        font: 600 0.72rem/1.4 var(--mono);
+      }
+      .commitment-facts span {
+        color: #c6c6cb;
+        font: 0.76rem/1.5 var(--mono);
+        letter-spacing: 0.03em;
+      }
+      .commitment-image {
+        min-height: 410px;
+        overflow: hidden;
+        background: #080809;
+      }
+      .commitment-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        filter: saturate(0.84) contrast(1.06);
+      }
+
+      .community {
+        position: relative;
+        overflow: hidden;
+      }
+      .community::before {
+        content: "SVJ";
+        position: absolute;
+        right: -1.2rem;
+        bottom: -3rem;
+        z-index: -1;
+        color: #121216;
+        font: 400 clamp(12rem, 34vw, 38rem)/0.8 var(--display);
+        letter-spacing: -0.04em;
+      }
+      .community-grid {
+        display: grid;
+        gap: 1rem;
+        align-items: end;
+      }
+      .community-copy .prose {
+        max-width: 43ch;
+        margin: 1.4rem 0 0;
+      }
+      .evidence-list {
+        margin: 2rem 0 0;
+        padding: 0;
+        border-top: 1px solid var(--line);
+      }
+      .evidence-list li {
+        display: flex;
+        gap: 1rem;
+        align-items: baseline;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--line);
+        color: #c9c9ce;
+        font: 0.72rem/1.5 var(--mono);
+        list-style: none;
+        text-transform: uppercase;
+      }
+      .evidence-list b {
+        min-width: 1.8rem;
+        color: var(--crimson);
+      }
+      .profile-shot {
+        position: relative;
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .profile-shot img {
+        width: 100%;
+        max-height: 650px;
+        object-fit: cover;
+        object-position: top center;
+        filter: saturate(0.84) contrast(1.06);
+      }
+      .profile-shot figcaption {
+        padding: 0.85rem 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font: 0.6rem/1.5 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .closing {
+        padding: clamp(5rem, 12vw, 12rem) 0;
+        text-align: center;
+      }
+      .closing h2 {
+        max-width: 10ch;
+        margin: 1rem auto 0;
+        font-size: clamp(4rem, 12vw, 12rem);
+        line-height: 0.78;
+      }
+      .closing p {
+        max-width: 53ch;
+        margin: 1.8rem auto 0;
+      }
+      .closing .button-link {
+        margin-top: 2.25rem;
+      }
+      .site-footer {
+        border-top: 1px solid var(--line);
+      }
+      .footer-inner {
+        display: grid;
+        gap: 2rem;
+        padding: 2.2rem 0;
+      }
+      .footer-brand {
+        font: 400 2rem/1 var(--display);
+      }
+      .footer-copy {
+        max-width: 48ch;
+        margin: 0.6rem 0 0;
+        color: var(--muted);
+        font: 0.63rem/1.6 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+      }
+      .footer-links a {
+        color: #c4c4c9;
+        font: 0.62rem/1.4 var(--mono);
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .footer-links a:hover {
+        color: var(--paper);
+      }
+      .footer-bottom {
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: #6f6f76;
+        font: 0.58rem/1.6 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      @keyframes signal-shift {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-9px) rotate(1.8deg);
+        }
+      }
+      @keyframes ticker-shift {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      @media (min-width: 720px) {
+        .shell {
+          width: min(1440px, calc(100% - 4rem));
+        }
+        .hero-grid {
+          grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+        }
+        .section-intro {
+          grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+        }
+        .method-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .product-stage {
+          grid-template-columns: minmax(0, 1fr) minmax(280px, 0.83fr);
+        }
+        .gallery-grid {
+          grid-template-columns: repeat(6, 1fr);
+        }
+        .gallery-card {
+          grid-column: span 2;
+        }
+        .gallery-card--wide {
+          grid-column: span 3;
+        }
+        .commitment-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(300px, 0.88fr);
+        }
+        .community-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
+        }
+        .footer-inner {
+          grid-template-columns: 1fr auto;
+          align-items: end;
+        }
+      }
+      @media (min-width: 960px) {
+        .main-nav {
+          display: flex;
+        }
+        .gallery-card {
+          min-height: 455px;
+        }
+        .gallery-card--wide {
+          min-height: 540px;
+        }
+      }
+      @media (max-width: 460px) {
+        .site-header__inner {
+          min-height: 60px;
+        }
+        .download-button {
+          padding: 0.5rem 0.58rem;
+          font-size: 0.55rem;
+        }
+        h1 {
+          font-size: clamp(4rem, 19vw, 5.8rem);
+        }
+        .hero-art {
+          min-height: 285px;
+        }
+        .hero-actions {
+          display: grid;
+        }
+        .button-link {
+          width: 100%;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="wordmark" href="/landing.html" aria-label="SVJ landing page">SVJ</a>
+        <nav class="main-nav" aria-label="Landing page navigation">
+          <a class="nav-link" href="#method">Method</a>
+          <a class="nav-link" href="#inside-svj">Inside SVJ</a>
+          <a class="nav-link" href="#sixty-day">60 Day</a>
+          <a class="nav-link" href="#community">Community</a>
+        </nav>
+        <a
+          id="svj-apk-download"
+          class="download-button"
+          data-apk-download
+          href="/downloads/SVJ-latest.apk"
+          download="SVJ-latest.apk"
+          aria-describedby="apk-download-note"
+        >
+          Download APK
+        </a>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="shell hero-grid">
+          <div>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+              <ol>
+                <li><a href="/landing.html">Home</a></li>
+                <li aria-current="page">SVJ</li>
+              </ol>
+            </nav>
+            <p class="eyebrow">Self-improvement, made visible</p>
+            <h1 id="hero-title">Build a life that <span>shows.</span></h1>
+            <p class="hero-lede">
+              SVJ turns disciplined effort into a living record: daily challenges, training,
+              nutrition, progress, and a community that can see the work.
+            </p>
+            <div class="hero-actions">
+              <a class="button-link button-link--primary" href="https://savaje-com.lovable.app/"
+                >Enter SVJ on Web</a
+              >
+              <a class="button-link button-link--secondary" href="#method">See the system</a>
+            </div>
+            <p class="hero-caption">Not a highlight reel. A record of what you did today.</p>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="hero-art__field"></div>
+            <svg class="hero-art__signal" viewBox="0 0 400 400" role="presentation">
+              <polygon class="signal-glow" points="200,18 361,112 361,292 200,382 39,292 39,112" />
+              <polygon class="signal-wire" points="200,49 334,126 334,274 200,351 66,274 66,126" />
+              <line class="signal-wire" x1="200" y1="49" x2="200" y2="351" />
+              <line class="signal-wire" x1="66" y1="126" x2="334" y2="274" />
+              <line class="signal-wire" x1="334" y1="126" x2="66" y2="274" />
+              <circle class="signal-core" cx="200" cy="200" r="30" />
+              <circle class="signal-node" cx="200" cy="49" r="8" />
+              <circle class="signal-node" cx="334" cy="126" r="8" />
+              <circle class="signal-node" cx="334" cy="274" r="8" />
+              <circle class="signal-node" cx="200" cy="351" r="8" />
+              <circle class="signal-node" cx="66" cy="274" r="8" />
+              <circle class="signal-node" cx="66" cy="126" r="8" />
+            </svg>
+            <p class="hero-art__label">
+              <strong>YOUR RECORD</strong><span>Built one action at a time</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker__track">
+          <span>Assessment</span><span>Action</span><span>XP</span><span>Stat growth</span
+          ><span>Community</span><span>Transformation</span> <span>Assessment</span
+          ><span>Action</span><span>XP</span><span>Stat growth</span><span>Community</span
+          ><span>Transformation</span>
+        </div>
+      </div>
+
+      <section id="method" class="section" aria-labelledby="method-title">
+        <div class="shell">
+          <div class="section-intro">
+            <div>
+              <p class="eyebrow">01 / The SVJ method</p>
+              <h2 id="method-title" class="section-title">Not motivation.<br />A system.</h2>
+            </div>
+            <p class="prose">
+              A goal means little without a repeatable way to meet it. SVJ gives your daily effort a
+              place, an order, and a record you can return to.
+            </p>
+          </div>
+          <div class="method-grid">
+            <article class="method-card">
+              <span class="method-card__index">01 / Assess</span>
+              <h3>Start with the truth.</h3>
+              <p>
+                Use your starting point to establish a direction before personalized work begins.
+              </p>
+            </article>
+            <article class="method-card method-card--accent">
+              <span class="method-card__index">02 / Execute</span>
+              <h3>Do the work today.</h3>
+              <p>Challenges, training, and fuel turn intentions into concrete daily actions.</p>
+            </article>
+            <article class="method-card">
+              <span class="method-card__index">03 / Review</span>
+              <h3>Let the record speak.</h3>
+              <p>Track consistency, see progress, and return tomorrow with a stronger standard.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="inside-svj" class="section" aria-labelledby="inside-title">
+        <div class="shell">
+          <div class="section-intro">
+            <div>
+              <p class="eyebrow">02 / Inside SVJ</p>
+              <h2 id="inside-title" class="section-title">Your day.<br />One command center.</h2>
+            </div>
+            <p class="prose">
+              The interface is built to make the next useful action obvious—not to fill your
+              attention with noise.
+            </p>
+          </div>
+          <div class="product-stage">
+            <div class="stage-copy">
+              <div>
+                <p class="kicker">Daily execution</p>
+                <h3>Forge your day.</h3>
+                <p class="prose">
+                  Move through a focused sequence of challenges, training, fuel, and progress
+                  review.
+                </p>
+              </div>
+              <ol class="stage-list">
+                <li><span>01</span>Challenges with a clear daily target</li>
+                <li><span>02</span>Training logs that preserve the work</li>
+                <li><span>03</span>Fuel tracking that supports the mission</li>
+              </ol>
+            </div>
+            <figure class="stage-shot">
+              <img
+                src="/landing-assets/screenshots/daily-challenges.jpg"
+                alt="SVJ daily challenges dashboard showing the Forge Your Day interface."
+                width="652"
+                height="960"
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="proof-title">
+        <div class="shell">
+          <div class="section-intro">
+            <div>
+              <p class="eyebrow">03 / Built for the whole effort</p>
+              <h2 id="proof-title" class="section-title">More than a<br />to-do list.</h2>
+            </div>
+            <p class="prose">
+              Every area has a job: record the work, show the pattern, and make the next decision
+              clearer.
+            </p>
+          </div>
+          <div class="gallery-grid">
+            <figure class="gallery-card gallery-card--wide">
+              <img
+                src="/landing-assets/screenshots/iron-log.jpg"
+                loading="lazy"
+                alt="SVJ Iron Log workout screen with exercises, sets, and logging controls."
+                width="653"
+                height="960"
+              />
+              <figcaption>Iron Log / Training history</figcaption>
+            </figure>
+            <figure class="gallery-card">
+              <img
+                src="/landing-assets/screenshots/fuel.jpg"
+                loading="lazy"
+                alt="SVJ nutrition screen with daily calorie and macro tracking."
+                width="650"
+                height="960"
+              />
+              <figcaption>Fuel / Nutrition tracking</figcaption>
+            </figure>
+            <figure class="gallery-card">
+              <img
+                src="/landing-assets/screenshots/fuel-goals.jpg"
+                loading="lazy"
+                alt="SVJ nutrition interface for recording daily food and macro goals."
+                width="650"
+                height="960"
+              />
+              <figcaption>Fuel / Daily targets</figcaption>
+            </figure>
+            <figure class="gallery-card">
+              <img
+                src="/landing-assets/screenshots/member-profile.jpg"
+                loading="lazy"
+                alt="SVJ member profile showing a character attribute hexagon and verified progress card."
+                width="648"
+                height="960"
+              />
+              <figcaption>Profile / The record you build</figcaption>
+            </figure>
+            <figure class="gallery-card gallery-card--wide">
+              <img
+                src="/landing-assets/screenshots/sixty-day.jpg"
+                loading="lazy"
+                alt="SVJ 60-Day program dashboard with day-by-day progress and mission sections."
+                width="1200"
+                height="1920"
+              />
+              <figcaption>60 Day / A longer commitment</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="sixty-day" class="section" aria-labelledby="sixty-title">
+        <div class="shell">
+          <div class="commitment-grid">
+            <div class="commitment-copy">
+              <p class="eyebrow">04 / The 60-day commitment</p>
+              <h2 id="sixty-title" class="section-title">Stay long enough to change.</h2>
+              <p class="prose">
+                The 60-Day experience gives sustained effort a visible structure. Return daily, keep
+                the record honest, and make a commitment big enough to matter.
+              </p>
+              <div class="commitment-facts" aria-label="60-Day program details">
+                <div><b>01</b><span>Daily work held in one place</span></div>
+                <div><b>02</b><span>Progress that stays connected to the commitment</span></div>
+                <div><b>03</b><span>Milestones that reward consistency, not noise</span></div>
+              </div>
+            </div>
+            <figure class="commitment-image">
+              <img
+                src="/landing-assets/screenshots/sixty-day.jpg"
+                loading="lazy"
+                alt="SVJ 60-Day program progress screen."
+                width="1200"
+                height="1920"
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="community" class="section community" aria-labelledby="community-title">
+        <div class="shell community-grid">
+          <div class="community-copy">
+            <p class="eyebrow">05 / Community and rivalry</p>
+            <h2 id="community-title" class="section-title">Status is earned.</h2>
+            <p class="prose">
+              SVJ keeps the social layer connected to actual effort. Share activity, compare
+              records, and let genuine progress speak louder than empty hype.
+            </p>
+            <ul class="evidence-list">
+              <li><b>01</b>Profile cards reflect the record behind them</li>
+              <li><b>02</b>Community activity is tied to completed actions</li>
+              <li><b>03</b>Rivalry creates a reason to keep showing up</li>
+            </ul>
+          </div>
+          <figure class="profile-shot">
+            <img
+              src="/landing-assets/screenshots/member-profile.jpg"
+              loading="lazy"
+              alt="SVJ profile with character attributes and progress values."
+              width="648"
+              height="960"
+            />
+            <figcaption>
+              Live profile interface / progress, attributes, and personal history
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="closing" aria-labelledby="closing-title">
+        <div class="shell">
+          <p class="eyebrow">The work starts where you are</p>
+          <h2 id="closing-title">Make today leave a mark.</h2>
+          <p class="prose">
+            Open the web app to begin your SVJ record. The Android download is available from the
+            button above when you want the native app.
+          </p>
+          <a class="button-link button-link--primary" href="https://savaje-com.lovable.app/"
+            >Use SVJ on Web</a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-inner">
+        <div>
+          <div class="footer-brand">SVJ</div>
+          <p class="footer-copy">
+            Self-improvement platform. Daily discipline. Confirmed progress.
+          </p>
+        </div>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="#method">Method</a>
+          <a href="#inside-svj">Features</a>
+          <a href="#sixty-day">60 Day</a>
+          <a href="#community">Community</a>
+          <a href="https://savaje-com.lovable.app/privacy">Privacy</a>
+          <a href="https://savaje-com.lovable.app/terms">Terms</a>
+        </nav>
+      </div>
+      <div class="shell footer-bottom">© 2026 SVJ. Built for people who show up.</div>
+    </footer>
+
+    <span id="apk-download-note" class="sr-only"
+      >Android may ask permission to install apps from this browser.</span
+    >
+    <script>
+      (function () {
+        var isNative = Boolean(
+          window.Capacitor &&
+          typeof window.Capacitor.isNativePlatform === "function" &&
+          window.Capacitor.isNativePlatform(),
+        );
+
+        if (isNative) {
+          document.querySelectorAll("[data-apk-download]").forEach(function (element) {
+            element.remove();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

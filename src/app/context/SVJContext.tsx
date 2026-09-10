@@ -99,6 +99,33 @@ const SVJContext = createContext<SVJContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 
+/**
+ * localStorage has a hard per-origin quota (~5MB). Large payloads (e.g. base64
+ * avatars stored on leaderboard/feed rows) can blow past it and throw
+ * QuotaExceededError, which would otherwise crash the React render. Persisting
+ * is a cache, never the source of truth, so failures are swallowed.
+ */
+const safeSetItem = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    try {
+      // Free space by dropping the largest, most disposable caches first.
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_feed`);
+      localStorage.setItem(key, value);
+    } catch {
+      /* out of space — skip persisting this slice */
+    }
+  }
+};
+
+/** Drop inline base64 images so cached rows stay small. */
+const slimAvatar = (avatar?: string) =>
+  typeof avatar === "string" && avatar.startsWith("data:") ? "" : avatar;
+
+const MAX_CACHED_ROWS = 100;
+
 export const SVJProvider: React.FC<{
   children: React.ReactNode;
   /** Server-authoritative Plus status from TrialGate (null = unknown/signed out). */

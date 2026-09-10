@@ -99,6 +99,33 @@ const SVJContext = createContext<SVJContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 
+/**
+ * localStorage has a hard per-origin quota (~5MB). Large payloads (e.g. base64
+ * avatars stored on leaderboard/feed rows) can blow past it and throw
+ * QuotaExceededError, which would otherwise crash the React render. Persisting
+ * is a cache, never the source of truth, so failures are swallowed.
+ */
+const safeSetItem = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    try {
+      // Free space by dropping the largest, most disposable caches first.
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
+      localStorage.removeItem(`${LOCAL_STORAGE_KEY}_feed`);
+      localStorage.setItem(key, value);
+    } catch {
+      /* out of space — skip persisting this slice */
+    }
+  }
+};
+
+/** Drop inline base64 images so cached rows stay small. */
+const slimAvatar = (avatar?: string) =>
+  typeof avatar === "string" && avatar.startsWith("data:") ? "" : avatar;
+
+const MAX_CACHED_ROWS = 100;
+
 export const SVJProvider: React.FC<{
   children: React.ReactNode;
   /** Server-authoritative Plus status from TrialGate (null = unknown/signed out). */
@@ -355,9 +382,9 @@ export const SVJProvider: React.FC<{
     // the server-side check (plusActive), so localStorage can never keep an
     // expired user looking Premium.
     const persisted = { ...user, isPremium: false };
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persisted));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persisted));
     if (user.email) {
-      localStorage.setItem(
+      safeSetItem(
         `svj_user_account_${user.email.toLowerCase()}`,
         JSON.stringify(persisted),
       );
@@ -411,38 +438,41 @@ export const SVJProvider: React.FC<{
   }, [user]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_challenges`, JSON.stringify(challenges));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_challenges`, JSON.stringify(challenges));
   }, [challenges]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_feed`, JSON.stringify(feed));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_feed`, JSON.stringify(feed.slice(0, MAX_CACHED_ROWS)));
   }, [feed]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_leaderboard`, JSON.stringify(leaderboard));
+    const slim = leaderboard
+      .slice(0, MAX_CACHED_ROWS)
+      .map((entry) => ({ ...entry, avatar: slimAvatar(entry.avatar) }));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_leaderboard`, JSON.stringify(slim));
   }, [leaderboard]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(rewards));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(rewards));
   }, [rewards]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_workouts`, JSON.stringify(workouts));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_workouts`, JSON.stringify(workouts));
   }, [workouts]);
 
   useEffect(() => {
-    localStorage.setItem(
+    safeSetItem(
       `${LOCAL_STORAGE_KEY}_workout_templates`,
       JSON.stringify(workoutTemplates),
     );
   }, [workoutTemplates]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_meals`, JSON.stringify(meals));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_meals`, JSON.stringify(meals));
   }, [meals]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_calorie_goal`, String(calorieGoal));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_calorie_goal`, String(calorieGoal));
   }, [calorieGoal]);
 
   const triggerConfetti = () => {
@@ -880,7 +910,7 @@ export const SVJProvider: React.FC<{
     const removed: string[] = removedRaw ? JSON.parse(removedRaw) : [];
     if (!removed.includes(id)) {
       removed.push(id);
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_removed_challenges`, JSON.stringify(removed));
+      safeSetItem(`${LOCAL_STORAGE_KEY}_removed_challenges`, JSON.stringify(removed));
     }
   };
 
@@ -988,7 +1018,7 @@ export const SVJProvider: React.FC<{
     avatar: string;
   }) => {
     triggerConfetti();
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
+    safeSetItem(`${LOCAL_STORAGE_KEY}_has_onboarded`, "true");
 
     // Idempotent onboarding baseline: ensure totalXP is at least 100 without
     // reducing existing XP or allowing repeated grants from cleared localStorage.
@@ -1083,7 +1113,7 @@ export const SVJProvider: React.FC<{
       // Unlock all rewards vault items
       setRewards((prev) => {
         const allUnlocked = prev.map((r) => ({ ...r, unlocked: true }));
-        localStorage.setItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(allUnlocked));
+        safeSetItem(`${LOCAL_STORAGE_KEY}_rewards`, JSON.stringify(allUnlocked));
         return allUnlocked;
       });
     }
@@ -1142,9 +1172,9 @@ export const SVJProvider: React.FC<{
     // Persist everything EXCEPT Plus status (same rule as the sync effect):
     // localStorage must never hold isPremium=true, only the server check decides.
     const persistedUser = { ...updatedUser, isPremium: false };
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persistedUser));
-    localStorage.setItem(`svj_user_account_${cleanEmail}`, JSON.stringify(persistedUser));
-    localStorage.setItem(`${LOCAL_STORAGE_KEY}_active_email`, cleanEmail);
+    safeSetItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persistedUser));
+    safeSetItem(`svj_user_account_${cleanEmail}`, JSON.stringify(persistedUser));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_active_email`, cleanEmail);
     triggerConfetti();
     setIsGoogleAuthModalOpen(false);
   };
@@ -1163,7 +1193,7 @@ export const SVJProvider: React.FC<{
         isOwner: false,
         isPremium: false,
       };
-      localStorage.setItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(nextUser));
+      safeSetItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(nextUser));
       return nextUser;
     });
   };

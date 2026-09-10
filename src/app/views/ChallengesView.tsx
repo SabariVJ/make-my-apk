@@ -20,8 +20,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { useActivityOptional } from "../context/ActivityContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
 import { EarnPlusCard } from "../components/EarnPlusCard";
+import { ActivitySummaryCard } from "../components/ActivitySummaryCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
@@ -40,7 +42,8 @@ import { AssessmentView } from "./AssessmentView";
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
   onOpenEarnPlus?: () => void;
-}> = ({ onOpenSixtyDay, onOpenEarnPlus }) => {
+  onOpenActivity?: () => void;
+}> = ({ onOpenSixtyDay, onOpenEarnPlus, onOpenActivity }) => {
   const {
     challenges,
     toggleChallenge,
@@ -261,6 +264,9 @@ export const ChallengesView: React.FC<{
   const totalCount = displayChallenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const todayXP = displayChallenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  // Automatic step-milestone XP counts toward the daily totals too.
+  const activity = useActivityOptional();
+  const totalTodayXp = todayXP + (activity?.xpEarnedToday ?? 0);
 
   const isAndroid = Capacitor.getPlatform() === "android";
 
@@ -386,7 +392,7 @@ export const ChallengesView: React.FC<{
               <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
               XP Today
             </div>
-            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{todayXP}</div>
+            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
@@ -415,17 +421,20 @@ export const ChallengesView: React.FC<{
         <div className="space-y-1.5 mb-6">
           <div className="flex justify-between text-xs font-mono text-[#8C8C90]">
             <span>Daily XP Goal</span>
-            <span>{todayXP} / 500 XP</span>
+            <span>{totalTodayXp} / 500 XP</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round((todayXP / 500) * 100))}%` }}
+              animate={{ width: `${Math.min(100, Math.round((totalTodayXp / 500) * 100))}%` }}
               transition={{ duration: 0.8 }}
               className="h-full rounded-full bg-gradient-to-r from-[#E62846] to-[#C81E3A]"
             />
           </div>
         </div>
+
+        {/* Compact live Activity card — automatic step counter summary */}
+        {onOpenActivity && <ActivitySummaryCard onOpen={onOpenActivity} />}
 
         {/* 6 Dynamic Attribute Stats Hexagon Radar */}
         <div className="border-t border-white/10 pt-4 space-y-3">

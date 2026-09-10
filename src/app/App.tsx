@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
 import { EngagementProvider } from "./context/EngagementContext";
+import { ActivityProvider } from "./context/ActivityContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
 import { ChallengesView } from "./views/ChallengesView";
+import { ActivityView } from "./views/ActivityView";
 import { EarnPlusView } from "./views/EarnPlusView";
 import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
@@ -258,8 +260,10 @@ const AppContent: React.FC<{
           <ChallengesView
             onOpenSixtyDay={() => handleTabChange("sixty")}
             onOpenEarnPlus={() => handleTabChange("earn")}
+            onOpenActivity={() => handleTabChange("activity")}
           />
         )}
+        {activeTab === "activity" && <ActivityView />}
         {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
@@ -320,7 +324,9 @@ export default function App() {
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
           <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
-            <AppContent locked={status?.locked} lockEmail={status?.email} />
+            <ActivityProvider userId={status?.userId ?? null}>
+              <AppContent locked={status?.locked} lockEmail={status?.email} />
+            </ActivityProvider>
           </EngagementProvider>
         </SVJProvider>
       )}

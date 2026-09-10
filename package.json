@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "node --import tsx --test src/integrations/supabase/client.server.test.ts src/app/lib/*.test.ts tests/activity-ledger.test.ts tests/activity-ui.test.mjs tests/engagement-profile.test.ts tests/engagement-ui.test.mjs tests/engagement-db.test.mjs tests/personalization.test.ts tests/challenge-engine.test.ts tests/personalized-task.server.test.ts tests/android-features.test.mjs tests/outperform-security.test.ts tests/avatar.test.ts",
+    "test": "node --import tsx --test src/integrations/supabase/client.server.test.ts src/app/lib/*.test.ts tests/activity-ledger.test.ts tests/activity-feature.test.mjs tests/activity-ui.test.mjs tests/engagement-profile.test.ts tests/engagement-ui.test.mjs tests/engagement-db.test.mjs tests/personalization.test.ts tests/challenge-engine.test.ts tests/personalized-task.server.test.ts tests/android-features.test.mjs tests/outperform-security.test.ts tests/avatar.test.ts",
     "test:rewards": "node --import tsx --test tests/engagement-db.test.mjs",
     "test:rewards:postgres": "node scripts/test-rewards-postgres.mjs",
     "cap:sync": "node -e \"require('fs').mkdirSync('android/app/src/main/assets',{recursive:true})\" && cap sync android"
@@ -21,6 +21,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.4.2",
+    "@capgo/capacitor-pedometer": "^8.0.39",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.12",

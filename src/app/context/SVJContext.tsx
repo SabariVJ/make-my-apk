@@ -69,7 +69,9 @@ interface SVJContextType {
   // Actions
   toggleChallenge: (id: string) => SaveResult;
   /** Apply a server-confirmed XP grant to the user's profile (60-day challenge). */
-  awardXp: (xp: number) => void;
+  awardXp: (xp: number, stats?: Partial<UserStats>) => void;
+  /** Push an entry into the community feed (used by automatic XP events). */
+  addActivity: (title: string, details: string, xpEarned: number) => void;
   syncEngagementProfile: (userId: string, earnedProfileXp: number, serverNow: string) => void;
   addCustomChallenge: (
     title: string,
@@ -392,10 +394,7 @@ export const SVJProvider: React.FC<{
     const persisted = { ...user, isPremium: false };
     safeSetItem(`${LOCAL_STORAGE_KEY}_user`, JSON.stringify(persisted));
     if (user.email) {
-      safeSetItem(
-        `svj_user_account_${user.email.toLowerCase()}`,
-        JSON.stringify(persisted),
-      );
+      safeSetItem(`svj_user_account_${user.email.toLowerCase()}`, JSON.stringify(persisted));
     }
 
     setLeaderboard((prev) => {
@@ -469,10 +468,7 @@ export const SVJProvider: React.FC<{
   }, [workouts]);
 
   useEffect(() => {
-    safeSetItem(
-      `${LOCAL_STORAGE_KEY}_workout_templates`,
-      JSON.stringify(workoutTemplates),
-    );
+    safeSetItem(`${LOCAL_STORAGE_KEY}_workout_templates`, JSON.stringify(workoutTemplates));
   }, [workoutTemplates]);
 
   useEffect(() => {
@@ -517,10 +513,10 @@ export const SVJProvider: React.FC<{
 
   // This only mirrors grants already confirmed by the 60-day server endpoint.
   // Ordinary device-only activity XP is not eligible for membership redemption.
-  const awardXp = (xp: number) => {
+  const awardXp = (xp: number, stats?: Partial<UserStats>) => {
     if (!Number.isFinite(xp) || xp <= 0) return;
     const now = new Date();
-    setUser((previous) => applyActivityXp(previous, xp, now));
+    setUser((previous) => applyActivityXp(previous, xp, now, { stats }));
   };
 
   const syncEngagementProfile = useCallback(
@@ -755,10 +751,7 @@ export const SVJProvider: React.FC<{
     // Track removed IDs so they stay hidden even if localStorage resets
     const removed = readStoredArray<string>(`${LOCAL_STORAGE_KEY}_removed_challenges`, []);
     if (!removed.includes(id)) {
-      safeSetItem(
-        `${LOCAL_STORAGE_KEY}_removed_challenges`,
-        JSON.stringify([...removed, id]),
-      );
+      safeSetItem(`${LOCAL_STORAGE_KEY}_removed_challenges`, JSON.stringify([...removed, id]));
     }
   };
 
@@ -1081,6 +1074,7 @@ export const SVJProvider: React.FC<{
         isGoogleAuthModalOpen,
         toggleChallenge,
         awardXp,
+        addActivity,
         addCustomChallenge,
         updateCustomChallenge,
         removeChallenge,

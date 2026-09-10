@@ -13,11 +13,13 @@ import {
   KeyRound,
   LogOut,
   Gift,
+  Activity,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export type ActiveTab =
   | "challenges"
+  | "activity"
   | "earn"
   | "workouts"
   | "nutrition"
@@ -48,6 +50,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   const allNavItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
+    { id: "activity", label: "Activity", icon: Activity },
     { id: "workouts", label: "Train", icon: Dumbbell },
     { id: "nutrition", label: "Fuel", icon: Apple },
     { id: "community", label: "Community", icon: Users },

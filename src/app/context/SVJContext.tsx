@@ -107,13 +107,13 @@ const LOCAL_STORAGE_KEY = "svj_app_state_v5";
  */
 const safeSetItem = (key: string, value: string) => {
   try {
-    safeSetItem(key, value);
+    localStorage.setItem(key, value);
   } catch {
     try {
       // Free space by dropping the largest, most disposable caches first.
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_leaderboard`);
       localStorage.removeItem(`${LOCAL_STORAGE_KEY}_feed`);
-      safeSetItem(key, value);
+      localStorage.setItem(key, value);
     } catch {
       /* out of space — skip persisting this slice */
     }

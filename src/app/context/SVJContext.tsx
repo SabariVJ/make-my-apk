@@ -442,11 +442,14 @@ export const SVJProvider: React.FC<{
   }, [challenges]);
 
   useEffect(() => {
-    safeSetItem(`${LOCAL_STORAGE_KEY}_feed`, JSON.stringify(feed));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_feed`, JSON.stringify(feed.slice(0, MAX_CACHED_ROWS)));
   }, [feed]);
 
   useEffect(() => {
-    safeSetItem(`${LOCAL_STORAGE_KEY}_leaderboard`, JSON.stringify(leaderboard));
+    const slim = leaderboard
+      .slice(0, MAX_CACHED_ROWS)
+      .map((entry) => ({ ...entry, avatar: slimAvatar(entry.avatar) }));
+    safeSetItem(`${LOCAL_STORAGE_KEY}_leaderboard`, JSON.stringify(slim));
   }, [leaderboard]);
 
   useEffect(() => {

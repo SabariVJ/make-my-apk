@@ -133,9 +133,8 @@ export const getPersonalizedChallenges = createServerFn({ method: "GET" })
       focusAreas: string[];
       reason: string;
     }> => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client = supabaseAdmin as any;
+      const client = context.supabase as any;
 
       const { assessmentCompleted, goals, stats } = await readPersonalization(
         client,
@@ -188,9 +187,8 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
       reason?: string;
       error?: string;
     }> => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client = supabaseAdmin as any;
+      const client = context.supabase as any;
 
       const { assessmentCompleted, goals, stats } = await readPersonalization(
         client,
@@ -205,44 +203,69 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
         };
       }
 
-      // Enforce refresh cooldown from the database, not client state.
-      const { data: refreshRow } = await client
-        .from("user_personalization")
-        .select("last_personalized_refresh_at")
-        .eq("user_id", context.userId)
-        .maybeSingle();
-
-      const lastRefresh = refreshRow?.last_personalized_refresh_at;
-      const now = new Date();
+      // Atomic cooldown reservation via RPC.
+      // Requires migration 20260905_add_atomic_refresh_rpc; falls back to a
+      // two-step approach (not atomic) when the RPC is not yet deployed, which
+      // is safe until that migration is applied.
       let cooldownRemainingMs = 0;
+      let reserved = false;
 
-      if (lastRefresh) {
-        const elapsed = now.getTime() - new Date(lastRefresh).getTime();
-        if (elapsed < REFRESH_COOLDOWN_MS) {
-          cooldownRemainingMs = REFRESH_COOLDOWN_MS - elapsed;
-          return {
-            ok: false,
-            cooldownRemainingMs,
-            error: "Personalized tasks are on a cooldown. Try again later.",
-          };
+      const { data: reserveResult, error: reserveError } = await client.rpc(
+        "svj_reserve_personalized_refresh",
+      );
+
+      if (reserveError) {
+        const missingRpc =
+          reserveError.code === "PGRST202" ||
+          /svj_reserve_personalized_refresh|could not find the function/i.test(
+            String(reserveError.message ?? ""),
+          );
+        if (!missingRpc) throw reserveError;
+
+        // Fallback: two-step cooldown check (migration not applied yet).
+        const { data: refreshRow } = await client
+          .from("user_personalization")
+          .select("last_personalized_refresh_at")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+
+        const lastRefresh = refreshRow?.last_personalized_refresh_at;
+        const now = new Date();
+
+        if (lastRefresh) {
+          const elapsed = now.getTime() - new Date(lastRefresh).getTime();
+          if (elapsed < REFRESH_COOLDOWN_MS) {
+            cooldownRemainingMs = REFRESH_COOLDOWN_MS - elapsed;
+            return {
+              ok: false,
+              cooldownRemainingMs,
+              error: "Personalized tasks are on a cooldown. Try again later.",
+            };
+          }
         }
+
+        await client
+          .from("user_personalization")
+          .update({ last_personalized_refresh_at: now.toISOString() })
+          .eq("user_id", context.userId);
+        reserved = true;
+      } else if (!reserveResult?.ok) {
+        cooldownRemainingMs = reserveResult.cooldownRemainingMs ?? 0;
+        return {
+          ok: false,
+          cooldownRemainingMs,
+          error: reserveResult.error ?? "Personalized tasks are on a cooldown. Try again later.",
+        };
+      } else {
+        reserved = true;
       }
 
       // Generate a fresh, non-duplicate set. The selection function considers
       // the user's current stats and goals; newly generated IDs differ from any
       // previous set, and duplicate-title prevention happens at the challenge
-      // merge layer in the client. The server refuses to regenerate the same
-      // set twice in a row by enforcing the cooldown.
+      // merge layer in the client.
       const selected = selectPersonalizedChallenges(stats, goals, [], 6);
       const insights = getChallengeInsights(stats, goals);
-
-      // Record the refresh time in the database so the cooldown is authoritative.
-      // This runs as a separate UPDATE so a failed challenge generation cannot
-      // accidentally consume the cooldown.
-      await client
-        .from("user_personalization")
-        .update({ last_personalized_refresh_at: now.toISOString() })
-        .eq("user_id", context.userId);
 
       return {
         ok: true,

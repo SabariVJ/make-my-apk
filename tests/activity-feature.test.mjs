@@ -17,6 +17,10 @@ const tracker = await read("src/app/lib/activityTracker.ts");
 const pkg = JSON.parse(await read("package.json"));
 const capBuild = await read("android/app/capacitor.build.gradle");
 const capSettings = await read("android/capacitor.settings.gradle");
+const vjPedometer = await read("src/app/lib/vj-pedometer.ts");
+const vjPluginJava = await read("android/app/src/main/java/app/lovable/svj/VjPedometerPlugin.java");
+const mainActivity = await read("android/app/src/main/java/app/lovable/svj/MainActivity.java");
+const accelDetector = await read("android/app/src/main/java/app/lovable/svj/AccelStepDetector.java");
 
 test("the Activity tab exists between Challenges and Train", () => {
   const items = [...navigation.matchAll(/id: "([a-z]+)", label: "(.+?)", icon/g)].map((m) => m[1]);
@@ -37,6 +41,18 @@ test("the app routes the Activity tab and mounts the tracking provider", () => {
   assert.match(app, /import \{ ActivityProvider \} from "\.\/context\/ActivityContext"/);
   assert.match(app, /\{activeTab === "activity" && <ActivityView \/>\}/);
   assert.match(app, /<ActivityProvider userId=\{status\?\.userId \?\? null\}>/);
+  // The app-local Android plugin is registered natively before the bridge is
+  // created, and JS reaches it through Capacitor.registerPlugin (never through
+  // the non-existent window.Capacitor.plugins global).
+  assert.match(mainActivity, /registerPlugin\(VjPedometerPlugin\.class\)/);
+  assert.ok(
+    mainActivity.indexOf("registerPlugin(VjPedometerPlugin.class)") <
+      mainActivity.indexOf("super.onCreate(savedInstanceState)"),
+    "plugin registration must happen before super.onCreate()",
+  );
+  assert.match(vjPedometer, /registerPlugin<VjNativePlugin>\("VjPedometer"\)/);
+  assert.match(vjPedometer, /Capacitor\.isPluginAvailable\("VjPedometer"\)/);
+  assert.doesNotMatch(vjPedometer, /Capacitor\?\.plugins/);
 });
 
 test("the homepage shows a compact Activity card above the Character Hexagon Matrix", () => {
@@ -57,9 +73,24 @@ test("step tracking is native-sensor based with a graceful web fallback", () => 
   // Runtime degrades safely when the native plugin is absent (published web
   // app runs before a new APK is built).
   assert.match(activityContext, /loadPedometer/);
-  assert.match(activityContext, /"denied"|"unsupported"/);
+  assert.match(activityContext, /['"]denied['"]|['"]unsupported['"]/);
   assert.match(activityContext, /requestPermissions/);
   assert.match(activityContext, /startMeasurementUpdates/);
+  assert.match(activityContext, /startAndroidTracking/);
+  // Universal Android sensor hierarchy: counter -> detector -> accelerometer.
+  const counterIdx = vjPluginJava.indexOf("TYPE_STEP_COUNTER");
+  const detectorIdx = vjPluginJava.indexOf("TYPE_STEP_DETECTOR");
+  const accelIdx = vjPluginJava.indexOf("TYPE_ACCELEROMETER");
+  assert.ok(counterIdx > -1 && detectorIdx > -1 && accelIdx > -1);
+  assert.ok(counterIdx < detectorIdx && detectorIdx < accelIdx);
+  assert.match(vjPluginJava, /registerListener\(this, selectedSensor/);
+  assert.match(vjPluginJava, /accelDetector\.onSample/);
+  assert.match(accelDetector, /MIN_STEP_INTERVAL_MS/);
+  // Mode-aware status copy so the Activity screen never says only "Connecting…".
+  assert.match(activityContext, /Step tracking active — hardware counter\./);
+  assert.match(activityContext, /Step tracking active — motion estimate/);
+  assert.match(activityContext, /No compatible step sensor found on this device\./);
+  assert.match(activityView, /Estimated steps — accelerometer motion detection/);
 });
 
 test("daily counts persist and reset at midnight", () => {
@@ -71,6 +102,8 @@ test("daily counts persist and reset at midnight", () => {
   // (sessionRefSteps/sessionLastSteps keep the live session anchored).
   assert.match(tracker, /sessionRefSteps/);
   assert.match(tracker, /sessionLastSteps/);
+  assert.match(activityContext, /nativeState/);
+  assert.match(activityContext, /STARTUP_WINDOW_MS/);
 });
 
 test("calories are labeled as estimates and split active vs total", () => {
@@ -93,6 +126,10 @@ test("step-milestone XP cannot be double-awarded on the same day", () => {
     activityContext.indexOf("awardXp(milestone.xp, { physical: 1 })");
   assert.ok(claimFirst, "milestone must be claimed before XP is granted");
   assert.match(activityContext, /paidMilestonesRef/);
+  // Diagnostics stay on by default on Android and are switched off only by the
+  // native release (non-debuggable) flag, never by import.meta.env.DEV.
+  assert.match(activityContext, /showDiagnostics/);
+  assert.match(activityContext, /info\.debug === false/);
 });
 
 test("activity XP flows through the existing SVJ XP system", () => {
@@ -109,4 +146,5 @@ test("history provides 7-day and 30-day views with averages and best day", () =>
   assert.match(activityView, /Avg Steps/);
   assert.match(activityView, /Best Day/);
   assert.match(activityView, /Avg KCAL/);
+  assert.match(activityView, /ANDROID PEDOMETER DEBUG/);
 });

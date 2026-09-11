@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  applyDailyTotal,
   applyMeasurement,
   activeKcalGoal,
   buildHistory,
@@ -130,6 +131,54 @@ describe("applyMeasurement", () => {
     const activeAfterFirst = state.today?.activeSeconds ?? 0;
     state = applyMeasurement(state, t2, { steps: 1500, atMs: t2.getTime() });
     assert.equal((state.today?.activeSeconds ?? 0) - activeAfterFirst, 120);
+  });
+});
+
+describe("applyDailyTotal (native Android stream)", () => {
+  it("keeps a valid positive native total as positive daily steps", () => {
+    const state = applyDailyTotal(emptyActivityState(), MORNING, 900, MORNING.getTime());
+    assert.equal(state.today?.steps, 900);
+    assert.equal(state.today?.dateKey, "2026-09-10");
+    // The first sync has no previous timestamp, so no walking time is implied.
+    assert.equal(state.today?.activeSeconds, 0);
+  });
+
+  it("never double-counts a duplicate or out-of-order event", () => {
+    let state = applyDailyTotal(emptyActivityState(), MORNING, 500, MORNING.getTime());
+    const t2 = new Date(2026, 8, 10, 9, 5, 0);
+    state = applyDailyTotal(state, t2, 500, t2.getTime());
+    assert.equal(state.today?.steps, 500);
+    state = applyDailyTotal(state, t2, 450, t2.getTime());
+    assert.equal(state.today?.steps, 500);
+    const t3 = new Date(2026, 8, 10, 9, 6, 0);
+    state = applyDailyTotal(state, t3, 620, t3.getTime());
+    assert.equal(state.today?.steps, 620);
+    assert.equal(state.today?.activeSeconds, 60);
+  });
+
+  it("a counter reset to zero cannot erase today's steps", () => {
+    let state = applyDailyTotal(emptyActivityState(), MORNING, 4200, MORNING.getTime());
+    const later = new Date(2026, 8, 10, 18, 0, 0);
+    state = applyDailyTotal(state, later, 0, later.getTime());
+    assert.equal(state.today?.steps, 4200);
+  });
+
+  it("rolls over at midnight and starts the new day from the native total", () => {
+    const yesterday = new Date(2026, 8, 10, 23, 59, 0);
+    let state = applyDailyTotal(emptyActivityState(), yesterday, 9000, yesterday.getTime());
+    const today = new Date(2026, 8, 11, 0, 1, 0);
+    state = applyDailyTotal(state, today, 20, today.getTime());
+    assert.equal(state.today?.dateKey, "2026-09-11");
+    assert.equal(state.today?.steps, 20);
+    assert.equal(state.days[state.days.length - 1]?.steps, 9000);
+  });
+
+  it("ignores negative or non-finite readings", () => {
+    let state = applyDailyTotal(emptyActivityState(), MORNING, 300, MORNING.getTime());
+    const later = new Date(2026, 8, 10, 10, 0, 0);
+    state = applyDailyTotal(state, later, Number.NaN, later.getTime());
+    state = applyDailyTotal(state, later, -50, later.getTime());
+    assert.equal(state.today?.steps, 300);
   });
 });
 

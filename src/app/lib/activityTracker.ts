@@ -134,7 +134,7 @@ export function normalizeActivityState(value: unknown): ActivityState {
 
 /**
  * Roll a day over: when the local date changes, the live record is archived
- * and tracking restarts from zero for the new day (midnight reset).
+ * and tracking restarts from zero for the new day (midnight rollover).
  *
  * Any live sensor session is re-anchored to the new day: its last reading
  * becomes the new session reference, so the next delta (reading - reference)
@@ -222,6 +222,44 @@ export function applyMeasurement(
         ? nonNegative(measurement.distanceMeters)
         : rolled.sessionLastDistance,
     lastSyncedAt: atMs,
+  };
+}
+
+/**
+ * Merge an authoritative "steps so far today" reading.
+ *
+ * The Android native bridge (VjPedometerPlugin) already converts its sensor
+ * data into today's total: the hardware counter subtracts its own persisted
+ * baseline, and the detector/accelerometer modes count events. That total is a
+ * daily value, not a session-relative delta, so it must be merged with `max`:
+ *
+ *  - a duplicate/out-of-order event can never double-count,
+ *  - a counter reset or a lower reading can never reduce (or zero) today's
+ *    steps,
+ *  - the calorie/history maths keeps receiving a single non-negative total.
+ */
+export function applyDailyTotal(
+  state: ActivityState,
+  now: Date,
+  totalSteps: number,
+  atMs?: number,
+): ActivityState {
+  const { state: rolled } = rollActivityDay(state, now);
+  const today = rolled.today ?? freshDayRecord(dateKeyOf(now));
+  const total = nonNegative(totalSteps);
+  const steps = Math.max(today.steps, total);
+  const added = Math.max(0, steps - today.steps);
+  const timestamp = atMs ?? now.getTime();
+  const elapsedSinceSync = rolled.lastSyncedAt
+    ? Math.min((timestamp - rolled.lastSyncedAt) / 1000, 120)
+    : 0;
+  const activeSeconds =
+    added > 0 ? today.activeSeconds + Math.max(0, elapsedSinceSync) : today.activeSeconds;
+  return {
+    ...rolled,
+    today: { ...today, steps, activeSeconds },
+    sessionLastSteps: total,
+    lastSyncedAt: timestamp,
   };
 }
 

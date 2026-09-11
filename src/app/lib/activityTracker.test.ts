@@ -28,7 +28,7 @@ describe("dateKeyOf", () => {
 });
 
 describe("rollActivityDay", () => {
-  it("archives today and resets baselines at midnight", () => {
+  it("archives today, resets baselines, and re-anchors a live session at midnight", () => {
     const state = {
       ...emptyActivityState(),
       today: {
@@ -40,16 +40,20 @@ describe("rollActivityDay", () => {
         totalKcal: 1800,
         xpMilestones: [2500],
       },
-      sessionBaseSteps: 4200,
-      sessionBaseDistance: 3000,
+      sessionRefSteps: 4200,
+      sessionRefDistance: 3000,
+      sessionLastSteps: 8050,
+      sessionLastDistance: 5800,
     };
     const { state: rolled, rolled: didRoll } = rollActivityDay(state, MORNING);
     assert.equal(didRoll, true);
     assert.equal(rolled.today?.dateKey, "2026-09-10");
     assert.equal(rolled.today?.steps, 0);
-    assert.equal(rolled.sessionBaseSteps, 0);
     assert.equal(rolled.days.length, 1);
     assert.equal(rolled.days[0].steps, 4200);
+    // The live session re-anchors: the next delta counts only post-midnight steps.
+    assert.equal(rolled.sessionRefSteps, 8050);
+    assert.equal(rolled.sessionRefDistance, 5800);
   });
 
   it("keeps the same record within one day", () => {
@@ -70,23 +74,39 @@ describe("rollActivityDay", () => {
     assert.equal(rolled.today?.steps, 10);
     assert.equal(rolled.days.length, 0);
   });
+
+  it("counts only the delta when a live session crosses midnight", () => {
+    // Production bug regression: an Android session reporting 8050 cumulative
+    // steps at 00:01 must add only post-midnight steps to the new day.
+    let state = startSession(emptyActivityState(), new Date(2026, 8, 9, 8, 0, 0), 0);
+    const lateNight = new Date(2026, 8, 9, 23, 59, 0);
+    state = applyMeasurement(state, lateNight, { steps: 8050, atMs: lateNight.getTime() });
+    assert.equal(state.today?.steps, 8050);
+    const nextDay = new Date(2026, 8, 10, 0, 1, 0);
+    state = applyMeasurement(state, nextDay, { steps: 8080, atMs: nextDay.getTime() });
+    assert.equal(state.today?.dateKey, "2026-09-10");
+    assert.equal(state.today?.steps, 30);
+  });
 });
 
 describe("applyMeasurement", () => {
-  it("adds the persisted session baseline to session-relative sensor steps", () => {
+  it("merges the anchor baseline with session-relative sensor deltas", () => {
+    // startSession(6800) seeds today with 6800 walked steps; the session's
+    // first cumulative reading of 1200 adds only its delta (1200 - 0).
     let state = startSession(emptyActivityState(), MORNING, 6800);
     state = applyMeasurement(state, EVENING, { steps: 1200, atMs: EVENING.getTime() });
     assert.equal(state.today?.steps, 8000);
     assert.equal(state.today?.dateKey, "2026-09-10");
   });
 
-  it("never decreases the day count when a session restarts lower", () => {
-    let state = startSession(emptyActivityState(), MORNING, 5000);
-    state = applyMeasurement(state, new Date(2026, 8, 10, 12, 0, 0), { steps: 300 });
-    assert.equal(state.today?.steps, 5300);
-    // Sensor session reset (app restart) but persisted day is higher.
-    state = applyMeasurement(state, EVENING, { steps: 100, atMs: EVENING.getTime() });
-    assert.equal(state.today?.steps, 5300);
+  it("counts only the delta between successive readings", () => {
+    let state = startSession(emptyActivityState(), MORNING, 0);
+    const t1 = new Date(2026, 8, 10, 12, 0, 0);
+    state = applyMeasurement(state, t1, { steps: 300, atMs: t1.getTime() });
+    assert.equal(state.today?.steps, 300);
+    const t2 = new Date(2026, 8, 10, 13, 0, 0);
+    state = applyMeasurement(state, t2, { steps: 700, atMs: t2.getTime() });
+    assert.equal(state.today?.steps, 700); // +400 delta, not 700 again
   });
 
   it("does not count active time before the first sync of a session", () => {
@@ -135,6 +155,8 @@ describe("milestones", () => {
     state = applyMeasurement(state, EVENING, { steps: 2600, atMs: EVENING.getTime() });
     state = claimMilestone(state, EVENING, 2500);
     const nextDay = new Date(2026, 8, 11, 8, 0, 0);
+    // A new sensor session anchors the next day from zero.
+    state = startSession(state, nextDay, 0);
     state = applyMeasurement(state, nextDay, { steps: 2600, atMs: nextDay.getTime() });
     const pending = pendingMilestones(state.today);
     assert.ok(pending.some((m) => m.steps === 2500));
@@ -210,14 +232,16 @@ describe("normalizeActivityState", () => {
     const restored = normalizeActivityState({
       days: [{ dateKey: "2026-09-08", steps: -5, activeSeconds: "x" }, null, { steps: 10 }],
       today: { dateKey: "2026-09-09", steps: 300, xpMilestones: ["2500", 2500] },
-      sessionBaseSteps: "bad",
+      sessionRefSteps: "bad",
+      sessionLastSteps: 456,
       lastSyncedAt: 123,
     });
     assert.equal(restored.days.length, 1);
     assert.equal(restored.days[0].steps, 0);
     assert.equal(restored.today?.steps, 300);
     assert.deepEqual(restored.today?.xpMilestones, [2500]);
-    assert.equal(restored.sessionBaseSteps, 0);
+    assert.equal(restored.sessionRefSteps, 0);
+    assert.equal(restored.sessionLastSteps, 456);
     assert.equal(restored.lastSyncedAt, 123);
   });
 

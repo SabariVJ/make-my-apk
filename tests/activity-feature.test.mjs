@@ -67,8 +67,10 @@ test("daily counts persist and reset at midnight", () => {
   assert.match(tracker, /ACTIVITY_HISTORY_CAP = 60/);
   assert.match(activityContext, /svj_activity_v1/);
   assert.match(activityContext, /rollActivityDay\(prev, now\)/);
-  // Session-relative Android steps are merged on top of the persisted baseline.
-  assert.match(tracker, /sessionBaseSteps/);
+  // Session-relative Android steps are merged on top of the persisted baseline
+  // (sessionRefSteps/sessionLastSteps keep the live session anchored).
+  assert.match(tracker, /sessionRefSteps/);
+  assert.match(tracker, /sessionLastSteps/);
 });
 
 test("calories are labeled as estimates and split active vs total", () => {

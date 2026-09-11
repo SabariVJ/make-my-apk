@@ -49,9 +49,14 @@ export interface ActivityState {
   /** Archived days, oldest first. Today lives in `today` until rollover. */
   days: ActivityDayRecord[];
   today: ActivityDayRecord | null;
-  /** Steps counted before the current sensor session began (today only). */
-  sessionBaseSteps: number;
-  sessionBaseDistance: number;
+  /** Today's total at the moment the live sensor session (re)anchored. */
+  sessionRefSteps: number;
+  sessionRefDistance: number;
+  /** Last cumulative reading reported by the live session's listener.
+   *  Pedometer sessions report steps since the session started, so each
+   *  accepted event contributes `reading - sessionLastSteps`. */
+  sessionLastSteps: number;
+  sessionLastDistance: number;
   /** Epoch ms of the most recent accepted sensor measurement. */
   lastSyncedAt: number | null;
 }
@@ -72,8 +77,10 @@ export function emptyActivityState(): ActivityState {
     version: 1,
     days: [],
     today: null,
-    sessionBaseSteps: 0,
-    sessionBaseDistance: 0,
+    sessionRefSteps: 0,
+    sessionRefDistance: 0,
+    sessionLastSteps: 0,
+    sessionLastDistance: 0,
     lastSyncedAt: null,
   };
 }
@@ -117,8 +124,10 @@ export function normalizeActivityState(value: unknown): ActivityState {
     version: 1,
     days,
     today,
-    sessionBaseSteps: nonNegative(saved.sessionBaseSteps),
-    sessionBaseDistance: nonNegative(saved.sessionBaseDistance),
+    sessionRefSteps: nonNegative(saved.sessionRefSteps),
+    sessionRefDistance: nonNegative(saved.sessionRefDistance),
+    sessionLastSteps: nonNegative(saved.sessionLastSteps),
+    sessionLastDistance: nonNegative(saved.sessionLastDistance),
     lastSyncedAt: typeof saved.lastSyncedAt === "number" ? saved.lastSyncedAt : null,
   };
 }
@@ -126,6 +135,10 @@ export function normalizeActivityState(value: unknown): ActivityState {
 /**
  * Roll a day over: when the local date changes, the live record is archived
  * and tracking restarts from zero for the new day (midnight reset).
+ *
+ * Any live sensor session is re-anchored to the new day: its last reading
+ * becomes the new session reference, so the next delta (reading - reference)
+ * counts only steps taken after midnight — never yesterday's total.
  */
 export function rollActivityDay(
   state: ActivityState,
@@ -134,13 +147,15 @@ export function rollActivityDay(
   const key = dateKeyOf(now);
   if (state.today && state.today.dateKey === key) return { state, rolled: false };
   const days = state.today ? [...state.days, state.today].slice(-ACTIVITY_HISTORY_CAP) : state.days;
+  const refSteps = nonNegative(state.sessionLastSteps);
+  const refDistance = nonNegative(state.sessionLastDistance);
   return {
     state: {
       ...state,
       days,
       today: freshDayRecord(key),
-      sessionBaseSteps: 0,
-      sessionBaseDistance: 0,
+      sessionRefSteps: refSteps,
+      sessionRefDistance: refDistance,
     },
     rolled: true,
   };
@@ -161,30 +176,32 @@ export function freshDayRecord(dateKey: string): ActivityDayRecord {
 /**
  * Merge a live pedometer measurement into today's record.
  *
- * Sensor sessions report steps accumulated since the session started, so the
- * persisted per-session baseline is added on top. Baselines come from the last
- * synced value (Android) or a midnight→now query (iOS) — see ActivityContext.
+ * The measurement is a cumulative reading since the current sensor session
+ * started (Android TYPE_STEP_COUNTER session delta; iOS startUpdates(from:
+ * session start)). Only the delta since the previous reading counts, so a
+ * live session surviving midnight keeps counting the new day correctly.
  */
 export function applyMeasurement(
   state: ActivityState,
   now: Date,
   measurement: {
-    steps: number; // steps since the current sensor session started
+    steps: number; // cumulative since the current sensor session started
     distanceMeters?: number;
     atMs?: number; // measurement end time (defaults to now)
   },
 ): ActivityState {
   const { state: rolled } = rollActivityDay(state, now);
   const today = rolled.today ?? freshDayRecord(dateKeyOf(now));
-  const steps = Math.max(
-    today.steps,
-    nonNegative(rolled.sessionBaseSteps) + nonNegative(measurement.steps),
-  );
+  const reading = nonNegative(measurement.steps);
+  const lastReading = nonNegative(rolled.sessionLastSteps);
+  const deltaSteps = Math.max(0, reading - lastReading);
+  const steps = today.steps + deltaSteps;
   const distance =
     measurement.distanceMeters != null
-      ? Math.max(
-          today.distanceMeters,
-          nonNegative(rolled.sessionBaseDistance) + nonNegative(measurement.distanceMeters),
+      ? today.distanceMeters +
+        Math.max(
+          0,
+          nonNegative(measurement.distanceMeters) - nonNegative(rolled.sessionLastDistance),
         )
       : today.distanceMeters;
   // Walking-time estimate: grow active time only while steps increase, and cap
@@ -194,14 +211,32 @@ export function applyMeasurement(
     ? Math.min((atMs - rolled.lastSyncedAt) / 1000, 120)
     : 0;
   const activeSeconds =
-    steps > today.steps ? today.activeSeconds + Math.max(0, elapsedSinceSync) : today.activeSeconds;
+    deltaSteps > 0 ? today.activeSeconds + Math.max(0, elapsedSinceSync) : today.activeSeconds;
   const nextToday: ActivityDayRecord = { ...today, steps, distanceMeters: distance, activeSeconds };
-  return { ...rolled, today: nextToday, lastSyncedAt: atMs };
+  return {
+    ...rolled,
+    today: nextToday,
+    sessionLastSteps: reading,
+    sessionLastDistance:
+      measurement.distanceMeters != null
+        ? nonNegative(measurement.distanceMeters)
+        : rolled.sessionLastDistance,
+    lastSyncedAt: atMs,
+  };
 }
 
 /**
- * Begin a sensor session: the baseline is the authoritative day count before
- * this session's deltas (last synced value, or a queried midnight total).
+ * Anchor a fresh sensor session to the current day count.
+ *
+ * `baselineSteps` is the authoritative count already walked today — the last
+ * synced value (Android) or the true midnight→now total queried from
+ * CMPedometer (iOS). The day record is raised to the baseline (monotonic, so
+ * a stale persisted value catches up to the iOS query without ever losing
+ * data), and the session reference starts from that same count. Live events
+ * then contribute only `reading - lastReading` deltas, so nothing the
+ * baseline already accounted for is counted twice, and a counter that resets
+ * mid-session (device reboot) clamps to a zero delta instead of going
+ * negative.
  */
 export function startSession(
   state: ActivityState,
@@ -210,10 +245,19 @@ export function startSession(
   baselineDistance = 0,
 ): ActivityState {
   const { state: rolled } = rollActivityDay(state, now);
+  const today = rolled.today ?? freshDayRecord(dateKeyOf(now));
+  const steps = Math.max(today.steps, nonNegative(baselineSteps));
+  const distance = Math.max(today.distanceMeters, nonNegative(baselineDistance));
   return {
     ...rolled,
-    sessionBaseSteps: Math.max(nonNegative(baselineSteps), rolled.today?.steps ?? 0),
-    sessionBaseDistance: Math.max(nonNegative(baselineDistance), rolled.today?.distanceMeters ?? 0),
+    today:
+      steps !== today.steps || distance !== today.distanceMeters
+        ? { ...today, steps, distanceMeters: distance }
+        : today,
+    sessionRefSteps: steps,
+    sessionRefDistance: distance,
+    sessionLastSteps: 0,
+    sessionLastDistance: 0,
   };
 }
 

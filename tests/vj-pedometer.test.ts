@@ -198,7 +198,9 @@ describe("VjPedometer universal sensor selection (native)", () => {
     assert.ok(nativePlugin.includes("accelDetector.onSample("));
     assert.ok(detector.includes("MIN_STEP_INTERVAL_MS"));
     assert.ok(detector.includes("PEAK_TO_HIGH"));
-    assert.ok(detector.includes("MAX_PEAK"));
+    assert.ok(
+      detector.includes("VIOLENT_DYNAMIC_CEILING") || detector.includes("window_dynamic_energy"),
+    );
   });
 });
 
@@ -250,10 +252,10 @@ describe("VjPedometer state persistence", () => {
       listenerRegistered: true,
       sensorStarted: true,
       mode: "accelerometer",
-      firstRaw: 0,
-      lastRaw: 0,
+      firstRaw: -1,
+      lastRaw: -1,
       dailySteps: 27,
-      guardedLastRaw: 0,
+      guardedLastRaw: -1,
       startDateMs: 1762000000000,
       lastEventMs: 1762000000300,
       lastError: null,

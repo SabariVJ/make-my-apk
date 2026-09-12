@@ -65,6 +65,20 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     private boolean listenerRegistered = false;
     private boolean sensorStarted = false;
 
+    /**
+     * User-controlled tracking. The sensor listener only exists between an
+     * explicit startUpdates() (START TRACKING) and stopUpdates()/pause/destroy.
+     * There is no foreground service, no polling, and no automatic restart.
+     */
+    private boolean trackingRequested = false;
+    private boolean listenerRemoved = false;
+    private long sessionBaselineRaw = -1;
+    private long sessionCarrySteps = 0;
+    private long sessionSteps = 0;
+    private long trackedDayBase = 0;
+    private long sessionStartedMs = -1;
+    private long sessionStoppedMs = -1;
+
     private long firstRaw = -1;
     private long lastRaw = -1;
     private long dailySteps = 0;
@@ -299,11 +313,10 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
                 return;
             }
 
+            // Exactly one listener: any stale registration is removed first.
             if (listenerRegistered) {
-                Log.d(TAG, "startUpdates(): listener already registered");
-                sensorStarted = true;
-                call.resolve();
-                return;
+                Log.d(TAG, "startUpdates(): removing stale listener before re-registering");
+                unregisterLocked("startUpdates-stale");
             }
 
             loadPersistedState();
@@ -328,9 +341,30 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
                 return;
             }
 
+            long now = System.currentTimeMillis();
+            // Fresh session: a new baseline is established, so steps taken
+            // before START are never counted.
+            if (startDateMs > 0 && startDateMs < dayStartMs(now)) {
+                Log.i(TAG, "midnight rollover on session start");
+                dailySteps = 0;
+            }
+            startDateMs = now;
+            trackedDayBase = dailySteps;
+            sessionBaselineRaw = -1;
+            sessionCarrySteps = 0;
+            sessionSteps = 0;
+            sessionStartedMs = now;
+            sessionStoppedMs = -1;
+            accelDetector.reset();
+            accelEvents = 0;
+            ownedSteps = 0;
+
+            trackingRequested = true;
+            listenerRemoved = false;
             listenerRegistered = true;
             sensorStarted = true;
             lastError = null;
+            Log.i(TAG, "tracking session started (mode=" + selectedMode + ", trackedDayBase=" + trackedDayBase + ")");
             persistState();
             call.resolve();
         }
@@ -341,20 +375,34 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
         Log.d(TAG, "stopUpdates() called");
         synchronized (lock) {
             unregisterLocked("stopUpdates");
+            persistState();
             call.resolve();
         }
     }
 
+    /**
+     * Physically unregisters the SensorEventListener — events stop arriving at
+     * the native layer, they are not merely ignored in JavaScript.
+     */
     private void unregisterLocked(String reason) {
         if (sensorManager != null && listenerRegistered) {
             try {
                 sensorManager.unregisterListener(this);
+                Log.i(TAG, "unregisterListener() done (" + reason + ")");
             } catch (Exception e) {
                 Log.w(TAG, "unregisterListener failed during " + reason, e);
             }
         }
+        if (listenerRegistered || trackingRequested) {
+            sessionStoppedMs = System.currentTimeMillis();
+        }
         listenerRegistered = false;
         sensorStarted = false;
+        trackingRequested = false;
+        listenerRemoved = true;
+        sessionBaselineRaw = -1;
+        accelDetector.reset();
+        accelEvents = 0;
     }
 
     @PluginMethod
@@ -364,6 +412,13 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
             result.put("sensorAvailable", sensorAvailable);
             result.put("listenerRegistered", listenerRegistered);
             result.put("sensorStarted", sensorStarted);
+            result.put("trackingRequested", trackingRequested);
+            result.put("trackingActive", trackingRequested && listenerRegistered);
+            result.put("listenerRemoved", listenerRemoved);
+            result.put("sessionBaselineRaw", sessionBaselineRaw);
+            result.put("sessionSteps", sessionSteps);
+            result.put("sessionStartedMs", sessionStartedMs);
+            result.put("sessionStoppedMs", sessionStoppedMs);
             result.put("mode", selectedMode);
             result.put("firstRaw", firstRaw);
             result.put("lastRaw", lastRaw);

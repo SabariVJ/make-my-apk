@@ -58,12 +58,17 @@ function deferred() {
   });
   return { promise, resolve };
 }
+function missingNativeMethod(name) {
+  return Object.assign(new Error(`"VjPedometer.${name}()" is not implemented on android`), {
+    code: "UNIMPLEMENTED",
+  });
+}
 function makeNative() {
   const native = {
     state: baseState(),
     permission: "granted",
     mode: "counter",
-    calls: { start: 0, stop: 0, request: 0, info: 0 },
+    calls: { start: 0, stop: 0, legacyStop: 0, request: 0, info: 0 },
     handlers: { measurement: new Set(), trackingStateChanged: new Set() },
     removed: [],
     startGate: null,
@@ -71,6 +76,10 @@ function makeNative() {
     addGate: null,
     addFails: false,
     stopFails: false,
+    legacyBridge: false,
+    missingLegacyStop: false,
+    missingStart: false,
+    stopLeavesRegistered: false,
     maxMeasurementListeners: 0,
     async getSensorInfo() {
       native.calls.info++;
@@ -85,6 +94,10 @@ function makeNative() {
       };
     },
     async getState() {
+      if (native.legacyBridge) {
+        const { sessionId, ...legacy } = native.state;
+        return legacy;
+      }
       return { ...native.state };
     },
     async checkPermissions() {
@@ -97,6 +110,7 @@ function makeNative() {
     },
     async startTracking({ sessionId }) {
       native.calls.start++;
+      if (native.legacyBridge || native.missingStart) throw missingNativeMethod("startTracking");
       if (native.startGate) await native.startGate.promise;
       native.state = {
         ...baseState(),
@@ -114,7 +128,17 @@ function makeNative() {
     },
     async stopTracking() {
       native.calls.stop++;
+      if (native.legacyBridge) throw missingNativeMethod("stopTracking");
+      return native.finishStop();
+    },
+    async stopUpdates() {
+      native.calls.legacyStop++;
+      if (native.missingLegacyStop) throw missingNativeMethod("stopUpdates");
+      await native.finishStop(); // Older native STOP resolves void.
+    },
+    async finishStop() {
       if (native.stopFails) throw new Error("native unregister failed");
+      if (native.stopLeavesRegistered) return { ...native.state };
       Object.assign(native.state, {
         trackingRequested: false,
         trackingActive: false,
@@ -180,12 +204,12 @@ function tree(show = true, userId = "test-user") {
     ),
   );
 }
-async function mount(show = true, userId = "test-user") {
+async function mount(show = true, userId = "test-user", expectedStatus = "stopped") {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   await act(async () => {
     view = render(tree(show, userId));
   });
-  await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+  await waitFor(() => assert.equal(api.trackingStatus, expectedStatus));
 }
 async function start() {
   await act(async () => {
@@ -475,11 +499,102 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await stop();
     assert.equal(api.trackingStatus, "error");
     assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.match(document.body.textContent, /native unregister failed/);
     assert.ok(screen.getByRole("button", { name: "RETRY STOP" }));
+    const stops = test.native.calls.stop;
     test.native.stopFails = false;
-    await stop();
-    assert.equal(api.trackingStatus, "stopped");
+    fireEvent.click(screen.getByRole("button", { name: "RETRY STOP" }));
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+    assert.ok(test.native.calls.stop > stops);
+    assert.equal(test.native.calls.legacyStop, 0, "genuine cleanup errors must not use fallback");
     assert.equal(api.debugInfo.listenerRemoved, true);
+  });
+  it("stops an older installed plugin and explains that an app update is required", async () => {
+    test.native.legacyBridge = true;
+    Object.assign(test.native.state, {
+      listenerRegistered: true,
+      listenerRemoved: false,
+      sensorStarted: true,
+      trackingRequested: true,
+      trackingActive: true,
+    });
+    await mount(true, "test-user", "update-required");
+    assert.ok(test.native.calls.legacyStop > 0);
+    assert.equal(test.native.state.listenerRegistered, false);
+    assert.equal(api.trackingActive, false);
+    assert.equal(api.debugInfo.listenerRemoved, true);
+    assert.equal(screen.getByRole("button", { name: "APP UPDATE REQUIRED" }).disabled, true);
+    assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
+    assert.match(document.body.textContent, /install the latest Android app/i);
+    await start();
+    assert.equal(test.native.calls.start, 0);
+    await emit(10000);
+    assert.equal(api.todaySteps, 0);
+    assert.equal(api.activeKcal, 0);
+    assert.deepEqual(test.xp, []);
+  });
+  it("the Retry Stop button recovers a legacy stop failure instead of repeating a missing method", async () => {
+    test.native.legacyBridge = true;
+    test.native.stopFails = true;
+    await mount(true, "test-user", "error");
+    const stops = test.native.calls.legacyStop;
+    test.native.stopFails = false;
+    fireEvent.click(screen.getByRole("button", { name: "RETRY STOP" }));
+    await waitFor(() => assert.equal(api.trackingStatus, "update-required"));
+    assert.ok(test.native.calls.legacyStop > stops);
+    assert.equal(test.native.state.listenerRegistered, false);
+    assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
+  });
+  it("does not claim successful STOP when native still reports a registered listener", async () => {
+    await mount();
+    await start();
+    test.native.stopLeavesRegistered = true;
+    await stop();
+    assert.equal(api.trackingStatus, "error");
+    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(test.native.state.listenerRegistered, true);
+    test.native.stopLeavesRegistered = false;
+    fireEvent.click(screen.getByRole("button", { name: "RETRY STOP" }));
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+  });
+  it("does not claim legacy cleanup succeeded while its listener remains registered", async () => {
+    test.native.legacyBridge = true;
+    test.native.stopLeavesRegistered = true;
+    Object.assign(test.native.state, { listenerRegistered: true, sensorStarted: true });
+    await mount(true, "test-user", "error");
+    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(test.native.state.listenerRegistered, true);
+  });
+  it("explains an unsupported installed app when neither native Stop method exists", async () => {
+    test.native.legacyBridge = true;
+    test.native.missingLegacyStop = true;
+    Object.assign(test.native.state, {
+      listenerRegistered: true,
+      listenerRemoved: false,
+      sensorStarted: true,
+    });
+    await mount(true, "test-user", "update-required");
+    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(
+      test.native.state.listenerRegistered,
+      true,
+      "unavailable Stop must not fake removal",
+    );
+    assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
+    assert.match(document.body.textContent, /close SVJ/i);
+    assert.equal(test.native.calls.start, 0);
+  });
+  it("missing native Start requires an update and never starts a legacy counting session", async () => {
+    await mount();
+    test.native.missingStart = true;
+    fireEvent.click(screen.getByRole("button", { name: "START TRACKING" }));
+    await waitFor(() => assert.equal(api.trackingStatus, "update-required"));
+    assert.equal(test.native.calls.start, 1);
+    assert.equal(test.native.state.listenerRegistered, false);
+    assert.equal(test.native.handlers.measurement.size, 0);
+    assert.equal(test.native.handlers.trackingStateChanged.size, 0);
+    assert.equal(api.trackingRequested, false);
+    assert.deepEqual(test.xp, []);
   });
   it("native pause notification updates the UI and visibility does not restart tracking", async () => {
     await mount();

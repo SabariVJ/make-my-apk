@@ -292,7 +292,7 @@ export const ActivityView: React.FC = () => {
       </p>
       <button
         type="button"
-        disabled={trackingStatus === "stopping"}
+        disabled={trackingStatus === "stopping" || trackingStatus === "update-required"}
         onClick={() => {
           if (trackingRequested || trackingActive || trackingStatus === "error")
             void stopTracking();
@@ -300,11 +300,13 @@ export const ActivityView: React.FC = () => {
         }}
         className="mb-5 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
       >
-        {trackingStatus === "error"
-          ? "RETRY STOP"
-          : trackingRequested || trackingActive
-            ? "STOP TRACKING"
-            : "START TRACKING"}
+        {trackingStatus === "update-required"
+          ? "APP UPDATE REQUIRED"
+          : trackingStatus === "error"
+            ? "RETRY STOP"
+            : trackingRequested || trackingActive
+              ? "STOP TRACKING"
+              : "START TRACKING"}
       </button>
 
       {/* Today's activity */}

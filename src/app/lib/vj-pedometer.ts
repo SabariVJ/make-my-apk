@@ -46,6 +46,8 @@ export interface VjPermissionState {
 }
 
 export interface VjPedometerState extends VjTrackingState {
+  /** Bridge compatibility hint: an older native STOP was used for cleanup only. */
+  requiresAppUpdate?: boolean;
   sensorAvailable: boolean;
   listenerRegistered: boolean;
   sensorStarted: boolean;
@@ -100,15 +102,70 @@ interface VjNativePlugin {
 /** Registered proxy — always use this, never `window.Capacitor.plugins`. */
 export const VjPedometer = registerPlugin<VjNativePlugin>("VjPedometer");
 
+export const VJ_NATIVE_UPDATE_MESSAGE =
+  "Close SVJ and install the latest Android app to use step tracking.";
+
+export class VjNativeUpdateRequiredError extends Error {
+  constructor() {
+    super(VJ_NATIVE_UPDATE_MESSAGE);
+    this.name = "VjNativeUpdateRequiredError";
+  }
+}
+
+function isMissingNativeMethod(error: unknown): boolean {
+  return (
+    typeof error === "object" && error !== null && "code" in error && error.code === "UNIMPLEMENTED"
+  );
+}
+
 export async function vjStartTracking(sessionId: string): Promise<VjPedometerState> {
   if (!vjPluginAvailable()) throw new Error("VjPedometer plugin unavailable");
-  return VjPedometer.startTracking({ sessionId });
+  try {
+    return await VjPedometer.startTracking({ sessionId });
+  } catch (error) {
+    if (isMissingNativeMethod(error)) throw new VjNativeUpdateRequiredError();
+    throw error;
+  }
 }
 
 /** STOP errors propagate: the UI must not claim a failed unregister succeeded. */
 export async function vjStopTracking(): Promise<VjPedometerState | null> {
   if (!vjPluginAvailable()) return null;
-  return VjPedometer.stopTracking();
+  try {
+    return requireStoppedState(await VjPedometer.stopTracking());
+  } catch (error) {
+    // A hosted web update can reach an older APK. Fall back only for an absent
+    // method, never for an actual failure to unregister the sensor.
+    if (!isMissingNativeMethod(error)) throw error;
+  }
+  try {
+    await VjPedometer.stopUpdates();
+    const state = requireStoppedState(await VjPedometer.getState(), true);
+    return { ...state, requiresAppUpdate: true };
+  } catch (error) {
+    if (isMissingNativeMethod(error)) throw new VjNativeUpdateRequiredError();
+    throw error;
+  }
+}
+
+function requireStoppedState(
+  state: VjPedometerState | undefined,
+  legacy = false,
+): VjPedometerState {
+  if (
+    !state ||
+    state.listenerRegistered !== false ||
+    state.sensorStarted !== false ||
+    state.trackingRequested === true ||
+    state.trackingActive === true ||
+    (!legacy &&
+      (state.listenerRemoved !== true ||
+        state.trackingRequested !== false ||
+        state.trackingActive !== false))
+  ) {
+    throw new Error("The native sensor did not confirm that its listener was removed.");
+  }
+  return state;
 }
 
 export function vjPluginAvailable(): boolean {

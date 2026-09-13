@@ -23,6 +23,8 @@ import {
   vjPluginAvailable,
   vjAddMeasurementListener,
   vjAddTrackingStateListener,
+  VjNativeUpdateRequiredError,
+  VJ_NATIVE_UPDATE_MESSAGE,
   type VjPedometerState,
   type VjSensorInfo,
   type VjSensorMode,
@@ -70,7 +72,14 @@ interface ActivityContextValue {
   kcalGoal: number;
   kcalPercent: number;
   trackingStatus:
-    "stopped" | "starting" | "tracking" | "stopping" | "denied" | "unsupported" | "error";
+    | "stopped"
+    | "starting"
+    | "tracking"
+    | "stopping"
+    | "denied"
+    | "unsupported"
+    | "error"
+    | "update-required";
   trackingRequested: boolean;
   trackingActive: boolean;
   startTracking: () => Promise<void>;
@@ -201,6 +210,7 @@ export function ActivityProvider({
   const mountedRef = useRef(false);
   const requestedRef = useRef(false);
   const activeRef = useRef(false);
+  const updateRequiredRef = useRef(false);
   const generationRef = useRef(0);
   const rewardSessionRef = useRef<number | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
@@ -296,7 +306,10 @@ export function ActivityProvider({
         trackingRequested: native.trackingRequested,
         trackingActive: native.trackingActive,
         listenerRegistered: native.listenerRegistered,
-        listenerRemoved: native.listenerRemoved,
+        listenerRemoved:
+          native.listenerRemoved === true &&
+          native.listenerRegistered === false &&
+          native.sensorStarted === false,
         sessionBaselineRaw: native.sessionBaselineRaw >= 0 ? native.sessionBaselineRaw : null,
         sessionSteps: native.sessionSteps,
         lastRawSteps: native.lastRaw >= 0 ? native.lastRaw : null,
@@ -348,8 +361,10 @@ export function ActivityProvider({
         const result = await immediateStop;
         const native = wasStarting ? await stopSensor() : result.native;
         if (!wasStarting && result.error) throw result.error;
-        if (generation === generationRef.current && native) syncNative(native);
-        else if (Capacitor.getPlatform() !== "android" && pluginRef.current) {
+        if (generation === generationRef.current && native) {
+          syncNative(native);
+          if (native.requiresAppUpdate) updateRequiredRef.current = true;
+        } else if (Capacitor.getPlatform() !== "android" && pluginRef.current) {
           debugRef.current.listenerRegistered = false;
           debugRef.current.listenerRemoved = true;
           debugRef.current.sensorStarted = false;
@@ -365,12 +380,21 @@ export function ActivityProvider({
         }
       }
       if (generation !== generationRef.current || !mountedRef.current) return;
-      if (failure) {
+      if (failure instanceof VjNativeUpdateRequiredError) {
+        updateRequiredRef.current = true;
+        debugRef.current.lastError = failure.message;
+        setTrackingStatus("update-required");
+        setStatusMessage(VJ_NATIVE_UPDATE_MESSAGE);
+      } else if (failure) {
         debugRef.current.lastError = String(failure);
         setTrackingStatus("error");
+        const detail = failure instanceof Error ? failure.message : String(failure);
         setStatusMessage(
-          "Tracking stopped accepting steps, but sensor cleanup failed. Retry STOP.",
+          `Tracking stopped accepting steps, but sensor cleanup failed: ${detail} Retry STOP.`,
         );
+      } else if (updateRequiredRef.current) {
+        setTrackingStatus("update-required");
+        setStatusMessage(VJ_NATIVE_UPDATE_MESSAGE);
       } else {
         setTrackingStatus("stopped");
         setStatusMessage("Tracking stopped — press START TRACKING to begin.");
@@ -408,7 +432,8 @@ export function ActivityProvider({
   }, [syncNative, stopTracking, refreshDebug]);
 
   const startTracking = useCallback((): Promise<void> => {
-    if (!userId || !mountedRef.current || requestedRef.current) return Promise.resolve();
+    if (!userId || !mountedRef.current || requestedRef.current || updateRequiredRef.current)
+      return Promise.resolve();
     const generation = ++generationRef.current;
     const sessionId = `${Date.now()}-${generation}`;
     const current = () =>
@@ -609,10 +634,26 @@ export function ActivityProvider({
           : message;
         debugRef.current.trackingRequested = false;
         debugRef.current.trackingActive = false;
+        if (
+          error instanceof VjNativeUpdateRequiredError ||
+          cleanupError instanceof VjNativeUpdateRequiredError
+        )
+          updateRequiredRef.current = true;
+        const retryCleanup = cleanupError && !(cleanupError instanceof VjNativeUpdateRequiredError);
         setTrackingStatus(
-          cleanupError ? "error" : /permission denied/i.test(message) ? "denied" : "unsupported",
+          retryCleanup
+            ? "error"
+            : updateRequiredRef.current
+              ? "update-required"
+              : /permission denied/i.test(message)
+                ? "denied"
+                : "unsupported",
         );
-        setStatusMessage(`Tracking stopped — ${debugRef.current.lastError}`);
+        setStatusMessage(
+          updateRequiredRef.current && !retryCleanup
+            ? VJ_NATIVE_UPDATE_MESSAGE
+            : `Tracking stopped — ${debugRef.current.lastError}`,
+        );
       } finally {
         refreshDebug();
       }

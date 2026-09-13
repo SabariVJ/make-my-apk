@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useActivity } from "../context/ActivityContext";
+import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {

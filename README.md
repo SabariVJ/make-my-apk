@@ -4,7 +4,7 @@ Make this as a apk app
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://make-my-apk.lovable.app
+**Live app**: https://savaje-com.lovable.app
 
 ## Build with Lovable
 

@@ -16,9 +16,22 @@ const detector = read("android/app/src/main/java/app/lovable/svj/AccelStepDetect
 const mainActivity = read("android/app/src/main/java/app/lovable/svj/MainActivity.java");
 const manifest = read("android/app/src/main/AndroidManifest.xml");
 
+const session = {
+  trackingRequested: true,
+  trackingActive: true,
+  listenerRegistered: true,
+  listenerRemoved: false,
+  sessionBaselineRaw: 0,
+  sessionSteps: 0,
+  sessionStartedMs: 1,
+  sessionStoppedMs: -1,
+  sessionId: "test-session",
+};
+
 describe("VjPedometer universal sensor contract", () => {
   it("normalized measurement event always carries a non-negative step count", () => {
     const event: VjMeasurementEvent = {
+      ...session,
       mode: "counter",
       timestamp: 1762000000300,
       rawValue: 5000,
@@ -37,6 +50,7 @@ describe("VjPedometer universal sensor contract", () => {
 
   it("normalized measurement event shape is stable across sensor modes", () => {
     const counter: VjMeasurementEvent = {
+      ...session,
       mode: "counter",
       timestamp: 1,
       rawValue: 1000,
@@ -190,7 +204,9 @@ describe("VjPedometer universal sensor selection (native)", () => {
 
   it("reports the selected mode and never assumes registerListener succeeded", () => {
     assert.ok(nativePlugin.includes('result.put("mode", selectedMode)'));
-    assert.ok(nativePlugin.includes("= sensorManager.registerListener(this, selectedSensor"));
+    assert.ok(
+      nativePlugin.includes("= sensorManager.registerListener(sessionListener, selectedSensor"),
+    );
     assert.ok(nativePlugin.includes("if (!registered)"));
   });
 
@@ -207,6 +223,7 @@ describe("VjPedometer universal sensor selection (native)", () => {
 describe("VjPedometer state persistence", () => {
   it("state stores raw baseline, last raw, and session start", () => {
     const state: VjPedometerState = {
+      ...session,
       sensorAvailable: true,
       listenerRegistered: true,
       sensorStarted: true,
@@ -229,6 +246,7 @@ describe("VjPedometer state persistence", () => {
 
   it("state can represent a detector session", () => {
     const state: VjPedometerState = {
+      ...session,
       sensorAvailable: true,
       listenerRegistered: true,
       sensorStarted: true,
@@ -248,6 +266,7 @@ describe("VjPedometer state persistence", () => {
 
   it("state can represent an estimated accelerometer session", () => {
     const state: VjPedometerState = {
+      ...session,
       sensorAvailable: true,
       listenerRegistered: true,
       sensorStarted: true,

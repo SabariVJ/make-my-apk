@@ -8,7 +8,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.SystemClock;
 import android.util.Log;
+import java.util.Calendar;
+import java.util.UUID;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -54,7 +57,7 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     public static final String MODE_NONE = "none";
 
     private final Object lock = new Object();
-    private final AccelStepDetector accelDetector = new AccelStepDetector();
+    private AccelStepDetector accelDetector;
 
     private SensorManager sensorManager;
     private Sensor selectedSensor;
@@ -64,10 +67,12 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
 
     private boolean listenerRegistered = false;
     private boolean sensorStarted = false;
+    private SensorEventListener sessionListener;
+    private long listenerGeneration = 0;
 
     /**
      * User-controlled tracking. The sensor listener only exists between an
-     * explicit startUpdates() (START TRACKING) and stopUpdates()/pause/destroy.
+     * explicit startTracking() (START TRACKING) and stopTracking()/pause/destroy.
      * There is no foreground service, no polling, and no automatic restart.
      */
     private boolean trackingRequested = false;
@@ -78,6 +83,10 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     private long trackedDayBase = 0;
     private long sessionStartedMs = -1;
     private long sessionStoppedMs = -1;
+    private long sessionStartedNs = -1;
+    private long lastSensorTimestampNs = -1;
+    private long sessionDayOffset = 0;
+    private String sessionId = "";
 
     private long firstRaw = -1;
     private long lastRaw = -1;
@@ -227,6 +236,7 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
         result.put("mode", selectedMode);
         result.put("available", sensorAvailable);
         result.put("debug", isDebuggable());
+        result.put("permission", activityRecognitionState());
         if (selectedSensor != null) {
             result.put("name", selectedSensor.getName());
             result.put("vendor", selectedSensor.getVendor());
@@ -289,8 +299,18 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
 
     @PluginMethod
     public void startUpdates(PluginCall call) {
-        Log.d(TAG, "startUpdates() called (mode=" + selectedMode + ")");
+        startTracking(call);
+    }
+
+    @PluginMethod
+    public void startTracking(PluginCall call) {
+        Log.d(TAG, "startTracking() called (mode=" + selectedMode + ")");
         synchronized (lock) {
+            // Repeated START during a live session must not reset its baseline.
+            if (trackingRequested && listenerRegistered) {
+                call.resolve(stateLocked());
+                return;
+            }
             if (sensorManager == null) {
                 Log.w(TAG, "startUpdates() rejected: SensorManager unavailable");
                 setLastError("SensorManager unavailable on this device.");
@@ -315,20 +335,63 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
 
             // Exactly one listener: any stale registration is removed first.
             if (listenerRegistered) {
-                Log.d(TAG, "startUpdates(): removing stale listener before re-registering");
-                unregisterLocked("startUpdates-stale");
+                if (!unregisterLocked("startTracking-stale")) {
+                    call.reject(lastError);
+                    return;
+                }
             }
 
             loadPersistedState();
             sensorStarted = false;
             listenerRegistered = false;
 
+            long now = System.currentTimeMillis();
+            if (startDateMs < dayStartMs(now)) dailySteps = 0;
+            startDateMs = now;
+            trackedDayBase = dailySteps;
+            // Android supplies the raw counter asynchronously. Invalidate the
+            // old baseline NOW; the first reading of this registration anchors
+            // at zero. Never reuse a persisted raw count from before START.
+            sessionBaselineRaw = -1;
+            firstRaw = -1;
+            lastRaw = -1;
+            guardedLastRaw = -1;
+            sessionCarrySteps = 0;
+            sessionSteps = 0;
+            sessionDayOffset = 0;
+            sessionStartedMs = now;
+            sessionStartedNs = SystemClock.elapsedRealtimeNanos();
+            lastSensorTimestampNs = -1;
+            sessionStoppedMs = -1;
+            sessionId = call.getString("sessionId", UUID.randomUUID().toString());
+            accelDetector = MODE_ACCELEROMETER.equals(selectedMode) ? new AccelStepDetector() : null;
+            accelEvents = 0;
+            ownedSteps = 0;
+            trackingRequested = true;
+            listenerRemoved = false;
+            final long generation = ++listenerGeneration;
+            sessionListener = new SensorEventListener() {
+                @Override
+                public void onSensorChanged(SensorEvent event) {
+                    synchronized (lock) {
+                        if (generation != listenerGeneration) return;
+                        VjPedometerPlugin.this.onSensorChanged(event);
+                    }
+                }
+                @Override
+                public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+            };
+
             boolean registered;
             try {
                 // Never assume success: registerListener() returns a boolean.
-                registered = sensorManager.registerListener(this, selectedSensor, sensorDelayForMode());
+                // Track the attempt so even a partially failed registration
+                // is physically unregistered before reporting the failure.
+                listenerRegistered = true;
+                registered = sensorManager.registerListener(sessionListener, selectedSensor, sensorDelayForMode());
             } catch (Exception e) {
                 Log.e(TAG, "registerListener threw", e);
+                unregisterLocked("start-failed");
                 setLastError("registerListener failed: " + e.getMessage());
                 call.reject("registerListener failed: " + e.getMessage());
                 return;
@@ -336,28 +399,11 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
 
             Log.i(TAG, "registerListener(" + selectedMode + ") returned " + registered);
             if (!registered) {
+                unregisterLocked("start-failed");
                 setLastError("registerListener returned false for " + selectedMode);
                 call.reject("registerListener returned false for " + selectedMode);
                 return;
             }
-
-            long now = System.currentTimeMillis();
-            // Fresh session: a new baseline is established, so steps taken
-            // before START are never counted.
-            if (startDateMs > 0 && startDateMs < dayStartMs(now)) {
-                Log.i(TAG, "midnight rollover on session start");
-                dailySteps = 0;
-            }
-            startDateMs = now;
-            trackedDayBase = dailySteps;
-            sessionBaselineRaw = -1;
-            sessionCarrySteps = 0;
-            sessionSteps = 0;
-            sessionStartedMs = now;
-            sessionStoppedMs = -1;
-            accelDetector.reset();
-            accelEvents = 0;
-            ownedSteps = 0;
 
             trackingRequested = true;
             listenerRemoved = false;
@@ -366,17 +412,25 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
             lastError = null;
             Log.i(TAG, "tracking session started (mode=" + selectedMode + ", trackedDayBase=" + trackedDayBase + ")");
             persistState();
-            call.resolve();
+            notifyListeners("trackingStateChanged", stateLocked());
+            call.resolve(stateLocked());
         }
     }
 
     @PluginMethod
     public void stopUpdates(PluginCall call) {
-        Log.d(TAG, "stopUpdates() called");
+        stopTracking(call);
+    }
+
+    @PluginMethod
+    public void stopTracking(PluginCall call) {
+        Log.d(TAG, "stopTracking() called");
         synchronized (lock) {
-            unregisterLocked("stopUpdates");
+            boolean removed = unregisterLocked("stopTracking");
             persistState();
-            call.resolve();
+            notifyListeners("trackingStateChanged", stateLocked());
+            if (removed) call.resolve(stateLocked());
+            else call.reject(lastError);
         }
     }
 
@@ -384,31 +438,41 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
      * Physically unregisters the SensorEventListener — events stop arriving at
      * the native layer, they are not merely ignored in JavaScript.
      */
-    private void unregisterLocked(String reason) {
+    private boolean unregisterLocked(String reason) {
+        if (listenerRegistered || trackingRequested) sessionStoppedMs = System.currentTimeMillis();
+        // Close the gate under the same lock used by every sensor callback.
+        trackingRequested = false;
+        listenerGeneration += 1; // invalidate callbacks already queued for this registration
+        sensorStarted = false;
+        if (accelDetector != null) accelDetector.reset();
+        accelDetector = null;
+        accelEvents = 0;
         if (sensorManager != null && listenerRegistered) {
             try {
-                sensorManager.unregisterListener(this);
+                sensorManager.unregisterListener(sessionListener);
                 Log.i(TAG, "unregisterListener() done (" + reason + ")");
             } catch (Exception e) {
                 Log.w(TAG, "unregisterListener failed during " + reason, e);
+                listenerRemoved = false;
+                setLastError("unregisterListener failed: " + e.getMessage());
+                return false; // Do not claim physical removal if Android failed.
             }
         }
-        if (listenerRegistered || trackingRequested) {
-            sessionStoppedMs = System.currentTimeMillis();
-        }
         listenerRegistered = false;
-        sensorStarted = false;
-        trackingRequested = false;
+        sessionListener = null;
         listenerRemoved = true;
-        sessionBaselineRaw = -1;
-        accelDetector.reset();
-        accelEvents = 0;
+        return true;
     }
 
     @PluginMethod
     public void getState(PluginCall call) {
-        JSObject result = new JSObject();
         synchronized (lock) {
+            call.resolve(stateLocked());
+        }
+    }
+
+    private JSObject stateLocked() {
+            JSObject result = new JSObject();
             result.put("sensorAvailable", sensorAvailable);
             result.put("listenerRegistered", listenerRegistered);
             result.put("sensorStarted", sensorStarted);
@@ -419,6 +483,7 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
             result.put("sessionSteps", sessionSteps);
             result.put("sessionStartedMs", sessionStartedMs);
             result.put("sessionStoppedMs", sessionStoppedMs);
+            result.put("sessionId", sessionId);
             result.put("mode", selectedMode);
             result.put("firstRaw", firstRaw);
             result.put("lastRaw", lastRaw);
@@ -435,148 +500,101 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
                 result.put("sensorName", "");
                 result.put("sensorVendor", "");
             }
-        }
-        call.resolve(result);
+            return result;
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor == null || event.values == null) {
-            return;
-        }
-        long now = System.currentTimeMillis();
-        int type = event.sensor.getType();
-        if (selectedSensorType != type) {
-            return;
-        }
-        switch (type) {
-            case Sensor.TYPE_STEP_COUNTER:
-                handleCounterEvent(now, event);
-                break;
-            case Sensor.TYPE_STEP_DETECTOR:
-                handleDetectorEvent(now, event);
-                break;
-            case Sensor.TYPE_ACCELEROMETER:
-                handleAccelerometerEvent(now, event);
-                break;
-            default:
-                break;
+        synchronized (lock) {
+            if (!trackingRequested || !listenerRegistered || event.sensor == null
+                || event.values == null || event.sensor.getType() != selectedSensorType) return;
+            // Ignore queued/duplicate samples, including those from a prior START.
+            if (event.timestamp <= lastSensorTimestampNs) return;
+            if (selectedSensorType != Sensor.TYPE_STEP_COUNTER && event.timestamp < sessionStartedNs) return;
+            long now = System.currentTimeMillis();
+            switch (selectedSensorType) {
+                case Sensor.TYPE_STEP_COUNTER:
+                    handleCounterEvent(now, event);
+                    break;
+                case Sensor.TYPE_STEP_DETECTOR:
+                    if (event.values.length < 1 || event.values[0] != 1.0f) return;
+                    rollDayLocked(now);
+                    sessionSteps += 1;
+                    updateDailyStepsLocked();
+                    lastEventMs = now;
+                    persistState();
+                    emitMeasurement(now, 1, dailySteps);
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    if (event.values.length < 3 || accelDetector == null) return;
+                    accelEvents += 1;
+                    // Feed the existing validated algorithm monotonic sample time.
+                    if (accelDetector.onSample(event.values[0], event.values[1], event.values[2],
+                        event.timestamp / 1_000_000L)) {
+                        rollDayLocked(now);
+                        sessionSteps += 1;
+                        ownedSteps += 1;
+                        updateDailyStepsLocked();
+                        lastRaw = dailySteps;
+                        lastStepAtMs = now;
+                        lastEventMs = now;
+                        persistState();
+                        emitMeasurement(now, dailySteps, dailySteps);
+                    }
+                    break;
+                default:
+                    return;
+            }
+            lastSensorTimestampNs = event.timestamp;
         }
     }
 
     private void handleCounterEvent(long now, SensorEvent event) {
-        if (!listenerRegistered) return;
-        if (event.values.length < 1) return;
+        if (event.values.length < 1 || !Float.isFinite(event.values[0]) || event.values[0] < 0) return;
         long raw = (long) event.values[0];
-        Log.d(TAG, "counter event raw=" + raw);
+        rollDayLocked(now);
+        if (sessionBaselineRaw < 0 || event.timestamp < sessionStartedNs) {
+            // The first callback is only a snapshot, never earned steps. A
+            // pre-START snapshot may update the baseline but cannot earn steps.
+            sessionBaselineRaw = raw;
+            firstRaw = raw;
+        } else if (lastRaw >= 0 && raw < lastRaw) {
+            // Reset/reboot: keep steps earned so far and re-anchor at zero delta.
+            sessionCarrySteps = sessionSteps;
+            sessionBaselineRaw = raw;
+            firstRaw = raw;
+        } else {
+            sessionSteps = sessionCarrySteps + Math.max(0, raw - sessionBaselineRaw);
+        }
+        lastRaw = raw;
+        guardedLastRaw = raw;
+        updateDailyStepsLocked();
+        lastEventMs = now;
+        persistState();
+        emitMeasurement(now, raw, dailySteps);
+    }
 
-        synchronized (lock) {
-            if (firstRaw < 0) {
-                firstRaw = raw;
-                startDateMs = now;
-                Log.i(TAG, "first raw sensor value=" + raw);
-            }
-
-            // Device reboot / counter reset.
-            if (guardedLastRaw >= 0 && raw < guardedLastRaw) {
-                Log.w(TAG, "counter reset detected: guarded=" + guardedLastRaw + " raw=" + raw);
-                firstRaw = raw;
-                startDateMs = now;
-                guardedLastRaw = raw;
-            }
-
-            lastRaw = raw;
-            if (guardedLastRaw < 0 || raw > guardedLastRaw) {
-                guardedLastRaw = raw;
-            }
-
-            if (startDateMs > 0) {
-                long dayStart = dayStartMs(now);
-                if (startDateMs < dayStart) {
-                    Log.i(TAG, "midnight rollover: start=" + startDateMs + " dayStart=" + dayStart);
-                    startDateMs = dayStart;
-                    firstRaw = raw;
-                }
-                dailySteps = Math.max(0, raw - firstRaw);
-                Log.d(TAG, "calculated dailySteps=" + dailySteps + " (raw=" + raw + " baseline=" + firstRaw + ")");
-            }
-
-            lastEventMs = now;
-            persistState();
-            emitMeasurement(now, raw, dailySteps);
+    private void rollDayLocked(long now) {
+        if (startDateMs < dayStartMs(now)) {
+            startDateMs = dayStartMs(now);
+            trackedDayBase = 0;
+            sessionDayOffset = sessionSteps;
+            dailySteps = 0;
         }
     }
 
-    private void handleDetectorEvent(long now, SensorEvent event) {
-        if (!listenerRegistered) return;
-        if (event.values.length < 1) return;
-        boolean stepDetected = event.values[0] == 1.0f;
-        if (!stepDetected) return;
-
-        synchronized (lock) {
-            long dayStart = dayStartMs(now);
-            if (startDateMs < dayStart) {
-                Log.i(TAG, "midnight rollover for detector");
-                startDateMs = dayStart;
-                dailySteps = 0;
-            }
-            if (startDateMs < 0) startDateMs = now;
-            dailySteps += 1;
-            lastEventMs = now;
-            Log.d(TAG, "detector step -> dailySteps=" + dailySteps);
-            persistState();
-            // rawValue stays 1: each detector event is exactly one step.
-            emitMeasurement(now, 1, dailySteps);
-        }
-    }
-
-    private void handleAccelerometerEvent(long now, SensorEvent event) {
-        if (!listenerRegistered) return;
-        if (event.values.length < 3) return;
-
-        boolean step = false;
-        synchronized (lock) {
-            accelEvents += 1;
-            step = accelDetector.onSample(event.values[0], event.values[1], event.values[2], now);
-            if (step) {
-                long dayStart = dayStartMs(now);
-                if (startDateMs < dayStart) {
-                    Log.i(TAG, "midnight rollover for accelerometer");
-                    startDateMs = dayStart;
-                    dailySteps = 0;
-                }
-                if (startDateMs < 0) startDateMs = now;
-                dailySteps += 1;
-                ownedSteps += 1;
-                lastStepAtMs = now;
-                lastEventMs = now;
-                lastRaw = dailySteps;
-                persistState();
-            }
-        }
-
-        if (step) {
-            Log.d(TAG, "accelerometer step detected -> dailySteps=" + dailySteps + " (events=" + accelEvents + ")");
-            synchronized (lock) {
-                emitMeasurement(now, dailySteps, dailySteps);
-            }
-        }
+    private void updateDailyStepsLocked() {
+        dailySteps = trackedDayBase + Math.max(0, sessionSteps - sessionDayOffset);
     }
 
     private void emitMeasurement(long now, long rawValue, long steps) {
-        JSObject payload = new JSObject();
-        payload.put("mode", selectedMode);
+        // Called only while holding lock, so STOP cannot interleave with emit.
+        if (!trackingRequested || !listenerRegistered) return;
+        JSObject payload = stateLocked();
         payload.put("timestamp", now);
         payload.put("rawValue", rawValue);
         payload.put("steps", steps);
-        payload.put("sensorAvailable", sensorAvailable);
-        payload.put("listenerRegistered", listenerRegistered);
-        payload.put("sensorStarted", sensorStarted);
-        payload.put("sensorName", selectedSensor != null ? selectedSensor.getName() : "");
-        payload.put("sensorVendor", selectedSensor != null ? selectedSensor.getVendor() : "");
-        payload.put("lastError", lastError != null ? lastError : "");
         notifyListeners("measurement", payload);
-        Log.d(TAG, "emitted measurement mode=" + selectedMode + " raw=" + rawValue + " steps=" + steps);
     }
 
     @Override
@@ -589,6 +607,8 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
         Log.d(TAG, "handleOnPause()");
         synchronized (lock) {
             unregisterLocked("onPause");
+            persistState();
+            notifyListeners("trackingStateChanged", stateLocked());
         }
         super.handleOnPause();
     }
@@ -597,20 +617,7 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     public void handleOnResume() {
         Log.d(TAG, "handleOnResume()");
         super.handleOnResume();
-        synchronized (lock) {
-            if (sensorManager == null || !sensorAvailable || selectedSensor == null) return;
-            if (listenerRegistered) return;
-            if (!hasActivityRecognitionPermission()) return;
-            try {
-                boolean registered = sensorManager.registerListener(this, selectedSensor, sensorDelayForMode());
-                listenerRegistered = registered;
-                sensorStarted = registered;
-                Log.i(TAG, "re-registered on resume (" + selectedMode + ") -> " + registered);
-            } catch (Exception e) {
-                Log.w(TAG, "re-register on resume failed", e);
-                setLastError("re-register on resume failed: " + e.getMessage());
-            }
-        }
+        // Deliberately no registration: every resume/reopen requires START.
     }
 
     @Override
@@ -618,6 +625,7 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
         Log.d(TAG, "handleOnDestroy()");
         synchronized (lock) {
             unregisterLocked("onDestroy");
+            persistState();
         }
         super.handleOnDestroy();
     }
@@ -626,6 +634,10 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     public void clearState(PluginCall call) {
         Log.d(TAG, "clearState() called");
         synchronized (lock) {
+            if (!unregisterLocked("clearState")) {
+                call.reject(lastError);
+                return;
+            }
             SharedPreferences prefs = getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
             prefs.edit()
                 .putLong(KEY_FIRST_RAW, -1)
@@ -646,7 +658,12 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
             ownedSteps = 0;
             lastStepAtMs = -1;
             accelEvents = 0;
-            accelDetector.reset();
+            sessionBaselineRaw = -1;
+            sessionSteps = 0;
+            sessionCarrySteps = 0;
+            sessionDayOffset = 0;
+            trackedDayBase = 0;
+            notifyListeners("trackingStateChanged", stateLocked());
         }
         call.resolve();
     }
@@ -662,7 +679,12 @@ public class VjPedometerPlugin extends Plugin implements SensorEventListener {
     }
 
     private static long dayStartMs(long nowMs) {
-        long day = nowMs / 86400000;
-        return day * 86400000;
+        Calendar day = Calendar.getInstance();
+        day.setTimeInMillis(nowMs);
+        day.set(Calendar.HOUR_OF_DAY, 0);
+        day.set(Calendar.MINUTE, 0);
+        day.set(Calendar.SECOND, 0);
+        day.set(Calendar.MILLISECOND, 0);
+        return day.getTimeInMillis();
     }
 }

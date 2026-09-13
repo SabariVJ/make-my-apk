@@ -341,3 +341,61 @@ describe("history", () => {
     assert.equal(summary.averageActiveKcal, 250);
   });
 });
+
+describe("explicit tracking sessions", () => {
+  it("starts a fresh session without counting the stopped interval as activity", async () => {
+    const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
+    let state = startTrackedSession(emptyActivityState(), MORNING);
+    const stepAt = new Date(MORNING.getTime() + 1000);
+    state = applyTrackedMeasurement(state, stepAt, { steps: 100 });
+    const active = state.today!.activeSeconds;
+    state = startTrackedSession(state, EVENING);
+    state = applyTrackedMeasurement(state, new Date(EVENING.getTime() + 1000), { steps: 5 });
+    assert.equal(state.today!.steps, 105);
+    assert.equal(state.today!.trackedSteps, 105);
+    assert.equal(state.today!.activeSeconds - active, 1);
+  });
+
+  it("rejects invalid/stale/decreasing samples without moving the high-water mark", async () => {
+    const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
+    let state = startTrackedSession(emptyActivityState(), MORNING);
+    state = applyTrackedMeasurement(state, MORNING, { steps: 100 });
+    for (const steps of [Number.NaN, Number.POSITIVE_INFINITY, -1, 99]) {
+      assert.equal(applyTrackedMeasurement(state, MORNING, { steps }), state);
+    }
+    assert.equal(
+      applyTrackedMeasurement(state, MORNING, { steps: 500, atMs: MORNING.getTime() - 1 }),
+      state,
+    );
+    state = applyTrackedMeasurement(state, MORNING, { steps: 100 });
+    assert.equal(state.today!.trackedSteps, 100);
+    state = applyTrackedMeasurement(state, MORNING, { steps: 101 });
+    assert.equal(state.today!.trackedSteps, 101);
+  });
+
+  it("tracks only the new-day delta across midnight", async () => {
+    const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
+    const night = new Date(2026, 8, 9, 23, 59);
+    let state = startTrackedSession(emptyActivityState(), night);
+    state = applyTrackedMeasurement(state, night, { steps: 9000 });
+    state = applyTrackedMeasurement(state, MORNING, { steps: 9010 });
+    assert.equal(state.today!.steps, 10);
+    assert.equal(state.today!.trackedSteps, 10);
+    assert.equal(state.days[0].trackedSteps, 9000);
+  });
+
+  it("does not turn legacy all-day totals into eligible milestone steps", async () => {
+    const { startTrackedSession, applyTrackedMeasurement, pendingTrackedMilestones } =
+      await import("./activityTracker");
+    let state = normalizeActivityState(startSession(emptyActivityState(), MORNING, 10000));
+    assert.deepEqual(pendingTrackedMilestones(state.today), []);
+    state = startTrackedSession(state, MORNING);
+    state = applyTrackedMeasurement(state, MORNING, { steps: 2500 });
+    assert.deepEqual(
+      pendingTrackedMilestones(state.today).map((m) => m.steps),
+      [2500],
+    );
+    state = claimMilestone(state, MORNING, 2500);
+    assert.deepEqual(pendingTrackedMilestones(normalizeActivityState(state).today), []);
+  });
+});

@@ -21,6 +21,19 @@ export interface VjSensorInfo {
   type: number;
   /** True when the native app is a debuggable build (diagnostics allowed). */
   debug: boolean;
+  permission?: VjPermissionState["activityRecognition"];
+}
+
+export interface VjTrackingState {
+  trackingRequested: boolean;
+  trackingActive: boolean;
+  listenerRegistered: boolean;
+  listenerRemoved: boolean;
+  sessionBaselineRaw: number;
+  sessionSteps: number;
+  sessionStartedMs: number;
+  sessionStoppedMs: number;
+  sessionId: string;
 }
 
 export interface VjPedometerAvailability {
@@ -32,7 +45,7 @@ export interface VjPermissionState {
   activityRecognition: "granted" | "denied" | "prompt" | "prompt-with-rationale";
 }
 
-export interface VjPedometerState {
+export interface VjPedometerState extends VjTrackingState {
   sensorAvailable: boolean;
   listenerRegistered: boolean;
   sensorStarted: boolean;
@@ -46,7 +59,7 @@ export interface VjPedometerState {
   lastError: string | null;
 }
 
-export interface VjMeasurementEvent {
+export interface VjMeasurementEvent extends VjTrackingState {
   mode: VjSensorMode;
   timestamp: number;
   rawValue: number;
@@ -68,6 +81,8 @@ interface VjNativePlugin {
   getSensorInfo(): Promise<VjSensorInfo>;
   checkPermissions(): Promise<VjPermissionState>;
   requestPermissions(): Promise<VjPermissionState>;
+  startTracking(options: { sessionId: string }): Promise<VjPedometerState>;
+  stopTracking(): Promise<VjPedometerState>;
   startUpdates(): Promise<void>;
   stopUpdates(): Promise<void>;
   getState(): Promise<VjPedometerState>;
@@ -76,10 +91,25 @@ interface VjNativePlugin {
     eventName: "measurement",
     listener: (event: VjMeasurementEvent) => void,
   ): Promise<VjListenerHandle>;
+  addListener(
+    eventName: "trackingStateChanged",
+    listener: (event: VjPedometerState) => void,
+  ): Promise<VjListenerHandle>;
 }
 
 /** Registered proxy — always use this, never `window.Capacitor.plugins`. */
 export const VjPedometer = registerPlugin<VjNativePlugin>("VjPedometer");
+
+export async function vjStartTracking(sessionId: string): Promise<VjPedometerState> {
+  if (!vjPluginAvailable()) throw new Error("VjPedometer plugin unavailable");
+  return VjPedometer.startTracking({ sessionId });
+}
+
+/** STOP errors propagate: the UI must not claim a failed unregister succeeded. */
+export async function vjStopTracking(): Promise<VjPedometerState | null> {
+  if (!vjPluginAvailable()) return null;
+  return VjPedometer.stopTracking();
+}
 
 export function vjPluginAvailable(): boolean {
   return Capacitor.isPluginAvailable("VjPedometer");
@@ -122,11 +152,7 @@ export async function vjStartUpdates(): Promise<void> {
 
 export async function vjStopUpdates(): Promise<void> {
   if (!vjPluginAvailable()) return;
-  try {
-    await VjPedometer.stopUpdates();
-  } catch (err) {
-    console.warn("[SVJ.VjPedometer] stopUpdates error:", err);
-  }
+  await VjPedometer.stopUpdates();
 }
 
 export async function vjGetState(): Promise<VjPedometerState | null> {
@@ -149,32 +175,27 @@ export async function vjGetSensorInfo(): Promise<VjSensorInfo | null> {
   }
 }
 
-let measurementHandle: VjListenerHandle | null = null;
-
-/** Register the single `measurement` listener (replacing any previous one). */
+/** Each cleanup owns exactly its own handle, even if a new session has begun. */
 export async function vjAddMeasurementListener(
   handler: (event: VjMeasurementEvent) => void,
-): Promise<() => void> {
+): Promise<() => Promise<void>> {
   if (!vjPluginAvailable()) throw new Error("VjPedometer plugin unavailable");
-
-  if (measurementHandle) {
-    try {
-      await measurementHandle.remove();
-    } catch {
-      /* ignore */
-    }
-    measurementHandle = null;
-  }
-
   const handle = await VjPedometer.addListener("measurement", handler);
-  measurementHandle = handle;
-  return () => {
-    try {
-      const current = measurementHandle;
-      measurementHandle = null;
-      void current?.remove();
-    } catch {
-      /* ignore */
-    }
+  return ownedCleanup(handle);
+}
+
+export async function vjAddTrackingStateListener(
+  handler: (state: VjPedometerState) => void,
+): Promise<() => Promise<void>> {
+  if (!vjPluginAvailable()) throw new Error("VjPedometer plugin unavailable");
+  return ownedCleanup(await VjPedometer.addListener("trackingStateChanged", handler));
+}
+
+function ownedCleanup(handle: VjListenerHandle): () => Promise<void> {
+  let removed = false;
+  return async () => {
+    if (removed) return;
+    await handle.remove();
+    removed = true;
   };
 }

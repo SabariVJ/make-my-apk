@@ -36,6 +36,12 @@ export interface BodyMetrics {
 export interface ActivityDayRecord {
   dateKey: string; // "2026-09-10" local
   steps: number;
+  /** Steps received during explicit START/STOP sessions (legacy totals are not XP eligible). */
+  trackedSteps?: number;
+  trackedDistanceMeters?: number;
+  trackedActiveSeconds?: number;
+  /** Preserve an existing estimate without recalculating pre-START movement. */
+  priorActiveKcal?: number;
   distanceMeters: number;
   activeSeconds: number;
   activeKcal: number;
@@ -96,6 +102,13 @@ export function normalizeActivityState(value: unknown): ActivityState {
         .map((d) => ({
           dateKey: d.dateKey,
           steps: nonNegative(d.steps),
+          trackedSteps: nonNegative(d.trackedSteps),
+          trackedDistanceMeters: nonNegative(d.trackedDistanceMeters),
+          trackedActiveSeconds: nonNegative(d.trackedActiveSeconds),
+          priorActiveKcal: nonNegative(
+            d.priorActiveKcal,
+            d.trackedSteps == null ? nonNegative(d.activeKcal) : 0,
+          ),
           distanceMeters: nonNegative(d.distanceMeters),
           activeSeconds: nonNegative(d.activeSeconds),
           activeKcal: nonNegative(d.activeKcal),
@@ -111,6 +124,13 @@ export function normalizeActivityState(value: unknown): ActivityState {
       ? {
           dateKey: saved.today.dateKey,
           steps: nonNegative(saved.today.steps),
+          trackedSteps: nonNegative(saved.today.trackedSteps),
+          trackedDistanceMeters: nonNegative(saved.today.trackedDistanceMeters),
+          trackedActiveSeconds: nonNegative(saved.today.trackedActiveSeconds),
+          priorActiveKcal: nonNegative(
+            saved.today.priorActiveKcal,
+            saved.today.trackedSteps == null ? nonNegative(saved.today.activeKcal) : 0,
+          ),
           distanceMeters: nonNegative(saved.today.distanceMeters),
           activeSeconds: nonNegative(saved.today.activeSeconds),
           activeKcal: nonNegative(saved.today.activeKcal),
@@ -165,6 +185,10 @@ export function freshDayRecord(dateKey: string): ActivityDayRecord {
   return {
     dateKey,
     steps: 0,
+    trackedSteps: 0,
+    trackedDistanceMeters: 0,
+    trackedActiveSeconds: 0,
+    priorActiveKcal: 0,
     distanceMeters: 0,
     activeSeconds: 0,
     activeKcal: 0,
@@ -297,6 +321,57 @@ export function startSession(
     sessionLastSteps: 0,
     sessionLastDistance: 0,
   };
+}
+
+/** A button-started session never imports an all-day/native raw total. */
+export function startTrackedSession(state: ActivityState, now: Date): ActivityState {
+  return { ...startSession(state, now, 0), lastSyncedAt: now.getTime() };
+}
+
+/** Accept session-relative readings only. The owner also checks its live session ID. */
+export function applyTrackedMeasurement(
+  state: ActivityState,
+  now: Date,
+  measurement: { steps: number; distanceMeters?: number; atMs?: number },
+): ActivityState {
+  const atMs = measurement.atMs ?? now.getTime();
+  if (
+    !Number.isFinite(measurement.steps) ||
+    measurement.steps < state.sessionLastSteps ||
+    !Number.isFinite(atMs) ||
+    (state.lastSyncedAt != null && atMs < state.lastSyncedAt)
+  ) {
+    return state;
+  }
+  const delta = measurement.steps - state.sessionLastSteps;
+  const rolled = rollActivityDay(state, now).state;
+  const next = applyMeasurement(rolled, now, {
+    ...measurement,
+    distanceMeters:
+      measurement.distanceMeters == null
+        ? undefined
+        : Math.max(state.sessionLastDistance, nonNegative(measurement.distanceMeters)),
+  });
+  if (!next.today) return next;
+  return {
+    ...next,
+    today: {
+      ...next.today,
+      trackedSteps: (rolled.today?.trackedSteps ?? 0) + delta,
+      trackedDistanceMeters:
+        (rolled.today?.trackedDistanceMeters ?? 0) +
+        next.today.distanceMeters -
+        (rolled.today?.distanceMeters ?? 0),
+      trackedActiveSeconds:
+        (rolled.today?.trackedActiveSeconds ?? 0) +
+        next.today.activeSeconds -
+        (rolled.today?.activeSeconds ?? 0),
+    },
+  };
+}
+
+export function pendingTrackedMilestones(record: ActivityDayRecord | null): typeof STEP_MILESTONES {
+  return pendingMilestones(record ? { ...record, steps: record.trackedSteps ?? 0 } : null);
 }
 
 /** Milestones newly reached by `steps` and not yet awarded today. */

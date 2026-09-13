@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import {
   Activity as ActivityIcon,
   Footprints,
@@ -11,9 +11,9 @@ import {
   BarChart3,
   Cpu,
   AlertCircle,
-} from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useActivity } from '../context/ActivityContext';
+} from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useActivity } from "../context/ActivityContext";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -34,8 +34,8 @@ const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, cl
       key={value}
       initial={bump ? { scale: 1.12 } : false}
       animate={{ scale: 1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-      className={`inline-block ${className ?? ''}`}
+      transition={{ type: "spring", stiffness: 400, damping: 18 }}
+      className={`inline-block ${className ?? ""}`}
     >
       {value.toLocaleString()}
     </motion.span>
@@ -49,7 +49,7 @@ const ProgressRing: React.FC<{
   stroke?: number;
   color?: string;
   children: React.ReactNode;
-}> = ({ percent, size = 190, stroke = 12, color = '#E62846', children }) => {
+}> = ({ percent, size = 190, stroke = 12, color = "#E62846", children }) => {
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - Math.min(100, Math.max(0, percent)) / 100);
@@ -75,7 +75,7 @@ const ProgressRing: React.FC<{
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.9, ease: 'easeOut' }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
           style={{ filter: `drop-shadow(0 0 8px ${color}66)` }}
         />
       </svg>
@@ -92,28 +92,28 @@ const StepChart: React.FC<{ data: { label: string; steps: number }[] }> = ({ dat
       <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
       <XAxis
         dataKey="label"
-        tick={{ fill: '#8C8C90', fontSize: 9, fontFamily: 'monospace' }}
-        axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+        axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
         tickLine={false}
         interval="preserveStartEnd"
       />
       <YAxis
-        tick={{ fill: '#8C8C90', fontSize: 9, fontFamily: 'monospace' }}
+        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
         axisLine={false}
         tickLine={false}
         tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
       />
       <Tooltip
-        cursor={{ fill: 'rgba(230,40,70,0.08)' }}
+        cursor={{ fill: "rgba(230,40,70,0.08)" }}
         contentStyle={{
-          background: '#141116',
-          border: '1px solid rgba(230,40,70,0.35)',
+          background: "#141116",
+          border: "1px solid rgba(230,40,70,0.35)",
           borderRadius: 12,
-          fontFamily: 'monospace',
+          fontFamily: "monospace",
           fontSize: 11,
         }}
-        labelStyle={{ color: '#F4F2ED' }}
-        itemStyle={{ color: '#E62846' }}
+        labelStyle={{ color: "#F4F2ED" }}
+        itemStyle={{ color: "#E62846" }}
       />
       <Bar dataKey="steps" fill="#E62846" radius={[4, 4, 0, 0]} maxBarSize={26} />
     </BarChart>
@@ -126,27 +126,27 @@ const KcalChart: React.FC<{ data: { label: string; activeKcal: number }[] }> = (
       <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
       <XAxis
         dataKey="label"
-        tick={{ fill: '#8C8C90', fontSize: 9, fontFamily: 'monospace' }}
-        axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+        axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
         tickLine={false}
         interval="preserveStartEnd"
       />
       <YAxis
-        tick={{ fill: '#8C8C90', fontSize: 9, fontFamily: 'monospace' }}
+        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
         axisLine={false}
         tickLine={false}
       />
       <Tooltip
-        cursor={{ fill: 'rgba(245,158,11,0.08)' }}
+        cursor={{ fill: "rgba(245,158,11,0.08)" }}
         contentStyle={{
-          background: '#141116',
-          border: '1px solid rgba(245,158,11,0.35)',
+          background: "#141116",
+          border: "1px solid rgba(245,158,11,0.35)",
           borderRadius: 12,
-          fontFamily: 'monospace',
+          fontFamily: "monospace",
           fontSize: 11,
         }}
-        labelStyle={{ color: '#F4F2ED' }}
-        itemStyle={{ color: '#F59E0B' }}
+        labelStyle={{ color: "#F4F2ED" }}
+        itemStyle={{ color: "#F59E0B" }}
       />
       <Bar dataKey="activeKcal" fill="#F59E0B" radius={[4, 4, 0, 0]} maxBarSize={26} />
     </BarChart>
@@ -179,7 +179,7 @@ const HistoryPanel: React.FC<{
       <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 text-center">
         <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-0.5">Best Day</div>
         <div className="font-mono text-sm font-bold text-[#E62846]">
-          {summary.bestDay ? summary.bestDay.steps.toLocaleString() : '—'}
+          {summary.bestDay ? summary.bestDay.steps.toLocaleString() : "—"}
         </div>
         {summary.bestDay && (
           <div className="text-[9px] font-mono text-[#8C8C90]">{summary.bestDay.label}</div>
@@ -211,6 +211,7 @@ export const ActivityView: React.FC = () => {
   const activity = useActivity();
   const {
     todaySteps,
+    milestoneSteps,
     stepGoal,
     stepPercent,
     remainingSteps,
@@ -219,6 +220,11 @@ export const ActivityView: React.FC = () => {
     kcalGoal,
     kcalPercent,
     trackingStatus,
+    trackingRequested,
+    trackingActive,
+    startTracking,
+    stopTracking,
+    getSensorInfo,
     statusMessage,
     stepSource,
     history7,
@@ -228,7 +234,16 @@ export const ActivityView: React.FC = () => {
     debugInfo,
   } = activity;
 
-  const nextMilestone = [2500, 5000, 7500, 10000].find((m) => todaySteps < m) ?? 10000;
+  // The provider also serves summary cards, so leaving this screen must stop
+  // its owned session even when the provider itself remains mounted.
+  useEffect(
+    () => () => {
+      void stopTracking();
+    },
+    [stopTracking],
+  );
+
+  const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
   const chart7 = history7.map((d) => ({
     label: d.label,
     steps: d.steps,
@@ -252,26 +267,45 @@ export const ActivityView: React.FC = () => {
         </div>
         <div
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-mono uppercase ${
-            trackingStatus === 'tracking'
-              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-              : trackingStatus === 'starting'
-                ? 'border-amber-500/40 bg-amber-500/10 text-amber-400'
-                : 'border-white/10 bg-black/40 text-[#8C8C90]'
+            trackingStatus === "tracking"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+              : trackingStatus === "starting"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                : "border-white/10 bg-black/40 text-[#8C8C90]"
           }`}
         >
-          {trackingStatus === 'tracking' ? (
+          {trackingStatus === "tracking" ? (
             <Watch className="w-3.5 h-3.5" />
           ) : (
             <ActivitySquare className="w-3.5 h-3.5" />
           )}
-          {trackingStatus === 'tracking' ? 'Live' : trackingStatus}
+          {trackingActive ? "Tracking active" : "Tracking stopped"}
         </div>
       </div>
 
       {/* Always visible: the Activity screen must never be silently stuck. */}
-      <p className="mb-4 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] font-mono text-[#8C8C90]">
+      <p
+        role="status"
+        className="mb-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] font-mono text-[#8C8C90]"
+      >
         {statusMessage}
       </p>
+      <button
+        type="button"
+        disabled={trackingStatus === "stopping"}
+        onClick={() => {
+          if (trackingRequested || trackingActive || trackingStatus === "error")
+            void stopTracking();
+          else void startTracking();
+        }}
+        className="mb-5 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
+      >
+        {trackingStatus === "error"
+          ? "RETRY STOP"
+          : trackingRequested || trackingActive
+            ? "STOP TRACKING"
+            : "START TRACKING"}
+      </button>
 
       {/* Today's activity */}
       <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
@@ -286,26 +320,26 @@ export const ActivityView: React.FC = () => {
               of {stepGoal.toLocaleString()} steps · {stepPercent}%
             </div>
             <div className="text-[10px] font-mono text-[#E62846] mt-0.5">
-              {remainingSteps > 0 ? `${remainingSteps.toLocaleString()} to go` : 'Goal complete'}
+              {remainingSteps > 0 ? `${remainingSteps.toLocaleString()} to go` : "Goal complete"}
             </div>
           </ProgressRing>
-          {stepSource === 'accelerometer' && (
+          {stepSource === "accelerometer" && (
             <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-amber-300">
               Estimated steps — accelerometer motion detection
             </div>
           )}
-          {stepSource === 'detector' && (
+          {stepSource === "detector" && (
             <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
               Source: step detector
             </div>
           )}
-          {stepSource === 'counter' && (
+          {stepSource === "counter" && (
             <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
               Source: hardware step counter
             </div>
           )}
           <div className="mt-3 text-[10px] font-mono text-[#8C8C90] text-center">
-            Next milestone:{' '}
+            Next milestone:{" "}
             <span className="text-white">{nextMilestone.toLocaleString()} steps</span> — XP awarded
             automatically at 2.5K / 5K / 7.5K / 10K
           </div>
@@ -385,21 +419,21 @@ export const ActivityView: React.FC = () => {
             { steps: 7500, xp: 80 },
             { steps: 10000, xp: 120 },
           ].map((m) => {
-            const reached = todaySteps >= m.steps;
+            const reached = milestoneSteps >= m.steps;
             return (
               <div
                 key={m.steps}
                 className={`rounded-xl border p-2 text-center ${
-                  reached ? 'border-[#C81E3A]/50 bg-[#C81E3A]/10' : 'border-white/5 bg-black/40'
+                  reached ? "border-[#C81E3A]/50 bg-[#C81E3A]/10" : "border-white/5 bg-black/40"
                 }`}
               >
                 <div
-                  className={`font-mono text-xs font-bold ${reached ? 'text-[#E62846]' : 'text-[#8C8C90]'}`}
+                  className={`font-mono text-xs font-bold ${reached ? "text-[#E62846]" : "text-[#8C8C90]"}`}
                 >
                   {(m.steps / 1000).toFixed(1)}K
                 </div>
                 <div
-                  className={`text-[9px] font-mono ${reached ? 'text-emerald-400' : 'text-[#8C8C90]'}`}
+                  className={`text-[9px] font-mono ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
                 >
                   +{m.xp} XP
                 </div>
@@ -423,66 +457,90 @@ export const ActivityView: React.FC = () => {
               ANDROID PEDOMETER DEBUG
             </span>
             <span className="text-[9px] font-mono text-[#8C8C90]">
-              {' '}
+              {" "}
               — shown when the native sensor bridge is present
             </span>
           </div>
           <ul className="space-y-1 text-[10px] font-mono leading-relaxed">
             <li className="text-[#8C8C90]">Platform: android · status: {trackingStatus}</li>
             <li className="text-[#8C8C90]">
-              Plugin registered:{' '}
+              Plugin registered:{" "}
               {debugInfo.pluginAvailable == null
-                ? 'unknown'
+                ? "unknown"
                 : debugInfo.pluginAvailable
-                  ? 'yes'
-                  : 'no'}
+                  ? "yes"
+                  : "no"}
+            </li>
+            <li className="text-[#8C8C90]">Sensor mode: {debugInfo.sensorMode ?? "none"}</li>
+            <li className="text-[#8C8C90]">
+              Sensor name: {debugInfo.sensorName ?? "none"}
+              {debugInfo.sensorVendor ? ` (${debugInfo.sensorVendor})` : ""}
             </li>
             <li className="text-[#8C8C90]">
-              Sensor mode: {debugInfo.sensorMode ?? 'none'}
-            </li>
-            <li className="text-[#8C8C90]">
-              Sensor name: {debugInfo.sensorName ?? 'none'}
-              {debugInfo.sensorVendor ? ` (${debugInfo.sensorVendor})` : ''}
-            </li>
-            <li className="text-[#8C8C90]">
-              Sensor available:{' '}
+              Sensor available:{" "}
               {debugInfo.sensorAvailable === true
-                ? 'true'
+                ? "true"
                 : debugInfo.sensorAvailable === false
-                  ? 'false'
-                  : 'unknown'}
+                  ? "false"
+                  : "unknown"}
+            </li>
+            <li className="text-[#8C8C90]">Permission: {debugInfo.permission ?? "unknown"}</li>
+            <li className="text-[#8C8C90]">
+              Tracking requested: {debugInfo.trackingRequested ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Permission: {debugInfo.permission ?? 'unknown'}
+              Tracking active: {debugInfo.trackingActive ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Listener connected: {debugInfo.listenerConnected ? 'yes' : 'no'}
+              Listener registered: {debugInfo.listenerRegistered ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Sensor started: {debugInfo.sensorStarted ? 'yes' : 'no'}
+              Listener removed: {debugInfo.listenerRemoved ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Last raw value: {debugInfo.lastRawSteps != null ? debugInfo.lastRawSteps : 'none'}
+              Session baseline raw: {debugInfo.sessionBaselineRaw ?? "waiting for first reading"}
+            </li>
+            <li className="text-[#8C8C90]">Session steps: {debugInfo.sessionSteps}</li>
+            <li className="text-[#8C8C90]">
+              Selected sensor mode: {debugInfo.selectedSensorMode ?? "none"}
+            </li>
+            <li className="text-[#8C8C90]">Active calories: {activeKcal} kcal</li>
+            <li className="text-[#8C8C90]">
+              Listener connected: {debugInfo.listenerConnected ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Last daily steps: {debugInfo.lastDailySteps != null ? debugInfo.lastDailySteps : 'none'}
+              Sensor started: {debugInfo.sensorStarted ? "yes" : "no"}
             </li>
             <li className="text-[#8C8C90]">
-              Last measurement at:{' '}
+              Last raw value: {debugInfo.lastRawSteps != null ? debugInfo.lastRawSteps : "none"}
+            </li>
+            <li className="text-[#8C8C90]">
+              Last daily steps:{" "}
+              {debugInfo.lastDailySteps != null ? debugInfo.lastDailySteps : "none"}
+            </li>
+            <li className="text-[#8C8C90]">
+              Last measurement at:{" "}
               {debugInfo.lastMeasurementAtMs != null
                 ? new Date(debugInfo.lastMeasurementAtMs).toISOString()
-                : 'none'}
+                : "none"}
             </li>
             <li className="text-[#8C8C90]">
-              Last event time:{' '}
+              Last event time:{" "}
               {debugInfo.lastMeasurementAtMs != null
                 ? new Date(debugInfo.lastMeasurementAtMs).toLocaleTimeString()
-                : 'none'}
+                : "none"}
             </li>
-            <li className="text-[#8C8C90]">
-              Last error: {debugInfo.lastError ?? 'none'}
-            </li>
+            <li className="text-[#8C8C90]">Last error: {debugInfo.lastError ?? "none"}</li>
           </ul>
+          <button
+            type="button"
+            onClick={() => {
+              void getSensorInfo();
+            }}
+            className="mt-3 text-[10px] font-mono text-amber-400 underline"
+          >
+            Refresh diagnostics
+          </button>
           {debugInfo.notes && debugInfo.notes.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
               {debugInfo.notes.slice(0, 40).map((n, i) => (

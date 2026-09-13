@@ -20,7 +20,9 @@ const capSettings = await read("android/capacitor.settings.gradle");
 const vjPedometer = await read("src/app/lib/vj-pedometer.ts");
 const vjPluginJava = await read("android/app/src/main/java/app/lovable/svj/VjPedometerPlugin.java");
 const mainActivity = await read("android/app/src/main/java/app/lovable/svj/MainActivity.java");
-const accelDetector = await read("android/app/src/main/java/app/lovable/svj/AccelStepDetector.java");
+const accelDetector = await read(
+  "android/app/src/main/java/app/lovable/svj/AccelStepDetector.java",
+);
 
 test("the Activity tab exists between Challenges and Train", () => {
   const items = [...navigation.matchAll(/id: "([a-z]+)", label: "(.+?)", icon/g)].map((m) => m[1]);
@@ -76,14 +78,15 @@ test("step tracking is native-sensor based with a graceful web fallback", () => 
   assert.match(activityContext, /['"]denied['"]|['"]unsupported['"]/);
   assert.match(activityContext, /requestPermissions/);
   assert.match(activityContext, /startMeasurementUpdates/);
-  assert.match(activityContext, /startAndroidTracking/);
+  assert.match(activityContext, /vjStartTracking\(sessionId\)/);
+  assert.match(activityContext, /vjStopTracking\(\)/);
   // Universal Android sensor hierarchy: counter -> detector -> accelerometer.
   const counterIdx = vjPluginJava.indexOf("TYPE_STEP_COUNTER");
   const detectorIdx = vjPluginJava.indexOf("TYPE_STEP_DETECTOR");
   const accelIdx = vjPluginJava.indexOf("TYPE_ACCELEROMETER");
   assert.ok(counterIdx > -1 && detectorIdx > -1 && accelIdx > -1);
   assert.ok(counterIdx < detectorIdx && detectorIdx < accelIdx);
-  assert.match(vjPluginJava, /registerListener\(this, selectedSensor/);
+  assert.match(vjPluginJava, /registerListener\(sessionListener, selectedSensor/);
   assert.match(vjPluginJava, /accelDetector\.onSample/);
   assert.match(accelDetector, /MIN_STEP_INTERVAL_MS/);
   // Mode-aware status copy so the Activity screen never says only "Connecting…".
@@ -97,13 +100,16 @@ test("daily counts persist and reset at midnight", () => {
   assert.match(tracker, /rollActivityDay/);
   assert.match(tracker, /ACTIVITY_HISTORY_CAP = 60/);
   assert.match(activityContext, /svj_activity_v1/);
-  assert.match(activityContext, /rollActivityDay\(prev, now\)/);
+  assert.match(activityContext, /rollActivityDay\(prev, new Date\(\)\)/);
   // Session-relative Android steps are merged on top of the persisted baseline
   // (sessionRefSteps/sessionLastSteps keep the live session anchored).
   assert.match(tracker, /sessionRefSteps/);
   assert.match(tracker, /sessionLastSteps/);
-  assert.match(activityContext, /nativeState/);
-  assert.match(activityContext, /STARTUP_WINDOW_MS/);
+  assert.match(activityContext, /syncNative/);
+  assert.match(activityContext, /startTrackedSession/);
+  assert.match(activityContext, /event\.sessionSteps/);
+  assert.doesNotMatch(activityContext, /setInterval/);
+  assert.match(activityContext, /midnight\.setHours\(24, 0, 0, 0\)/);
 });
 
 test("calories are labeled as estimates and split active vs total", () => {

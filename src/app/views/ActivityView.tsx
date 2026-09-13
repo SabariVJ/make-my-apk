@@ -217,7 +217,9 @@ export const ActivityView: React.FC = () => {
   if (!activity) {
     return (
       <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 text-center space-y-2">
-        <p className="font-anton text-lg uppercase tracking-wider text-white">Activity Unavailable</p>
+        <p className="font-anton text-lg uppercase tracking-wider text-white">
+          Activity Unavailable
+        </p>
         <p className="text-xs font-mono text-[#8C8C90]">
           Reload the app to reconnect step tracking.
         </p>
@@ -228,7 +230,6 @@ export const ActivityView: React.FC = () => {
 };
 
 const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ activity }) => {
-
   const {
     todaySteps,
     milestoneSteps,

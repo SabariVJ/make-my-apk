@@ -68,7 +68,7 @@ function makeNative() {
     state: baseState(),
     permission: "granted",
     mode: "counter",
-    calls: { start: 0, stop: 0, legacyStop: 0, request: 0, info: 0 },
+    calls: { start: 0, stop: 0, legacyStop: 0, request: 0, info: 0, query: 0 },
     handlers: { measurement: new Set(), trackingStateChanged: new Set() },
     removed: [],
     startGate: null,
@@ -99,6 +99,19 @@ function makeNative() {
         return legacy;
       }
       return { ...native.state };
+    },
+    async isAvailable() {
+      return { stepCounting: true };
+    },
+    async getMeasurement() {
+      native.calls.query++;
+      return { numberOfSteps: 10000, distance: 6000 };
+    },
+    async startMeasurementUpdates() {
+      await native.startTracking({ sessionId: "ios-session" });
+    },
+    async stopMeasurementUpdates() {
+      await native.stopTracking();
     },
     async checkPermissions() {
       return { activityRecognition: native.permission };
@@ -230,7 +243,7 @@ before(async () => {
       contents: `
       export { ActivityProvider, useActivity } from './src/app/context/ActivityContext';
       export { ActivityView } from './src/app/views/ActivityView';
-      export { vjAddMeasurementListener } from './src/app/lib/vj-pedometer';
+      export { vjAddMeasurementListener, vjStartTracking, vjStopTracking } from './src/app/lib/vj-pedometer';
     `,
       resolveDir: process.cwd(),
       loader: "tsx",
@@ -246,7 +259,8 @@ before(async () => {
         name: "hardware-and-services",
         setup(builder) {
           const modules = {
-            "@capacitor/core": `export const Capacitor={getPlatform:()=> 'android',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capgo/capacitor-pedometer": `export const CapacitorPedometer=new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
             "./SVJContext": `const awardXp=(xp)=>globalThis.__svjTracking.xp.push(xp);const addActivity=(...args)=>globalThis.__svjTracking.feed.push(args);export const useSVJ=()=>({awardXp,addActivity});`,
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
             "@tanstack/react-start": `export const useServerFn=fn=>fn;`,
@@ -272,6 +286,7 @@ beforeEach(() => {
   test = {
     native: makeNative(),
     available: true,
+    platform: "android",
     xp: [],
     feed: [],
     profile: { weightKg: 70, heightCm: 170, sex: "male", bmr: 1600 },
@@ -288,6 +303,105 @@ after(async () => {
 });
 
 describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_000 }, () => {
+  it("preserves the reload notice when Activity has no mounted provider", () => {
+    view = render(React.createElement(app.ActivityView));
+    assert.ok(screen.getByText("Activity Unavailable"));
+    assert.match(document.body.textContent, /Reload the app to reconnect step tracking/);
+    assert.equal(test.native.calls.start, 0);
+  });
+  it("rejects unavailable native Start while allowing passive cleanup without a plugin", async () => {
+    test.available = false;
+    await mount();
+    await assert.rejects(app.vjStartTracking("missing-plugin"), /unavailable/);
+    assert.equal(await app.vjStopTracking(), null);
+    await start();
+    assert.equal(api.trackingStatus, "unsupported");
+    assert.equal(test.native.calls.start, 0);
+    assert.equal(test.native.handlers.measurement.size, 0);
+  });
+  it("invalid Android readings cannot alter steps, calories, XP or persisted session state", async () => {
+    await mount();
+    await start();
+    await emit(100);
+    const stored = localStorage.getItem("svj_activity_v1");
+    const before = { steps: api.todaySteps, kcal: api.activeKcal, xp: [...test.xp] };
+    for (const bad of [
+      NaN,
+      Infinity,
+      null,
+      undefined,
+      "2500",
+      Symbol("steps"),
+      {},
+      () => 2500,
+      [],
+      2500n,
+      true,
+      2499.5,
+      -1,
+    ]) {
+      await emit(0, { sessionSteps: bad });
+    }
+    for (const timestamp of [NaN, Infinity, null, "10", 9e15, 1]) await emit(2500, { timestamp });
+    await emit(2500, { sessionId: "older-session" });
+    await emit(2500, { trackingActive: "true" });
+    assert.deepEqual({ steps: api.todaySteps, kcal: api.activeKcal, xp: test.xp }, before);
+    assert.equal(localStorage.getItem("svj_activity_v1"), stored);
+    await emit(2500);
+    assert.equal(api.todaySteps, 2500);
+    assert.deepEqual(test.xp, [40]);
+  });
+  it("validates live iOS steps and distance without importing historical query totals", async () => {
+    test.platform = "ios";
+    await mount();
+    await start();
+    const receive = async (event) =>
+      act(async () => {
+        for (const fn of test.native.handlers.measurement) fn(event);
+      });
+    for (const numberOfSteps of [
+      NaN,
+      Infinity,
+      null,
+      undefined,
+      "2500",
+      Symbol("steps"),
+      {},
+      () => 2500,
+      [],
+      2500n,
+      true,
+      2499.5,
+      -1,
+    ]) {
+      await receive({ numberOfSteps, distance: 1, endDate: Date.now() });
+    }
+    for (const distance of [NaN, Infinity, null, "10", true, -1, Symbol("distance"), {}, [], 10n]) {
+      await receive({ numberOfSteps: 2500, distance, endDate: Date.now() });
+    }
+    await receive(null);
+    await receive({ numberOfSteps: 2500, endDate: 1 });
+    assert.equal(api.todaySteps, 0);
+    assert.equal(api.activeKcal, 0);
+    assert.deepEqual(test.xp, []);
+    await receive({ numberOfSteps: 2499, distance: 100.5, endDate: Date.now() });
+    await receive({ numberOfSteps: 2499, distance: 100.5, endDate: Date.now() });
+    assert.equal(api.todaySteps, 2499);
+    await receive({ numberOfSteps: 2500, distance: 101, endDate: Date.now() });
+    assert.deepEqual(test.xp, [40]);
+    const late = [...test.native.handlers.measurement][0];
+    await stop();
+    const kcal = api.activeKcal;
+    await act(async () => late({ numberOfSteps: 10000, distance: 5000 }));
+    assert.equal(api.todaySteps, 2500);
+    assert.equal(api.activeKcal, kcal);
+    assert.deepEqual(test.xp, [40]);
+    assert.equal(test.native.handlers.measurement.size, 0);
+    await start();
+    await receive({ numberOfSteps: 3, distance: 1.5, endDate: Date.now() });
+    assert.equal(api.todaySteps, 2503);
+    assert.equal(test.native.calls.query, 0, "START/STOP must not import history");
+  });
   it("mounts stopped in StrictMode, shows START, and reads sensor info without requesting permission", async () => {
     await mount();
     assert.equal(test.native.calls.start, 0);

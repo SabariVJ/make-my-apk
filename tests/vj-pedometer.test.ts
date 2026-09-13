@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { vjGetMeasurement, vjValidateMeasurement } from "../src/app/lib/vj-pedometer";
 import type {
   VjMeasurementEvent,
   VjPedometerState,
@@ -15,6 +16,99 @@ const nativePlugin = read("android/app/src/main/java/app/lovable/svj/VjPedometer
 const detector = read("android/app/src/main/java/app/lovable/svj/AccelStepDetector.java");
 const mainActivity = read("android/app/src/main/java/app/lovable/svj/MainActivity.java");
 const manifest = read("android/app/src/main/AndroidManifest.xml");
+
+// These invoke the production validator/query wrapper. A mock that resolves an
+// invalid native payload does not itself reject; the bridge must reject it.
+describe("native measurement validation", () => {
+  const invalidSteps: [string, unknown][] = [
+    ["NaN", NaN],
+    ["infinite", Infinity],
+    ["negative infinity", -Infinity],
+    ["null", null],
+    ["undefined", undefined],
+    ["string", "2500"],
+    ["symbol", Symbol("steps")],
+    ["object", {}],
+    ["function", () => 2500],
+    ["array", [2500]],
+    ["bigint", 2500n],
+    ["boolean", true],
+    ["fractional", 2499.5],
+    ["negative", -1],
+    ["unsafe integer", Number.MAX_SAFE_INTEGER + 1],
+  ];
+  for (const [label, numberOfSteps] of invalidSteps) {
+    it(`rejects ${label} steps returned by getMeasurement`, async () => {
+      const plugin = { getMeasurement: async () => ({ numberOfSteps, distance: 100 }) };
+      await assert.rejects(vjGetMeasurement(plugin, { start: 1, end: 2 }), /numberOfSteps/);
+    });
+  }
+  const invalidDistances: [string, unknown][] = [
+    ["NaN", NaN],
+    ["infinite", Infinity],
+    ["negative infinity", -Infinity],
+    ["null", null],
+    ["string", "10"],
+    ["boolean", true],
+    ["negative", -1],
+    ["symbol", Symbol("distance")],
+    ["object", {}],
+    ["function", () => 10],
+    ["array", [10]],
+    ["bigint", 10n],
+  ];
+  for (const [label, distance] of invalidDistances) {
+    it(`rejects ${label} distance returned by getMeasurement`, async () => {
+      const plugin = { getMeasurement: async () => ({ numberOfSteps: 0, distance }) };
+      await assert.rejects(vjGetMeasurement(plugin, { start: 1, end: 2 }), /distance/);
+    });
+  }
+  it("rejects malformed payloads and absent query methods", async () => {
+    for (const payload of [null, undefined, "0", 0, [], false, () => 0]) {
+      await assert.rejects(
+        vjGetMeasurement({ getMeasurement: async () => payload }),
+        /measurement/,
+      );
+    }
+    for (const plugin of [null, undefined, {}, { getMeasurement: 1 }]) {
+      await assert.rejects(vjGetMeasurement(plugin as never), /unavailable/);
+    }
+  });
+  it("accepts zero steps, omitted distance, and fractional metres without coercion", () => {
+    assert.deepEqual(vjValidateMeasurement({ numberOfSteps: 0 }), { numberOfSteps: 0 });
+    assert.deepEqual(vjValidateMeasurement({ numberOfSteps: 25, distance: 12.5 }), {
+      numberOfSteps: 25,
+      distance: 12.5,
+    });
+    assert.deepEqual(vjValidateMeasurement({ numberOfSteps: 0, distance: 0 }), {
+      numberOfSteps: 0,
+      distance: 0,
+    });
+  });
+  it("forwards the requested range and method receiver and preserves native failures", async () => {
+    const range = { start: 1, end: 2 };
+    const plugin = {
+      measurement: { numberOfSteps: 12, distance: 5.5 },
+      async getMeasurement(options?: { start?: number; end?: number }) {
+        assert.equal(options, range);
+        return this.measurement;
+      },
+    };
+    assert.deepEqual(await vjGetMeasurement(plugin, range), plugin.measurement);
+    const failure = new Error("Native query unavailable");
+    await assert.rejects(
+      vjGetMeasurement(
+        {
+          getMeasurement: async () => {
+            throw failure;
+          },
+        },
+        range,
+      ),
+      (error) => error === failure,
+    );
+  });
+});
 
 const session = {
   trackingRequested: true,

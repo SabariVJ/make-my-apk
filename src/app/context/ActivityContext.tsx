@@ -23,6 +23,7 @@ import {
   vjPluginAvailable,
   vjAddMeasurementListener,
   vjAddTrackingStateListener,
+  vjValidateMeasurement,
   VjNativeUpdateRequiredError,
   VJ_NATIVE_UPDATE_MESSAGE,
   type VjPedometerState,
@@ -451,8 +452,25 @@ export function ActivityProvider({
     });
     refreshDebug();
 
-    const acceptMeasurement = (steps: number, atMs: number, distanceMeters?: number) => {
-      if (!current() || !activeRef.current || !Number.isFinite(atMs)) return;
+    const acceptMeasurement = (rawSteps: unknown, atMs: unknown, rawDistance?: unknown) => {
+      if (!current() || !activeRef.current) return false;
+      if (
+        typeof atMs !== "number" ||
+        !Number.isSafeInteger(atMs) ||
+        !Number.isFinite(new Date(atMs).getTime())
+      )
+        return false;
+      let measurement;
+      try {
+        measurement = vjValidateMeasurement({ numberOfSteps: rawSteps, distance: rawDistance });
+      } catch (error) {
+        debugRef.current.lastError = error instanceof Error ? error.message : String(error);
+        refreshDebug();
+        return false;
+      }
+      const { numberOfSteps: steps, distance: distanceMeters } = measurement;
+      if (stateRef.current.lastSyncedAt != null && atMs < stateRef.current.lastSyncedAt)
+        return false;
       const metrics = metricsRef.current;
       if (steps > stateRef.current.sessionLastSteps) rewardSessionRef.current = generation;
       setState((prev) => {
@@ -477,6 +495,7 @@ export function ActivityProvider({
           },
         };
       });
+      return true;
     };
     const start = async () => {
       if (!current()) return;
@@ -515,9 +534,9 @@ export function ActivityProvider({
 
           listenerCleanupsRef.current.push(
             await vjAddTrackingStateListener((native) => {
-              if (!current() || native.sessionId !== sessionId) return;
+              if (!current() || !native || native.sessionId !== sessionId) return;
               syncNative(native);
-              if (!native.trackingActive) {
+              if (native.trackingActive !== true) {
                 void stopTracking();
                 return;
               }
@@ -529,23 +548,30 @@ export function ActivityProvider({
             await vjAddMeasurementListener((event) => {
               if (
                 !current() ||
+                !event ||
                 event.sessionId !== sessionId ||
-                !event.trackingActive ||
-                !event.trackingRequested ||
-                !event.listenerRegistered
+                event.trackingActive !== true ||
+                event.trackingRequested !== true ||
+                event.listenerRegistered !== true
               )
                 return;
               activeRef.current = true;
+              // Validate before diagnostics, persistence, calories or XP receive the payload.
+              if (!acceptMeasurement(event.sessionSteps, event.timestamp)) return;
               Object.assign(debugRef.current, {
                 lastMeasurementAtMs: event.timestamp,
                 lastRawSteps: event.rawValue,
                 lastDailySteps: event.steps,
-                sessionBaselineRaw: event.sessionBaselineRaw >= 0 ? event.sessionBaselineRaw : null,
+                sessionBaselineRaw:
+                  typeof event.sessionBaselineRaw === "number" &&
+                  Number.isSafeInteger(event.sessionBaselineRaw) &&
+                  event.sessionBaselineRaw >= 0
+                    ? event.sessionBaselineRaw
+                    : null,
                 sessionSteps: event.sessionSteps,
               });
               // Native sessionSteps already excludes pre-START and stopped motion.
               // Never import the device's raw counter or historical all-day total.
-              acceptMeasurement(event.sessionSteps, event.timestamp);
               refreshDebug();
             }),
           );
@@ -582,7 +608,11 @@ export function ActivityProvider({
             throw new Error("This device has no step-counting hardware.");
           setState((prev) => startTrackedSession(prev, new Date()));
           const listener = await plugin.addListener("measurement", (event) => {
-            acceptMeasurement(Number(event.numberOfSteps), Date.now(), event.distance);
+            acceptMeasurement(
+              event?.numberOfSteps,
+              event?.endDate === undefined ? Date.now() : event.endDate,
+              event?.distance,
+            );
           });
           listenerCleanupsRef.current.push(() => listener.remove());
           if (!current()) return;

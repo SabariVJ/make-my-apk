@@ -13,6 +13,44 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export type VjSensorMode = "counter" | "detector" | "accelerometer" | "none";
 
+export interface VjValidatedMeasurement {
+  numberOfSteps: number;
+  distance?: number;
+}
+
+/** Validate the native payload without coercing strings, nulls or fractional steps. */
+export function vjValidateMeasurement(value: unknown): VjValidatedMeasurement {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new TypeError("Invalid pedometer measurement: expected an object.");
+  const { numberOfSteps, distance } = value as Record<string, unknown>;
+  if (
+    typeof numberOfSteps !== "number" ||
+    !Number.isSafeInteger(numberOfSteps) ||
+    numberOfSteps < 0
+  )
+    throw new TypeError("Invalid numberOfSteps: expected a non-negative safe integer.");
+  if (
+    distance !== undefined &&
+    (typeof distance !== "number" || !Number.isFinite(distance) || distance < 0)
+  )
+    throw new TypeError("Invalid distance: expected a finite non-negative number.");
+  return distance === undefined ? { numberOfSteps } : { numberOfSteps, distance };
+}
+
+/** Validate explicit query responses with the same rules used for live readings.
+ * Activity sessions do not query or import historical/all-day measurements. */
+export async function vjGetMeasurement(
+  plugin:
+    | { getMeasurement?: (options?: { start?: number; end?: number }) => Promise<unknown> }
+    | null
+    | undefined,
+  options?: { start?: number; end?: number },
+): Promise<VjValidatedMeasurement> {
+  if (!plugin || typeof plugin.getMeasurement !== "function")
+    throw new Error("Pedometer getMeasurement is unavailable in this app.");
+  return vjValidateMeasurement(await plugin.getMeasurement(options));
+}
+
 export interface VjSensorInfo {
   mode: VjSensorMode;
   available: boolean;

@@ -373,6 +373,29 @@ describe("explicit tracking sessions", () => {
     assert.equal(state.today!.trackedSteps, 101);
   });
 
+  it("rejects fractional steps and invalid distances without advancing session totals", async () => {
+    const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
+    const state = startTrackedSession(emptyActivityState(), MORNING);
+    for (const steps of [0.5, 2499.5, Number.MAX_SAFE_INTEGER + 1]) {
+      assert.equal(applyTrackedMeasurement(state, MORNING, { steps }), state);
+    }
+    for (const distanceMeters of [Number.NaN, Number.POSITIVE_INFINITY, -1, null, "10", true]) {
+      assert.equal(
+        applyTrackedMeasurement(state, MORNING, { steps: 2500, distanceMeters } as never),
+        state,
+      );
+    }
+  });
+
+  it("rejects invalid calendar timestamps without changing or archiving a day", async () => {
+    const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
+    const state = startTrackedSession(emptyActivityState(), MORNING);
+    for (const atMs of [Number.NaN, Number.POSITIVE_INFINITY, 9e15, null, "10"]) {
+      assert.equal(applyTrackedMeasurement(state, MORNING, { steps: 2500, atMs } as never), state);
+    }
+    assert.equal(applyTrackedMeasurement(state, new Date(Number.NaN), { steps: 2500 }), state);
+  });
+
   it("tracks only the new-day delta across midnight", async () => {
     const { startTrackedSession, applyTrackedMeasurement } = await import("./activityTracker");
     const night = new Date(2026, 8, 9, 23, 59);

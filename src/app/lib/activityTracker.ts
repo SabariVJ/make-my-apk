@@ -334,11 +334,16 @@ export function applyTrackedMeasurement(
   now: Date,
   measurement: { steps: number; distanceMeters?: number; atMs?: number },
 ): ActivityState {
-  const atMs = measurement.atMs ?? now.getTime();
+  const atMs = measurement.atMs === undefined ? now.getTime() : measurement.atMs;
   if (
-    !Number.isFinite(measurement.steps) ||
+    !Number.isSafeInteger(measurement.steps) ||
+    measurement.steps < 0 ||
     measurement.steps < state.sessionLastSteps ||
-    !Number.isFinite(atMs) ||
+    (measurement.distanceMeters !== undefined &&
+      (!Number.isFinite(measurement.distanceMeters) || measurement.distanceMeters < 0)) ||
+    !Number.isSafeInteger(atMs) ||
+    !Number.isFinite(now.getTime()) ||
+    !Number.isFinite(new Date(atMs).getTime()) ||
     (state.lastSyncedAt != null && atMs < state.lastSyncedAt)
   ) {
     return state;

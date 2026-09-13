@@ -59,7 +59,7 @@ type PedometerPlugin = import("@capgo/capacitor-pedometer").CapacitorPedometerPl
 
 export type ActivityStepSource = VjSensorMode | "ios" | null;
 
-interface ActivityContextValue {
+export interface ActivityContextValue {
   todaySteps: number;
   stepGoal: number;
   stepPercent: number;

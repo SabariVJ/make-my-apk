@@ -253,7 +253,10 @@ before(async () => {
     format: "esm",
     platform: "node",
     packages: "external",
-    define: { "import.meta.env.MODE": '"test"' },
+    define: {
+      "import.meta.env.MODE": '"test"',
+      "import.meta.env.VITE_PEDOMETER_DIAGNOSTICS": '"1"',
+    },
     plugins: [
       {
         name: "hardware-and-services",

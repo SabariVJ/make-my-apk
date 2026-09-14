@@ -9,14 +9,15 @@ import { AvatarImage } from "./AvatarImage";
 import { bumpAvatarRevision } from "../hooks/useAvatarUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { saveMyProfile } from "@/lib/profile.functions";
+import { classifyAvatarRef } from "@/lib/avatar";
 
-function ownedAvatarPath(url: string | null, userId: string): string | null {
-  if (!url) return null;
-  const marker = "/avatars/";
-  const markerIndex = url.indexOf(marker);
-  if (markerIndex === -1) return null;
-  const path = url.slice(markerIndex + marker.length).split(/[?#]/, 1)[0];
-  return path.startsWith(`${userId}/`) ? path : null;
+/** The permanent, durable avatar reference saved with the cloud profile is the
+ *  BARE Storage object path (`<uid>/<file>`). Never a blob URL, a local file
+ *  path, a cache-busted public URL, or an expiring signed URL. */
+function ownedAvatarRef(url: string | null | undefined, userId: string): string | null {
+  const classified = classifyAvatarRef(url ?? null);
+  if (classified.kind !== "storage") return null;
+  return classified.path && classified.path.startsWith(`${userId}/`) ? classified.path : null;
 }
 
 export const EditProfileModal: React.FC = () => {
@@ -32,13 +33,14 @@ export const EditProfileModal: React.FC = () => {
   const [username, setUsername] = useState(user.username);
   const [bio, setBio] = useState(user.bio);
   const [location, setLocation] = useState(user.location || "");
-  const [avatarPreview, setAvatarPreview] = useState(user.avatar);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar || null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatar || null);
   const [avatarChanged, setAvatarChanged] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewObjectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isEditProfileOpen) return;
@@ -46,12 +48,21 @@ export const EditProfileModal: React.FC = () => {
     setUsername(user.username);
     setBio(user.bio);
     setLocation(user.location || "");
-    setAvatarPreview(user.avatar);
+    setAvatarPreview(user.avatar || null);
     setAvatarUrl(user.avatar || null);
     setAvatarChanged(false);
     setCropFile(null);
     setError(null);
   }, [isEditProfileOpen, user]);
+
+  // Transient object URLs are local-only; drop them when the modal unmounts so
+  // they can never leak into persisted state or outlive the editor.
+  useEffect(
+    () => () => {
+      if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+    },
+    [],
+  );
 
   if (!isEditProfileOpen) return null;
 
@@ -82,16 +93,22 @@ export const EditProfileModal: React.FC = () => {
       upsert: false,
     });
     if (uploadError) throw new Error(uploadError.message);
-    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-    const cacheBustedUrl = `${data.publicUrl}?v=${Date.now()}`;
-    setAvatarPreview(cacheBustedUrl);
-    setAvatarUrl(cacheBustedUrl);
+    // The durable reference saved with the profile is the bare object path.
+    // The just-cropped blob is shown via a transient local object URL that is
+    // never persisted — display URLs for storage refs are signed at render time.
+    if (previewObjectUrlRef.current) URL.revokeObjectURL(previewObjectUrlRef.current);
+    const localPreview = URL.createObjectURL(photo);
+    previewObjectUrlRef.current = localPreview;
+    setAvatarPreview(localPreview);
+    setAvatarUrl(path);
     setAvatarChanged(true);
     setCropFile(null);
   };
 
   const handleRemoveAvatar = () => {
-    setAvatarPreview(INITIAL_USER.avatar);
+    // Removal is explicit: null (not a failed lookup) is the removed state,
+    // which the profile save persists to the cloud account.
+    setAvatarPreview(null);
     setAvatarUrl(null);
     setAvatarChanged(true);
     setError(null);
@@ -102,7 +119,9 @@ export const EditProfileModal: React.FC = () => {
     setSaving(true);
     setError(null);
     try {
-      const oldOwnedPath = avatarChanged ? ownedAvatarPath(user.avatar, user.id) : null;
+      // The previous photo stays intact until the profile save succeeds; the
+      // old object is deleted only after the new reference is confirmed.
+      const oldOwnedPath = avatarChanged ? ownedAvatarRef(user.avatar, user.id) : null;
       const saved = await callSaveProfile({
         data: {
           displayName: name,
@@ -113,6 +132,9 @@ export const EditProfileModal: React.FC = () => {
           avatarChanged,
         },
       });
+      // The server's confirmed reference is the authority. An empty string or
+      // null means the avatar was removed; fall back to the placeholder only
+      // for display.
       const nextAvatar = saved.avatarUrl || INITIAL_USER.avatar;
       updateUserProfile({
         name: saved.displayName,
@@ -127,9 +149,11 @@ export const EditProfileModal: React.FC = () => {
       if (
         avatarChanged &&
         oldOwnedPath &&
-        oldOwnedPath !== ownedAvatarPath(saved.avatarUrl, user.id)
+        oldOwnedPath !== ownedAvatarRef(saved.avatarUrl, user.id)
       ) {
-        await supabase.storage.from("avatars").remove([oldOwnedPath]);
+        await supabase.storage.from("avatars").remove([oldOwnedPath]).catch(() => {
+          /* orphaned old object — a failed cleanup never fails the save */
+        });
       }
       setIsEditProfileOpen(false);
     } catch (cause) {
@@ -178,7 +202,7 @@ export const EditProfileModal: React.FC = () => {
               <div className="relative group">
                 <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#C81E3A] bg-[#0B0B0C] p-0.5 shadow-lg shadow-[#C81E3A]/20">
                   <AvatarImage
-                    src={avatarPreview || INITIAL_USER.avatar}
+                    src={avatarPreview}
                     name={name}
                     className="h-full w-full rounded-full object-cover"
                   />

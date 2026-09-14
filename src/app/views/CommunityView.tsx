@@ -12,6 +12,10 @@ import {
   UserPlus,
   Filter,
   Loader2,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCw,
+  Inbox,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
@@ -32,11 +36,21 @@ export const CommunityView: React.FC = () => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [rivalries, setRivalries] = useState<RivalryData[]>([]);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  /** Rivalry feedback shown inline inside the Members tab (in-app, SVJ-styled). */
+  const [rivalryFeedback, setRivalryFeedback] = useState<{
+    kind: "success" | "error";
+    text: string;
+    retryId?: string;
+  } | null>(null);
   const friendsApi = useFriends();
 
   const loadRivalries = useCallback(async () => {
-    const res = await getRivalries();
-    if (Array.isArray(res)) setRivalries(res);
+    try {
+      const res = await getRivalries();
+      if (Array.isArray(res)) setRivalries(res);
+    } catch {
+      /* polling refresh — a transient failure must not blank the tab */
+    }
   }, []);
 
   useEffect(() => {
@@ -101,20 +115,51 @@ export const CommunityView: React.FC = () => {
   };
 
   const handleSendRivalry = async (opponentId: string) => {
+    // Identity is resolved from the authenticated account id, never from
+    // display names, handles or avatars. An obvious self-action makes no
+    // network request at all.
+    if (opponentId === user.id) {
+      setRivalryFeedback({ kind: "error", text: "You cannot challenge your own account." });
+      return;
+    }
+    // A single in-flight request per opponent: repeated taps are ignored
+    // instead of creating duplicate requests.
+    if (sendingId) return;
     setSendingId(opponentId);
+    setRivalryFeedback(null);
     try {
       const res = await createRivalry({ data: { opponentId } });
-      if (res?.error) {
-        alert(res.error);
-      } else if (res?.ok) {
-        // Optimistically add the new pending rivalry
+      if (res?.error || !res?.ok) {
+        setRivalryFeedback({
+          kind: "error",
+          text: res?.error || "Could not send the rivalry request. Please retry.",
+          retryId: opponentId,
+        });
+      } else {
         if (res?.rivalry) {
           setRivalries((prev) => [res.rivalry!, ...prev]);
         } else {
           void loadRivalries();
         }
-        alert("Outperform request sent!");
+        const target = friendsApi.members.find((m) => m.id === opponentId);
+        const handle =
+          target?.username || target?.display_name
+            ? `@${target.username || target.display_name}`
+            : "that member";
+        setRivalryFeedback({
+          kind: "success",
+          text: res?.existing
+            ? `A request to ${handle} is already waiting for a response.`
+            : `Request sent — waiting for ${handle}.`,
+        });
       }
+    } catch (err) {
+      // A rejected request must never leave the button stuck or crash the view.
+      setRivalryFeedback({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Could not send the rivalry request. Please retry.",
+        retryId: opponentId,
+      });
     } finally {
       setSendingId(null);
     }
@@ -175,6 +220,17 @@ export const CommunityView: React.FC = () => {
       ) : activeSubTab === "feed" ? (
         /* ACTIVITY FEED TAB */
         <div className="space-y-4">
+          {feed.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
+              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
+              <p className="font-anton text-sm uppercase tracking-wide text-white">
+                No activity yet
+              </p>
+              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
+                Your verified SVJ activity and your friends&apos; milestones will appear here.
+              </p>
+            </div>
+          )}
           {feed.map((item, index) => {
             const userReaction = item.userReactions[user.id];
 
@@ -328,6 +384,62 @@ export const CommunityView: React.FC = () => {
             />
           </div>
 
+          {/* In-app rivalry feedback banner (SVJ-styled, replaces browser dialogs) */}
+          {activeSubTab === "directory" && rivalryFeedback && (
+            <div
+              role={rivalryFeedback.kind === "error" ? "alert" : "status"}
+              className={`flex items-start justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-xs font-mono ${
+                rivalryFeedback.kind === "error"
+                  ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+              }`}
+            >
+              <span className="flex items-start gap-2">
+                {rivalryFeedback.kind === "error" ? (
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                )}
+                {rivalryFeedback.text}
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {rivalryFeedback.kind === "error" && rivalryFeedback.retryId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const retryId = rivalryFeedback.retryId;
+                      setRivalryFeedback(null);
+                      if (retryId) void handleSendRivalry(retryId);
+                    }}
+                    className="flex items-center gap-1 rounded-lg border border-rose-500/40 px-2 py-1 text-[10px] font-bold uppercase hover:bg-rose-500/20"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Retry
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setRivalryFeedback(null)}
+                  className="rounded-lg px-1.5 py-1 text-[10px] uppercase opacity-70 hover:opacity-100"
+                  aria-label="Dismiss message"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+          )}
+
+          {filteredMembers.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
+              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
+              <p className="font-anton text-sm uppercase tracking-wide text-white">
+                No members to show yet
+              </p>
+              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
+                As real SVJ members join and appear in the directory, they will show up here.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {filteredMembers.map((m) => {
               const isSelf = m.id === user.id;
@@ -368,14 +480,15 @@ export const CommunityView: React.FC = () => {
                     <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
                       Rank #{m.rank}
                     </span>
-                    {/* Outperform button states */}
+                    {/* Self accounts never get opponent actions; stale clicks are
+                        resolved against the authenticated id inside the handler. */}
                     {!isSelf && rivalryState === "none" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleSendRivalry(m.id);
                         }}
-                        disabled={sendingId === m.id}
+                        disabled={sendingId === m.id || !!sendingId}
                         className="px-3 py-1.5 rounded-xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
                       >
                         {sendingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}

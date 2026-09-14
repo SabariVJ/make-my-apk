@@ -22,23 +22,33 @@ interface XPComparisonModalProps {
 }
 
 export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, onClose }) => {
-  const { user } = useSVJ();
+  const { user, leaderboard } = useSVJ();
   const [rivalry, setRivalry] = useState<RivalryData | null>(null);
   const [sending, setSending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [rivalryLookupFailed, setRivalryLookupFailed] = useState(false);
   const [showRivalry, setShowRivalry] = useState(false);
+
+  // Identity is the authenticated account id. A stale modal or direct handler
+  // invocation can never compare the user against their own account.
+  const isSelf = member?.id === user.id;
 
   useEffect(() => {
     if (!member) return;
+    setRivalryLookupFailed(false);
     const refreshRivalry = () =>
-      void getRivalries().then((items) => {
-        const match = items.find(
-          (item) =>
-            (item.challengerId === user.id && item.opponentId === member.id) ||
-            (item.challengerId === member.id && item.opponentId === user.id),
-        );
-        setRivalry(match ?? null);
-      });
+      void getRivalries()
+        .then((items) => {
+          const match = items.find(
+            (item) =>
+              (item.challengerId === user.id && item.opponentId === member.id) ||
+              (item.challengerId === member.id && item.opponentId === user.id),
+          );
+          setRivalry(match ?? null);
+        })
+        .catch(() => {
+          setRivalryLookupFailed(true);
+        });
     setShowRivalry(false);
     refreshRivalry();
     const interval = window.setInterval(refreshRivalry, 15_000);
@@ -48,12 +58,25 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
   if (!member) return null;
 
   const handleLockIn = async () => {
+    if (isSelf) {
+      setActionError("You cannot challenge your own account.");
+      return;
+    }
+    if (sending) return; // repeated taps never send duplicate requests
     setSending(true);
     setActionError(null);
-    const result = await createRivalry({ data: { opponentId: member.id } });
-    if (result.ok && result.rivalry) setRivalry(result.rivalry);
-    else setActionError(result.error || "Could not send the rivalry request.");
-    setSending(false);
+    try {
+      const result = await createRivalry({ data: { opponentId: member.id } });
+      if (result.ok && result.rivalry) setRivalry(result.rivalry);
+      else setActionError(result.error || "Could not send the rivalry request. Please retry.");
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Could not send the rivalry request. Please retry.",
+      );
+    } finally {
+      // The loading state is always cleared, including on rejection.
+      setSending(false);
+    }
   };
   const actionLabel =
     rivalry?.status === "active"
@@ -64,6 +87,14 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           : "Respond in Community"
         : "Lock In & Outperform";
 
+  // Rank is only displayed when a real ranked entry exists for the signed-in
+  // account. There is no invented fallback number.
+  const myRankEntry = leaderboard.find((entry) => entry.id === user.id);
+  const myRankLabel = rivalryLookupFailed
+    ? "—"
+    : myRankEntry && Number.isFinite(myRankEntry.rank)
+      ? `#${myRankEntry.rank}`
+      : "—";
   const xpDiff = Math.abs(user.totalXP - member.totalXP);
   const isUserAhead = user.totalXP >= member.totalXP;
 
@@ -79,6 +110,9 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="XP rivalry and analysis"
           className="relative w-full max-w-lg bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header Bar */}
@@ -91,12 +125,34 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             </div>
             <button
               onClick={onClose}
+              aria-label="Close comparison"
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
+          {isSelf ? (
+            /* Self accounts never expose opponent actions. */
+            <div className="py-10 text-center">
+              <Swords className="mx-auto mb-3 h-8 w-8 text-[#8C8C90]" />
+              <p className="font-anton text-sm uppercase text-white">
+                This is your own account
+              </p>
+              <p className="mx-auto mt-2 max-w-xs text-xs font-mono text-[#8C8C90]">
+                Rivalries compare your verified activity against another member. Open someone
+                else&apos;s profile to compare and challenge.
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-5 rounded-xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
+              >
+                Got it
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Versus Card Header */}
           <div className="grid grid-cols-2 gap-3 my-6 relative">
             {/* VS Badge in center */}
@@ -115,7 +171,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               </div>
               <span className="font-anton text-sm text-white uppercase">{user.name}</span>
               <span className="text-[10px] font-mono text-[#8C8C90]">
-                You (Rank #{user.xpHistory ? 47 : 47})
+                Rank {myRankLabel}
               </span>
               <div className="mt-2 text-lg font-mono font-bold text-[#C81E3A]">
                 {user.totalXP.toLocaleString()} XP
@@ -288,10 +344,34 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
             <span>{sending ? "Sending…" : actionLabel}</span>
             <ArrowRight className="w-4 h-4" />
           </motion.button>
-          {actionError && (
-            <p role="alert" className="mt-2 text-center text-xs font-mono text-rose-400">
-              {actionError}
+          {rivalry?.status === "pending" && rivalry.challengerId === user.id && (
+            <p
+              role="status"
+              className="mt-2 text-center text-xs font-mono text-emerald-400"
+            >
+              Request sent — waiting for @{member.username}.
             </p>
+          )}
+          {actionError && (
+            <div
+              role="alert"
+              className="mt-2 flex flex-col items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2"
+            >
+              <p className="text-center text-xs font-mono text-rose-300">{actionError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setActionError(null);
+                  void handleLockIn();
+                }}
+                disabled={sending}
+                className="rounded-lg border border-rose-500/40 px-3 py-1 text-[10px] font-mono font-bold uppercase text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          </>
           )}
         </motion.div>
       </div>

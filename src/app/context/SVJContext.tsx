@@ -18,11 +18,13 @@ import {
 import {
   INITIAL_USER,
   INITIAL_CHALLENGES,
-  INITIAL_FEED,
-  LEADERBOARD_USERS,
   INITIAL_REWARDS,
   TIERS,
 } from "../data/initialData";
+import {
+  stripSeedFeedPosts,
+  stripSeedMembers,
+} from "../lib/seedData";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginAvatar } from "@/lib/avatar";
 import {
@@ -179,12 +181,17 @@ export const SVJProvider: React.FC<{
   });
 
   const [feed, setFeed] = useState<FeedActivity[]>(() => {
+    // No seed feed is shipped anymore: a missing cache is simply an empty feed.
+    // Cached posts are restored, but KNOWN fabricated seed records (sample
+    // members and their posts cached by earlier builds) are stripped during
+    // restoration so they cannot reappear after a refresh or restart.
     const saved = appStorage.getItem(`${LOCAL_STORAGE_KEY}_feed`);
-    if (!saved) return INITIAL_FEED;
+    if (!saved) return [];
     try {
-      const parsed = readStoredArray<FeedActivity>(`${LOCAL_STORAGE_KEY}_feed`, INITIAL_FEED);
+      const parsed = readStoredArray<FeedActivity>(`${LOCAL_STORAGE_KEY}_feed`, []);
+      const cleaned = stripSeedFeedPosts(parsed);
       const seenIds = new Set<string>();
-      return parsed.map((item, idx) => {
+      return cleaned.map((item, idx) => {
         if (!item.id || seenIds.has(item.id)) {
           const uniqueId = `feed-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`;
           seenIds.add(uniqueId);
@@ -194,14 +201,16 @@ export const SVJProvider: React.FC<{
         return item;
       });
     } catch {
-      return INITIAL_FEED;
+      return [];
     }
   });
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    return readStoredArray<LeaderboardEntry>(
-      `${LOCAL_STORAGE_KEY}_leaderboard`,
-      import.meta.env.DEV ? LEADERBOARD_USERS : [],
+    // Restore the cached directory but drop known fabricated seed members so
+    // stock-photo sample identities (vikram_elite, alex_titan, …) can never
+    // reappear in production. No empty-cache fallback content is shipped.
+    return stripSeedMembers(
+      readStoredArray<LeaderboardEntry>(`${LOCAL_STORAGE_KEY}_leaderboard`, []),
     );
   });
 
@@ -994,27 +1003,13 @@ export const SVJProvider: React.FC<{
       monthlyXP: baseUser.monthlyXP,
       leagueRank: isOwnerEmail ? "FOUNDER #1" : baseUser.leagueRank,
       equippedFrame: isOwnerEmail ? "frame-crimson" : baseUser.equippedFrame,
-      equippedBadge: isOwnerEmail ? "bdg-top1" : baseUser.equippedBadge,
-      stats: isOwnerEmail
-        ? {
-            physical: 93,
-            mental: 91,
-            social: 87,
-            intellect: 84,
-            discipline: 93,
-            ambition: 95,
-          }
-        : baseUser.stats,
-      badges: isOwnerEmail
-        ? baseUser.badges.map((b) => ({ ...b, unlocked: true }))
-        : baseUser.badges,
-      achievements: isOwnerEmail
-        ? baseUser.achievements.map((a) => ({
-            ...a,
-            unlocked: true,
-            unlockedAt: a.unlockedAt || "2026-07-31",
-          }))
-        : baseUser.achievements,
+      // The owner's hard-coded stat block, emoji badge auto-unlocks and
+      // fabricated achievement dates were removed: presentation sections must
+      // not mint unlock states the account never earned. Real XP, tiers and
+      // membership entitlements are untouched.
+      stats: baseUser.stats,
+      badges: baseUser.badges,
+      achievements: baseUser.achievements,
     };
 
     setUser(updatedUser);

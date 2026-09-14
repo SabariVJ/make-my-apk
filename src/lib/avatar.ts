@@ -2,15 +2,19 @@
 // Avatar reference helpers.
 //
 // The canonical server-backed avatar reference is the Storage object path
-// (`avatars/<user-id>/<file>`). Records may store it in several shapes:
-//   * a bare path:            avatars/<uid>/<file>
-//   * a public-style URL:     https://<project>.supabase.co/storage/v1/object/public/avatars/<uid>/<file>
-//   * an already-signed URL:  https://<project>.supabase.co/storage/v1/object/sign/avatars/<uid>/<file>?token=...
+// (`<user-id>/<file>` inside the `avatars` bucket). Records may store it in
+// several shapes:
+//   * a bare object path:      <uid>/<file>
+//   * a bucket-prefixed path:  avatars/<uid>/<file>
+//   * a public-style URL:      https://<project>.supabase.co/storage/v1/object/public/avatars/<uid>/<file>
+//   * an already-signed URL:   https://<project>.supabase.co/storage/v1/object/sign/avatars/<uid>/<file>?token=...
 //
 // The `avatars` bucket is PRIVATE, so public-style URLs 404. These helpers
-// normalize any stored reference back to the object path so it can be
-// re-signed with createSignedUrl() at render time. External URLs (Google
-// avatars, preset images) and inline data URLs pass through untouched.
+// normalize any stored reference down to the BARE object path (never including
+// the bucket name — Supabase Storage APIs such as createSignedUrl() and
+// .remove() already scope to the bucket selected via .from(bucket)). External
+// URLs (Google avatars, preset images) and inline data URLs pass through
+// untouched.
 // ============================================================================
 
 export const AVATAR_BUCKET = "avatars";
@@ -20,7 +24,8 @@ export type AvatarRefKind = "none" | "direct" | "storage";
 
 export interface AvatarRefClassification {
   kind: AvatarRefKind;
-  /** Storage object path (`avatars/<uid>/<file>`) when kind === "storage". */
+  /** Bare Storage object path (`<uid>/<file>`) when kind === "storage".
+   *  Never includes the bucket name — callers already target the bucket. */
   path: string | null;
   /** Pass-through URL when kind === "direct" (data:, external http(s)). */
   direct: string | null;
@@ -37,7 +42,9 @@ function cleanObjectPath(value: string): string {
 
 /**
  * Classify a stored avatar reference. Storage-backed references are reduced to
- * their object path; everything else is either passed through or ignored.
+ * the bare object path inside the bucket (the bucket name is stripped so it is
+ * never duplicated by Storage calls); everything else is either passed through
+ * or ignored.
  */
 export function classifyAvatarRef(ref: string | null | undefined): AvatarRefClassification {
   const trimmed = (ref ?? "").trim();
@@ -47,34 +54,42 @@ export function classifyAvatarRef(ref: string | null | undefined): AvatarRefClas
   if (trimmed.startsWith("data:")) return { kind: "direct", path: null, direct: trimmed };
 
   // Already-signed storage URL → re-sign the underlying object path.
-  // Both markers end in "avatars/", so the extracted segment must be
-  // re-prefixed to form the full object path createSignedUrl expects.
+  // Both markers end in "avatars/", so the extracted segment is already the
+  // bare object path the Storage API expects.
   const signIdx = trimmed.indexOf(SIGN_MARKER);
   if (signIdx !== -1) {
-    const remainder = cleanObjectPath(trimmed.slice(signIdx + SIGN_MARKER.length));
-    return remainder
-      ? { kind: "storage", path: `avatars/${remainder}`, direct: null }
+    const path = cleanObjectPath(trimmed.slice(signIdx + SIGN_MARKER.length));
+    return path
+      ? { kind: "storage", path, direct: null }
       : { kind: "none", path: null, direct: null };
   }
 
   // Public-style storage URL (broken while the bucket is private) → object path.
   const publicIdx = trimmed.indexOf(PUBLIC_MARKER);
   if (publicIdx !== -1) {
-    const remainder = cleanObjectPath(trimmed.slice(publicIdx + PUBLIC_MARKER.length));
-    return remainder
-      ? { kind: "storage", path: `avatars/${remainder}`, direct: null }
-      : { kind: "none", path: null, direct: null };
-  }
-
-  // Bare storage path forms: avatars/…, /avatars/…, public/avatars/…
-  const bare = trimmed.replace(/^\/+/, "");
-  if (bare.startsWith("avatars/")) {
-    const path = cleanObjectPath(bare);
+    const path = cleanObjectPath(trimmed.slice(publicIdx + PUBLIC_MARKER.length));
     return path
       ? { kind: "storage", path, direct: null }
       : { kind: "none", path: null, direct: null };
   }
+
+  // Bare path forms: <uid>/<file>, avatars/<uid>/<file>, public/avatars/<uid>/<file>.
+  // A leading bucket/public prefix is stripped so the result never duplicates
+  // the bucket name when handed to .from(AVATAR_BUCKET) calls.
+  const bare = trimmed.replace(/^\/+/, "");
   if (bare.startsWith("public/avatars/")) {
+    const path = cleanObjectPath(bare.slice("public/avatars/".length));
+    return path
+      ? { kind: "storage", path, direct: null }
+      : { kind: "none", path: null, direct: null };
+  }
+  if (bare.startsWith("avatars/")) {
+    const path = cleanObjectPath(bare.slice("avatars/".length));
+    return path
+      ? { kind: "storage", path, direct: null }
+      : { kind: "none", path: null, direct: null };
+  }
+  if (bare.startsWith("public/")) {
     const path = cleanObjectPath(bare.slice("public/".length));
     return path
       ? { kind: "storage", path, direct: null }
@@ -85,8 +100,20 @@ export function classifyAvatarRef(ref: string | null | undefined): AvatarRefClas
   if (/^https?:\/\//i.test(trimmed)) return { kind: "direct", path: null, direct: trimmed };
 
   // Unknown shapes are ignored so surfaces can render initials instead of a
-  // broken image.
+  // broken image. A bare "<uid>/<file>" path is accepted as storage only when
+  // it looks like an owned object path.
+  if (looksLikeOwnedObjectPath(bare)) {
+    return { kind: "storage", path: cleanObjectPath(bare), direct: null };
+  }
   return { kind: "none", path: null, direct: null };
+}
+
+/** Matches "<uuid>/<anything>" — the owned object path shape used by uploads. */
+function looksLikeOwnedObjectPath(value: string): boolean {
+  const slash = value.indexOf("/");
+  if (slash <= 0 || slash === value.length - 1) return false;
+  const first = value.slice(0, slash);
+  return /^[0-9a-fA-F-]{8,}$/.test(first);
 }
 
 /** Single-letter fallback for the initials avatar (matches existing SVJ UI). */

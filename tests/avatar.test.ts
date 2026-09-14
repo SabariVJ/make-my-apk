@@ -2,10 +2,13 @@
 // Signed-avatar reference tests.
 //
 // The `avatars` bucket is private, so every stored avatar reference must be
-// normalized back to its Storage object path and re-signed with
-// createSignedUrl() before it can render. These tests lock down the
-// classification rules: storage references (public-style URLs, signed URLs,
-// bare paths) are extracted; external/data URLs pass through; junk falls back.
+// normalized down to its BARE Storage object path (`<uid>/<file>`) and re-signed
+// with createSignedUrl() before it can render. The bucket name is stripped
+// during classification so Storage calls never double it
+// (`/object/sign/avatars/avatars/…` was the historical broken shape).
+// These tests lock down the classification rules: storage references
+// (public-style URLs, signed URLs, bare paths) are extracted; external/data
+// URLs pass through; junk falls back.
 // ============================================================================
 
 import { describe, it } from "node:test";
@@ -15,44 +18,50 @@ import { avatarInitials, classifyAvatarRef, resolveLoginAvatar } from "../src/li
 const UID = "11111111-2222-3333-4444-555555555555";
 
 describe("classifyAvatarRef — storage references", () => {
-  it("extracts the object path from a public-style storage URL", () => {
+  it("extracts the bare object path from a public-style storage URL", () => {
     const ref = `https://oltmnrkceodpyqznfhjb.supabase.co/storage/v1/object/public/avatars/${UID}/avatar.webp`;
     const result = classifyAvatarRef(ref);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.webp`);
+    assert.equal(result.path, `${UID}/avatar.webp`);
     assert.equal(result.direct, null);
   });
 
-  it("extracts the object path from a public-style URL with a query string", () => {
+  it("extracts the bare object path from a public-style URL with a query string", () => {
     const ref = `https://oltmnrkceodpyqznfhjb.supabase.co/storage/v1/object/public/avatars/${UID}/avatar.webp?foo=bar`;
     const result = classifyAvatarRef(ref);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.webp`);
+    assert.equal(result.path, `${UID}/avatar.webp`);
   });
 
-  it("re-signs the object path from an already-signed URL", () => {
+  it("re-signs the bare object path from an already-signed URL", () => {
     const ref = `https://oltmnrkceodpyqznfhjb.supabase.co/storage/v1/object/sign/avatars/${UID}/avatar.webp?token=abc123`;
     const result = classifyAvatarRef(ref);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.webp`);
+    assert.equal(result.path, `${UID}/avatar.webp`);
   });
 
-  it("accepts a bare avatars/<uid>/<file> path", () => {
-    const result = classifyAvatarRef(`avatars/${UID}/avatar.png`);
+  it("accepts a bare <uid>/<file> object path", () => {
+    const result = classifyAvatarRef(`${UID}/avatar.png`);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.png`);
+    assert.equal(result.path, `${UID}/avatar.png`);
   });
 
-  it("accepts a leading-slash avatars/<uid>/<file> path", () => {
+  it("strips a bucket-prefixed avatars/<uid>/<file> path to the bare path", () => {
+    const result = classifyAvatarRef(`avatars/${UID}/avatar.jpg`);
+    assert.equal(result.kind, "storage");
+    assert.equal(result.path, `${UID}/avatar.jpg`);
+  });
+
+  it("strips a leading-slash avatars/<uid>/<file> path", () => {
     const result = classifyAvatarRef(`/avatars/${UID}/avatar.jpg`);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.jpg`);
+    assert.equal(result.path, `${UID}/avatar.jpg`);
   });
 
-  it("accepts a public/avatars/<uid>/<file> path", () => {
+  it("strips a public/avatars/<uid>/<file> path", () => {
     const result = classifyAvatarRef(`public/avatars/${UID}/avatar.jpg`);
     assert.equal(result.kind, "storage");
-    assert.equal(result.path, `avatars/${UID}/avatar.jpg`);
+    assert.equal(result.path, `${UID}/avatar.jpg`);
   });
 
   it("rejects an empty storage path after extraction", () => {

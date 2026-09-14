@@ -27,9 +27,13 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
   onClose,
   onCompare,
 }) => {
-  const { triggerConfetti } = useSVJ();
+  const { triggerConfetti, user } = useSVJ();
 
   if (!member) return null;
+
+  // Identity authority is the authenticated account id — never display names,
+  // handles or avatars. Own profile shows information only: no opponent actions.
+  const isSelf = member.id === user.id;
 
   return (
     <AnimatePresence>
@@ -65,18 +69,20 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    onClose();
-                    onCompare(member);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
-                >
-                  <Swords className="w-3.5 h-3.5" />
-                  <span>Compare XP</span>
-                </motion.button>
+                {!isSelf && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      onClose();
+                      onCompare(member);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                  >
+                    <Swords className="w-3.5 h-3.5" />
+                    <span>Compare XP</span>
+                  </motion.button>
+                )}
               </div>
             </div>
 
@@ -129,36 +135,20 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Badges & Achievements */}
-            <div className="space-y-3 my-4">
-              <h3 className="font-anton text-sm tracking-wide text-[#8C8C90] uppercase">
-                Member Badges
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>⚔️</span> Iron Will
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>🔥</span> Streak Master
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>👑</span> Top 100 Elite
-                </span>
-              </div>
-            </div>
-
             {/* Quick Celebrate Action */}
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  triggerConfetti();
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-                <span>Send Respect & Celebration 🔥</span>
-              </button>
-            </div>
+            {!isSelf && (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    triggerConfetti();
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+                  <span>Send Respect &amp; Celebration 🔥</span>
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

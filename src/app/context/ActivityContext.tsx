@@ -51,10 +51,23 @@ import {
 const STORAGE_KEY = "svj_activity_v1";
 const MILESTONE_FEED_PREFIX = "Step Milestone";
 
-/** Android needs its own runtime path (native VjPedometer bridge). */
-const ANDROID_PLATFORM = Capacitor.getPlatform() === "android";
-/** Web/dev builds keep the diagnostics panel even without a native flag. */
-const WEB_DEBUG_BUILD = import.meta.env?.MODE !== "production";
+/**
+ * Developer diagnostics are strictly opt-in and never appear in production.
+ * Production bundles never show the pedometer debug panel regardless of the
+ * flag. Development/test bundles show it only when
+ * VITE_PEDOMETER_DIAGNOSTICS="1" is explicitly set. Never derive this from
+ * platform detection alone.
+ */
+export function shouldEnableDiagnostics(
+  mode: string | undefined,
+  flag: string | undefined,
+): boolean {
+  return mode !== "production" && flag === "1";
+}
+const DIAGNOSTICS_OPT_IN = shouldEnableDiagnostics(
+  import.meta.env?.MODE as string | undefined,
+  import.meta.env?.VITE_PEDOMETER_DIAGNOSTICS as string | undefined,
+);
 
 type PedometerPlugin = import("@capgo/capacitor-pedometer").CapacitorPedometerPlugin;
 
@@ -96,6 +109,8 @@ export interface ActivityContextValue {
   summary30: ReturnType<typeof summarizeHistory>;
   bodyMetrics: BodyMetrics;
   debugInfo: ActivityDebugInfo | null;
+  /** Developer-only diagnostics opt-in (off unless explicitly enabled). */
+  showDiagnostics: boolean;
 }
 
 interface ActivityDebugInfo {
@@ -193,13 +208,10 @@ export function ActivityProvider({
     "Tracking stopped — press START TRACKING to begin.",
   );
   const [stepSource, setStepSource] = useState<ActivityStepSource>(null);
-  /**
-   * Diagnostics on Android are on by default so a debug APK always shows them,
-   * and are switched off when the native plugin reports a non-debuggable
-   * (release) build. Never rely on import.meta.env.DEV: the WebView bundle is
-   * production-built even inside a debug APK.
-   */
-  const [showDiagnostics, setShowDiagnostics] = useState(ANDROID_PLATFORM || WEB_DEBUG_BUILD);
+  /** Never rely on import.meta.env.DEV: the WebView bundle is production-built
+   * even inside a debug APK, so only the explicit VITE_PEDOMETER_DIAGNOSTICS
+   * opt-in may surface diagnostics. */
+  const [showDiagnostics, setShowDiagnostics] = useState(DIAGNOSTICS_OPT_IN);
   const [debugTick, setDebugTick] = useState(0);
   const pluginRef = useRef<PedometerPlugin | null>(null);
   const debugRef = useRef<ActivityDebugInfo>({ ...EMPTY_DEBUG, notes: [] });
@@ -424,7 +436,7 @@ export function ActivityProvider({
         sensorAvailable: info.available,
         permission: info.permission ?? "unknown",
       });
-      if (info.debug === false) setShowDiagnostics(WEB_DEBUG_BUILD);
+      if (info.debug === false) setShowDiagnostics(DIAGNOSTICS_OPT_IN);
     }
     if (native) syncNative(native);
     if (activeRef.current && native && !native.trackingActive) void stopTracking();
@@ -520,7 +532,7 @@ export function ActivityProvider({
             sensorName: info.name,
             sensorVendor: info.vendor,
           });
-          if (info.debug === false) setShowDiagnostics(WEB_DEBUG_BUILD);
+          if (info.debug === false) setShowDiagnostics(DIAGNOSTICS_OPT_IN);
           let permission = await vjCheckPermissions();
           if (!current()) return;
           if (permission?.activityRecognition !== "granted")
@@ -797,6 +809,7 @@ export function ActivityProvider({
     summary30,
     bodyMetrics: { ...bodyMetrics, ageYears },
     debugInfo: showDiagnostics ? debugSnapshot : null,
+    showDiagnostics,
   };
 
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>;

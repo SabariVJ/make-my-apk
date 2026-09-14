@@ -282,6 +282,12 @@ const AppContent: React.FC<{
         member={selectedMemberModal}
         onClose={() => setSelectedMemberModal(null)}
         onCompare={(member) => {
+          // Never route a self-comparison into the rivalry modal — the modal
+          // also guards, but the shared handler is the primary boundary.
+          if (member.id === user.id) {
+            setSelectedMemberModal(null);
+            return;
+          }
           setSelectedMemberModal(null);
           setComparingMember(member);
         }}

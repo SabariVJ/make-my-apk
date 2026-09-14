@@ -253,6 +253,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
     summary7,
     summary30,
     debugInfo,
+    showDiagnostics,
   } = activity;
 
   // The provider also serves summary cards, so leaving this screen must stop
@@ -471,8 +472,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
         </div>
       </div>
 
-      {/* Debug diagnostics — always visible in a debug Android build that has the plugin */}
-      {debugInfo && (
+      {/* Developer diagnostics — only render when the explicit opt-in or a dev/test bundle enables them. */}
+      {showDiagnostics && debugInfo && (
         <div className="rounded-2xl border border-amber-500/30 bg-black/60 p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <Cpu className="w-3.5 h-3.5 text-amber-400" />

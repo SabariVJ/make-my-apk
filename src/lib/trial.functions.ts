@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdminKey } from "@/integrations/supabase/client.server";
 
 export const TRIAL_DAYS = 7;
 
@@ -53,109 +52,57 @@ function buildStatus(row: {
   };
 }
 
+/**
+ * Membership resolution for the CURRENTLY AUTHENTICATED USER ONLY.
+ *
+ * Architecture (emergency backend stabilization):
+ *   authenticated session/JWT
+ *     → RLS-respecting Supabase client (auth middleware attaches the caller's
+ *       own bearer token — no service-role/admin key involved)
+ *     → svj_get_my_membership() SECURITY DEFINER RPC
+ *     → server derives auth.uid() and returns ONLY that user's entitlement
+ *
+ * This deliberately does NOT require SVJ_SUPABASE_SECRET_KEY or
+ * SUPABASE_SERVICE_ROLE_KEY. The old flow went through requireAdminKey() +
+ * supabaseAdmin, which crashed every normal sign-in on the Lovable-managed
+ * backend where no service-role key is exposed. Privileged operations
+ * (account deletion, Plus grants, code redemption) still call
+ * requireAdminKey() and remain fail-closed — see client.server.ts.
+ *
+ * The RPC takes no user_id parameter and derives identity from auth.uid(),
+ * so a caller can never request another user's membership. The same-email
+ * sibling-account merge (Google vs. password sign-up) moved into the RPC so
+ * both providers land on identical entitlement data without an admin client.
+ */
 export const getTrialStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TrialStatus> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // context.supabase is the publishable-key client carrying the caller's own
+    // bearer token. RLS + auth.uid() restrict every read to the caller's row.
+    // The generated types intentionally lag additive SQL migrations; this RPC
+    // has a fixed, audited output shape and is safe to cast locally.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
+    const { data: rows, error } = await client.rpc("svj_get_my_membership");
+    if (error) throw new Error(error.message);
+
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) {
+      // svj_get_my_membership() returns no rows for an unauthenticated
+      // caller. The middleware guarantees a valid session here, so an empty
+      // result means the profile row could not be provisioned.
+      throw new Error("Your membership could not be resolved. Please retry.");
+    }
 
     const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase() || null;
 
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
-      .eq("id", context.userId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data)
-      return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, data));
-
-    // Safety net for users created before the profiles trigger existed.
-    const { data: created, error: insertError } = await supabaseAdmin
-      .from("profiles")
-      .insert({
-        id: context.userId,
-        email,
-      })
-      .select("id, email, display_name, signup_date, is_plus_member, plus_expires_at")
-      .single();
-
-    if (insertError) throw insertError;
-    return buildStatus(await mergeSiblingAccounts(supabaseAdmin, context.userId, email, created));
+    return buildStatus({
+      id: row.id as string,
+      // Keep the token's own email for display; the RPC never returns email.
+      email: email ?? null,
+      display_name: (row.display_name as string | null) ?? null,
+      signup_date: row.signup_date as string,
+      is_plus_member: Boolean(row.is_plus_member),
+      plus_expires_at: (row.plus_expires_at as string | null) ?? null,
+    });
   });
-
-type ProfileRow = {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  signup_date: string;
-  is_plus_member: boolean;
-  plus_expires_at: string | null;
-};
-
-/**
- * Account unification for people who signed up with email/password and later
- * used "Continue with Google" (or vice versa) with the SAME email address.
- *
- * Supabase may mint a second auth user for the second provider. We cannot merge
- * auth rows server-side, so instead we keep every profile that shares an email
- * perfectly in sync: the oldest signup date wins, membership/XP/stats/tier are
- * carried over, and both rows are written back. The result is that signing in
- * with either provider lands on the exact same account data.
- */
-async function mergeSiblingAccounts(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  admin: any,
-  userId: string,
-  email: string | null,
-  self: ProfileRow,
-): Promise<ProfileRow> {
-  if (!email) return self;
-
-  const { data: siblings } = await admin
-    .from("profiles")
-    .select(
-      "id, email, display_name, signup_date, is_plus_member, plus_unlocked_at, plus_expires_at, username, avatar_url, total_xp, current_streak",
-    )
-    .ilike("email", email);
-
-  if (!siblings || siblings.length < 2) return self;
-
-  // Canonical record = richest/oldest across all rows sharing this email.
-  const canonical = siblings.reduce(
-    (acc: Record<string, unknown>, row: Record<string, unknown>) => ({
-      signup_date:
-        new Date(row["signup_date"] as string) < new Date(acc["signup_date"] as string)
-          ? row["signup_date"]
-          : acc["signup_date"],
-      is_plus_member: Boolean(acc["is_plus_member"]) || Boolean(row["is_plus_member"]),
-      plus_unlocked_at: acc["plus_unlocked_at"] ?? row["plus_unlocked_at"] ?? null,
-      plus_expires_at:
-        (acc["plus_expires_at"] as string | null) ??
-        (row["plus_expires_at"] as string | null) ??
-        null,
-      display_name: acc["display_name"] ?? row["display_name"] ?? null,
-      username: acc["username"] ?? row["username"] ?? null,
-      avatar_url: acc["avatar_url"] ?? row["avatar_url"] ?? null,
-      total_xp: Math.max(Number(acc["total_xp"] ?? 0), Number(row["total_xp"] ?? 0)),
-      current_streak: Math.max(
-        Number(acc["current_streak"] ?? 0),
-        Number(row["current_streak"] ?? 0),
-      ),
-    }),
-    siblings[0] as Record<string, unknown>,
-  );
-
-  await admin.from("profiles").update(canonical).eq("id", userId);
-
-  return {
-    id: userId,
-    email,
-    display_name: (canonical["display_name"] as string | null) ?? null,
-    signup_date: canonical["signup_date"] as string,
-    is_plus_member: Boolean(canonical["is_plus_member"]),
-    plus_expires_at: (canonical["plus_expires_at"] as string | null) ?? null,
-  };
-}

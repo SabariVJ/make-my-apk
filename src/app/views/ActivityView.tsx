@@ -15,6 +15,7 @@ import {
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
+import { TrainGoals, TrainProgress } from "./TrainGoals";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -230,6 +231,8 @@ export const ActivityView: React.FC = () => {
   return <ActivityViewContent activity={activity} />;
 };
 
+type TrainSection = "activity" | "history" | "goals" | "progress";
+
 const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ activity }) => {
   const {
     todaySteps,
@@ -265,6 +268,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
     },
     [stopTracking],
   );
+
+  const [section, setSection] = useState<TrainSection>("activity");
 
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
   const chart7 = history7.map((d) => ({
@@ -332,7 +337,35 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
               : "START TRACKING"}
       </button>
 
-      {/* Today's activity */}
+      {/* Train internal navigation: only working sections are exposed. */}
+      <div className="mb-5 flex gap-2" data-testid="train-sections">
+        {([
+          { id: "activity", label: "Activity" },
+          { id: "history", label: "History" },
+          { id: "goals", label: "Goals" },
+          { id: "progress", label: "Progress" },
+        ] as const).map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setSection(s.id)}
+            className={`flex-1 rounded-xl border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+              section === s.id
+                ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
+                : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {section === "goals" && <TrainGoals />}
+      {section === "progress" && <TrainProgress />}
+
+      {/* Today's activity — visible on the Activity section. */}
+      {section === "activity" && (
+      <>
       <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
         <div className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90] mb-3">
           Today&apos;s Activity
@@ -424,16 +457,22 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
           not medical measurements.
         </p>
       </div>
+      </>
+      )}
 
-      {/* Completion summary + canonical server save (Update 01) */}
+      {/* Completion summary + canonical server save (Update 01/02) */}
       <CompletedSessionCard />
 
       {/* Server-backed activity history + manual logging (Update 01) */}
-      <ActivityHistory />
+      {section === "history" && <ActivityHistory />}
 
-      {/* History */}
-      <HistoryPanel title="Last 7 Days" history={chart7} summary={summary7} />
-      <HistoryPanel title="Last 30 Days" history={chart30} summary={summary30} />
+      {/* Charts */}
+      {section === "activity" && (
+        <>
+          <HistoryPanel title="Last 7 Days" history={chart7} summary={summary7} />
+          <HistoryPanel title="Last 30 Days" history={chart30} summary={summary30} />
+        </>
+      )}
 
       {/* How XP works */}
       <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4">

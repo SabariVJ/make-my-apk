@@ -39,6 +39,10 @@ import {
   type CompletedSessionPayload,
 } from "../lib/serverActivities";
 import {
+  extractSaveExtras,
+  type SaveExtras,
+} from "../lib/goalsRecords";
+import {
   activeKcalGoal,
   applyTrackedMeasurement,
   buildHistory,
@@ -127,6 +131,8 @@ export interface ActivityContextValue {
   saveCompletedSession: (activityType: ActivityTypeFromLib) => Promise<SaveActivityResultLike>;
   saveState: "idle" | "saving" | "error";
   lastSaveError: string | null;
+  /** Server-reported records/goal progress from the most recent save. */
+  lastSaveExtras: SaveExtras | null;
   /** Idempotent retry for the last failed save. */
   retrySaveCompletedSession: () => Promise<SaveActivityResultLike>;
   logManualActivity: (input: {
@@ -156,6 +162,7 @@ export type SaveActivityResultLike = {
   duplicate?: boolean;
   activity?: ServerActivity;
   error?: string;
+  extras?: SaveExtras;
 };
 
 export interface CompletedSessionSummary {
@@ -293,6 +300,7 @@ export function ActivityProvider({
   const [completedSession, setCompletedSession] = useState<CompletedSessionSummary | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [lastSaveError, setLastSaveError] = useState<string | null>(null);
+  const [lastSaveExtras, setLastSaveExtras] = useState<SaveExtras | null>(null);
   const lastPayloadRef = useRef<CompletedSessionPayload | null>(null);
   const [manualSaveState, setManualSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [manualSaveError, setManualSaveError] = useState<string | null>(null);
@@ -926,7 +934,12 @@ export function ActivityProvider({
       if (!hasSupabaseConfig() || !userId) {
         return { ok: false as const, error: "Sign in to save activities to your history." };
       }
-      return saveServerActivity(rpcCall, payload, Date.now(), { source });
+      const result = await saveServerActivity(rpcCall, payload, Date.now(), { source });
+      if (result.ok) {
+        // Update 02: surface server-derived records + goal progress.
+        return { ...result, extras: extractSaveExtras(result.rawData) };
+      }
+      return result;
     },
     [userId, rpcCall],
   );
@@ -942,6 +955,8 @@ export function ActivityProvider({
       if (result.ok) {
         setSaveState("idle");
         lastPayloadRef.current = null;
+        // Server-derived records + goal progress for this save (Update 02).
+        setLastSaveExtras(result.extras ?? null);
       } else {
         setSaveState("error");
         setLastSaveError(result.error ?? "Couldn't save activity.");
@@ -966,6 +981,7 @@ export function ActivityProvider({
     if (result.ok) {
       setSaveState("idle");
       lastPayloadRef.current = null;
+      setLastSaveExtras(result.extras ?? null);
     } else {
       setSaveState("error");
       setLastSaveError(result.error ?? "Couldn't save activity.");
@@ -1042,6 +1058,7 @@ export function ActivityProvider({
     saveCompletedSession,
     saveState,
     lastSaveError,
+    lastSaveExtras,
     retrySaveCompletedSession,
     logManualActivity,
     manualSaveState,

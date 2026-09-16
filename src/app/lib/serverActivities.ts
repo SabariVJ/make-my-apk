@@ -97,6 +97,10 @@ export interface SaveActivityResult {
   duplicate?: boolean;
   activity?: ServerActivity;
   error?: string;
+  /** Raw server envelope — carries Update 02 extras (records/goals). */
+  rawData?: unknown;
+  /** Update 02: server-derived records + goal progress when present. */
+  extras?: import("./goalsRecords").SaveExtras;
 }
 
 const MIN_SESSION_ID_LENGTH = 8;
@@ -284,7 +288,7 @@ export async function saveServerActivity(
       return { ok: false, error: "The server rejected this activity." };
     const activity = normalizeServerActivity(envelope.activity);
     if (!activity) return { ok: false, error: "The server returned an unreadable activity." };
-    return { ok: true, duplicate: envelope.duplicate === true, activity };
+    return { ok: true, duplicate: envelope.duplicate === true, activity, rawData: data };
   } catch (error) {
     return {
       ok: false,

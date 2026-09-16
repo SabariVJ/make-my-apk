@@ -112,7 +112,7 @@ before(async () => {
           builder.onLoad({ filter: /.*/, namespace: "mock" }, ({ path: target }) => ({
             loader: "js",
             contents: {
-              auth: "export const supabase={auth:{getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};",
+              auth: "export const supabase={auth:{getSession:async()=>({data:{session:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}}; export const hasSupabaseConfig=()=>true;",
               challenge: "export const getChallengeState=async()=>null;",
               engagement:
                 "export const getEngagementState=async()=>({ok:false,error:'not configured'}); export const claimDailyCheckin=getEngagementState; export const startDailyMission=getEngagementState; export const completeDailyMission=getEngagementState; export const redeemEarnedPlus=getEngagementState;",

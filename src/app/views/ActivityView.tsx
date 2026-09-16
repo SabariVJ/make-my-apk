@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
+import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -423,6 +424,12 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
           not medical measurements.
         </p>
       </div>
+
+      {/* Completion summary + canonical server save (Update 01) */}
+      <CompletedSessionCard />
+
+      {/* Server-backed activity history + manual logging (Update 01) */}
+      <ActivityHistory />
 
       {/* History */}
       <HistoryPanel title="Last 7 Days" history={chart7} summary={summary7} />

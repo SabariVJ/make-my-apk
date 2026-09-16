@@ -267,6 +267,7 @@ before(async () => {
             "./SVJContext": `const awardXp=(xp)=>globalThis.__svjTracking.xp.push(xp);const addActivity=(...args)=>globalThis.__svjTracking.feed.push(args);export const useSVJ=()=>({awardXp,addActivity});`,
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
             "@tanstack/react-start": `export const useServerFn=fn=>fn;`,
+            "@/integrations/supabase/client": `export const supabase={rpc:(...a)=>globalThis.__svjTracking.supabase.rpc(...a)}; export const hasSupabaseConfig=()=>globalThis.__svjTracking.supabase != null;`,
             "motion/react": `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,...rest}=props;return React.createElement(tag,rest,children)}});`,
             recharts: `export const Bar=()=>null,CartesianGrid=Bar,Tooltip=Bar,XAxis=Bar,YAxis=Bar,BarChart=Bar;export const ResponsiveContainer=({children})=>children;`,
           };
@@ -293,6 +294,7 @@ beforeEach(() => {
     xp: [],
     feed: [],
     profile: { weightKg: 70, heightCm: 170, sex: "male", bmr: 1600 },
+    supabase: undefined,
   };
   globalThis.__svjTracking = test;
 });
@@ -766,5 +768,188 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.equal(test.native.handlers.measurement.size, 1);
     await second();
     assert.equal(test.native.handlers.measurement.size, 0);
+  });
+
+  // ── Update 01: server-backed activity foundation + history ──────────────
+  it("STOP freezes a completion summary and saving routes one idempotent save", async () => {
+    let saveCalls = 0;
+    test.supabase = {
+      rpc: async (fn, args) => {
+        if (fn === "svj_list_activities") return { data: [], error: null };
+        saveCalls += 1;
+        assert.equal(fn, "svj_save_activity");
+        assert.equal(args.p_source, "svj_native");
+        assert.ok(args.p_step_count >= 0);
+        return {
+          data: {
+            ok: true,
+            duplicate: saveCalls > 1,
+            activity: {
+              id: `srv-${saveCalls}`,
+              user_id: "u1",
+              client_session_id: args.p_client_session_id,
+              activity_type: args.p_activity_type,
+              source: "svj_native",
+              started_at: args.p_started_at,
+              ended_at: args.p_ended_at,
+              duration_seconds: args.p_duration_seconds,
+              step_count: args.p_step_count,
+              distance_meters: null,
+              calories_estimate: null,
+              perceived_effort: null,
+              notes: null,
+              visibility: "private",
+              created_at: args.p_ended_at,
+              updated_at: args.p_ended_at,
+            },
+          },
+          error: null,
+        };
+      },
+    };
+    await mount();
+    await start();
+    await emit(0);
+    await emit(500);
+    await stop();
+    // Completion summary appears with only real metrics.
+    const summary = document.body.textContent;
+    assert.match(summary, /WORKOUT COMPLETE/);
+    assert.match(summary, /Steps/);
+    assert.ok(!/Distance \(measured\)/.test(summary) || test.native.state.lastDistance > 0);
+    // Save once, then retry the same session — the server sees two calls but
+    // flags the second as a duplicate (no second canonical activity).
+    await act(async () => {
+      await api.saveCompletedSession("walking");
+    });
+    assert.equal(saveCalls, 1);
+    const firstId = api.completedSession?.clientSessionId;
+    await act(async () => {
+      await api.saveCompletedSession("walking");
+    });
+    assert.equal(saveCalls, 2);
+    assert.equal(api.completedSession?.clientSessionId, firstId);
+    test.supabase = undefined;
+  });
+
+  it("a failed save keeps the summary and retries with the same session id", async () => {
+    let failing = true;
+    const ids = [];
+    test.supabase = {
+      rpc: async (fn, args) => {
+        if (fn === "svj_list_activities") return { data: [], error: null };
+        ids.push(args.p_client_session_id);
+        if (failing) return { data: null, error: { message: "network down" } };
+        return {
+          data: {
+            ok: true,
+            duplicate: false,
+            activity: {
+              id: "srv-1",
+              user_id: "u1",
+              client_session_id: args.p_client_session_id,
+              activity_type: args.p_activity_type,
+              source: "svj_native",
+              started_at: args.p_started_at,
+              ended_at: args.p_ended_at,
+              duration_seconds: args.p_duration_seconds,
+              step_count: args.p_step_count,
+              distance_meters: null,
+              calories_estimate: null,
+              perceived_effort: null,
+              notes: null,
+              visibility: "private",
+              created_at: args.p_ended_at,
+              updated_at: args.p_ended_at,
+            },
+          },
+          error: null,
+        };
+      },
+    };
+    await mount();
+    await start();
+    await emit(120);
+    await stop();
+    await act(async () => {
+      const result = await api.saveCompletedSession("running");
+      assert.equal(result.ok, false);
+      assert.match(result.error, /network down/);
+    });
+    assert.equal(api.saveState, "error");
+    await act(async () => {
+      failing = false;
+      const retry = await api.retrySaveCompletedSession();
+      assert.equal(retry.ok, true);
+    });
+    assert.equal(api.saveState, "idle");
+    // Same session id on retry: the server dedupes to one canonical row.
+    assert.equal(ids[0], ids[1]);
+    test.supabase = undefined;
+  });
+
+  it("manual logging stores source=manual without sensor metrics", async () => {
+    const bodies = [];
+    test.supabase = {
+      rpc: async (fn, args) => {
+        if (fn === "svj_list_activities") return { data: [], error: null };
+        bodies.push({ fn, args });
+        return {
+          data: {
+            ok: true,
+            duplicate: false,
+            activity: {
+              id: "srv-m1",
+              user_id: "u1",
+              client_session_id: args.p_client_session_id,
+              activity_type: args.p_activity_type,
+              source: args.p_source,
+              started_at: args.p_started_at,
+              ended_at: args.p_ended_at,
+              duration_seconds: args.p_duration_seconds,
+              step_count: args.p_step_count,
+              distance_meters: null,
+              calories_estimate: null,
+              perceived_effort: args.p_perceived_effort ?? null,
+              notes: args.p_notes ?? null,
+              visibility: "private",
+              created_at: args.p_ended_at,
+              updated_at: args.p_ended_at,
+            },
+          },
+          error: null,
+        };
+      },
+    };
+    await mount();
+    await act(async () => {
+      const result = await api.logManualActivity({
+        activityType: "strength",
+        startedAtMs: Date.now() - 45 * 60_000,
+        durationMinutes: 45,
+        perceivedEffort: 7,
+        notes: "Push day",
+      });
+      assert.equal(result.ok, true);
+    });
+    assert.equal(bodies.length, 1);
+    assert.equal(bodies[0].args.p_source, "manual");
+    assert.equal(bodies[0].args.p_step_count, 0);
+    assert.equal(bodies[0].args.p_perceived_effort, 7);
+    assert.equal(bodies[0].args.p_notes, "Push day");
+    assert.equal(bodies[0].fn, "svj_save_activity");
+    test.supabase = undefined;
+  });
+
+  it("save fails cleanly when the backend is not configured", async () => {
+    await mount();
+    await start();
+    await emit(10);
+    await stop();
+    await act(async () => {
+      const result = await api.saveCompletedSession("walking");
+      assert.equal(result.ok, false);
+      assert.match(result.error, /sign in|backend/i);
+    });
   });
 });

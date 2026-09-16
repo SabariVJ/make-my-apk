@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Capacitor } from "@capacitor/core";
+import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getBodyProfile } from "@/lib/personalization.functions";
@@ -30,6 +31,13 @@ import {
   type VjSensorInfo,
   type VjSensorMode,
 } from "../lib/vj-pedometer";
+import {
+  saveServerActivity,
+  listServerActivities,
+  buildClientSessionId,
+  type ServerActivity,
+  type CompletedSessionPayload,
+} from "../lib/serverActivities";
 import {
   activeKcalGoal,
   applyTrackedMeasurement,
@@ -111,6 +119,53 @@ export interface ActivityContextValue {
   debugInfo: ActivityDebugInfo | null;
   /** Developer-only diagnostics opt-in (off unless explicitly enabled). */
   showDiagnostics: boolean;
+  /** Frozen summary of the most recent completed tracking session. */
+  completedSession: CompletedSessionSummary | null;
+  /** Dismiss the completion summary card. */
+  dismissCompletedSession: () => void;
+  /** Save the completed session as ONE canonical server activity. */
+  saveCompletedSession: (activityType: ActivityTypeFromLib) => Promise<SaveActivityResultLike>;
+  saveState: "idle" | "saving" | "error";
+  lastSaveError: string | null;
+  /** Idempotent retry for the last failed save. */
+  retrySaveCompletedSession: () => Promise<SaveActivityResultLike>;
+  logManualActivity: (input: {
+    activityType: ActivityTypeFromLib;
+    startedAtMs: number;
+    durationMinutes: number;
+    perceivedEffort?: number;
+    notes?: string;
+  }) => Promise<SaveActivityResultLike>;
+  manualSaveState: "idle" | "saving" | "error";
+  manualSaveError: string | null;
+}
+
+// Re-exported lib types keep the context self-contained for consumers.
+export type ActivityTypeFromLib =
+  | "walking"
+  | "running"
+  | "strength"
+  | "cycling"
+  | "football"
+  | "calisthenics"
+  | "hiit"
+  | "yoga"
+  | "other";
+export type SaveActivityResultLike = {
+  ok: boolean;
+  duplicate?: boolean;
+  activity?: ServerActivity;
+  error?: string;
+};
+
+export interface CompletedSessionSummary {
+  clientSessionId: string;
+  startedAtMs: number;
+  endedAtMs: number;
+  durationSeconds: number;
+  stepCount: number;
+  distanceMeters?: number;
+  caloriesEstimate?: number;
 }
 
 interface ActivityDebugInfo {
@@ -228,6 +283,19 @@ export function ActivityProvider({
   const rewardSessionRef = useRef<number | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const listenerCleanupsRef = useRef<Array<() => Promise<void>>>([]);
+
+  // ── Server activity session bookkeeping (Update 01) ───────────────────
+  /** When the current tracking session started (ms), or null while idle. */
+  const sessionStartedAtRef = useRef<number | null>(null);
+  /** Steps/distance recorded by THIS session (session-relative, already excludes pre-START). */
+  const sessionStepsRef = useRef(0);
+  const sessionDistanceRef = useRef(0);
+  const [completedSession, setCompletedSession] = useState<CompletedSessionSummary | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "error">("idle");
+  const [lastSaveError, setLastSaveError] = useState<string | null>(null);
+  const lastPayloadRef = useRef<CompletedSessionPayload | null>(null);
+  const [manualSaveState, setManualSaveState] = useState<"idle" | "saving" | "error">("idle");
+  const [manualSaveError, setManualSaveError] = useState<string | null>(null);
 
   const note = useCallback((message: string) => {
     debugRef.current.notes = [message, ...debugRef.current.notes].slice(0, 40);
@@ -352,6 +420,22 @@ export function ActivityProvider({
     requestedRef.current = false;
     activeRef.current = false;
     rewardSessionRef.current = null;
+    // Freeze the session summary for the completion card / canonical save.
+    const frozenStart = sessionStartedAtRef.current;
+    const frozenSteps = sessionStepsRef.current;
+    const frozenDistance = sessionDistanceRef.current;
+    const endedAt = Date.now();
+    if (frozenStart != null && (frozenSteps > 0 || endedAt - frozenStart >= 60_000)) {
+      setCompletedSession({
+        clientSessionId: `svj-${frozenStart.toString(36)}-${generationRef.current}`,
+        startedAtMs: frozenStart,
+        endedAtMs: endedAt,
+        durationSeconds: Math.max(1, Math.round((endedAt - frozenStart) / 1000)),
+        stepCount: frozenSteps,
+        ...(frozenDistance > 0 ? { distanceMeters: Math.round(frozenDistance * 100) / 100 } : {}),
+      });
+    }
+    sessionStartedAtRef.current = null;
     debugRef.current.trackingRequested = false;
     debugRef.current.trackingActive = false;
     if (mountedRef.current) setTrackingStatus("stopping");
@@ -453,6 +537,9 @@ export function ActivityProvider({
       mountedRef.current && requestedRef.current && generation === generationRef.current;
     requestedRef.current = true;
     rewardSessionRef.current = null;
+    sessionStepsRef.current = 0;
+    sessionDistanceRef.current = 0;
+    sessionStartedAtRef.current = Date.now();
     setTrackingStatus("starting");
     setStatusMessage("Starting step tracking…");
     Object.assign(debugRef.current, {
@@ -483,6 +570,11 @@ export function ActivityProvider({
       const { numberOfSteps: steps, distance: distanceMeters } = measurement;
       if (stateRef.current.lastSyncedAt != null && atMs < stateRef.current.lastSyncedAt)
         return false;
+      // Session-relative bookkeeping for the canonical server activity.
+      if (steps > stateRef.current.sessionLastSteps)
+        sessionStepsRef.current += steps - stateRef.current.sessionLastSteps;
+      if (distanceMeters !== undefined && distanceMeters > stateRef.current.sessionLastDistance)
+        sessionDistanceRef.current += distanceMeters - stateRef.current.sessionLastDistance;
       const metrics = metricsRef.current;
       if (steps > stateRef.current.sessionLastSteps) rewardSessionRef.current = generation;
       setState((prev) => {
@@ -783,6 +875,141 @@ export function ActivityProvider({
     [debugTick, state.today?.steps],
   );
 
+  // ── Canonical server activity save (Update 01) ─────────────────────────
+  const buildSessionPayload = useCallback(
+    (activityType: ActivityTypeFromLib): CompletedSessionPayload | null => {
+      const session = completedSession;
+      if (!session) return null;
+      return {
+        clientSessionId: session.clientSessionId,
+        activityType,
+        startedAtMs: session.startedAtMs,
+        endedAtMs: session.endedAtMs,
+        durationSeconds: session.durationSeconds,
+        stepCount: session.stepCount,
+        ...(session.distanceMeters !== undefined ? { distanceMeters: session.distanceMeters } : {}),
+        // Calories come from the existing estimator over this session's tracked
+        // metrics — never fabricated per-step server writes.
+        ...(session.stepCount > 0
+          ? {
+              caloriesEstimate: estimateCalories(
+                {
+                  steps: session.stepCount,
+                  distanceMeters: session.distanceMeters ?? 0,
+                  activeSeconds: session.durationSeconds,
+                },
+                metricsRef.current,
+                new Date(session.endedAtMs),
+              ).activeKcal,
+            }
+          : {}),
+      };
+    },
+    [completedSession],
+  );
+
+  const rpcCall = useCallback(async (rpcPayload: Record<string, unknown>) => {
+    // svj_save_activity is defined in a new migration and not yet in the
+    // generated Database types — cast through the generic client.
+    const client = supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    };
+    const { data, error } = await client.rpc("svj_save_activity", rpcPayload);
+    return { data, error };
+  }, []);
+
+  const persist = useCallback(
+    async (payload: CompletedSessionPayload, source: "svj_native" | "manual") => {
+      if (!hasSupabaseConfig() || !userId) {
+        return { ok: false as const, error: "Sign in to save activities to your history." };
+      }
+      return saveServerActivity(rpcCall, payload, Date.now(), { source });
+    },
+    [userId, rpcCall],
+  );
+
+  const runSave = useCallback(
+    async (activityType: ActivityTypeFromLib) => {
+      const payload = buildSessionPayload(activityType);
+      if (!payload) return { ok: false, error: "No completed session to save." };
+      lastPayloadRef.current = payload;
+      setSaveState("saving");
+      setLastSaveError(null);
+      const result = await persist(payload, "svj_native");
+      if (result.ok) {
+        setSaveState("idle");
+        lastPayloadRef.current = null;
+      } else {
+        setSaveState("error");
+        setLastSaveError(result.error ?? "Couldn't save activity.");
+      }
+      return result;
+    },
+    [buildSessionPayload, persist],
+  );
+
+  const saveCompletedSession = useCallback(
+    (activityType: ActivityTypeFromLib) => runSave(activityType),
+    [runSave],
+  );
+
+  const retrySaveCompletedSession = useCallback(async () => {
+    const payload = lastPayloadRef.current;
+    if (!payload) return { ok: false, error: "Nothing to retry." };
+    setSaveState("saving");
+    setLastSaveError(null);
+    // Same payload = same client_session_id → idempotent server-side retry.
+    const result = await persist(payload, "svj_native");
+    if (result.ok) {
+      setSaveState("idle");
+      lastPayloadRef.current = null;
+    } else {
+      setSaveState("error");
+      setLastSaveError(result.error ?? "Couldn't save activity.");
+    }
+    return result;
+  }, [persist]);
+
+  const logManualActivity = useCallback(
+    async (input: {
+      activityType: ActivityTypeFromLib;
+      startedAtMs: number;
+      durationMinutes: number;
+      perceivedEffort?: number;
+      notes?: string;
+    }) => {
+      setManualSaveState("saving");
+      setManualSaveError(null);
+      const endedAtMs = input.startedAtMs + Math.round(input.durationMinutes * 60_000);
+      const result = await persist(
+        {
+          clientSessionId: buildClientSessionId(),
+          activityType: input.activityType,
+          startedAtMs: input.startedAtMs,
+          endedAtMs,
+          durationSeconds: Math.round(input.durationMinutes * 60),
+          stepCount: 0,
+          ...(input.perceivedEffort !== undefined
+            ? { perceivedEffort: input.perceivedEffort }
+            : {}),
+          ...(input.notes ? { notes: input.notes } : {}),
+        },
+        "manual",
+      );
+      if (result.ok) {
+        setManualSaveState("idle");
+      } else {
+        setManualSaveState("error");
+        setManualSaveError(result.error ?? "Couldn't save activity.");
+      }
+      return result;
+    },
+    [persist],
+  );
+
   const value: ActivityContextValue = {
     todaySteps,
     stepGoal: STEP_GOAL,
@@ -810,6 +1037,15 @@ export function ActivityProvider({
     bodyMetrics: { ...bodyMetrics, ageYears },
     debugInfo: showDiagnostics ? debugSnapshot : null,
     showDiagnostics,
+    completedSession,
+    dismissCompletedSession: useCallback(() => setCompletedSession(null), []),
+    saveCompletedSession,
+    saveState,
+    lastSaveError,
+    retrySaveCompletedSession,
+    logManualActivity,
+    manualSaveState,
+    manualSaveError,
   };
 
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>;

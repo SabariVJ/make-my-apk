@@ -172,7 +172,9 @@ export const ActivityHistory: React.FC = () => {
         error: { message: string } | null;
       }>;
     };
-    const result = await listServerActivities(() => client.rpc("svj_list_activities"));
+    const result = await listServerActivities(() =>
+      client.rpc("svj_list_activities", { p_limit: 100 }),
+    );
     if (result.ok) {
       setItems(result.activities);
       setState("loaded");

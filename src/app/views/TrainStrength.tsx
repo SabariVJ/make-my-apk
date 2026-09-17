@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dumbbell,
   Plus,
@@ -41,6 +42,7 @@ import {
 } from "../lib/strength";
 import { MuscleTrainedList } from "../components/StrengthDetails";
 import { strengthRpcClient } from "../lib/strengthClient";
+import { processActivityRewards, rewardsRpcClient, type ActivityRewards } from "../lib/rewards";
 
 type Phase = "idle" | "logging" | "summary" | "saved";
 
@@ -48,6 +50,13 @@ const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   weighted_reps: "Weighted reps",
   bodyweight_reps: "Bodyweight reps",
   duration: "Time based",
+};
+
+/** Server stat name → Character Matrix display label (Update 04). */
+const REWARD_STAT_LABELS: Record<string, string> = {
+  fitness: "PHYSICAL",
+  discipline: "DISCIPLINE",
+  focus: "MENTAL",
 };
 
 const numeric = (raw: string): number | null => {
@@ -86,6 +95,7 @@ const Field: React.FC<{
  * retried save can never create a duplicate workout.
  */
 export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+  const queryClient = useQueryClient();
   const [catalog, setCatalog] = useState<StrengthExerciseOption[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -98,6 +108,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<StrengthSaveOutcome | null>(null);
+  const [rewards, setRewards] = useState<ActivityRewards | null>(null);
   const sessionIdRef = useRef<string>("");
 
   const loadCatalog = useCallback(async () => {
@@ -125,6 +136,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     sessionIdRef.current = buildClientSessionId();
     setDrafts([]);
     setOutcome(null);
+    setRewards(null);
     setSaveError(null);
     setDraftError(null);
     setEndedAtMs(null);
@@ -237,6 +249,27 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (result.ok) {
       setOutcome(result);
       setPhase("saved");
+      // Update 04: server-confirmed rewards. Only a NEW workout processes
+      // rewards; a retried save returns the original workout and must never
+      // re-announce them. The server enforces zero duplicates regardless.
+      if (!result.duplicate && result.activity) {
+        const rpc = rewardsRpcClient();
+        if (rpc) {
+          const processed = await processActivityRewards(rpc, result.activity.id);
+          if (processed.ok) setRewards(processed.rewards ?? null);
+          // A rewards failure never fails the save — the workout is canonical.
+          // Refresh Character Matrix + profile XP without a reload once the
+          // server confirms progression for this workout.
+          if (
+            processed.ok &&
+            processed.rewards &&
+            (processed.rewards.xpAwarded > 0 ||
+              Object.keys(processed.rewards.statChanges).length > 0)
+          ) {
+            void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+          }
+        }
+      }
     } else {
       setSaveError(result.error ?? "Couldn't save the workout.");
     }
@@ -568,6 +601,34 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   ? "Already saved — no duplicate workout created."
                   : "Saved to your activity history."}
               </p>
+
+              {/* Update 04: compact server-confirmed reward summary. */}
+              {!outcome.duplicate &&
+                rewards &&
+                (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0) && (
+                  <div
+                    data-testid="strength-rewards"
+                    className="mt-3 rounded-xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
+                  >
+                    {rewards.xpAwarded > 0 && (
+                      <p className="text-[11px] font-mono font-bold text-[#C81E3A]">
+                        +{rewards.xpAwarded} XP
+                      </p>
+                    )}
+                    {Object.entries(REWARD_STAT_LABELS).map(([key, label]) => {
+                      const gain = rewards.statChanges[key];
+                      if (!gain) return null;
+                      return (
+                        <p key={key} className="text-[10px] font-mono text-[#8C8C90]">
+                          {label} +{gain}
+                        </p>
+                      );
+                    })}
+                    {rewards.prBonusAwarded > 0 && (
+                      <p className="mt-0.5 text-[10px] font-mono text-amber-300">NEW PR 🔥</p>
+                    )}
+                  </div>
+                )}
 
               {/* A retried save returns the original workout: it must never
                   re-announce the same personal record. */}

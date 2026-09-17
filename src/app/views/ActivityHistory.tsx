@@ -56,6 +56,7 @@ export const CompletedSessionCard: React.FC = () => {
   const [duplicate, setDuplicate] = useState(false);
   if (!activity || !activity.completedSession) return null;
   const session = activity.completedSession;
+  const rewards = saved ? activity.lastSaveRewards : null;
 
   const save = async () => {
     const result = await activity.saveCompletedSession(type);
@@ -129,6 +130,36 @@ export const CompletedSessionCard: React.FC = () => {
         </p>
       )}
 
+      {/* Update 04: compact server-confirmed reward summary. Never optimistic:
+          rewards render only after the server has confirmed them. */}
+      {saved &&
+        !duplicate &&
+        rewards &&
+        (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0) && (
+          <div
+            data-testid="activity-rewards"
+            className="mt-2 rounded-xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
+          >
+            {rewards.xpAwarded > 0 && (
+              <p className="text-[11px] font-mono font-bold text-[#C81E3A]">
+                +{rewards.xpAwarded} XP
+              </p>
+            )}
+            {Object.entries(REWARD_STAT_LABELS).map(([key, label]) => {
+              const gain = rewards.statChanges[key];
+              if (!gain) return null;
+              return (
+                <p key={key} className="text-[10px] font-mono text-[#8C8C90]">
+                  {label} +{gain}
+                </p>
+              );
+            })}
+            {rewards.prBonusAwarded > 0 && (
+              <p className="mt-0.5 text-[10px] font-mono text-amber-300">NEW PR 🔥</p>
+            )}
+          </div>
+        )}
+
       {activity.saveState === "error" && activity.lastSaveError && (
         <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
           <p role="alert" className="flex items-start gap-1.5 text-[11px] font-mono text-red-400">
@@ -160,6 +191,13 @@ const TYPE_OPTIONS = ACTIVITY_TYPES.map((t) => ({
   value: t,
   label: ACTIVITY_TYPE_LABELS[t],
 }));
+
+/** Server stat name → Character Matrix display label (Update 04). */
+const REWARD_STAT_LABELS: Record<string, string> = {
+  fitness: "PHYSICAL",
+  discipline: "DISCIPLINE",
+  focus: "MENTAL",
+};
 
 /**
  * Server-backed activity history (Update 01). Loads the signed-in user's

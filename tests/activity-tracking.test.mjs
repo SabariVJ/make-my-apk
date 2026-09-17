@@ -776,6 +776,20 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     test.supabase = {
       rpc: async (fn, args) => {
         if (fn === "svj_list_activities") return { data: [], error: null };
+        // Update 04: reward processing is a separate, server-side call that
+        // never creates an activity — it must not count as a save.
+        if (fn === "svj_process_activity_rewards")
+          return {
+            data: {
+              ok: true,
+              eligible: true,
+              xpAwarded: 10,
+              prBonusAwarded: 0,
+              statChanges: {},
+              dailyActivityXpRemaining: 90,
+            },
+            error: null,
+          };
         saveCalls += 1;
         assert.equal(fn, "svj_save_activity");
         assert.equal(args.p_source, "svj_native");
@@ -893,6 +907,20 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     test.supabase = {
       rpc: async (fn, args) => {
         if (fn === "svj_list_activities") return { data: [], error: null };
+        // Update 04 reward processing is not an activity save.
+        if (fn === "svj_process_activity_rewards")
+          return {
+            data: {
+              ok: true,
+              eligible: false,
+              reason: "manual_source",
+              xpAwarded: 0,
+              prBonusAwarded: 0,
+              statChanges: {},
+              dailyActivityXpRemaining: 100,
+            },
+            error: null,
+          };
         bodies.push({ fn, args });
         return {
           data: {

@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getBodyProfile } from "@/lib/personalization.functions";
 import { useSVJ } from "./SVJContext";
@@ -38,10 +38,8 @@ import {
   type ServerActivity,
   type CompletedSessionPayload,
 } from "../lib/serverActivities";
-import {
-  extractSaveExtras,
-  type SaveExtras,
-} from "../lib/goalsRecords";
+import { extractSaveExtras, type SaveExtras } from "../lib/goalsRecords";
+import { processActivityRewards, rewardsRpcClient, type ActivityRewards } from "../lib/rewards";
 import {
   activeKcalGoal,
   applyTrackedMeasurement,
@@ -92,6 +90,8 @@ export interface ActivityContextValue {
   remainingSteps: number;
   /** XP granted today by step milestones (feeds XP Today / Daily XP Goal). */
   xpEarnedToday: number;
+  /** Server-confirmed activity XP earned today (Update 04, database clock). */
+  serverActivityXpToday: number;
   milestoneSteps: number;
   activeKcal: number;
   totalKcal: number;
@@ -133,6 +133,8 @@ export interface ActivityContextValue {
   lastSaveError: string | null;
   /** Server-reported records/goal progress from the most recent save. */
   lastSaveExtras: SaveExtras | null;
+  /** Server-confirmed rewards from the most recent save (Update 04). */
+  lastSaveRewards: ActivityRewards | null;
   /** Idempotent retry for the last failed save. */
   retrySaveCompletedSession: () => Promise<SaveActivityResultLike>;
   logManualActivity: (input: {
@@ -163,6 +165,8 @@ export type SaveActivityResultLike = {
   activity?: ServerActivity;
   error?: string;
   extras?: SaveExtras;
+  /** Server-confirmed rewards (Update 04). Null when not eligible / offline. */
+  rewards?: ActivityRewards | null;
 };
 
 export interface CompletedSessionSummary {
@@ -255,6 +259,7 @@ export function ActivityProvider({
   userId: string | null;
 }) {
   const { awardXp, addActivity } = useSVJ();
+  const queryClient = useQueryClient();
   const callGetBodyProfile = useServerFn(getBodyProfile);
 
   const [state, setState] = useState<ActivityState>(
@@ -301,6 +306,8 @@ export function ActivityProvider({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [lastSaveError, setLastSaveError] = useState<string | null>(null);
   const [lastSaveExtras, setLastSaveExtras] = useState<SaveExtras | null>(null);
+  // Update 04: server-confirmed rewards for the most recent canonical save.
+  const [lastSaveRewards, setLastSaveRewards] = useState<ActivityRewards | null>(null);
   const lastPayloadRef = useRef<CompletedSessionPayload | null>(null);
   const [manualSaveState, setManualSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [manualSaveError, setManualSaveError] = useState<string | null>(null);
@@ -937,11 +944,30 @@ export function ActivityProvider({
       const result = await saveServerActivity(rpcCall, payload, Date.now(), { source });
       if (result.ok) {
         // Update 02: surface server-derived records + goal progress.
-        return { ...result, extras: extractSaveExtras(result.rawData) };
+        const extras = extractSaveExtras(result.rawData);
+        // Update 04: server-derived rewards. Only a NEW activity processes
+        // rewards; an idempotent retry is a guaranteed zero-duplicate no-op
+        // on the server, but skipping it avoids a pointless round-trip.
+        let rewards: ActivityRewards | null = null;
+        if (!result.duplicate && result.activity) {
+          const client = rewardsRpcClient();
+          if (client) {
+            const processed = await processActivityRewards(client, result.activity.id);
+            if (processed.ok) rewards = processed.rewards ?? null;
+            // A rewards failure never fails the save — the activity is
+            // canonical and can be re-processed safely at any time.
+          }
+          // Update 04: refresh Character Matrix + profile XP without a reload
+          // once the server confirms progression for this save.
+          if (rewards && (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0)) {
+            void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+          }
+        }
+        return { ...result, extras, rewards };
       }
       return result;
     },
-    [userId, rpcCall],
+    [userId, rpcCall, queryClient],
   );
 
   const runSave = useCallback(
@@ -957,6 +983,7 @@ export function ActivityProvider({
         lastPayloadRef.current = null;
         // Server-derived records + goal progress for this save (Update 02).
         setLastSaveExtras(result.extras ?? null);
+        setLastSaveRewards(result.rewards ?? null);
       } else {
         setSaveState("error");
         setLastSaveError(result.error ?? "Couldn't save activity.");
@@ -982,6 +1009,7 @@ export function ActivityProvider({
       setSaveState("idle");
       lastPayloadRef.current = null;
       setLastSaveExtras(result.extras ?? null);
+      setLastSaveRewards(result.rewards ?? null);
     } else {
       setSaveState("error");
       setLastSaveError(result.error ?? "Couldn't save activity.");
@@ -1032,6 +1060,14 @@ export function ActivityProvider({
     stepPercent,
     remainingSteps,
     xpEarnedToday: milestoneXpClaimed(state.today),
+    // Update 04: latest server-confirmed activity-XP-today figure. Derived
+    // from the server's own daily-cap arithmetic — never device-local math.
+    serverActivityXpToday:
+      lastSaveRewards && lastSaveRewards.xpAwarded > 0
+        ? Math.max(0, 100 - (lastSaveRewards.dailyActivityXpRemaining ?? 0))
+        : lastSaveRewards
+          ? Math.max(0, 100 - (lastSaveRewards.dailyActivityXpRemaining ?? 0))
+          : 0,
     milestoneSteps: state.today?.trackedSteps ?? 0,
     activeKcal: liveCalories.activeKcal,
     totalKcal: liveCalories.totalKcal,
@@ -1059,6 +1095,7 @@ export function ActivityProvider({
     saveState,
     lastSaveError,
     lastSaveExtras,
+    lastSaveRewards,
     retrySaveCompletedSession,
     logManualActivity,
     manualSaveState,

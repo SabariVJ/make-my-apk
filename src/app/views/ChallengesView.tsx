@@ -264,9 +264,12 @@ export const ChallengesView: React.FC<{
   const totalCount = displayChallenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const todayXP = displayChallenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
-  // Automatic step-milestone XP counts toward the daily totals too.
+  // Automatic step-milestone XP + server-verified activity XP count toward
+  // the daily totals too. Server activity XP is the authoritative, capped,
+  // evidence-backed figure from the database — never device-local math.
   const activity = useActivityOptional();
-  const totalTodayXp = todayXP + (activity?.xpEarnedToday ?? 0);
+  const totalTodayXp =
+    todayXP + (activity?.xpEarnedToday ?? 0) + (activity?.serverActivityXpToday ?? 0);
 
   const isAndroid = Capacitor.getPlatform() === "android";
 

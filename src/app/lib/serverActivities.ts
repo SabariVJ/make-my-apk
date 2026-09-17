@@ -104,6 +104,8 @@ export interface SaveActivityResult {
   rawData?: unknown;
   /** Update 02: server-derived records + goal progress when present. */
   extras?: import("./goalsRecords").SaveExtras;
+  /** Update 04: server-confirmed rewards when present (never client-calculated). */
+  rewards?: import("./rewards").ActivityRewards | null;
 }
 
 const MIN_SESSION_ID_LENGTH = 8;

@@ -14,6 +14,10 @@ const challengeServer = await readFile(
   new URL("../src/lib/challenge.functions.ts", import.meta.url),
   "utf8",
 );
+const selfServiceMigration = await readFile(
+  new URL("../supabase/migrations/20260918000000_challenge_self_service.sql", import.meta.url),
+  "utf8",
+);
 const verifiedActivityMigration = await readFile(
   new URL(
     "../supabase/migrations/20260904183000_verified_activity_and_rivalry_scoring.sql",
@@ -49,8 +53,24 @@ test("rivalry RPCs require an authenticated participant and a friend relationshi
 });
 
 test("verified challenge activity is the only 60-Day XP and rivalry score writer", () => {
-  assert.match(challengeServer, /svj_record_verified_60_day_completion/);
-  assert.match(challengeServer, /missingVerifiedActivityRpc/);
+  // The verified-activity RPC is now invoked from inside the self-service
+  // completion RPC (SECURITY DEFINER, identity = auth.uid()) rather than from
+  // the application server. The chain must stay intact end to end.
+  assert.match(
+    challengeServer,
+    /svj_complete_my_challenge_day/,
+    "the application completion path must go through the self-service RPC",
+  );
+  assert.match(
+    selfServiceMigration,
+    /svj_record_verified_60_day_completion/,
+    "the self-service completion RPC must award XP via the verified activity RPC",
+  );
+  assert.match(
+    selfServiceMigration,
+    /missing_verified_activity_rpc/,
+    "the deploy-window fallback flag must remain",
+  );
   assert.match(verifiedActivityMigration, /ON CONFLICT \(user_id, event_key\) DO NOTHING/);
   assert.match(verifiedActivityMigration, /INSERT INTO public\.rivalry_events/);
   assert.match(verifiedActivityMigration, /status = 'active'/);

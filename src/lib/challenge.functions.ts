@@ -1,29 +1,29 @@
 // ============================================================================
 // 60-Day Challenge — server-side functions.
 //
-// SECURITY MODEL
-//   * Every write goes through these TanStack Start server functions, which
-//     run behind requireSupabaseAuth and use the service_role admin client.
-//   * The challenge tables (challenge_enrollments, challenge_day_progress,
-//     redeem_codes) have RLS enabled with zero policies and no authenticated
-//     grants, so direct client writes are impossible at the database level.
-//   * "now" always comes from the DATABASE clock (public.db_now()), never the
-//     device clock. Day N unlocks at anchor + (N - 1) * 24h where anchor is the
-//     server-recorded start time.
+// SECURITY MODEL (emergency backend stabilization — no admin key required)
+//   * Every call is authenticated: requireSupabaseAuth validates the caller's
+//     own JWT and provides a publishable-key client carrying the user's own
+//     bearer token. All reads/writes go through self-service SECURITY DEFINER
+//     database RPCs that derive identity from auth.uid() — never from a
+//     caller-supplied user_id. No requireAdminKey / service-role client is
+//     involved anywhere in these flows.
+//   * The challenge tables keep RLS enabled with zero policies and no
+//     authenticated grants: direct client writes remain impossible.
+//   * "now" always comes from the DATABASE clock (now() inside the RPCs),
+//     never the device clock. Day N unlocks at anchor + (N - 1) * 24h where
+//     anchor is the server-recorded start time.
+//   * Day content (XP / focus / tasks) lives server-side in
+//     challenge_day_definitions; a caller cannot choose their own XP.
 //   * The completion path is verified server-side in strictly sequential order
-//     and the redeem code is generated here, never on the client.
+//     and the redeem code is generated server-side, never on the client.
 // ============================================================================
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdminKey } from "@/integrations/supabase/client.server";
-import { CHALLENGE_DAYS, TOTAL_DAYS, DAY_MS, getDayDef } from "./challengeDays";
+import { TOTAL_DAYS, DAY_MS, getDayDef } from "./challengeDays";
 
 const FOUNDER_EMAIL = "sabarivj777@gmail.com";
-
-// No 0/O/1/I/L — avoids visually ambiguous characters in the code.
-const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-const PLUS_MONTHS = 2;
 
 export type ChallengeRunStatus = "not_started" | "active" | "paused" | "completed";
 export type ChallengeDayStatus = "completed" | "current" | "locked" | "missed";
@@ -64,390 +64,186 @@ export interface CompleteDayInput {
 export type RedeemResult =
   { ok: true; message: string; plusExpiresAt: string | null } | { ok: false; message: string };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Admin = any;
+// ── RPC result parsing ───────────────────────────────────────────────────────
 
-interface EnrollmentRow {
-  id: string;
-  user_id: string;
-  status: string;
-  started_at: string;
-  paused_at: string | null;
-  completed_at: string | null;
-  code_granted: boolean;
-  current_streak: number;
-  best_streak: number;
+interface RawChallengeState {
+  status?: string;
+  startedAt?: string | null;
+  pausedAt?: string | null;
+  completedAt?: string | null;
+  currentDay?: number;
+  daysCompleted?: number;
+  currentStreak?: number;
+  bestStreak?: number;
+  currentUnlockAt?: string | null;
+  currentUnlocked?: boolean;
+  dayKeys?: number[];
+  dayStates?: Record<string, { status?: string; completedAt?: string | null }>;
+  code?: string | null;
+  codeRedeemed?: boolean;
+  serverNow?: string;
+  lastGrantedXp?: number;
 }
 
-interface ProgressRow {
-  id: string;
-  enrollment_id: string;
-  day_number: number;
-  status: string;
-  completed_at: string | null;
-  checkin_duration_minutes: number | null;
-  checkin_reflection: string | null;
+/** Normalizes the RPC's JSON shape into the client-facing ChallengeState. */
+function parseChallengeState(raw: unknown): ChallengeState {
+  const r = (raw ?? {}) as RawChallengeState;
+  const dayKeys = Array.isArray(r.dayKeys) ? r.dayKeys : [];
+  const dayStates = r.dayStates ?? {};
+
+  const days: ChallengeDayState[] = dayKeys.map((d) => {
+    const s = dayStates[String(d)] ?? {};
+    const status =
+      s.status === "completed" || s.status === "current" || s.status === "missed"
+        ? s.status
+        : "locked";
+    return status === "completed" && s.completedAt
+      ? { day: d, status, completedAt: s.completedAt }
+      : { day: d, status };
+  });
+
+  return {
+    status: (r.status ?? "not_started") as ChallengeState["status"],
+    startedAt: r.startedAt ?? null,
+    pausedAt: r.pausedAt ?? null,
+    completedAt: r.completedAt ?? null,
+    currentDay: Number(r.currentDay ?? 1),
+    daysCompleted: Number(r.daysCompleted ?? 0),
+    currentStreak: Number(r.currentStreak ?? 0),
+    bestStreak: Number(r.bestStreak ?? 0),
+    currentUnlockAt: r.currentUnlockAt ?? null,
+    currentUnlocked: Boolean(r.currentUnlocked),
+    days,
+    serverNow: r.serverNow ?? new Date().toISOString(),
+    code: r.code ?? null,
+    codeRedeemed: Boolean(r.codeRedeemed),
+    debugIsAdmin: false,
+    lastGrantedXp: Number(r.lastGrantedXp ?? 0),
+  };
 }
 
-interface RedeemCodeRow {
-  id: string;
-  code: string;
-  user_id: string;
-  redeemed: boolean;
-  redeemed_at: string | null;
-}
-
-// ── Database helpers ─────────────────────────────────────────────────────────
-
-async function getDbNow(admin: Admin): Promise<Date> {
-  const { data, error } = await admin.rpc("db_now");
-  if (error || !data) {
-    console.error("[SVJ][60Day] db_now failed:", error);
-    throw new Error("Could not read the server clock. Please retry.");
-  }
-  return new Date(data as string);
-}
-
-async function getEnrollment(admin: Admin, userId: string): Promise<EnrollmentRow | null> {
-  const { data, error } = await admin
-    .from("challenge_enrollments")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as EnrollmentRow | null) ?? null;
-}
-
-async function getProgress(admin: Admin, enrollmentId: string): Promise<ProgressRow[]> {
-  const { data, error } = await admin
-    .from("challenge_day_progress")
-    .select("*")
-    .eq("enrollment_id", enrollmentId)
-    .order("day_number", { ascending: true });
-  if (error) throw error;
-  return (data as ProgressRow[] | null) ?? [];
-}
-
-async function getRedeemCode(admin: Admin, userId: string): Promise<RedeemCodeRow | null> {
-  const { data, error } = await admin
-    .from("redeem_codes")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as RedeemCodeRow | null) ?? null;
-}
-
-// ── State computation (pure) ─────────────────────────────────────────────────
+// ── Local mirror of the server-side run math (fast, friendly client errors) ──
 
 interface ComputedRun {
-  completedSet: Set<number>;
   daysCompleted: number;
   nextDay: number; // 1..60, or 61 when finished
   unlockAtMs: number | null;
-  isMissed: boolean; // nextDay's window elapsed while active
   effectiveStatus: ChallengeRunStatus;
 }
 
 function computeRun(
-  enrollment: EnrollmentRow | null,
-  progress: ProgressRow[],
+  enrollment: { startedAt: string; status: string } | null,
+  daysCompleted: number,
   nowMs: number,
 ): ComputedRun {
   if (!enrollment) {
-    return {
-      completedSet: new Set(),
-      daysCompleted: 0,
-      nextDay: 1,
-      unlockAtMs: null,
-      isMissed: false,
-      effectiveStatus: "not_started",
-    };
+    return { daysCompleted: 0, nextDay: 1, unlockAtMs: null, effectiveStatus: "not_started" };
   }
 
-  const completedSet = new Set<number>();
-  for (const row of progress) if (row.status === "completed") completedSet.add(row.day_number);
-
-  const daysCompleted = completedSet.size;
   const nextDay = daysCompleted + 1;
-
   if (nextDay > TOTAL_DAYS) {
-    return {
-      completedSet,
-      daysCompleted,
-      nextDay,
-      unlockAtMs: null,
-      isMissed: false,
-      effectiveStatus: "completed",
-    };
+    return { daysCompleted, nextDay, unlockAtMs: null, effectiveStatus: "completed" };
   }
 
-  const anchorMs = new Date(enrollment.started_at).getTime();
+  const anchorMs = new Date(enrollment.startedAt).getTime();
   const unlockAtMs = anchorMs + (nextDay - 1) * DAY_MS;
   const windowElapsed = nowMs > unlockAtMs + DAY_MS;
 
   if (enrollment.status === "paused" || windowElapsed) {
-    return {
-      completedSet,
-      daysCompleted,
-      nextDay,
-      unlockAtMs,
-      isMissed: true,
-      effectiveStatus: "paused",
-    };
+    return { daysCompleted, nextDay, unlockAtMs, effectiveStatus: "paused" };
   }
-
-  return {
-    completedSet,
-    daysCompleted,
-    nextDay,
-    unlockAtMs,
-    isMissed: false,
-    effectiveStatus: "active",
-  };
-}
-
-function buildState(
-  enrollment: EnrollmentRow | null,
-  progress: ProgressRow[],
-  now: Date,
-  code: RedeemCodeRow | null,
-  debugIsAdmin: boolean,
-): ChallengeState {
-  const nowMs = now.getTime();
-  const run = computeRun(enrollment, progress, nowMs);
-
-  const days: ChallengeDayState[] = [];
-  for (let d = 1; d <= TOTAL_DAYS; d++) {
-    let status: ChallengeDayStatus = "locked";
-    if (run.completedSet.has(d)) {
-      status = "completed";
-    } else if (d === run.nextDay && run.effectiveStatus === "paused") {
-      status = "missed";
-    } else if (d === run.nextDay) {
-      status = "current"; // active: waiting for unlock (details hidden until unlocked) or unlocked now
-    }
-    const done = progress.find((p) => p.day_number === d && p.status === "completed");
-    days.push(
-      status === "completed"
-        ? { day: d, status, completedAt: done?.completed_at ?? undefined }
-        : { day: d, status },
-    );
-  }
-
-  return {
-    status: run.effectiveStatus,
-    startedAt: enrollment ? enrollment.started_at : null,
-    pausedAt: enrollment?.paused_at ?? null,
-    completedAt: enrollment?.completed_at ?? null,
-    currentDay: run.nextDay,
-    daysCompleted: run.daysCompleted,
-    currentStreak: enrollment?.current_streak ?? 0,
-    bestStreak: enrollment?.best_streak ?? 0,
-    currentUnlockAt: run.unlockAtMs ? new Date(run.unlockAtMs).toISOString() : null,
-    currentUnlocked:
-      run.effectiveStatus === "active" && run.unlockAtMs !== null && nowMs >= run.unlockAtMs,
-    days,
-    serverNow: now.toISOString(),
-    code: code?.code ?? null,
-    codeRedeemed: code?.redeemed ?? false,
-    debugIsAdmin,
-    lastGrantedXp: 0,
-  };
-}
-
-async function loadState(admin: Admin, userId: string, now: Date): Promise<ChallengeState> {
-  const enrollment = await getEnrollment(admin, userId);
-  const progress = enrollment ? await getProgress(admin, enrollment.id) : [];
-  const code = await getRedeemCode(admin, userId);
-  return buildState(enrollment, progress, now, code, false);
-}
-
-// ── Verification + code generation (the real, non-mock paths) ───────────────
-
-/**
- * REAL completion verification. Returns true only when every day 1..60 has a
- * completed row and the rows are exactly sequential (no gaps, no skips).
- * Used by completeChallengeDay's final step AND by the founder debug action —
- * there is no separate mock path.
- */
-async function verifyCompletion(
-  admin: Admin,
-  userId: string,
-  enrollment: EnrollmentRow,
-  progress: ProgressRow[],
-  now: Date,
-): Promise<boolean> {
-  const completed = new Set(
-    progress.filter((p) => p.status === "completed").map((p) => p.day_number),
-  );
-  if (completed.size !== TOTAL_DAYS) return false;
-  for (let d = 1; d <= TOTAL_DAYS; d++) {
-    if (!completed.has(d)) return false;
-  }
-  return true;
-}
-
-function randomSegment(length: number): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(length));
-  let out = "";
-  for (let i = 0; i < length; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-  return out;
-}
-
-function generateCodeString(): string {
-  return `SVJ-${randomSegment(4)}-${randomSegment(4)}`;
+  return { daysCompleted, nextDay, unlockAtMs, effectiveStatus: "active" };
 }
 
 /**
- * REAL code generation. Generates one unique SVJ-XXXX-XXXX code per finisher,
- * server-side only, stored in redeem_codes. Idempotent: a finisher who already
- * has a code gets the same one back.
+ * Authoritative state fetch for the current user (identity = auth.uid() inside
+ * the RPC). Used by completeChallengeDay for pre-flight error parity.
  */
-async function grantCompletionCode(
-  admin: Admin,
-  userId: string,
-  enrollmentId: string,
-  now: Date,
-): Promise<string> {
-  const existing = await getRedeemCode(admin, userId);
-  if (existing) {
-    // Ensure the enrollment flag matches (defensive; keeps idempotency).
-    if (!existing.redeemed) {
-      await admin
-        .from("challenge_enrollments")
-        .update({ code_granted: true })
-        .eq("id", enrollmentId);
-    }
-    return existing.code;
-  }
-
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const code = generateCodeString();
-    const { error } = await admin.from("redeem_codes").insert({
-      code,
-      user_id: userId,
-      redeemed: false,
-    });
-    if (!error) {
-      await admin
-        .from("challenge_enrollments")
-        .update({ code_granted: true })
-        .eq("id", enrollmentId);
-      return code;
-    }
-    // Unique collision — retry with a fresh code.
-    if (
-      String(error?.message ?? "")
-        .toLowerCase()
-        .includes("duplicate")
-    )
-      continue;
-    throw error;
-  }
-  throw new Error("Could not generate a unique redeem code. Please retry.");
+async function fetchMyChallengeState(supabase: unknown): Promise<ChallengeState> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const client = supabase as any;
+  const { data, error } = await client.rpc("svj_get_my_challenge_state");
+  if (error) throw new Error(error.message);
+  return parseChallengeState(data);
 }
 
 // ── Public server functions ──────────────────────────────────────────────────
 
-/** Read-only state for the current user (also lazily persists a missed-day pause). */
+/** Read-only state for the current user (the RPC lazily persists a missed-day pause). */
 export const getChallengeState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as Admin;
-    const now = await getDbNow(admin);
+    // context.supabase is the publishable-key client carrying the caller's own
+    // bearer token. The generated types intentionally lag additive SQL
+    // migrations; these RPCs have fixed, audited JSON shapes and are cast
+    // locally — the same approach as the membership RPC in trial.functions.ts.
+    const state = await fetchMyChallengeState(context.supabase);
     const email = ((context.claims["email"] as string | undefined) ?? "").toLowerCase();
-
-    // Lazily persist a missed day: window elapsed without completion -> paused.
-    const enrollment = await getEnrollment(admin, context.userId);
-    if (enrollment) {
-      const progress = await getProgress(admin, enrollment.id);
-      const run = computeRun(enrollment, progress, now.getTime());
-      if (run.effectiveStatus === "paused" && enrollment.status !== "paused") {
-        await admin
-          .from("challenge_enrollments")
-          .update({ status: "paused", paused_at: now.toISOString() })
-          .eq("id", enrollment.id);
-        enrollment.status = "paused";
-        enrollment.paused_at = now.toISOString();
-      }
-    }
-
-    const state = await loadState(admin, context.userId, now);
     return { ...state, debugIsAdmin: email === FOUNDER_EMAIL };
   });
 
-/** Start the 60-day program (server records the start time / unlock clock). */
+/** Start the 60-day program (the RPC records the server start time / unlock clock). */
 export const startChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as Admin;
-    const now = await getDbNow(admin);
-
-    const existing = await getEnrollment(admin, context.userId);
-    if (!existing) {
-      const { error } = await admin.from("challenge_enrollments").insert({
-        user_id: context.userId,
-        status: "active",
-        started_at: now.toISOString(),
-      });
-      if (error) throw error;
-    }
-
-    return loadState(admin, context.userId, now);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
+    const { data, error } = await client.rpc("svj_start_my_challenge");
+    if (error) throw new Error(error.message);
+    return parseChallengeState(data);
   });
 
 /**
- * Complete the current day. Server-side validation only:
+ * Complete the current day. The RPC enforces the full validation contract:
  *  - auth + enrollment + not paused/completed
  *  - strictly sequential (day must be daysCompleted + 1)
  *  - unlock time from the DB clock (anchor + (day-1)*24h)
- *  - ALL of the day's tasks checked (validated against the shared program)
+ *  - ALL of the day's tasks checked (validated against server-side definitions)
  *  - required check-in (duration + reflection)
- * Finishing day 60 triggers the real verification + code grant.
+ *  - XP/focus from the server-side definition table via the existing verified
+ *    activity RPC (exactly-once XP, stats, rivalry)
+ * Finishing day 60 triggers full verification + the code grant.
  */
 export const completeChallengeDay = createServerFn({ method: "POST" })
   .validator((input: CompleteDayInput) => input)
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }): Promise<ChallengeState> => {
     const input = data as CompleteDayInput;
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as Admin;
-    const now = await getDbNow(admin);
-    const nowMs = now.getTime();
+    const taskIds = Array.isArray(input?.taskIds) ? input.taskIds : [];
+    const durationMinutes = Math.round(Number(input?.durationMinutes) || 0);
+    const reflection = typeof input?.reflection === "string" ? input.reflection : "";
 
-    const enrollment = await getEnrollment(admin, context.userId);
-    if (!enrollment) throw new Error("Start the 60-Day Challenge before completing days.");
-    if (enrollment.status === "completed")
-      throw new Error("The 60-Day Challenge is already complete.");
+    // Fast, friendly pre-flight using the caller's own server state. The RPC
+    // re-validates everything authoritatively — including the unlock window on
+    // the database clock — so this mirror can never widen the contract.
+    const state = await fetchMyChallengeState(context.supabase);
+    const run = computeRun(
+      state.startedAt ? { startedAt: state.startedAt, status: state.status } : null,
+      state.daysCompleted,
+      new Date(state.serverNow).getTime(),
+    );
 
-    const progress = await getProgress(admin, enrollment.id);
-    const run = computeRun(enrollment, progress, nowMs);
+    if (run.effectiveStatus === "not_started") {
+      throw new Error("Start the 60-Day Challenge before completing days.");
+    }
     if (run.effectiveStatus === "paused") {
       throw new Error("This day was missed. Resume the challenge to continue.");
     }
     if (run.effectiveStatus === "completed") {
       throw new Error("The 60-Day Challenge is already complete.");
     }
-
     const day = run.nextDay;
-    if (run.unlockAtMs === null || nowMs < run.unlockAtMs) {
+    if (run.unlockAtMs === null || new Date(state.serverNow).getTime() < run.unlockAtMs) {
       throw new Error(
-        `Day ${day} is not unlocked yet. It unlocks ${run.unlockAtMs ? new Date(run.unlockAtMs).toISOString() : "later"}.`,
+        `Day ${day} is not unlocked yet. It unlocks ${
+          run.unlockAtMs ? new Date(run.unlockAtMs).toISOString() : "later"
+        }.`,
       );
     }
+    const dayDef = getDayDef(day);
+    if (!dayDef) throw new Error("Unknown day definition.");
 
-    const def = getDayDef(day);
-    if (!def) throw new Error("Unknown day definition.");
-
-    // Sequential + full task validation against the server-side program content.
-    const taskIds = Array.isArray(input?.taskIds) ? input.taskIds : [];
-    const required = new Set(def.tasks.map((_, i) => String(i)));
+    const required = new Set(dayDef.tasks.map((_, i) => String(i)));
     const submitted = new Set(taskIds.map(String));
     const allTasksDone =
       required.size > 0 &&
@@ -456,140 +252,43 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
     if (!allTasksDone) {
       throw new Error("Check off every task for this day before completing it.");
     }
-
-    // Required daily check-in: duration (minutes) + reflection text.
-    const durationMinutes = Math.round(Number(input?.durationMinutes) || 0);
-    const reflection = typeof input?.reflection === "string" ? input.reflection.trim() : "";
     if (!Number.isFinite(durationMinutes) || durationMinutes < 1 || durationMinutes > 600) {
       throw new Error("Add a valid check-in duration (1–600 minutes).");
     }
-    if (reflection.length < 5) {
+    if (reflection.trim().length < 5) {
       throw new Error("Write a short check-in reflection before finishing the day.");
     }
 
-    const isFinalDay = day === TOTAL_DAYS;
-
-    // The day row itself is sequential and replay-safe. XP, activity ledger,
-    // stat growth and rivalry contribution are then awarded together by the
-    // service-only RPC below, keyed by this enrollment/day combination.
-    const { data: inserted, error: progressError } = await admin
-      .from("challenge_day_progress")
-      .upsert(
-        {
-          enrollment_id: enrollment.id,
-          day_number: day,
-          status: "completed",
-          completed_at: now.toISOString(),
-          checkin_duration_minutes: durationMinutes,
-          checkin_reflection: reflection.slice(0, 2000),
-          tasks_completed: JSON.stringify(def.tasks),
-        },
-        { onConflict: "enrollment_id,day_number", ignoreDuplicates: true },
-      )
-      .select("id");
-    if (progressError) throw progressError;
-
-    // One immutable activity-event key is the server-side idempotency guard.
-    // A double click/replay can read the completed day but cannot add lifetime
-    // XP, stats or rivalry score a second time.
-    const { data: award, error: awardError } = await admin.rpc(
-      "svj_record_verified_60_day_completion",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: award, error } = await (context.supabase as any).rpc(
+      "svj_complete_my_challenge_day",
       {
-        p_user_id: context.userId,
-        p_enrollment_id: enrollment.id,
-        p_day_number: day,
-        p_xp: def.xp,
-        p_focus: def.focus,
+        p_task_ids: JSON.stringify(taskIds),
+        p_duration_minutes: durationMinutes,
+        p_reflection: reflection,
       },
     );
-    let lastGrantedXp = 0;
-    if (!awardError) {
-      lastGrantedXp = award?.xp_awarded === true ? def.xp : 0;
-    } else {
-      // Deploys can briefly serve the new application code before its additive
-      // database migration is available. Preserve the previously working,
-      // server-only exactly-once XP path in that narrow compatibility window;
-      // any other RPC failure remains a visible error and never mints XP.
-      const missingVerifiedActivityRpc =
-        awardError.code === "PGRST202" ||
-        /svj_record_verified_60_day_completion|could not find the function/i.test(
-          String(awardError.message ?? ""),
-        );
-      if (!missingVerifiedActivityRpc) throw awardError;
-      if ((inserted?.length ?? 0) > 0) {
-        const { error: legacyXpError } = await admin.rpc("increment_total_xp", {
-          target_user: context.userId,
-          amount: def.xp,
-        });
-        if (legacyXpError) throw legacyXpError;
-        lastGrantedXp = def.xp;
-      }
-    }
+    if (error) throw new Error(error.message);
 
-    const nextStreak = Math.max(enrollment.current_streak, day);
-    const update: Record<string, unknown> = {
-      current_streak: nextStreak,
-      best_streak: Math.max(enrollment.best_streak, nextStreak),
-    };
-    if (isFinalDay) {
-      update.status = "completed";
-      update.completed_at = now.toISOString();
-    }
-    const { error: enrollmentError } = await admin
-      .from("challenge_enrollments")
-      .update(update)
-      .eq("id", enrollment.id);
-    if (enrollmentError) throw enrollmentError;
-
-    if (isFinalDay) {
-      const fresh = await getEnrollment(admin, context.userId);
-      const freshProgress = await getProgress(admin, enrollment.id);
-      if (!fresh) throw new Error("Enrollment missing after completion.");
-      const verified = await verifyCompletion(admin, context.userId, fresh, freshProgress, now);
-      if (verified) {
-        await grantCompletionCode(admin, context.userId, enrollment.id, now);
-      }
-    }
-
-    const state = await loadState(admin, context.userId, now);
-    return { ...state, lastGrantedXp };
+    return parseChallengeState(award);
   });
 
-/** Resume after a missed day: re-anchor the unlock clock, keep streak + history. */
+/** Resume after a missed day: the RPC re-anchors the unlock clock, keeping streak + history. */
 export const resumeChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ChallengeState> => {
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as Admin;
-    const now = await getDbNow(admin);
-    const nowMs = now.getTime();
-
-    const enrollment = await getEnrollment(admin, context.userId);
-    if (!enrollment) throw new Error("Start the 60-Day Challenge before resuming.");
-    if (enrollment.status === "completed") return loadState(admin, context.userId, now);
-
-    const progress = await getProgress(admin, enrollment.id);
-    const run = computeRun(enrollment, progress, nowMs);
-    if (run.effectiveStatus !== "paused") {
-      return loadState(admin, context.userId, now); // nothing to resume
-    }
-
-    // Re-anchor so the pending day unlocks immediately; streak/history preserved.
-    const reAnchor = new Date(nowMs - (run.nextDay - 1) * DAY_MS).toISOString();
-    const { error } = await admin
-      .from("challenge_enrollments")
-      .update({ status: "active", paused_at: null, started_at: reAnchor })
-      .eq("id", enrollment.id);
-    if (error) throw error;
-
-    return loadState(admin, context.userId, now);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
+    const { data, error } = await client.rpc("svj_resume_my_challenge");
+    if (error) throw new Error(error.message);
+    return parseChallengeState(data);
   });
 
 /**
- * Redeem an earned SVJ-XXXX-XXXX code. Validates server-side:
+ * Redeem an earned SVJ-XXXX-XXXX code. The RPC validates server-side:
  *  - code exists and is unredeemed
- *  - code belongs to the redeeming account (locked to the finisher, non-transferable)
+ *  - code belongs to the redeeming account (locked to the finisher,
+ *    non-transferable) — identity is auth.uid(), never a client user_id
  *  - on success: permanently marks the code redeemed (single use, even for the
  *    original account) and grants Plus for exactly 2 months from redemption.
  * Errors are deliberately generic so we never reveal whether a code exists but
@@ -601,104 +300,32 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<RedeemResult> => {
     const input = data as { code?: string };
     const raw = typeof input?.code === "string" ? input.code.trim().toUpperCase() : "";
-    if (!raw) return { ok: false, message: "This code is invalid or has already been redeemed." };
+    const genericMessage = "This code is invalid or has already been redeemed.";
+    if (!raw) return { ok: false, message: genericMessage };
 
-    requireAdminKey();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as Admin;
-    const now = await getDbNow(admin);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: result, error } = await (context.supabase as any).rpc("svj_redeem_my_plus_code", {
+      p_code: raw,
+    });
+    if (error) {
+      // The RPC returns structured results for all code-level outcomes; a
+      // thrown error here is infrastructure-level. Stay generic either way.
+      return { ok: false, message: genericMessage };
+    }
 
-    const { data: codeRow, error } = await admin
-      .from("redeem_codes")
-      .select("*")
-      .eq("code", raw)
-      .maybeSingle();
-    if (error) throw error;
-
-    const genericError: RedeemResult = {
-      ok: false,
-      message: "This code is invalid or has already been redeemed.",
+    const payload = (result ?? {}) as {
+      ok?: boolean;
+      message?: string;
+      plusExpiresAt?: string | null;
     };
-    if (!codeRow || codeRow.redeemed || codeRow.user_id !== context.userId) return genericError;
-
-    // ── Entitlement safety: never shorten an existing Plus entitlement ───────
-    const { data: profileRow } = await admin
-      .from("profiles")
-      .select("is_plus_member, plus_expires_at")
-      .eq("id", context.userId)
-      .maybeSingle();
-
-    const existingPlusActive =
-      (profileRow as Record<string, unknown> | null)?.is_plus_member === true;
-    const existingExpiresRaw = (profileRow as Record<string, unknown> | null)?.plus_expires_at;
-    const existingExpiresMs = existingExpiresRaw
-      ? new Date(existingExpiresRaw as string).getTime()
-      : 0;
-    const isLifetimePlus = existingPlusActive && !existingExpiresRaw;
-
-    if (isLifetimePlus) {
-      // Lifetime / Founder Plus — the code is consumed but the entitlement is
-      // already superior to anything a 2-month code can grant.
-      const { data: claimed, error: claimError } = await admin
-        .from("redeem_codes")
-        .update({ redeemed: true, redeemed_at: now.toISOString() })
-        .eq("id", codeRow.id)
-        .eq("redeemed", false)
-        .select("id")
-        .maybeSingle();
-      if (claimError) throw claimError;
-      if (!claimed) return genericError;
-
+    if (payload.ok === true) {
       return {
         ok: true,
-        message: "Code redeemed. Your existing lifetime SVJ Plus remains active.",
-        plusExpiresAt: null,
+        message:
+          payload.message ??
+          "SVJ Plus activated for 2 months. Locked to your account — single use.",
+        plusExpiresAt: payload.plusExpiresAt ?? null,
       };
     }
-
-    // Compute the new expiry: add 2 months after the existing expiry (if still
-    // active) or 2 months from now (if Plus expired / never held).
-    const baseMs =
-      existingPlusActive && existingExpiresMs > now.getTime() ? existingExpiresMs : now.getTime();
-    const expires = new Date(baseMs);
-    expires.setMonth(expires.getMonth() + PLUS_MONTHS);
-    const expiresAt = expires.toISOString();
-
-    // Atomic claim: only one redemption can flip redeemed=false -> true.
-    const { data: claimed, error: claimError } = await admin
-      .from("redeem_codes")
-      .update({ redeemed: true, redeemed_at: now.toISOString() })
-      .eq("id", codeRow.id)
-      .eq("redeemed", false)
-      .select("id")
-      .maybeSingle();
-    if (claimError) throw claimError;
-    if (!claimed) return genericError; // lost the race — already redeemed elsewhere
-
-    // Grant Plus via the service-role client.
-    const plusPatch = {
-      is_plus_member: true,
-      plus_unlocked_at: now.toISOString(),
-      plus_expires_at: expiresAt,
-    };
-
-    const { error: profileError } = await admin
-      .from("profiles")
-      .update(plusPatch)
-      .eq("id", context.userId);
-    if (profileError) {
-      // Best-effort compensation: un-burn the code so a transient error does
-      // not permanently destroy the user's reward.
-      await admin
-        .from("redeem_codes")
-        .update({ redeemed: false, redeemed_at: null })
-        .eq("id", codeRow.id);
-      throw profileError;
-    }
-
-    return {
-      ok: true,
-      message: "SVJ Plus activated for 2 months. Locked to your account — single use.",
-      plusExpiresAt: expiresAt,
-    };
+    return { ok: false, message: payload.message ?? genericMessage };
   });

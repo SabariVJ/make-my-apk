@@ -11,6 +11,9 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
+  Loader2,
+  Trophy,
+  Target,
 } from "lucide-react";
 import { useActivityOptional, type ActivityTypeFromLib } from "../context/ActivityContext";
 import {
@@ -21,6 +24,22 @@ import {
   listServerActivities,
   type ServerActivity,
 } from "../lib/serverActivities";
+import {
+  STRENGTH_RECORD_LABELS,
+  formatRecordValue,
+  formatVolume,
+  getStrengthDetail,
+  listStrengthSummaries,
+  type GoalContribution,
+  type StrengthDetail,
+  type StrengthSummary,
+} from "../lib/strength";
+import {
+  ExerciseHistoryPanel,
+  MuscleTrainedList,
+  StrengthSetsList,
+} from "../components/StrengthDetails";
+import { strengthRpcClient } from "../lib/strengthClient";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 
 type LoadState = "loading" | "loaded" | "error";
@@ -154,6 +173,8 @@ export const ActivityHistory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ServerActivity | null>(null);
   const [showManual, setShowManual] = useState(false);
+  // Exercise/set totals for structured strength workouts (server derived).
+  const [summaries, setSummaries] = useState<Map<string, StrengthSummary>>(new Map());
 
   const load = useCallback(async () => {
     setState("loading");
@@ -178,6 +199,12 @@ export const ActivityHistory: React.FC = () => {
     if (result.ok) {
       setItems(result.activities);
       setState("loaded");
+      // Best effort: strength rows show their exercise/set totals. A failure
+      // here must never hide the activity history itself.
+      if (result.activities.some((a) => a.activityType === "strength")) {
+        const extras = await listStrengthSummaries((fn, args) => client.rpc(fn, args), 100);
+        if (extras.ok) setSummaries(extras.summaries);
+      }
     } else {
       setError(result.error ?? "Couldn't load history.");
       setState("error");
@@ -188,8 +215,16 @@ export const ActivityHistory: React.FC = () => {
     void load();
   }, [load]);
 
+  const summaryFor = (item: ServerActivity): StrengthSummary | undefined => summaries.get(item.id);
+
   if (selected) {
-    return <ActivityDetail activity={selected} onBack={() => setSelected(null)} />;
+    return (
+      <ActivityDetail
+        activity={selected}
+        summary={summaries.get(selected.id)}
+        onBack={() => setSelected(null)}
+      />
+    );
   }
 
   return (
@@ -289,14 +324,29 @@ export const ActivityHistory: React.FC = () => {
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
                   <span>{formatDurationLabel(item.durationSeconds)}</span>
                   {item.stepCount > 0 && <span>· {item.stepCount.toLocaleString()} steps</span>}
+                  {(summaryFor(item)?.exerciseCount ?? 0) > 0 && (
+                    <span>
+                      · {summaryFor(item)!.exerciseCount}{" "}
+                      {summaryFor(item)!.exerciseCount === 1 ? "exercise" : "exercises"} ·{" "}
+                      {summaryFor(item)!.setCount}{" "}
+                      {summaryFor(item)!.setCount === 1 ? "set" : "sets"}
+                    </span>
+                  )}
+                  {(summaryFor(item)?.volumeKg ?? 0) > 0 && (
+                    <span>· {formatVolume(summaryFor(item)!.volumeKg)} volume</span>
+                  )}
                   <span
                     className={`rounded border px-1.5 py-0.5 text-[9px] uppercase ${
-                      item.source === "svj_native"
-                        ? "border-[#C81E3A]/40 text-[#E62846]"
-                        : "border-white/15 text-[#8C8C90]"
+                      item.source === "manual"
+                        ? "border-white/15 text-[#8C8C90]"
+                        : "border-[#C81E3A]/40 text-[#E62846]"
                     }`}
                   >
-                    {item.source === "svj_native" ? "Tracked" : "Manual"}
+                    {item.source === "svj_native"
+                      ? "Tracked"
+                      : item.source === "strength_log"
+                        ? "Strength log"
+                        : "Manual"}
                   </span>
                 </div>
               </button>
@@ -308,71 +358,227 @@ export const ActivityHistory: React.FC = () => {
   );
 };
 
-const ActivityDetail: React.FC<{ activity: ServerActivity; onBack: () => void }> = ({
-  activity,
-  onBack,
-}) => (
-  <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5">
-    <button
-      type="button"
-      onClick={onBack}
-      className="mb-3 flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
-    >
-      <ChevronLeft className="w-3.5 h-3.5" /> Back to history
-    </button>
-    <h3 className="font-anton text-xl uppercase tracking-wider text-white">
-      {ACTIVITY_TYPE_LABELS[activity.activityType]}
-    </h3>
-    <p className="mt-0.5 text-[10px] font-mono uppercase text-[#8C8C90]">
-      {formatActivityDate(activity.startedAt)} ·{" "}
-      {new Date(activity.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-      {" – "}
-      {new Date(activity.endedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-    </p>
-    <dl className="mt-3 space-y-1.5 text-[11px] font-mono">
-      <div className="flex justify-between">
-        <dt className="text-[#8C8C90]">Duration</dt>
-        <dd className="text-white">{formatDurationLabel(activity.durationSeconds)}</dd>
-      </div>
-      {activity.stepCount > 0 && (
+const ActivityDetail: React.FC<{
+  activity: ServerActivity;
+  summary?: StrengthSummary;
+  onBack: () => void;
+}> = ({ activity, summary, onBack }) => {
+  const isStrength = activity.activityType === "strength";
+  const [detail, setDetail] = useState<StrengthDetail | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [activeExercise, setActiveExercise] = useState<{ id: string; name: string } | null>(null);
+
+  // Structured sets live behind one bounded RPC (no N+1 per exercise).
+  useEffect(() => {
+    if (!isStrength) return;
+    let cancelled = false;
+    const client = strengthRpcClient();
+    if (!client) {
+      setDetailError("Backend is not configured.");
+      return;
+    }
+    void (async () => {
+      const result = await getStrengthDetail((fn, args) => client.rpc(fn, args), activity.id);
+      if (cancelled) return;
+      if (result.ok && result.detail) setDetail(result.detail);
+      else setDetailError(result.error ?? "Couldn't load workout detail.");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isStrength, activity.id]);
+
+  const strengthSummary = detail?.summary ?? summary;
+
+  return (
+    <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-3 flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+      >
+        <ChevronLeft className="w-3.5 h-3.5" /> Back to history
+      </button>
+      <h3 className="font-anton text-xl uppercase tracking-wider text-white">
+        {ACTIVITY_TYPE_LABELS[activity.activityType]}
+      </h3>
+      <p className="mt-0.5 text-[10px] font-mono uppercase text-[#8C8C90]">
+        {formatActivityDate(activity.startedAt)} ·{" "}
+        {new Date(activity.startedAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+        {" – "}
+        {new Date(activity.endedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </p>
+      <dl className="mt-3 space-y-1.5 text-[11px] font-mono">
         <div className="flex justify-between">
-          <dt className="text-[#8C8C90]">Steps</dt>
-          <dd className="text-white">{activity.stepCount.toLocaleString()}</dd>
+          <dt className="text-[#8C8C90]">Duration</dt>
+          <dd className="text-white">{formatDurationLabel(activity.durationSeconds)}</dd>
         </div>
-      )}
-      {activity.distanceMeters != null && (
+        {activity.stepCount > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-[#8C8C90]">Steps</dt>
+            <dd className="text-white">{activity.stepCount.toLocaleString()}</dd>
+          </div>
+        )}
+        {activity.distanceMeters != null && (
+          <div className="flex justify-between">
+            <dt className="text-[#8C8C90]">Distance (measured)</dt>
+            <dd className="text-white">{(activity.distanceMeters / 1000).toFixed(2)} km</dd>
+          </div>
+        )}
+        {activity.caloriesEstimate != null && (
+          <div className="flex justify-between">
+            <dt className="text-[#8C8C90]">Calories (est.)</dt>
+            <dd className="text-white">{Math.round(activity.caloriesEstimate)} kcal</dd>
+          </div>
+        )}
+        {activity.perceivedEffort != null && (
+          <div className="flex justify-between">
+            <dt className="text-[#8C8C90]">Perceived effort</dt>
+            <dd className="text-white">{activity.perceivedEffort}/10</dd>
+          </div>
+        )}
         <div className="flex justify-between">
-          <dt className="text-[#8C8C90]">Distance (measured)</dt>
-          <dd className="text-white">{(activity.distanceMeters / 1000).toFixed(2)} km</dd>
+          <dt className="text-[#8C8C90]">Source</dt>
+          <dd className="text-white">
+            {activity.source === "svj_native"
+              ? "Device tracking"
+              : activity.source === "strength_log"
+                ? "Structured strength log"
+                : "Manual entry"}
+          </dd>
+        </div>
+        {activity.notes && (
+          <div className="pt-1">
+            <dt className="text-[#8C8C90]">Notes</dt>
+            <dd className="mt-0.5 text-[#F4F2ED]">{activity.notes}</dd>
+          </div>
+        )}
+      </dl>
+
+      {isStrength && (
+        <div className="mt-4 space-y-3" data-testid="strength-detail">
+          {strengthSummary && strengthSummary.exerciseCount > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              <DetailStat label="Exercises" value={String(strengthSummary.exerciseCount)} />
+              <DetailStat label="Sets" value={String(strengthSummary.setCount)} />
+              <DetailStat label="Volume" value={formatVolume(strengthSummary.volumeKg)} />
+            </div>
+          )}
+
+          {detail && detail.records.length > 0 && (
+            <div
+              className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3"
+              data-testid="strength-detail-pr"
+            >
+              <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-300">
+                <Trophy className="h-3.5 w-3.5" /> Personal Record
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {detail.records.map((record) => (
+                  <li
+                    key={`${record.recordType}-${record.exerciseId}`}
+                    className="flex items-center justify-between text-[11px] font-mono"
+                  >
+                    <span className="text-[#F4F2ED]">{record.exerciseName}</span>
+                    <span className="text-white">
+                      {STRENGTH_RECORD_LABELS[record.recordType]}
+                      {" · "}
+                      {formatRecordValue(record.recordType, record.value)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {detail && detail.exercises.length === 0 && (
+            <p className="rounded-xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono text-[#8C8C90]">
+              Logged without structured sets — no exercise history or protected records.
+            </p>
+          )}
+
+          {activeExercise ? (
+            <ExerciseHistoryPanel
+              exerciseId={activeExercise.id}
+              exerciseName={activeExercise.name}
+              onClose={() => setActiveExercise(null)}
+            />
+          ) : (
+            detail &&
+            detail.exercises.length > 0 && (
+              <StrengthSetsList
+                exercises={detail.exercises}
+                onSelectExercise={(id, name) => setActiveExercise({ id, name })}
+              />
+            )
+          )}
+
+          {detail && <MuscleTrainedList muscles={detail.summary.muscles} />}
+
+          {detail && detail.goalContributions.length > 0 && (
+            <div
+              className="rounded-xl border border-[#C81E3A]/25 bg-black/40 p-3"
+              data-testid="strength-detail-goals"
+            >
+              <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-white">
+                <Target className="h-3.5 w-3.5 text-[#E62846]" /> Goals Contributed To
+              </p>
+              <ul className="mt-1.5 space-y-1">
+                {detail.goalContributions.map((goal) => (
+                  <li
+                    key={goal.goalId}
+                    className="flex items-center justify-between text-[11px] font-mono"
+                  >
+                    <span className="text-[#8C8C90]">{goalLabel(goal)}</span>
+                    <span className="text-emerald-400">+{formatContribution(goal)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {isStrength && !detail && !detailError && (
+            <p className="flex items-center justify-center gap-2 py-3 text-[10px] font-mono uppercase text-[#8C8C90]">
+              <Loader2 className="h-3 w-3 animate-spin" /> Loading workout…
+            </p>
+          )}
+          {detailError && <p className="text-[10px] font-mono text-red-400">{detailError}</p>}
         </div>
       )}
-      {activity.caloriesEstimate != null && (
-        <div className="flex justify-between">
-          <dt className="text-[#8C8C90]">Calories (est.)</dt>
-          <dd className="text-white">{Math.round(activity.caloriesEstimate)} kcal</dd>
-        </div>
-      )}
-      {activity.perceivedEffort != null && (
-        <div className="flex justify-between">
-          <dt className="text-[#8C8C90]">Perceived effort</dt>
-          <dd className="text-white">{activity.perceivedEffort}/10</dd>
-        </div>
-      )}
-      <div className="flex justify-between">
-        <dt className="text-[#8C8C90]">Source</dt>
-        <dd className="text-white">
-          {activity.source === "svj_native" ? "Device tracking" : "Manual entry"}
-        </dd>
-      </div>
-      {activity.notes && (
-        <div className="pt-1">
-          <dt className="text-[#8C8C90]">Notes</dt>
-          <dd className="mt-0.5 text-[#F4F2ED]">{activity.notes}</dd>
-        </div>
-      )}
-    </dl>
+    </div>
+  );
+};
+
+const DetailStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="rounded-xl border border-white/5 bg-black/40 p-2 text-center">
+    <div className="text-[9px] font-mono uppercase text-[#8C8C90]">{label}</div>
+    <div className="font-mono text-sm font-bold text-white">{value}</div>
   </div>
 );
+
+const GOAL_METRIC_SHORT: Record<string, string> = {
+  workout_count: "Workouts",
+  step_total: "Steps",
+  active_minutes: "Active Minutes",
+  distance: "Distance",
+};
+
+function goalLabel(goal: GoalContribution): string {
+  const period =
+    goal.periodType === "monthly"
+      ? new Date(`${goal.periodStart}T00:00:00`).toLocaleDateString("en-GB", { month: "long" })
+      : "Weekly";
+  return `${period} ${GOAL_METRIC_SHORT[goal.metric] ?? "Goal"}`;
+}
+
+function formatContribution(goal: GoalContribution): string {
+  if (goal.metric === "distance") return `${(goal.contribution / 1000).toFixed(2)} km`;
+  if (goal.metric === "active_minutes") return `${Math.round(goal.contribution)} min`;
+  return Math.round(goal.contribution).toLocaleString();
+}
 
 const ManualActivityForm: React.FC<{
   onClose: () => void;

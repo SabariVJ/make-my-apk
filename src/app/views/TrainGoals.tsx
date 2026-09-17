@@ -29,6 +29,13 @@ import {
   type GoalPeriod,
   type RecordDto,
 } from "../lib/goalsRecords";
+import {
+  STRENGTH_RECORD_LABELS,
+  formatRecordValue as formatStrengthRecordValue,
+  listStrengthRecords,
+  type StrengthRecordDto,
+} from "../lib/strength";
+import { ExerciseHistoryPanel } from "../components/StrengthDetails";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 
 type RpcClient = {
@@ -87,7 +94,10 @@ export const TrainGoals: React.FC = () => {
   );
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5" data-testid="train-goals">
+    <div
+      className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5"
+      data-testid="train-goals"
+    >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-[#C81E3A]" />
@@ -217,9 +227,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
         </span>
         <span
           className={`rounded border px-1.5 py-0.5 text-[9px] font-mono uppercase ${
-            completed
-              ? "border-emerald-500/40 text-emerald-400"
-              : "border-white/15 text-[#8C8C90]"
+            completed ? "border-emerald-500/40 text-emerald-400" : "border-white/15 text-[#8C8C90]"
           }`}
         >
           {periodLabel(goal)}
@@ -426,7 +434,9 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
 
 export const TrainProgress: React.FC = () => {
   const [records, setRecords] = useState<RecordDto[] | null>(null);
+  const [strengthRecords, setStrengthRecords] = useState<StrengthRecordDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyExercise, setHistoryExercise] = useState<{ id: string; name: string } | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -434,6 +444,7 @@ export const TrainProgress: React.FC = () => {
     if (!client) {
       setError("Backend is not configured.");
       setRecords([]);
+      setStrengthRecords([]);
       return;
     }
     const result = await listRecords((fn, args) => client.rpc(fn, args));
@@ -442,6 +453,10 @@ export const TrainProgress: React.FC = () => {
       setError(result.error ?? "Couldn't load records.");
       setRecords([]);
     }
+    // Structured strength records are their own evidence-linked set; a failure
+    // here must not hide the universal records above.
+    const strength = await listStrengthRecords((fn, args) => client.rpc(fn, args));
+    setStrengthRecords(strength.ok ? strength.records : []);
   }, []);
 
   useEffect(() => {
@@ -516,6 +531,53 @@ export const TrainProgress: React.FC = () => {
             })}
         </ul>
       )}
+
+      {historyExercise && (
+        <div className="mt-3">
+          <ExerciseHistoryPanel
+            exerciseId={historyExercise.id}
+            exerciseName={historyExercise.name}
+            onClose={() => setHistoryExercise(null)}
+          />
+        </div>
+      )}
+
+      {/* Strength records — derived from stored sets, never client-typed. */}
+      <div className="mt-3" data-testid="train-strength-records">
+        <p className="mb-1.5 text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+          Strength Records
+        </p>
+        {strengthRecords !== null && strengthRecords.length === 0 && (
+          <p className="rounded-xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
+            Complete a structured strength workout to set this record
+          </p>
+        )}
+        {strengthRecords !== null && strengthRecords.length > 0 && (
+          <ul className="space-y-2">
+            {strengthRecords.map((record) => (
+              <li key={`${record.recordType}-${record.exerciseId}`}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setHistoryExercise({ id: record.exerciseId, name: record.exerciseName })
+                  }
+                  className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/40 p-3 text-left hover:border-[#C81E3A]/40"
+                >
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
+                    {record.exerciseName}
+                    <span className="ml-1.5 text-[9px] font-normal text-[#8C8C90]">
+                      {STRENGTH_RECORD_LABELS[record.recordType]}
+                    </span>
+                  </span>
+                  <span className="font-mono text-sm font-bold text-[#E62846]">
+                    {formatStrengthRecordValue(record.recordType, record.value)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {!error && records !== null && records.length > 0 && (
         <div className="mt-3">

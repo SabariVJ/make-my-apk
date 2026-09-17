@@ -953,3 +953,286 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     });
   });
 });
+
+describe("structured strength logging (Update 03)", { concurrency: false, timeout: 20_000 }, () => {
+  const bench = {
+    id: "ex-bench",
+    name: "Bench Press",
+    slug: "bench_press",
+    category: "chest",
+    primary_muscle: "chest",
+    secondary_muscles: ["triceps", "shoulders"],
+    exercise_type: "weighted_reps",
+    is_custom: false,
+  };
+  const pushUp = {
+    id: "ex-pushup",
+    name: "Push-Up",
+    slug: "push_up",
+    category: "chest",
+    primary_muscle: "chest",
+    secondary_muscles: ["triceps"],
+    exercise_type: "bodyweight_reps",
+    is_custom: false,
+  };
+  function strengthEnvelope(args, overrides = {}) {
+    return {
+      ok: true,
+      duplicate: false,
+      activity: {
+        id: "srv-strength-1",
+        user_id: "test-user",
+        client_session_id: args.p_client_session_id,
+        activity_type: "strength",
+        source: "strength_log",
+        started_at: args.p_started_at,
+        ended_at: args.p_ended_at,
+        duration_seconds: args.p_duration_seconds,
+        step_count: 0,
+        distance_meters: null,
+        calories_estimate: null,
+        perceived_effort: null,
+        notes: null,
+        visibility: "private",
+        created_at: args.p_ended_at,
+        updated_at: args.p_ended_at,
+      },
+      summary: {
+        exercise_count: args.p_exercises.length,
+        set_count: args.p_exercises.reduce((t, e) => t + e.sets.length, 0),
+        total_reps: 19,
+        volume_kg: 1140,
+        muscles: [{ muscle: "chest", score: 2, level: "high" }],
+      },
+      strength_records: [
+        {
+          record_type: "heaviest_weight",
+          exercise_id: "ex-bench",
+          value: 60,
+          previous_value: 57.5,
+          set_id: "set-1",
+        },
+      ],
+      new_records: [],
+      goal_progress: [
+        {
+          id: "goal-1",
+          metric: "workout_count",
+          activity_type: null,
+          target_value: 12,
+          period_type: "monthly",
+          period_start: "2026-09-01",
+          period_end: "2026-09-30",
+          status: "active",
+          progress: 8,
+          created_at: "2026-09-01T00:00:00Z",
+          updated_at: "2026-09-17T00:00:00Z",
+        },
+      ],
+      ...overrides,
+    };
+  }
+  function strengthBackend(save) {
+    return {
+      rpc: async (fn, args) => {
+        if (fn === "svj_list_exercises")
+          return { data: { ok: true, exercises: [bench, pushUp] }, error: null };
+        if (fn === "svj_save_strength_activity") return save(args);
+        if (fn === "svj_list_activities") return { data: [], error: null };
+        if (fn === "svj_list_strength_summaries")
+          return { data: { ok: true, summaries: [] }, error: null };
+        if (fn === "svj_list_records") return { data: { ok: true, records: [] }, error: null };
+        if (fn === "svj_list_strength_records")
+          return { data: { ok: true, records: [] }, error: null };
+        if (fn === "svj_list_goals") return { data: { ok: true, goals: [] }, error: null };
+        return { data: null, error: { message: `unexpected rpc ${fn}` } };
+      },
+    };
+  }
+  async function openStrength() {
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("open-strength"));
+    });
+    assert.ok(screen.getByTestId("strength-logger"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-start"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-add-exercise"));
+    });
+    await waitFor(() => {
+      assert.ok(screen.getAllByTestId("strength-exercise-option").length >= 2);
+    });
+    const option = screen
+      .getAllByTestId("strength-exercise-option")
+      .find((node) => node.textContent.includes("Bench Press"));
+    assert.ok(option, "the catalog must offer Bench Press");
+    await act(async () => {
+      fireEvent.click(option);
+    });
+  }
+  function fillSet(index, reps, weight) {
+    fireEvent.change(screen.getAllByTestId("strength-set-reps")[index], {
+      target: { value: String(reps) },
+    });
+    fireEvent.change(screen.getAllByTestId("strength-set-weight")[index], {
+      target: { value: String(weight) },
+    });
+  }
+
+  it("logs one atomic workout, shows volume and the server-derived new record", async () => {
+    const calls = [];
+    test.supabase = strengthBackend((args) => {
+      calls.push(args);
+      return { data: strengthEnvelope(args), error: null };
+    });
+    await mount();
+    await openStrength();
+
+    await act(async () => {
+      fillSet(0, 10, 60);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-add-set"));
+    });
+    await act(async () => {
+      fillSet(1, 9, 60);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-finish"));
+    });
+    assert.ok(screen.getByTestId("strength-summary"));
+    assert.match(document.body.textContent, /STRENGTH COMPLETE/);
+    assert.match(document.body.textContent, /1,140 kg/);
+    assert.equal(calls.length, 0, "finishing must not save anything yet");
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-save"));
+    });
+    await waitFor(() => assert.ok(screen.getByTestId("strength-new-pr")));
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].p_client_session_id, /^svj-/);
+    assert.equal(calls[0].p_exercises.length, 1);
+    assert.equal(calls[0].p_exercises[0].exercise_id, "ex-bench");
+    assert.deepEqual(
+      calls[0].p_exercises[0].sets.map((s) => [s.weight_kg, s.reps]),
+      [
+        [60, 10],
+        [60, 9],
+      ],
+    );
+    assert.match(document.body.textContent, /NEW PERSONAL RECORD/);
+    assert.match(document.body.textContent, /Bench Press/);
+    assert.match(document.body.textContent, /60 kg/);
+    assert.match(document.body.textContent, /previous 57\.5 kg/);
+    assert.match(document.body.textContent, /8 \/ 12/);
+    test.supabase = undefined;
+  });
+
+  it("retries the SAME session id so a failed save cannot duplicate the workout", async () => {
+    const ids = [];
+    let failing = true;
+    test.supabase = strengthBackend((args) => {
+      ids.push(args.p_client_session_id);
+      if (failing) return { data: null, error: { message: "network down" } };
+      return { data: strengthEnvelope(args, { duplicate: true }), error: null };
+    });
+    await mount();
+    await openStrength();
+    await act(async () => {
+      fillSet(0, 12, 50);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-finish"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-save"));
+    });
+    await waitFor(() => assert.ok(screen.getByTestId("strength-retry")));
+    assert.match(document.body.textContent, /COULDN'T SAVE WORKOUT/);
+
+    failing = false;
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("strength-retry"));
+    });
+    await waitFor(() => assert.match(document.body.textContent, /Already saved/));
+    assert.equal(ids.length, 2);
+    assert.equal(ids[0], ids[1]);
+    // Even if a duplicate envelope carried records, the retry must not
+    // re-announce a personal record for the same workout.
+    assert.equal(Boolean(screen.queryByTestId("strength-new-pr")), false);
+    test.supabase = undefined;
+  });
+
+  it("keeps Train navigation at four tabs and leaves history working", async () => {
+    const bodies = [];
+    test.supabase = {
+      ...strengthBackend(() => ({ data: null, error: { message: "unused" } })),
+      rpc: async (fn, args) => {
+        bodies.push({ fn, args });
+        if (fn === "svj_list_activities")
+          return {
+            data: [
+              {
+                id: "srv-strength-1",
+                user_id: "test-user",
+                client_session_id: "svj-abc12345",
+                activity_type: "strength",
+                source: "strength_log",
+                started_at: new Date().toISOString(),
+                ended_at: new Date().toISOString(),
+                duration_seconds: 600,
+                step_count: 0,
+                distance_meters: null,
+                calories_estimate: null,
+                perceived_effort: null,
+                notes: null,
+                visibility: "private",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+            ],
+            error: null,
+          };
+        if (fn === "svj_list_strength_summaries")
+          return {
+            data: {
+              ok: true,
+              summaries: [
+                {
+                  activity_id: "srv-strength-1",
+                  exercise_count: 2,
+                  set_count: 6,
+                  total_reps: 63,
+                  volume_kg: 6840,
+                  muscles: [{ muscle: "chest", score: 6, level: "high" }],
+                },
+              ],
+            },
+            error: null,
+          };
+        if (fn === "svj_list_goals") return { data: { ok: true, goals: [] }, error: null };
+        if (fn === "svj_list_records") return { data: { ok: true, records: [] }, error: null };
+        if (fn === "svj_list_strength_records")
+          return { data: { ok: true, records: [] }, error: null };
+        return { data: null, error: { message: `unexpected rpc ${fn}` } };
+      },
+    };
+    await mount();
+    const tabs = screen.getByTestId("train-sections");
+    assert.equal(tabs.querySelectorAll("button").length, 4, "no new bottom-nav tab");
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "History" }));
+    });
+    await waitFor(() => assert.ok(screen.getByTestId("activity-history")));
+    const historyRpc = bodies.find((b) => b.fn === "svj_list_activities");
+    assert.deepEqual(historyRpc.args, { p_limit: 100 });
+    await waitFor(() => assert.match(document.body.textContent, /Strength log/));
+    assert.match(document.body.textContent, /2 exercises/);
+    assert.match(document.body.textContent, /6 sets/);
+    test.supabase = undefined;
+  });
+});

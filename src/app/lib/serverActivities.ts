@@ -31,7 +31,10 @@ export const STEP_COMPATIBLE_ACTIVITY_TYPES: ReadonlySet<ActivityType> = new Set
   "running",
 ]);
 
-export const ACTIVITY_SOURCES = ["svj_native", "manual"] as const;
+// 'strength_log' (Update 03) is written only by the structured strength save
+// RPC — it is never sent by the client. It is accepted here so structured
+// workouts appear in history with their own provenance.
+export const ACTIVITY_SOURCES = ["svj_native", "manual", "strength_log"] as const;
 export type ActivitySource = (typeof ACTIVITY_SOURCES)[number];
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {

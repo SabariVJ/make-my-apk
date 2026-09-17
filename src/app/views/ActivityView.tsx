@@ -10,12 +10,14 @@ import {
   ActivitySquare,
   BarChart3,
   Cpu,
+  Dumbbell,
   AlertCircle,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 import { TrainGoals, TrainProgress } from "./TrainGoals";
+import { TrainStrength } from "./TrainStrength";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -270,6 +272,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
   );
 
   const [section, setSection] = useState<TrainSection>("activity");
+  // Structured strength is a flow inside Train, not another navigation tab.
+  const [strengthOpen, setStrengthOpen] = useState(false);
 
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
   const chart7 = history7.map((d) => ({
@@ -282,6 +286,14 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
     steps: d.steps,
     activeKcal: d.activeKcal,
   }));
+
+  if (strengthOpen) {
+    return (
+      <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
+        <TrainStrength onExit={() => setStrengthOpen(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
@@ -339,12 +351,14 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
 
       {/* Train internal navigation: only working sections are exposed. */}
       <div className="mb-5 flex gap-2" data-testid="train-sections">
-        {([
-          { id: "activity", label: "Activity" },
-          { id: "history", label: "History" },
-          { id: "goals", label: "Goals" },
-          { id: "progress", label: "Progress" },
-        ] as const).map((s) => (
+        {(
+          [
+            { id: "activity", label: "Activity" },
+            { id: "history", label: "History" },
+            { id: "goals", label: "Goals" },
+            { id: "progress", label: "Progress" },
+          ] as const
+        ).map((s) => (
           <button
             key={s.id}
             type="button"
@@ -365,99 +379,136 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
 
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
-      <>
-      <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
-        <div className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90] mb-3">
-          Today&apos;s Activity
-        </div>
-        <div className="flex flex-col items-center">
-          <ProgressRing percent={stepPercent}>
-            <Footprints className="w-5 h-5 text-[#E62846] mb-1" />
-            <LiveNumber value={todaySteps} className="font-mono text-4xl font-bold text-white" />
-            <div className="text-[10px] font-mono text-[#8C8C90] mt-1">
-              of {stepGoal.toLocaleString()} steps · {stepPercent}%
+        <>
+          {/* Structured strength entry — opens the dedicated interview-free logger. */}
+          <div
+            className="rounded-2xl border border-[#C81E3A]/25 bg-[#0B0B0C] p-4 mb-5"
+            data-testid="strength-entry"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="h-4 w-4 text-[#E62846]" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
+                    Structured Strength
+                  </span>
+                </div>
+                <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                  Log exercises, sets, reps and weight into your workout history.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStrengthOpen(true)}
+                data-testid="open-strength"
+                className="shrink-0 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white hover:bg-[#C81E3A]/30"
+              >
+                Open
+              </button>
             </div>
-            <div className="text-[10px] font-mono text-[#E62846] mt-0.5">
-              {remainingSteps > 0 ? `${remainingSteps.toLocaleString()} to go` : "Goal complete"}
-            </div>
-          </ProgressRing>
-          {stepSource === "accelerometer" && (
-            <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-amber-300">
-              Estimated steps — accelerometer motion detection
-            </div>
-          )}
-          {stepSource === "detector" && (
-            <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-              Source: step detector
-            </div>
-          )}
-          {stepSource === "counter" && (
-            <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-              Source: hardware step counter
-            </div>
-          )}
-          <div className="mt-3 text-[10px] font-mono text-[#8C8C90] text-center">
-            Next milestone:{" "}
-            <span className="text-white">{nextMilestone.toLocaleString()} steps</span> — XP awarded
-            automatically at 2.5K / 5K / 7.5K / 10K
           </div>
-        </div>
-      </div>
 
-      {/* Calories */}
-      <div className="rounded-2xl border border-amber-500/20 bg-[#0B0B0C] p-5 mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
-              Calories Burned
-            </span>
-          </div>
-          <span className="text-[9px] font-mono uppercase text-[#8C8C90] border border-white/10 rounded px-1.5 py-0.5">
-            Estimate
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-black/40 border border-white/5 p-3">
-            <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">
-              Active Calories
+          <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90] mb-3">
+              Today&apos;s Activity
             </div>
-            <LiveNumber
-              value={activeKcal}
-              className="font-mono text-2xl font-bold text-amber-400"
-            />
-            <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">KCAL · from movement</div>
-          </div>
-          <div className="rounded-xl bg-black/40 border border-white/5 p-3">
-            <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">Total Calories</div>
-            <LiveNumber value={totalKcal} className="font-mono text-2xl font-bold text-white" />
-            <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">
-              KCAL · incl. resting burn
+            <div className="flex flex-col items-center">
+              <ProgressRing percent={stepPercent}>
+                <Footprints className="w-5 h-5 text-[#E62846] mb-1" />
+                <LiveNumber
+                  value={todaySteps}
+                  className="font-mono text-4xl font-bold text-white"
+                />
+                <div className="text-[10px] font-mono text-[#8C8C90] mt-1">
+                  of {stepGoal.toLocaleString()} steps · {stepPercent}%
+                </div>
+                <div className="text-[10px] font-mono text-[#E62846] mt-0.5">
+                  {remainingSteps > 0
+                    ? `${remainingSteps.toLocaleString()} to go`
+                    : "Goal complete"}
+                </div>
+              </ProgressRing>
+              {stepSource === "accelerometer" && (
+                <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-amber-300">
+                  Estimated steps — accelerometer motion detection
+                </div>
+              )}
+              {stepSource === "detector" && (
+                <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+                  Source: step detector
+                </div>
+              )}
+              {stepSource === "counter" && (
+                <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+                  Source: hardware step counter
+                </div>
+              )}
+              <div className="mt-3 text-[10px] font-mono text-[#8C8C90] text-center">
+                Next milestone:{" "}
+                <span className="text-white">{nextMilestone.toLocaleString()} steps</span> — XP
+                awarded automatically at 2.5K / 5K / 7.5K / 10K
+              </div>
             </div>
           </div>
-        </div>
-        <div className="mt-3 space-y-1.5">
-          <div className="flex justify-between text-[10px] font-mono text-[#8C8C90]">
-            <span>Active Calorie Goal</span>
-            <span>
-              {activeKcal.toLocaleString()} / {kcalGoal.toLocaleString()} KCAL
-            </span>
+
+          {/* Calories */}
+          <div className="rounded-2xl border border-amber-500/20 bg-[#0B0B0C] p-5 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
+                  Calories Burned
+                </span>
+              </div>
+              <span className="text-[9px] font-mono uppercase text-[#8C8C90] border border-white/10 rounded px-1.5 py-0.5">
+                Estimate
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-black/40 border border-white/5 p-3">
+                <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">
+                  Active Calories
+                </div>
+                <LiveNumber
+                  value={activeKcal}
+                  className="font-mono text-2xl font-bold text-amber-400"
+                />
+                <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">
+                  KCAL · from movement
+                </div>
+              </div>
+              <div className="rounded-xl bg-black/40 border border-white/5 p-3">
+                <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">
+                  Total Calories
+                </div>
+                <LiveNumber value={totalKcal} className="font-mono text-2xl font-bold text-white" />
+                <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">
+                  KCAL · incl. resting burn
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <div className="flex justify-between text-[10px] font-mono text-[#8C8C90]">
+                <span>Active Calorie Goal</span>
+                <span>
+                  {activeKcal.toLocaleString()} / {kcalGoal.toLocaleString()} KCAL
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${kcalPercent}%` }}
+                  transition={{ duration: 0.8 }}
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
+                />
+              </div>
+            </div>
+            <p className="mt-3 text-[9px] font-mono leading-relaxed text-[#8C8C90]">
+              Calorie values are estimates calculated from steps, distance and your SVJ body profile
+              — not medical measurements.
+            </p>
           </div>
-          <div className="w-full h-2 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${kcalPercent}%` }}
-              transition={{ duration: 0.8 }}
-              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
-            />
-          </div>
-        </div>
-        <p className="mt-3 text-[9px] font-mono leading-relaxed text-[#8C8C90]">
-          Calorie values are estimates calculated from steps, distance and your SVJ body profile —
-          not medical measurements.
-        </p>
-      </div>
-      </>
+        </>
       )}
 
       {/* Completion summary + canonical server save (Update 01/02) */}

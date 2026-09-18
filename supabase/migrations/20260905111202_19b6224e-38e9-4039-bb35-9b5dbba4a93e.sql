@@ -13,9 +13,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF current_setting('role', true) = 'service_role'
-    OR auth.role() = 'service_role'
-    OR current_setting('svj.trusted_server_write', true) = 'on' THEN
+  IF current_setting('role', true) = 'service_role' OR auth.role() = 'service_role' THEN
     RETURN NEW;
   END IF;
 

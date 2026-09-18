@@ -31,10 +31,19 @@
 --   SECURITY DEFINER impl transaction (a server-controlled setting that no
 --   browser call path can reach — PostgREST callers cannot set arbitrary
 --   custom GUCs, and the impls set it unconditionally from trusted server
---   code, never from client input) so the profile-protection triggers that
---   already honor it (20260904183000, and protect_engagement_profile_xp as
---   amended in supabase/pending) accept the XP/membership writes exactly as
---   they did under the service role.
+--   code, never from client input).
+--
+--   PRODUCTION-UPGRADE SAFETY: the live runtime already carries an older
+--   protect_profile_privileged_columns() trigger body (whichever historical
+--   migration last defined it). Historical migration files are never edited
+--   to change live behavior, so THIS migration recreates BOTH profile
+--   protection triggers with their current, full production bodies — identical
+--   protection, plus explicit acceptance of the server-set
+--   svj.trusted_server_write GUC — before any impl performs a protected
+--   profile write. Without this, production would keep the OLD trigger and
+--   wallet/ledger rows could commit while the profile XP / membership write
+--   was silently reverted (a partial redemption). The recreated bodies are
+--   copied verbatim from the current shipped definitions.
 --
 --   NO economics, policy values, ledger rules, lock order, idempotency keys,
 --   timezone math, or replay behavior is changed. No table, wallet, ledger
@@ -43,6 +52,64 @@
 -- ============================================================================
 
 BEGIN;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- 0a) PROFILE-PROTECTION TRIGGER UPGRADES (production parity).
+--    The live database may still run a pre-trusted-write trigger body from an
+--    already-applied historical migration. Recreate both triggers here with
+--    the CURRENT full production bodies so the trusted server writes performed
+--    by the impl functions below actually persist. Client protection is
+--    unchanged: a normal authenticated update still has every privileged
+--    field restored from OLD.
+-- ─────────────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.protect_profile_privileged_columns()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF current_setting('role', true) = 'service_role'
+    OR auth.role() = 'service_role'
+    OR current_setting('svj.trusted_server_write', true) = 'on' THEN
+    RETURN NEW;
+  END IF;
+
+  NEW.is_plus_member := OLD.is_plus_member;
+  NEW.plus_unlocked_at := OLD.plus_unlocked_at;
+  NEW.plus_expires_at := OLD.plus_expires_at;
+  NEW.signup_date := OLD.signup_date;
+  NEW.qualifying_xp := OLD.qualifying_xp;
+  NEW.total_xp := OLD.total_xp;
+  NEW.current_streak := OLD.current_streak;
+  NEW.leaderboard_eligible := OLD.leaderboard_eligible;
+
+  IF NEW.avatar_url IS DISTINCT FROM OLD.avatar_url
+    AND NEW.avatar_url IS NOT NULL
+    AND NEW.avatar_url NOT LIKE ('%/avatars/' || auth.uid()::text || '/%') THEN
+    NEW.avatar_url := OLD.avatar_url;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.protect_engagement_profile_xp()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+BEGIN
+  IF COALESCE(current_setting('role', true), '') <> 'service_role'
+     AND COALESCE(auth.role(), '') <> 'service_role'
+     AND COALESCE(current_setting('svj.trusted_server_write', true), '') <> 'on' THEN
+    NEW.engagement_profile_xp := OLD.engagement_profile_xp;
+  END IF;
+  RETURN NEW;
+END;
+$$;
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- 0) INTERNAL IMPLEMENTATIONS — business logic only, no role assertion.

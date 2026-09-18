@@ -218,8 +218,7 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 BEGIN
   IF COALESCE(current_setting('role', true), '') <> 'service_role'
-     AND COALESCE(auth.role(), '') <> 'service_role'
-     AND COALESCE(current_setting('svj.trusted_server_write', true), '') <> 'on' THEN
+     AND COALESCE(auth.role(), '') <> 'service_role' THEN
     NEW.engagement_profile_xp := OLD.engagement_profile_xp;
   END IF;
   RETURN NEW;

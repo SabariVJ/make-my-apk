@@ -140,6 +140,14 @@ async function enable() {
   );
 }
 
+async function totalXp(id) {
+  const r = await execute(
+    "SELECT COALESCE(total_xp, 0)::int AS xp FROM public.profiles WHERE id=$1",
+    [id],
+  );
+  return r.rows[0].xp;
+}
+
 async function makeReady(assignmentId) {
   await execute(
     "UPDATE public.reward_mission_sessions s SET started_at=clock_timestamp()-make_interval(secs=>a.minimum_seconds+5),eligible_at=clock_timestamp()-interval '5 seconds' FROM public.reward_mission_assignments a WHERE a.id=s.assignment_id AND a.id=$1",
@@ -161,6 +169,12 @@ before(async () => {
     .sort()) {
     await execScript(await readFile("supabase/migrations/" + name, "utf8"));
   }
+  // PRODUCTION PARITY: production still runs the PRE-trusted-write trigger
+  // bodies from the already-applied historical migrations. Recreate the OLD
+  // trigger definitions on top (as production has them), then prove the new
+  // migration alone upgrades them. Extracted from the c929d01~1 (pre-hotfix)
+  // versions of the historical files via `git show`.
+  await execScript(await readFile("tests/fixtures/pre-hotfix-triggers.sql", "utf8"));
   await execScript(await readFile("supabase/pending/20260902_earned_plus.sql", "utf8"));
   await execScript(
     await readFile("supabase/pending/20260903_earned_plus_qualifying_days_7.sql", "utf8"),
@@ -527,6 +541,138 @@ describe(
         () => asRole("anon", null, "SELECT public.svj_lock_reward_wallet_impl($1)", [id]),
         (error) => /permission denied|does not exist/i.test(error.message),
       );
+    });
+
+    // ── PRODUCTION-PARITY UPGRADE PROOFS ────────────────────────────────────
+    // The `before` hook installed the PRE-hotfix trigger bodies (as the live
+    // database still has them) BEFORE this migration ran. Every assertion
+    // below therefore proves that applying ONLY the new migration to an OLD
+    // production-style schema is sufficient.
+
+    it("upgrade: the migration itself replaced the old trigger bodies", async () => {
+      if (skipAll) return;
+      const def = await execute(
+        "SELECT pg_get_functiondef(p.oid) AS d FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname='protect_profile_privileged_columns'",
+      );
+      assert.match(def.rows[0].d, /svj\.trusted_server_write/);
+      const def2 = await execute(
+        "SELECT pg_get_functiondef(p.oid) AS d FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname='protect_engagement_profile_xp'",
+      );
+      assert.match(def2.rows[0].d, /svj\.trusted_server_write/);
+    });
+
+    it("upgrade: check-in ACTUALLY increments profiles.total_xp under the OLD trigger", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const before = await totalXp(id);
+      const receipt = (
+        await callSelfService("svj_claim_my_daily_checkin", "authenticated", id, [randomUUID()])
+      ).rows[0].result;
+      assert.ok(receipt.receipt.profileXpAwarded > 0);
+      const after = await totalXp(id);
+      assert.equal(after - before, receipt.receipt.profileXpAwarded, "profile XP must persist");
+    });
+
+    it("upgrade: mission completion ACTUALLY increments profiles.total_xp and stays consistent", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const start = (
+        await callSelfService("svj_start_my_daily_mission", "authenticated", id, [
+          randomUUID(),
+          "plan-and-reflect",
+        ])
+      ).rows[0].result;
+      await makeReady(start.receipt.assignmentId);
+      const before = await totalXp(id);
+      const done = (
+        await callSelfService("svj_complete_my_daily_mission", "authenticated", id, [
+          randomUUID(),
+          start.receipt.assignmentId,
+          confirmation,
+        ])
+      ).rows[0].result;
+      assert.equal((await totalXp(id)) - before, done.receipt.profileXpAwarded);
+      const wallet = await execute(
+        "SELECT reward_xp, qualifying_days FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      const ledger = await execute(
+        "SELECT COALESCE(sum(reward_xp_delta),0)::int AS s FROM public.reward_xp_ledger WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(wallet.rows[0].reward_xp, ledger.rows[0].s, "wallet and ledger must agree");
+    });
+
+    it("upgrade: Founder lifetime survives redemption attempts under the upgraded trigger", async () => {
+      if (skipAll) return;
+      const id = await account({ lifetime: true });
+      await seedEligibility(id);
+      await assert.rejects(
+        () => callSelfService("svj_redeem_my_earned_plus", "authenticated", id, [randomUUID()]),
+        (error) => /SVJ_REWARD_LIFETIME_ALREADY_ACTIVE/i.test(error.message),
+      );
+      const profile = await execute(
+        "SELECT is_plus_member, plus_expires_at FROM public.profiles WHERE id=$1",
+        [id],
+      );
+      assert.equal(profile.rows[0].is_plus_member, true);
+      assert.equal(profile.rows[0].plus_expires_at, null);
+    });
+
+    it("upgrade: timed Plus redemption ACTUALLY activates membership (no silent trigger revert)", async () => {
+      if (skipAll) return;
+      const id = await account({ expiry: new Date(Date.now() + 10 * 86400000).toISOString() });
+      await seedEligibility(id);
+      const receipt = (
+        await callSelfService("svj_redeem_my_earned_plus", "authenticated", id, [randomUUID()])
+      ).rows[0].result;
+      const redemption = await execute(
+        "SELECT plus_expires_at FROM public.reward_redemptions WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(redemption.rows.length, 1, "redemption row exists");
+      const profile = await execute(
+        "SELECT is_plus_member, plus_expires_at FROM public.profiles WHERE id=$1",
+        [id],
+      );
+      assert.equal(profile.rows[0].is_plus_member, true, "is_plus_member must be written");
+      assert.equal(
+        new Date(profile.rows[0].plus_expires_at).getTime(),
+        new Date(redemption.rows[0].plus_expires_at).getTime(),
+        "redemption row and live membership MUST agree — a revert here is the production bug",
+      );
+      assert.ok(
+        new Date(receipt.receipt.plusExpiresAt).getTime() > Date.now() + 39 * 86400000,
+        "expiry = old expiry + 30 days",
+      );
+    });
+
+    it("upgrade: unauthorized authenticated profile updates still cannot alter protected fields", async () => {
+      if (skipAll) return;
+      const id = await account();
+      // Protected columns are column-REVOKEd from authenticated, so the write
+      // is denied outright; if a role ever regains the grant, the recreated
+      // trigger must still revert the values. Either protection is acceptable.
+      try {
+        await asRole(
+          "authenticated",
+          id,
+          "UPDATE public.profiles SET is_plus_member=true, plus_expires_at=now()+interval '365 days', total_xp=999999 WHERE id=$1",
+          [id],
+        );
+      } catch (error) {
+        assert.match(
+          error.message,
+          /permission denied/i,
+          "denied writes must be permission errors",
+        );
+      }
+      const profile = await execute(
+        "SELECT is_plus_member, plus_expires_at, total_xp FROM public.profiles WHERE id=$1",
+        [id],
+      );
+      assert.equal(profile.rows[0].is_plus_member, false, "membership must stay unchanged");
+      assert.notEqual(profile.rows[0].total_xp, 999999, "total_xp must stay unchanged");
     });
   },
 );

@@ -445,9 +445,9 @@ export const ProfileView: React.FC = () => {
               </button>
             </div>
             <p className="text-xs font-inter leading-relaxed text-[#B8B8C0]">
-              You will be signed out of SVJ on this device. Your account, cloud progress and
-              profile photo remain safe — nothing is deleted. Sign back in anytime to continue
-              where you left off.
+              You will be signed out of SVJ on this device. Your account, cloud progress and profile
+              photo remain safe — nothing is deleted. Sign back in anytime to continue where you
+              left off.
             </p>
             {signOutError && (
               <div

@@ -971,7 +971,7 @@ export const SVJProvider: React.FC<{
       id: userId || baseUser.id,
       email: cleanEmail,
       name: isOwnerEmail
-        ? "Sabari (Founder & Owner)"
+        ? "Sabari (Founder)"
         : serverProfile?.display_name ||
           name ||
           (baseUser.name !== "New Voyager" ? baseUser.name : cleanEmail.split("@")[0]),

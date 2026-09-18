@@ -39,7 +39,12 @@ import {
   type CompletedSessionPayload,
 } from "../lib/serverActivities";
 import { extractSaveExtras, type SaveExtras } from "../lib/goalsRecords";
-import { processActivityRewards, rewardsRpcClient, type ActivityRewards } from "../lib/rewards";
+import {
+  processActivityRewards,
+  rewardsRpcClient,
+  fetchPersonalizedXpToday,
+  type ActivityRewards,
+} from "../lib/rewards";
 import {
   activeKcalGoal,
   applyTrackedMeasurement,
@@ -92,6 +97,8 @@ export interface ActivityContextValue {
   xpEarnedToday: number;
   /** Server-confirmed activity XP earned today (Update 04, database clock). */
   serverActivityXpToday: number;
+  /** Server-confirmed personalized-task XP earned today (ledger-backed). */
+  personalizedXpToday: number;
   milestoneSteps: number;
   activeKcal: number;
   totalKcal: number;
@@ -308,6 +315,20 @@ export function ActivityProvider({
   const [lastSaveExtras, setLastSaveExtras] = useState<SaveExtras | null>(null);
   // Update 04: server-confirmed rewards for the most recent canonical save.
   const [lastSaveRewards, setLastSaveRewards] = useState<ActivityRewards | null>(null);
+  // Personalized-task XP today comes from the immutable ledger, refreshed
+  // after completion events — never derived from local displayed tasks.
+  const [personalizedXpToday, setPersonalizedXpToday] = useState(0);
+  useEffect(() => {
+    const client = rewardsRpcClient();
+    if (!client) return;
+    let cancelled = false;
+    void fetchPersonalizedXpToday(client).then((v) => {
+      if (!cancelled) setPersonalizedXpToday(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const lastPayloadRef = useRef<CompletedSessionPayload | null>(null);
   const [manualSaveState, setManualSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [manualSaveError, setManualSaveError] = useState<string | null>(null);
@@ -1062,12 +1083,10 @@ export function ActivityProvider({
     xpEarnedToday: milestoneXpClaimed(state.today),
     // Update 04: latest server-confirmed activity-XP-today figure. Derived
     // from the server's own daily-cap arithmetic — never device-local math.
-    serverActivityXpToday:
-      lastSaveRewards && lastSaveRewards.xpAwarded > 0
-        ? Math.max(0, 100 - (lastSaveRewards.dailyActivityXpRemaining ?? 0))
-        : lastSaveRewards
-          ? Math.max(0, 100 - (lastSaveRewards.dailyActivityXpRemaining ?? 0))
-          : 0,
+    serverActivityXpToday: lastSaveRewards
+      ? Math.max(0, 100 - (lastSaveRewards.dailyActivityXpRemaining ?? 0))
+      : 0,
+    personalizedXpToday,
     milestoneSteps: state.today?.trackedSteps ?? 0,
     activeKcal: liveCalories.activeKcal,
     totalKcal: liveCalories.totalKcal,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Flame,
@@ -30,6 +30,7 @@ import { getChallengeState, type ChallengeState } from "@/lib/challenge.function
 import {
   getPersonalizedChallenges,
   refreshPersonalizedChallenges,
+  completePersonalizedTask,
 } from "@/lib/challenge-engine.server";
 import {
   getAssessmentEntryState,
@@ -110,6 +111,9 @@ export const ChallengesView: React.FC<{
       difficulty: string;
       xp: number;
       durationMinutes: number;
+      status?: string;
+      completed?: boolean;
+      completedAt?: string | null;
     }>;
     focusAreas: string[];
     reason: string;
@@ -218,12 +222,13 @@ export const ChallengesView: React.FC<{
       }
     : user.stats;
 
-  // Merge personalized challenges with user's existing challenges
+  // Merge personalized SERVER assignments with user's existing challenges.
+  // Personalized rows carry stable database IDs and server completion state,
+  // so they are never routed through the local toggleChallenge() path.
   const displayChallenges = React.useMemo(() => {
     const personalized = personalizedQuery.data?.challenges;
     if (!personalized || personalized.length === 0) return challenges;
 
-    // Convert personalized templates to DailyChallenge format and prepend
     const personalizedChallenges: DailyChallenge[] = personalized.map((p) => ({
       id: p.id,
       title: p.title,
@@ -232,8 +237,9 @@ export const ChallengesView: React.FC<{
       difficulty: p.difficulty as DailyChallenge["difficulty"],
       xp: p.xp,
       durationMinutes: p.durationMinutes,
-      completed: false,
+      completed: p.completed ?? false,
       isCustom: false,
+      isPersonalized: true,
     }));
 
     // Deduplicate: keep personalized + user's custom challenges, skip duplicates by title
@@ -244,7 +250,44 @@ export const ChallengesView: React.FC<{
   }, [challenges, personalizedQuery.data]);
 
   const [actionError, setActionError] = useState<string | null>(null);
-  const handleToggle = (id: string) => {
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const callCompletePersonalized = useServerFn(completePersonalizedTask);
+  const queryClient = useQueryClient();
+
+  const handleToggle = async (id: string) => {
+    // Personalized assignments complete through the server-validated RPC —
+    // never through the local toggleChallenge()/applyActivityXp path. This
+    // removes the false "This task is no longer available" error (their IDs
+    // are not local challenge IDs) and keeps XP server-controlled.
+    if (personalizedQuery.data?.challenges?.some((p) => p.id === id)) {
+      if (completingId) return;
+      setCompletingId(id);
+      setActionError(null);
+      try {
+        const result = (await callCompletePersonalized({ data: { assignmentId: id } })) as {
+          ok: boolean;
+          xpAwarded?: number;
+          statChanges?: Record<string, number>;
+          error?: string;
+        };
+        if (!result.ok) {
+          setActionError(result.error ?? "Could not complete the task.");
+          return;
+        }
+        // Refetch so the checked state comes from SERVER assignment state.
+        await personalizedQuery.refetch();
+        // Invalidate profile/XP + stats so Character Matrix, total XP and
+        // XP Today refresh from ledger-confirmed data. No optimistic writes.
+        void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+        void queryClient.invalidateQueries({ queryKey: ["profile"] });
+      } catch {
+        setActionError("Could not complete the task. Please retry.");
+      } finally {
+        setCompletingId(null);
+      }
+      return;
+    }
+
     const result = toggleChallenge(id);
     setActionError(result.ok ? null : result.error);
   };
@@ -268,8 +311,18 @@ export const ChallengesView: React.FC<{
   // the daily totals too. Server activity XP is the authoritative, capped,
   // evidence-backed figure from the database — never device-local math.
   const activity = useActivityOptional();
+  // Personalized-task XP comes only from the ledger; the local XP math above
+  // counts personalized rows too, so strip them out here to avoid double
+  // counting, then add the authoritative ledger figure.
+  const personalizedLocalXp = displayChallenges
+    .filter((c) => c.isPersonalized && c.completed)
+    .reduce((acc, c) => acc + c.xp, 0);
   const totalTodayXp =
-    todayXP + (activity?.xpEarnedToday ?? 0) + (activity?.serverActivityXpToday ?? 0);
+    todayXP -
+    personalizedLocalXp +
+    (activity?.xpEarnedToday ?? 0) +
+    (activity?.serverActivityXpToday ?? 0) +
+    (activity?.personalizedXpToday ?? 0);
 
   const isAndroid = Capacitor.getPlatform() === "android";
 

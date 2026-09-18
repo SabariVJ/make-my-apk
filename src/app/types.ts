@@ -25,6 +25,8 @@ export interface DailyChallenge {
   completed: boolean;
   completedAt?: string;
   isCustom?: boolean;
+  /** True when this row is a server-backed personalized assignment (stable DB id, server-confirmed completion). */
+  isPersonalized?: boolean;
   createdAt?: string;
   updatedAt?: string;
   earnedXP?: number;

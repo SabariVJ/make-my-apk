@@ -42,7 +42,9 @@ test("personalized challenges are gated server-side on assessment completion", (
 });
 
 test("the personalized gate reads the authenticated user's own rows only", () => {
-  assert.match(serverSource, /\.eq\("user_id", context\.userId\)/);
+  // Identity flows through requireSupabaseAuth's context; assignment row
+  // ownership is additionally enforced in the database via auth.uid().
+  assert.match(serverSource, /\.eq\("user_id", userId\)/);
   assert.match(serverSource, /requireSupabaseAuth/);
   assert.match(serverSource, /context\.supabase/);
   // Never uses the service-role client for personalized reads/refreshes.

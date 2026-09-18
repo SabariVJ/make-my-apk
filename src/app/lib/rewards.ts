@@ -9,6 +9,19 @@ export type RpcClient = {
     fn: string,
     args?: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (
+        col: string,
+        val: unknown,
+      ) => {
+        gte: (
+          col: string,
+          val: unknown,
+        ) => Promise<{ data: unknown; error: { message: string } | null }>;
+      };
+    };
+  };
 };
 
 /** Null when the app has no backend configured (signed-out / web preview). */
@@ -77,5 +90,33 @@ export async function processActivityRewards(
     return { ok: true, rewards };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Network error." };
+  }
+}
+
+/**
+ * Read today's server-confirmed personalized-task XP from the immutable
+ * ledger (source_class 'svj_personalized'). Ledger-backed so XP Today never
+ * double-counts local task math and survives refresh/devices.
+ */
+export async function fetchPersonalizedXpToday(client: RpcClient): Promise<number> {
+  try {
+    const { data, error } = await client
+      .from("activity_events")
+      .select("lifetime_xp_delta")
+      .eq("source_class", "svj_personalized")
+      .gte("created_at", new Date().toISOString().slice(0, 10));
+    if (error || !Array.isArray(data)) return 0;
+    return data.reduce(
+      (acc, row) =>
+        acc +
+        (typeof row.lifetime_xp_delta === "number" &&
+        Number.isFinite(row.lifetime_xp_delta) &&
+        row.lifetime_xp_delta > 0
+          ? row.lifetime_xp_delta
+          : 0),
+      0,
+    );
+  } catch {
+    return 0;
   }
 }

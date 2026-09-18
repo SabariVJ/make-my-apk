@@ -1,8 +1,14 @@
 // ============================================================================
 // Personalized Challenge Engine — server function.
 //
-// Separated from challenge-engine.ts to avoid pulling @tanstack/react-start
-// into test bundles. Pure selection logic lives in challenge-engine.ts.
+// HOTFIX: personalized tasks are now first-class SERVER-BACKED assignments.
+// Selection still runs here (stats/goals/focus reasoning preserved), but the
+// chosen tasks are persisted via svj_get_or_create_my_personalized_tasks /
+// svj_refresh_my_personalized_tasks, which assign STABLE database IDs
+// (unique per user/day/template). The client never decides task identity,
+// XP, or completion — see svj_complete_my_personalized_task.
+//
+// Pure selection logic lives in challenge-engine.ts.
 // ============================================================================
 
 import { createServerFn } from "@tanstack/react-start";
@@ -10,8 +16,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ChallengeDifficulty } from "../app/types";
 import type { UserStatsData } from "./personalization.functions";
 import { selectPersonalizedChallenges, getChallengeInsights } from "./challenge-engine";
-
-const REFRESH_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes between refreshes
 
 interface PersonalizedResult {
   challenges: Array<{
@@ -28,10 +32,45 @@ interface PersonalizedResult {
 }
 
 /**
+ * Server refresh cooldown. Enforced AUTHORITATIVELY by the database via the
+ * atomic svj_reserve_personalized_refresh / svj_refresh_my_personalized_tasks
+ * RPCs (30-minute window); this mirror exists for the legacy two-step
+ * fallback only and can never override the server's own decision.
+ */
+const REFRESH_COOLDOWN_MS = 30 * 60 * 1000;
+
+/** Server-stored XP per difficulty — mirrors the persisted assignment values. */
+const XP_MAP: Record<ChallengeDifficulty, number> = {
+  Easy: 50,
+  Medium: 80,
+  Hard: 120,
+  Elite: 180,
+};
+const DURATION_MAP: Record<ChallengeDifficulty, number> = {
+  Easy: 10,
+  Medium: 20,
+  Hard: 30,
+  Elite: 45,
+};
+
+interface AssignmentRow {
+  id: string;
+  templateKey: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  xp: number;
+  durationMinutes: number | null;
+  status: string;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+/**
  * Read the authenticated user's personalization + stats. Gated on assessment
  * completion: users who have not completed the SVJ Assessment receive an
- * empty set with a clear unlock reason. The server is the authority — the
- * client never decides whether personalized tasks exist.
+ * empty set with a clear unlock reason.
  */
 async function readPersonalization(
   client: Record<string, unknown>,
@@ -76,103 +115,78 @@ async function readPersonalization(
   };
 }
 
-/**
- * Build the final challenge array from selected templates.
- */
-function buildChallenges(
-  templates: ReturnType<typeof selectPersonalizedChallenges>,
-  userId: string,
-): PersonalizedResult["challenges"] {
-  const xpMap: Record<ChallengeDifficulty, number> = {
-    Easy: 50,
-    Medium: 80,
-    Hard: 120,
-    Elite: 180,
-  };
-  const durMap: Record<ChallengeDifficulty, number> = {
-    Easy: 10,
-    Medium: 20,
-    Hard: 30,
-    Elite: 45,
-  };
-
-  return templates.map((t, i) => ({
-    id: `personalized-${userId.slice(0, 8)}-${Date.now()}-${i}`,
+/** Serialize a template into the server RPC payload (server → server only). */
+function templatePayload(templates: ReturnType<typeof selectPersonalizedChallenges>) {
+  return templates.map((t) => ({
+    template_key: `${t.category}:${t.title}`.toLowerCase().replace(/\s+/g, "-"),
     title: t.title,
     description: t.description,
     category: t.category,
     difficulty: t.difficulty,
-    xp: xpMap[t.difficulty],
-    durationMinutes: durMap[t.difficulty],
+    xp: XP_MAP[t.difficulty],
+    durationMinutes: DURATION_MAP[t.difficulty],
   }));
 }
 
+function toResult(assignments: AssignmentRow[]): PersonalizedResult["challenges"] {
+  return assignments.map((a) => ({
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    category: a.category,
+    difficulty: a.difficulty,
+    xp: a.xp,
+    durationMinutes: a.durationMinutes ?? DURATION_MAP[a.difficulty as ChallengeDifficulty] ?? 20,
+  }));
+}
+
+const ASSESSMENT_REASON = "Complete your SVJ Assessment to unlock personalized challenges.";
+
 /**
- * Server function: returns personalized challenges for the authenticated user.
+ * Server function: returns the user's persisted personalized assignments.
  *
- * Gated on assessment completion. Users who have not completed the SVJ
- * Assessment receive an empty challenge set with an unlock reason — the
- * server refuses to generate personalized tasks until the one-time assessment
- * is done.
+ * First call of the day creates the assignment set server-side; every
+ * subsequent call (refresh, logout/login, new device) returns THE SAME rows
+ * and IDs. Completion state comes from the server.
  */
 export const getPersonalizedChallenges = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(
-    async ({
-      context,
-    }): Promise<{
-      challenges: Array<{
-        id: string;
-        title: string;
-        description: string;
-        category: string;
-        difficulty: string;
-        xp: number;
-        durationMinutes: number;
-      }>;
-      focusAreas: string[];
-      reason: string;
-    }> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client = context.supabase as any;
+  .handler(async ({ context }): Promise<PersonalizedResult> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
 
-      const { assessmentCompleted, goals, stats } = await readPersonalization(
-        client,
-        context.userId,
-      );
+    const { assessmentCompleted, goals, stats } = await readPersonalization(client, context.userId);
 
-      // One-time assessment gate: no personalized tasks until the user has
-      // completed the SVJ Assessment. The database column is the authority,
-      // so logout/login, device change, and page refresh cannot bypass it.
-      if (!assessmentCompleted) {
-        return {
-          challenges: [],
-          focusAreas: [],
-          reason: "Complete your SVJ Assessment to unlock personalized challenges.",
-        };
-      }
+    if (!assessmentCompleted) {
+      return { challenges: [], focusAreas: [], reason: ASSESSMENT_REASON };
+    }
 
-      const selected = selectPersonalizedChallenges(stats, goals, [], 6);
-      const insights = getChallengeInsights(stats, goals);
+    const selected = selectPersonalizedChallenges(stats, goals, [], 6);
+    const insights = getChallengeInsights(stats, goals);
 
-      return {
-        challenges: buildChallenges(selected, context.userId),
-        focusAreas: insights.focusAreas,
-        reason: insights.reason,
-      };
-    },
-  );
+    const { data, error } = await client.rpc("svj_get_or_create_my_personalized_tasks", {
+      p_templates: templatePayload(selected),
+    });
+    if (error) throw error;
+
+    const result = data as {
+      assigned: boolean;
+      reason?: string;
+      assignments: AssignmentRow[];
+    };
+
+    return {
+      challenges: toResult(result.assignments ?? []),
+      focusAreas: insights.focusAreas,
+      reason: result.assigned ? insights.reason : (result.reason ?? insights.reason),
+    };
+  });
 
 /**
- * Server function: refresh the authenticated user's personalized task set.
- *
- * Protected by a server-enforced 30-minute cooldown. The cooldown is checked
- * against the database column `user_personalization.last_personalized_refresh_at`
- * so it cannot be bypassed by page reload, logout/login, client state changes,
- * or rapid clicking.
- *
- * This function does NOT award XP — generating tasks is not a reward event.
- * XP is only awarded when the user legitimately completes a task.
+ * Server function: refresh the personalized task set (30-minute cooldown,
+ * enforced atomically in the database). Uncompleted assignments are marked
+ * replaced; completed assignments are never silently undone. Refresh never
+ * mints XP — only legitimate completion does.
  */
 export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -199,80 +213,131 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
         return {
           ok: false,
           cooldownRemainingMs: 0,
-          error: "Complete your SVJ Assessment to unlock personalized challenges.",
+          error: ASSESSMENT_REASON,
         };
       }
 
-      // Atomic cooldown reservation via RPC.
-      // Requires migration 20260905_add_atomic_refresh_rpc; falls back to a
-      // two-step approach (not atomic) when the RPC is not yet deployed, which
-      // is safe until that migration is applied.
-      let cooldownRemainingMs = 0;
-      let reserved = false;
-
-      const { data: reserveResult, error: reserveError } = await client.rpc(
-        "svj_reserve_personalized_refresh",
-      );
-
-      if (reserveError) {
-        const missingRpc =
-          reserveError.code === "PGRST202" ||
-          /svj_reserve_personalized_refresh|could not find the function/i.test(
-            String(reserveError.message ?? ""),
-          );
-        if (!missingRpc) throw reserveError;
-
-        // Fallback: two-step cooldown check (migration not applied yet).
-        const { data: refreshRow } = await client
-          .from("user_personalization")
-          .select("last_personalized_refresh_at")
-          .eq("user_id", context.userId)
-          .maybeSingle();
-
-        const lastRefresh = refreshRow?.last_personalized_refresh_at;
-        const now = new Date();
-
-        if (lastRefresh) {
-          const elapsed = now.getTime() - new Date(lastRefresh).getTime();
-          if (elapsed < REFRESH_COOLDOWN_MS) {
-            cooldownRemainingMs = REFRESH_COOLDOWN_MS - elapsed;
-            return {
-              ok: false,
-              cooldownRemainingMs,
-              error: "Personalized tasks are on a cooldown. Try again later.",
-            };
-          }
-        }
-
-        await client
-          .from("user_personalization")
-          .update({ last_personalized_refresh_at: now.toISOString() })
-          .eq("user_id", context.userId);
-        reserved = true;
-      } else if (!reserveResult?.ok) {
-        cooldownRemainingMs = reserveResult.cooldownRemainingMs ?? 0;
-        return {
-          ok: false,
-          cooldownRemainingMs,
-          error: reserveResult.error ?? "Personalized tasks are on a cooldown. Try again later.",
-        };
-      } else {
-        reserved = true;
-      }
-
-      // Generate a fresh, non-duplicate set. The selection function considers
-      // the user's current stats and goals; newly generated IDs differ from any
-      // previous set, and duplicate-title prevention happens at the challenge
-      // merge layer in the client.
       const selected = selectPersonalizedChallenges(stats, goals, [], 6);
       const insights = getChallengeInsights(stats, goals);
+
+      // The RPC reserves the atomic cooldown AND swaps the set in one
+      // server-authoritative step. If the RPC is not yet deployed we fall
+      // back to the legacy two-step reservation so the UI stays functional.
+      const { data, error } = await client.rpc("svj_refresh_my_personalized_tasks", {
+        p_templates: templatePayload(selected),
+      });
+
+      if (error) {
+        const missingRpc =
+          error.code === "PGRST202" ||
+          /svj_refresh_my_personalized_tasks|could not find the function/i.test(
+            String(error.message ?? ""),
+          );
+        if (!missingRpc) throw error;
+
+        const { data: reserveResult, error: reserveError } = await client.rpc(
+          "svj_reserve_personalized_refresh",
+        );
+        if (reserveError) throw reserveError;
+        if (!reserveResult?.ok) {
+          return {
+            ok: false,
+            cooldownRemainingMs: reserveResult.cooldownRemainingMs ?? 0,
+            error: reserveResult.error ?? "Personalized tasks are on a cooldown.",
+          };
+        }
+        return {
+          ok: true,
+          cooldownRemainingMs: 0,
+          challenges: toResult(
+            // Legacy path without persistence: selection only.
+            (selected as ReturnType<typeof selectPersonalizedChallenges>)
+              .map((t) => ({
+                id: `${t.category}:${t.title}`,
+                title: t.title,
+                description: t.description,
+                category: t.category,
+                difficulty: t.difficulty,
+                xp: XP_MAP[t.difficulty],
+                durationMinutes: DURATION_MAP[t.difficulty],
+              }))
+              .map((t) => ({
+                ...t,
+                status: "active",
+                completed: false,
+                completedAt: null,
+                templateKey: t.id,
+                description: t.description,
+              })) as AssignmentRow[],
+          ),
+          focusAreas: insights.focusAreas,
+          reason: insights.reason,
+        };
+      }
+
+      const result = data as {
+        ok: boolean;
+        cooldownRemainingMs: number;
+        error?: string;
+        assignments?: AssignmentRow[];
+      };
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          cooldownRemainingMs: result.cooldownRemainingMs ?? 0,
+          error: result.error ?? "Personalized tasks are on a cooldown.",
+        };
+      }
 
       return {
         ok: true,
         cooldownRemainingMs: 0,
-        challenges: buildChallenges(selected, context.userId),
+        challenges: toResult(result.assignments ?? []),
         focusAreas: insights.focusAreas,
         reason: insights.reason,
+      };
+    },
+  );
+
+/**
+ * Server function: complete a personalized assignment.
+ *
+ * Identity and validation live entirely in the database
+ * (svj_complete_my_personalized_task): ownership via auth.uid(), active
+ * status, currency, and idempotent exactly-once XP/stat rewards from the
+ * SERVER-STORED xp_reward. The client sends only the assignment id.
+ */
+export const completePersonalizedTask = createServerFn({ method: "POST" })
+  .validator((input: { assignmentId: string }) => input)
+  .middleware([requireSupabaseAuth])
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{
+      ok: boolean;
+      alreadyCompleted?: boolean;
+      xpAwarded?: number;
+      statChanges?: Record<string, number>;
+      error?: string;
+    }> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = context.supabase as any;
+
+      // Only the assignment id leaves the client. XP, identity and status
+      // transitions are decided exclusively inside the SECURITY DEFINER RPC.
+      const { data: result, error } = await client.rpc("svj_complete_my_personalized_task", {
+        p_assignment_id: data.assignmentId,
+      });
+      if (error) throw error;
+
+      return {
+        ok: result?.ok ?? false,
+        alreadyCompleted: result?.alreadyCompleted ?? false,
+        xpAwarded: result?.xpAwarded ?? 0,
+        statChanges: result?.statChanges ?? {},
+        error: result?.error,
       };
     },
   );

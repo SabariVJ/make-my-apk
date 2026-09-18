@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   TrendingUp,
@@ -28,6 +28,8 @@ import {
   type PersonalizationData,
 } from "@/lib/personalization.functions";
 import { getChallengeInsights, selectPersonalizedChallenges } from "@/lib/challenge-engine";
+import { getMyReadiness } from "@/app/lib/recovery";
+import { useActivityOptional } from "@/app/context/ActivityContext";
 
 // ── Stat display config ──────────────────────────────────────────────────
 
@@ -319,6 +321,21 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
   const callGetStats = useServerFn(getUserStats);
   const callGetPersonalization = useServerFn(getPersonalization);
+  const activity = useActivityOptional();
+  const history30 = activity?.history30 ?? [];
+  const [readinessScore, setReadinessScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getMyReadiness()
+      .then((r) => {
+        if (!cancelled && r.ok && r.readiness) setReadinessScore(r.readiness.score);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const { data: serverStats } = useQuery<UserStatsData | null>({
     queryKey: ["user-stats"],
@@ -471,6 +488,49 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
           {/* This Week's Priority */}
           <PriorityCard areas={insights.focusAreas} reason={insights.reason} />
+
+          {/* Weekly Analysis — real stored data only (stat deltas vs
+              assessment baseline, recorded activity trend, recovery trend). */}
+          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10">
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="w-4 h-4 text-[#C81E3A]" />
+              <h3 className="font-anton text-sm uppercase tracking-wider text-white">
+                Weekly Analysis
+              </h3>
+            </div>
+            <ul className="space-y-2 text-xs font-mono text-[#B8B8C0]">
+              {statEntries
+                .filter(
+                  ([label, v]) => (serverStats && label === strongest[0]) || label === weakest[0],
+                )
+                .slice(0, 2)
+                .map(([label, v]) => {
+                  const baseKey = `baseline${label.toLowerCase()}` as keyof UserStatsData;
+                  const base = (serverStats?.[baseKey] as number | undefined) ?? v;
+                  const delta = v - base;
+                  return (
+                    <li
+                      key={label}
+                      className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2"
+                    >
+                      <span>{label}</span>
+                      <span className={delta >= 0 ? "text-emerald-400" : "text-amber-400"}>
+                        {delta >= 0 ? "▲ +" : "▼ "}
+                        {delta} since assessment
+                      </span>
+                    </li>
+                  );
+                })}
+              <li className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2">
+                <span>Activity (30d)</span>
+                <span className="text-white">{history30.length} days recorded</span>
+              </li>
+              <li className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2">
+                <span>Readiness (today)</span>
+                <span className="text-white">{readinessScore ?? "No check-in"}</span>
+              </li>
+            </ul>
+          </div>
 
           {/* 8 Stat Cards Grid */}
           <div>

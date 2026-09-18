@@ -1,6 +1,6 @@
 # SVJ AUTONOMOUS RUN — STATE CHECKPOINT
 
-CURRENT_REMOTE_SHA: 81f2526 (Update 09 pushed)
+CURRENT_REMOTE_SHA: a8a0b43 (Earn Plus admin-key hotfix pushed)
 LAST_COMPLETED_UPDATE: 08 (Plus + MY SVJ PLAN weekly analysis — commit 7b52993, already pushed)
 NEXT_UPDATE: 09 — Profile + Avatar + Settings
 MIGRATIONS_CREATED: none by this run so far (Updates 01–08 own their migrations; see supabase/migrations)
@@ -8,6 +8,18 @@ MIGRATIONS_APPLIED: (see MIGRATIONS_PENDING — live status not verified from th
 MIGRATIONS_PENDING: audit required on the oltmnrkceodpyqznfhjb runtime for 20260918*, 20260919* migrations
 TEST_STATUS: baseline full suite = 427 pass / 25 fail (failures pre-existing on clean HEAD, proven via stash-run); TypeScript PASS; targeted suites (avatar, membership, xp-stats, strength, personalized) 116/116 PASS
 KNOWN_BLOCKERS: no authenticated runtime DB access from this workspace for migration deployment verification; Android SDK unavailable for assembleDebug (gradle wrapper present)
+
+## HOTFIX — Earn Plus admin-key removal (commit a8a0b43)
+
+- Migration supabase/migrations/20260920000000_earned_plus_self_service.sql created:
+  five authenticated self-service SECURITY DEFINER RPCs delegating to the existing
+  reward logic. NOT YET LIVE — DB DEPLOYMENT REQUIRED on oltmnrkceodpyqznfhjb
+  (run the file, then NOTIFY pgrst, 'reload schema';).
+- engagement.server.ts/functions.ts now use the requireSupabaseAuth session client;
+  requireAdminKey/supabaseAdmin removed from all normal reward flows.
+- 16 new regression tests in tests/earned-plus-self-service.test.ts: all pass.
+- Two stale tests that codified the old admin-gated engagement architecture updated;
+  account deletion remains privileged and fail-closed.
 
 ## FINAL STATE (run complete)
 

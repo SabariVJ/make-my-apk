@@ -17,6 +17,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 import { TrainGoals, TrainProgress } from "./TrainGoals";
+import { TrainRecovery } from "./TrainRecovery";
 import { TrainStrength } from "./TrainStrength";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
@@ -233,7 +234,7 @@ export const ActivityView: React.FC = () => {
   return <ActivityViewContent activity={activity} />;
 };
 
-type TrainSection = "activity" | "history" | "goals" | "progress";
+type TrainSection = "activity" | "history" | "goals" | "progress" | "recovery";
 
 const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ activity }) => {
   const {
@@ -357,6 +358,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             { id: "history", label: "History" },
             { id: "goals", label: "Goals" },
             { id: "progress", label: "Progress" },
+            { id: "recovery", label: "Recovery" },
           ] as const
         ).map((s) => (
           <button
@@ -376,6 +378,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
 
       {section === "goals" && <TrainGoals />}
       {section === "progress" && <TrainProgress />}
+      {section === "recovery" && <TrainRecovery />}
 
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (

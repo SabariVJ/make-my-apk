@@ -1250,7 +1250,9 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
     };
     await mount();
     const tabs = screen.getByTestId("train-sections");
-    assert.equal(tabs.querySelectorAll("button").length, 4, "no new bottom-nav tab");
+    // Update 05 adds the RECOVERY section inside Train (still no new
+    // bottom-navigation tab).
+    assert.equal(tabs.querySelectorAll("button").length, 5, "no new bottom-nav tab");
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "History" }));

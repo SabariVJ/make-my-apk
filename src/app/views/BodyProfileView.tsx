@@ -5,8 +5,10 @@ import { Calculator, Scale, Flame, Target, Apple, Loader2, ChevronRight, Info } 
 import {
   saveBodyProfile,
   getBodyProfile,
-  getPersonalization,
+  getAssessmentEntryState,
+  savePersonalization,
   type BodyProfileData,
+  type PersonalizationData,
 } from "@/lib/personalization.functions";
 
 // ── Food suggestions by diet + goal ───────────────────────────────────────
@@ -256,7 +258,12 @@ export const BodyProfileView: React.FC = () => {
   const [allergies, setAllergies] = useState<string[]>([]);
   const callGetBodyProfile = useServerFn(getBodyProfile);
   const callSaveBodyProfile = useServerFn(saveBodyProfile);
-  const callGetPersonalization = useServerFn(getPersonalization);
+  const callGetPersonalization = useServerFn(getAssessmentEntryState);
+  const callGetAssessmentEntryState = callGetPersonalization;
+  const callSavePersonalization = useServerFn(savePersonalization);
+  const [nutritionDirty, setNutritionDirty] = useState(false);
+  const [savingNutrition, setSavingNutrition] = useState(false);
+  const [nutritionSaved, setNutritionSaved] = useState(false);
 
   // Form state
   const [dob, setDob] = useState("");
@@ -284,10 +291,10 @@ export const BodyProfileView: React.FC = () => {
           setBodyGoal(data.bodyGoal || "maintain");
           setTargetWeight(data.targetWeightKg?.toString() || "");
         }
-        if (personalization?.nutritionDietaryPreference) {
-          setDietaryPref(personalization.nutritionDietaryPreference);
+        if (personalization?.personalization?.nutritionDietaryPreference) {
+          setDietaryPref(personalization.personalization.nutritionDietaryPreference);
         }
-        setAllergies(personalization?.nutritionAllergies ?? []);
+        setAllergies(personalization?.personalization?.nutritionAllergies ?? []);
       } catch (e) {
         console.error("Failed to load body profile:", e);
         setError("Your body profile could not be loaded. Try again shortly.");
@@ -551,6 +558,108 @@ export const BodyProfileView: React.FC = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Dietary preference + allergies — persisted server-side */}
+      <div className="p-5 rounded-3xl bg-[#17171A] border border-white/10 space-y-3">
+        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Diet & Allergies</h3>
+        <div className="space-y-1">
+          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+            Dietary Preference
+          </label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[
+              { id: "vegetarian", label: "Vegetarian" },
+              { id: "eggetarian", label: "Eggetarian" },
+              { id: "non_vegetarian", label: "Non-Veg" },
+              { id: "vegan", label: "Vegan" },
+            ].map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => {
+                  setDietaryPref(d.id);
+                  setNutritionDirty(true);
+                }}
+                className={`py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                  dietaryPref === d.id
+                    ? "bg-[#C81E3A] text-white"
+                    : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+            Allergies / Foods to Avoid
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {["Peanuts", "Dairy", "Gluten", "Eggs", "Shellfish", "Soy"].map((a) => {
+              const active = allergies.includes(a);
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => {
+                    setAllergies((prev) =>
+                      prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a],
+                    );
+                    setNutritionDirty(true);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                    active
+                      ? "bg-amber-500/20 border border-amber-500/50 text-amber-300"
+                      : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                  }`}
+                >
+                  {active ? "✓ " : ""}
+                  {a}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={!nutritionDirty || savingNutrition}
+          onClick={async () => {
+            setSavingNutrition(true);
+            try {
+              const entryState = await callGetAssessmentEntryState({}).catch(() => null);
+              // Merge into the existing personalization row — never reset the
+              // assessment flags or answers.
+              await callSavePersonalization({
+                data: {
+                  ...(entryState?.personalization ?? ({} as PersonalizationData)),
+                  assessmentCompleted: entryState?.personalization?.assessmentCompleted ?? false,
+                  goalsSelected: entryState?.personalization?.goalsSelected ?? false,
+                  goals: entryState?.personalization?.goals ?? [],
+                  nutritionDietaryPreference: dietaryPref,
+                  nutritionAllergies: allergies,
+                } as PersonalizationData,
+              });
+              setNutritionDirty(false);
+              setNutritionSaved(true);
+            } catch {
+              setError("Could not save diet preferences. Please retry.");
+            } finally {
+              setSavingNutrition(false);
+            }
+          }}
+          className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
+        >
+          {savingNutrition
+            ? "Saving..."
+            : nutritionSaved && !nutritionDirty
+              ? "Saved ✓"
+              : "Save Diet Preferences"}
+        </button>
+        <p className="text-[10px] font-mono text-[#8C8C90]">
+          Free: standard food guidance. SVJ Plus adds deeper personalized guidance and trends.
+        </p>
+      </div>
 
       {/* Food suggestions */}
       {foodSuggestions && (

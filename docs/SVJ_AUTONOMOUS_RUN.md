@@ -1,9 +1,9 @@
 # SVJ AUTONOMOUS RUN — STATE CHECKPOINT
 
-CURRENT_REMOTE_SHA: a8a0b43 (Earn Plus admin-key hotfix pushed)
-LAST_COMPLETED_UPDATE: 08 (Plus + MY SVJ PLAN weekly analysis — commit 7b52993, already pushed)
+CURRENT_REMOTE_SHA: c929d011b1782b799516b551da7deebf324a2a7e
+LAST_COMPLETED_UPDATE: Earn Plus self-service RPC correction (impl extraction) — commit c929d01
 NEXT_UPDATE: 09 — Profile + Avatar + Settings
-MIGRATIONS_CREATED: none by this run so far (Updates 01–08 own their migrations; see supabase/migrations)
+MIGRATIONS_CREATED: 20260920000000_earned_plus_self_service.sql (corrected in place: internal _impl functions + two entry points; NOT yet deployed)
 MIGRATIONS_APPLIED: (see MIGRATIONS_PENDING — live status not verified from this environment)
 MIGRATIONS_PENDING: audit required on the oltmnrkceodpyqznfhjb runtime for 20260918*, 20260919* migrations
 TEST_STATUS: baseline full suite = 427 pass / 25 fail (failures pre-existing on clean HEAD, proven via stash-run); TypeScript PASS; targeted suites (avatar, membership, xp-stats, strength, personalized) 116/116 PASS

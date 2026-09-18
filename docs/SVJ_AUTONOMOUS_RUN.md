@@ -1,7 +1,7 @@
 # SVJ AUTONOMOUS RUN — STATE CHECKPOINT
 
-CURRENT_REMOTE_SHA: c929d011b1782b799516b551da7deebf324a2a7e
-LAST_COMPLETED_UPDATE: Earn Plus self-service RPC correction (impl extraction) — commit c929d01
+CURRENT_REMOTE_SHA: b1ea348c887c597bdc06fa983d083fbe9f0e3a66
+LAST_COMPLETED_UPDATE: Earn Plus production-upgrade safety (trigger upgrades inside 20260920000000) — commit b1ea348
 NEXT_UPDATE: 09 — Profile + Avatar + Settings
 MIGRATIONS_CREATED: 20260920000000_earned_plus_self_service.sql (corrected in place: internal _impl functions + two entry points; NOT yet deployed)
 MIGRATIONS_APPLIED: (see MIGRATIONS_PENDING — live status not verified from this environment)

@@ -63,10 +63,12 @@ function MissionCard({
   mission,
   anotherRunning,
   paused,
+  policyDay,
 }: {
   mission: RewardMission;
   anotherRunning: boolean;
   paused: boolean;
+  policyDay: string;
 }) {
   const { serverNowMs, pending, startMission, completeMission } = useEngagement();
   const [confirmation, setConfirmation] = useState("");
@@ -79,6 +81,8 @@ function MissionCard({
   const completed = mission.status === "completed";
   const started = Boolean(mission.assignmentId) && !completed;
   const ready = started && !expired && remaining === 0;
+  const startPending = pending === "start:" + policyDay + ":" + mission.key;
+  const completePending = pending === "complete:" + mission.assignmentId;
   const disabled = Boolean(pending) || paused;
 
   async function submit(event: React.FormEvent) {
@@ -124,7 +128,7 @@ function MissionCard({
               void startMission(mission.key);
             }}
           >
-            {pending?.startsWith("start:") ? "Starting…" : "Start " + mission.title}
+            {startPending ? "Starting…" : "Start " + mission.title}
           </button>
           {anotherRunning && (
             <p className="mt-2 text-xs text-[#A1A1AA]">Finish your active mission first.</p>
@@ -165,7 +169,7 @@ function MissionCard({
             className={primaryButton}
             disabled={disabled || !ready || confirmation.trim().length < 20}
           >
-            {pending?.startsWith("complete:") ? "Confirming…" : "Confirm " + mission.title}
+            {completePending ? "Confirming…" : "Confirm " + mission.title}
           </button>
         </form>
       )}
@@ -363,6 +367,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
                 key={active.policyDay + ":" + mission.key}
                 mission={mission}
                 paused={paused}
+                policyDay={active.policyDay}
                 anotherRunning={Boolean(running && running.key !== mission.key)}
               />
             ))}

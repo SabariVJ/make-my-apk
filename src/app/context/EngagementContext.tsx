@@ -14,7 +14,14 @@ import {
   type EngagementReply,
   type RewardMutation,
   type RewardReceipt,
+  type RewardRpcClient,
 } from "@/lib/engagement";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  browserStartDailyMission,
+  browserCompleteDailyMission,
+  browserRedeemEarnedPlus,
+} from "@/lib/engagement.server";
 import { useSVJ } from "./SVJContext";
 
 type Action =
@@ -22,6 +29,9 @@ type Action =
   | { kind: "start"; missionKey: string }
   | { kind: "complete"; assignmentId: string; confirmation: string }
   | { kind: "redeem" };
+
+/** The authenticated browser client satisfies the structural rpc() view. */
+const rewardClient: RewardRpcClient = supabase as unknown as RewardRpcClient;
 
 function newRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -105,7 +115,10 @@ export function EngagementProvider({
   const active = isActiveEngagement(state) ? state : undefined;
   const latestState = useRef(state);
   latestState.current = state;
-  const busy = useRef(false);
+  // In-flight mutation keys, so one pending action never visually blocks or
+  // mislabels unrelated missions, while duplicates of the SAME action are
+  // still refused until it resolves.
+  const inflight = useRef(new Set<string>());
   const requests = useRef(new Map<string, string>());
   const attemptedCheckins = useRef(new Set<string>());
   const [pending, setPending] = useState<string | null>(null);
@@ -139,7 +152,7 @@ export function EngagementProvider({
 
   const perform = useCallback(
     async (action: Action): Promise<boolean> => {
-      if (!userId || busy.current) return false;
+      if (!userId) return false;
       const snapshot = latestState.current;
       if (
         !isActiveEngagement(snapshot) ||
@@ -156,6 +169,9 @@ export function EngagementProvider({
               ? snapshot.policyDay
               : "launch";
       const key = action.kind + ":" + source;
+      // Duplicate protection is per-operation: two rapid clicks on the same
+      // mission cannot create two starts, but unrelated actions stay free.
+      if (inflight.current.has(key)) return false;
       let requestId: string;
       try {
         requestId = requests.current.get(key) ?? newRequestId();
@@ -163,8 +179,10 @@ export function EngagementProvider({
         setActionError("Secure request IDs are unavailable in this browser. Refresh and retry.");
         return false;
       }
+      // A retry after an uncertain failure reuses the SAME requestId so the
+      // database's receipt idempotency stays authoritative.
       requests.current.set(key, requestId);
-      busy.current = true;
+      inflight.current.add(key);
       setPending(key);
       setActionError(null);
       setNotice(null);
@@ -172,24 +190,28 @@ export function EngagementProvider({
         let result: EngagementReply<RewardMutation>;
         switch (action.kind) {
           case "checkin":
+            // Check-in is confirmed working through the serverFn path.
             result = await calls.current.checkin({ data: { requestId } });
             break;
           case "start":
-            result = await calls.current.start({
-              data: { requestId, missionKey: action.missionKey },
-            });
+            result = await browserStartDailyMission(
+              rewardClient,
+              userId,
+              requestId,
+              action.missionKey,
+            );
             break;
           case "complete":
-            result = await calls.current.complete({
-              data: {
-                requestId,
-                assignmentId: action.assignmentId,
-                confirmation: action.confirmation,
-              },
-            });
+            result = await browserCompleteDailyMission(
+              rewardClient,
+              userId,
+              requestId,
+              action.assignmentId,
+              action.confirmation,
+            );
             break;
           case "redeem":
-            result = await calls.current.redeem({ data: { requestId } });
+            result = await browserRedeemEarnedPlus(rewardClient, userId, requestId);
             break;
         }
         if (currentAccount.current !== userId) return false;
@@ -222,7 +244,8 @@ export function EngagementProvider({
         }
         return false;
       } finally {
-        busy.current = false;
+        // The pending state ALWAYS clears — success, failure, or timeout.
+        inflight.current.delete(key);
         if (currentAccount.current === userId) setPending(null);
       }
     },
@@ -238,7 +261,8 @@ export function EngagementProvider({
     )
       return;
     const key = active.userId + ":" + active.policyDay;
-    if (attemptedCheckins.current.has(key) || busy.current) return;
+    if (attemptedCheckins.current.has(key)) return;
+    if ([...inflight.current].some((k) => k.startsWith("checkin:"))) return;
     attemptedCheckins.current.add(key);
     void perform({ kind: "checkin" });
   }, [active, perform]);

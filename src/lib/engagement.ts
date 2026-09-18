@@ -141,6 +141,16 @@ export type RewardMission = z.infer<typeof rewardMissionSchema>;
 export type ActiveEngagementState = z.infer<typeof activeEngagementSchema>;
 export type EngagementState = z.infer<typeof engagementStateSchema>;
 export type RewardMutation = z.infer<typeof rewardMutationSchema>;
+
+/** Minimal rpc() view of the authenticated browser Supabase client. Only
+ *  request identity and mission/assignment input are ever sent — identity is
+ *  derived from auth.uid() inside the RPC, never from a client parameter. */
+export type RewardRpcClient = {
+  rpc: <R = unknown>(
+    fn: string,
+    args?: Record<string, unknown>,
+  ) => PromiseLike<{ data: R; error: { code?: string; message?: string } | null }>;
+};
 export type RewardReceipt = z.infer<typeof rewardReceiptSchema>;
 export type EngagementReply<T> =
   { ok: true; value: T } | { ok: false; error: string; code: string };

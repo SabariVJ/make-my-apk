@@ -6,6 +6,7 @@ import {
   type EngagementReply,
   type EngagementState,
   type RewardMutation,
+  type RewardRpcClient,
 } from "./engagement";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -213,6 +214,124 @@ export const finishDailyMission = (
 export const claimEarnedPlus = (db: AuthenticatedDb, userId: string, requestId: string) =>
   runRpc(
     db,
+    "svj_redeem_my_earned_plus",
+    { p_request_id: requestId },
+    rewardMutationSchema,
+    userId,
+  );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Browser-direct mutation path.
+//
+// The TanStack serverFn transport can leave a POST hanging without ever
+// reaching the database. These wrappers run the SAME self-service RPCs through
+// the authenticated browser Supabase client (the user's own session/JWT), so
+// identity still comes only from auth.uid() in the database. The browser
+// supplies request identity and mission input only — never user_id, XP, or
+// policy values. A finite timeout guarantees the UI can never remain pending
+// indefinitely on a dead transport.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const REWARD_MUTATION_TIMEOUT_MS = 20_000;
+
+export function withTimeout<T>(
+  promise: PromiseLike<{ data: T; error: { code?: string; message?: string } | null }>,
+  timeoutMs: number,
+): Promise<{ data: T; error: { code?: string; message?: string } | null }> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("SVJ_REWARD_TRANSPORT_TIMEOUT")), timeoutMs);
+  });
+  return Promise.race([Promise.resolve(promise), timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+async function runBrowserRpc<T>(
+  client: RewardRpcClient,
+  name: string,
+  args: Record<string, unknown>,
+  schema: z.ZodType<T>,
+  userId: string,
+): Promise<EngagementReply<T>> {
+  try {
+    const { data, error } = await withTimeout(
+      client.rpc<T>(name, args),
+      REWARD_MUTATION_TIMEOUT_MS,
+    );
+    if (error) return { ok: false, ...classifyError(error) };
+    const parsed = schema.safeParse(data);
+    if (!parsed.success) {
+      console.error("[SVJ rewards] Response shape validation failed", { rpc: name });
+      return {
+        ok: false,
+        error: "Reward data could not be verified. Please refresh.",
+        code: "INVALID_REWARD_STATE",
+      };
+    }
+    const value = parsed.data as unknown as RewardMutation;
+    if (value.state.userId !== userId) {
+      return {
+        ok: false,
+        error: "The reward account changed. Please sign in again.",
+        code: "ACCOUNT_CHANGED",
+      };
+    }
+    return { ok: true, value: parsed.data };
+  } catch (caught) {
+    if (caught instanceof Error && caught.message === "SVJ_REWARD_TRANSPORT_TIMEOUT") {
+      console.error("[SVJ rewards] Mutation transport timed out", { rpc: name });
+      return {
+        ok: false,
+        error:
+          "The request timed out before confirmation. Retry safely—your request will not award twice.",
+        code: "REWARDS_UNAVAILABLE",
+      };
+    }
+    return {
+      ok: false,
+      error: "The rewards server could not be reached. Please try again.",
+      code: "REWARDS_UNAVAILABLE",
+    };
+  }
+}
+
+export const browserStartDailyMission = (
+  client: RewardRpcClient,
+  userId: string,
+  requestId: string,
+  missionKey: string,
+) =>
+  runBrowserRpc(
+    client,
+    "svj_start_my_daily_mission",
+    { p_request_id: requestId, p_mission_key: missionKey },
+    rewardMutationSchema,
+    userId,
+  );
+
+export const browserCompleteDailyMission = (
+  client: RewardRpcClient,
+  userId: string,
+  requestId: string,
+  assignmentId: string,
+  confirmation: string,
+) =>
+  runBrowserRpc(
+    client,
+    "svj_complete_my_daily_mission",
+    { p_request_id: requestId, p_assignment_id: assignmentId, p_confirmation_text: confirmation },
+    rewardMutationSchema,
+    userId,
+  );
+
+export const browserRedeemEarnedPlus = (
+  client: RewardRpcClient,
+  userId: string,
+  requestId: string,
+) =>
+  runBrowserRpc(
+    client,
     "svj_redeem_my_earned_plus",
     { p_request_id: requestId },
     rewardMutationSchema,

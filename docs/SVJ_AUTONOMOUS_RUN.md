@@ -1,6 +1,6 @@
 # SVJ AUTONOMOUS RUN — STATE CHECKPOINT
 
-CURRENT_REMOTE_SHA: 7b52993 (at start of Update 09)
+CURRENT_REMOTE_SHA: 81f2526 (Update 09 pushed)
 LAST_COMPLETED_UPDATE: 08 (Plus + MY SVJ PLAN weekly analysis — commit 7b52993, already pushed)
 NEXT_UPDATE: 09 — Profile + Avatar + Settings
 MIGRATIONS_CREATED: none by this run so far (Updates 01–08 own their migrations; see supabase/migrations)
@@ -9,7 +9,23 @@ MIGRATIONS_PENDING: audit required on the oltmnrkceodpyqznfhjb runtime for 20260
 TEST_STATUS: baseline full suite = 427 pass / 25 fail (failures pre-existing on clean HEAD, proven via stash-run); TypeScript PASS; targeted suites (avatar, membership, xp-stats, strength, personalized) 116/116 PASS
 KNOWN_BLOCKERS: no authenticated runtime DB access from this workspace for migration deployment verification; Android SDK unavailable for assembleDebug (gradle wrapper present)
 
-## Update 09 — Profile + Avatar + Settings (in progress)
+## FINAL STATE (run complete)
+
+- Updates 01–09 are complete and pushed. No Update 10/11/12 definitions exist in the
+  controlling specification (docs/SVJ_MASTER_PROGRESS.md defines Phases 01–04, all complete;
+  updates 05–08 landed via commits 34d8a19/23da1d7/bcfeba4/7b52993). Final hardening ran at
+  commit 81f2526: TypeScript PASS, targeted suites 116/116 PASS, full suite 427 pass / 25 fail
+  (identical failures proven pre-existing on clean HEAD), web build PASS, cap sync android PASS,
+  git diff --check PASS, no secret leakage, project refs locked to oltmnrkceodpyqznfhjb.
+- Full-repo ESLint shows ~1450 prettier formatting errors across the whole tree — pre-existing,
+  not introduced by this run (touched files lint clean; fixes are mechanical `--fix` churn best
+  done in a dedicated formatting commit).
+- Migrations 20260918* and 20260919* (challenge self-service, strength logging, activity XP,
+  personalized assignments, recovery) still need live deployment verification against
+  oltmnrkceodpyqznfhjb — this workspace has no authenticated runtime DB access.
+- Android assembleDebug NOT run: no Android SDK in this environment (cap sync verified).
+
+## Update 09 — Profile + Avatar + Settings (DONE — commit 81f2526)
 
 Audit findings (GitHub state 7b52993, branch release/play-v1-compliance):
 

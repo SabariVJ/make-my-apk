@@ -145,14 +145,25 @@ async function enable() {
 
 before(async () => {
   await execScript(await readFile("tests/fixtures/rewards-auth.sql", "utf8"));
+  // Base tables first: the migrations directory replay (which includes the
+  // self-service RPC migration under test) needs public.profiles etc., and
+  // the pending reward schema needs them too.
   for (const name of (await readdir("supabase/migrations"))
-    .filter((x) => x.endsWith(".sql"))
+    .filter((x) => x.endsWith(".sql") && x < "20260920000000")
     .sort()) {
     await execScript(await readFile("supabase/migrations/" + name, "utf8"));
   }
+  // The reward schema (supabase/pending) creates the reward_* tables that the
+  // self-service RPC layer builds on; the layered migration replays below it.
   await execScript(schema);
   // Applied policy amendment: 7 qualifying days, account age still 21 days.
   await execScript(qualifyingDaysAmendment);
+  // New migrations (including the self-service RPC layer under test) last.
+  for (const name of (await readdir("supabase/migrations"))
+    .filter((x) => x.endsWith(".sql") && x >= "20260920000000")
+    .sort()) {
+    await execScript(await readFile("supabase/migrations/" + name, "utf8"));
+  }
 });
 after(async () => {
   if (native) await database.end();

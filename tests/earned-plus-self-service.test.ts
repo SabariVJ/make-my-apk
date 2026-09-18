@@ -162,20 +162,31 @@ describe("Earn Plus admin-key removal (architecture regression)", () => {
 
   it("5. identity derives from auth.uid() — migration wrappers take no user parameter", () => {
     for (const signature of [
-      "svj_get_my_engagement_state()",
-      "svj_claim_my_daily_checkin(p_request_id uuid)",
-      "svj_start_my_daily_mission(\n  p_request_id uuid,\n  p_mission_key text\n)",
-      "svj_complete_my_daily_mission(\n  p_request_id uuid,\n  p_assignment_id uuid,\n  p_confirmation_text text\n)",
-      "svj_redeem_my_earned_plus(p_request_id uuid)",
+      "svj_get_my_engagement_state",
+      "svj_claim_my_daily_checkin",
+      "svj_start_my_daily_mission",
+      "svj_complete_my_daily_mission",
+      "svj_redeem_my_earned_plus",
     ]) {
-      assert.ok(
-        MIGRATION.includes(signature),
-        `missing self-service signature: ${signature.split("(")[0]}`,
-      );
+      // Signature exists AND takes no user id parameter in its arg list.
+      const re = new RegExp("FUNCTION public\\." + signature + "\\s*\\(([^)]*)\\)", "i");
+      const match = MIGRATION.match(re);
+      assert.ok(match, `missing self-service signature: ${signature}`);
+      assert.ok(!/user_id|p_user/i.test(match[1]), `${signature} must not accept a user id`);
     }
     // Every wrapper derives the caller from auth.uid() only.
     const wrapperCount = (MIGRATION.match(/caller_id uuid := auth\.uid\(\);/g) ?? []).length;
     assert.equal(wrapperCount, 5);
+    // And each wrapper delegates to the INTERNAL impl, never to a
+    // service-role-gated original RPC.
+    const implCalls = (MIGRATION.match(/public\.svj_[a-z_]+_impl\(caller_id/g) ?? []).length;
+    assert.equal(implCalls, 5, "all five wrappers must call *_impl functions");
+    assert.ok(
+      !/public\.svj_(get_engagement_state|claim_daily_checkin|start_daily_mission|complete_daily_mission|redeem_earned_plus)\(caller_id/.test(
+        MIGRATION,
+      ),
+      "wrappers must NOT call the service-role-gated originals",
+    );
   });
 
   it("6. anonymous execution is denied (28000 → REWARDS_AUTH_REQUIRED, sanitized)", async () => {
@@ -295,13 +306,28 @@ describe("Earn Plus admin-key removal (architecture regression)", () => {
   });
 
   it("12-13. Founder/lifetime and timed-Plus rules are untouched in the migration", () => {
-    // The wrapper delegates to the original redeem function; it must not
-    // re-implement or relax the lifetime/extension logic.
-    assert.ok(MIGRATION.includes("public.svj_redeem_earned_plus(caller_id, p_request_id)"));
-    assert.ok(!/plus_expires_at\s*=/.test(MIGRATION), "wrapper must not write membership dates");
+    // The wrapper delegates to the internal redeem implementation; it must
+    // not re-implement or relax the lifetime/extension logic.
+    assert.ok(MIGRATION.includes("public.svj_redeem_earned_plus_impl(caller_id, p_request_id)"));
+    // Membership writes are only allowed inside the extracted impl (copied
+    // verbatim from the original service-role implementation) — never in the
+    // self-service or privileged entry-point wrappers themselves.
+    const wrappers = MIGRATION.slice(MIGRATION.indexOf("svj_get_engagement_state(p_user_id uuid)"));
+    const wrapperBodies = wrappers
+      .split("CREATE OR REPLACE FUNCTION")
+      .filter((b) => b.includes("_impl("));
+    for (const body of wrapperBodies) {
+      assert.ok(
+        !/is_plus_member|plus_expires_at\s*=/.test(body),
+        "entry-point wrapper must not touch entitlements",
+      );
+    }
+    // The impl preserves both original rules.
+    const implBody = MIGRATION.slice(MIGRATION.indexOf("svj_redeem_earned_plus_impl"));
+    assert.ok(implBody.includes("SVJ_REWARD_LIFETIME_ALREADY_ACTIVE"), "lifetime rule preserved");
     assert.ok(
-      !/is_plus_member/.test(MIGRATION.replace(/--.*$/gm, "")),
-      "wrapper must not touch entitlements",
+      implBody.includes("v_profile.plus_expires_at > v_now"),
+      "timed-Plus extension preserved",
     );
   });
 

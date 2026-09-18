@@ -142,11 +142,14 @@ describe("privileged operations still fail closed without an admin key", () => {
     );
   });
 
-  it("engagement server operations keep requireAdminKey", () => {
+  it("engagement server operations are self-service (no admin key)", () => {
+    // Earn Plus now runs through authenticated self-service RPCs derived from
+    // auth.uid() (svj_*_my_*), matching membership and the 60-Day challenge.
+    // Normal reward operations must NOT require the unavailable admin key.
     const src = readSource("src/lib/engagement.server.ts");
     assert.ok(
-      src.includes("requireAdminKey()"),
-      "privileged engagement writes must still require an admin key",
+      !src.includes("requireAdminKey()") && !src.includes("supabaseAdmin"),
+      "normal Earn Plus operations must not depend on the admin key",
     );
   });
 });

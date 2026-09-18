@@ -219,8 +219,8 @@ describe("privileged boundaries stay intact", () => {
       "account deletion must keep its admin gate",
     );
     assert.ok(
-      readSource("src/lib/engagement.server.ts").includes("requireAdminKey()"),
-      "engagement writes must keep their admin gate",
+      !readSource("src/lib/engagement.server.ts").includes("requireAdminKey()"),
+      "normal engagement writes must be self-service (auth.uid() RPCs, no admin gate)",
     );
   });
 

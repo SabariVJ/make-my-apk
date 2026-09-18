@@ -30,7 +30,15 @@ import {
 } from "@/lib/rivalry.functions";
 
 export const CommunityView: React.FC = () => {
-  const { feed, toggleReaction, addComment, setSelectedMemberModal, leaderboard, user } = useSVJ();
+  const {
+    feed,
+    toggleReaction,
+    addComment,
+    setSelectedMemberModal,
+    setComparingMember,
+    leaderboard,
+    user,
+  } = useSVJ();
   const [activeSubTab, setActiveSubTab] = useState<"feed" | "directory" | "friends">("feed");
   const [searchQuery, setSearchQuery] = useState("");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -157,7 +165,8 @@ export const CommunityView: React.FC = () => {
       // A rejected request must never leave the button stuck or crash the view.
       setRivalryFeedback({
         kind: "error",
-        text: err instanceof Error ? err.message : "Could not send the rivalry request. Please retry.",
+        text:
+          err instanceof Error ? err.message : "Could not send the rivalry request. Please retry.",
         retryId: opponentId,
       });
     } finally {
@@ -506,9 +515,16 @@ export const CommunityView: React.FC = () => {
                       </span>
                     )}
                     {rivalryState === "active" && (
-                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold">
-                        COMPETITION ACTIVE
-                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setComparingMember(m);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                      >
+                        VIEW RIVALRY
+                      </button>
                     )}
                   </div>
                 </motion.div>

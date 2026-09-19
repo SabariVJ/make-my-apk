@@ -286,7 +286,13 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       }
     } else if (event.touches.length === 1) {
       const touch = event.touches[0]!;
-      gesture.current = { mode: "pan", lastX: touch.clientX, lastY: touch.clientY, startDistance: 0, startZoom: 16 };
+      gesture.current = {
+        mode: "pan",
+        lastX: touch.clientX,
+        lastY: touch.clientY,
+        startDistance: 0,
+        startZoom: 16,
+      };
     }
   };
 

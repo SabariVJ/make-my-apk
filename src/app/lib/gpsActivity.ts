@@ -70,19 +70,12 @@ export type GpsQuality = "searching" | "weak" | "good" | "excellent";
 
 const EARTH_RADIUS_M = 6371008.8;
 
-export function haversineMeters(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+export function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
@@ -174,10 +167,7 @@ export function decodePolyline(encoded: string, precision = 5): { lat: number; l
   return points;
 }
 
-function decodeSigned(
-  encoded: string,
-  start: number,
-): { value: number; index: number } | null {
+function decodeSigned(encoded: string, start: number): { value: number; index: number } | null {
   let index = start;
   let result = 0;
   let shift = 0;
@@ -193,10 +183,7 @@ function decodeSigned(
 }
 
 /** Douglas–Peucker simplification, in metres, for compact map payloads. */
-export function simplifyTrack(
-  points: readonly TrackPoint[],
-  toleranceMeters = 8,
-): TrackPoint[] {
+export function simplifyTrack(points: readonly TrackPoint[], toleranceMeters = 8): TrackPoint[] {
   if (points.length <= 2) return [...points];
   const keep = new Array<boolean>(points.length).fill(false);
   keep[0] = true;
@@ -267,12 +254,7 @@ export interface PointFilterOptions {
 }
 
 export type PointRejectionReason =
-  | "invalid"
-  | "accuracy"
-  | "non_monotonic_time"
-  | "duplicate_time"
-  | "too_soon"
-  | "impossible_jump";
+  "invalid" | "accuracy" | "non_monotonic_time" | "duplicate_time" | "too_soon" | "impossible_jump";
 
 export interface PointDecision {
   accept: boolean;
@@ -509,15 +491,12 @@ export function computeSplits(
       pushBucket(boundaryT);
       // The remainder of this segment starts the next split.
       bucketStartT = boundaryT;
-      bucketStartCum = (bucket) * splitMeters;
+      bucketStartCum = bucket * splitMeters;
     }
   }
   // A trailing remainder only counts as a split when it is long enough to be
   // meaningful; otherwise a 20 m shuffle would render as "split 1".
-  if (
-    bucketStartT != null &&
-    cumulative - bucket * splitMeters >= MIN_PARTIAL_SPLIT_METERS
-  ) {
+  if (bucketStartT != null && cumulative - bucket * splitMeters >= MIN_PARTIAL_SPLIT_METERS) {
     pushBucket(points[points.length - 1]!.t);
   }
 
@@ -608,7 +587,8 @@ export function summarizeTrack(
     movingSeconds: moving,
     elevationGainMeters: gainSeen ? Math.round(gain * 100) / 100 : null,
     elevationLossMeters: gainSeen ? Math.round(loss * 100) / 100 : null,
-    avgSpeedMps: moving > 0 && distanceMeters > 1 ? Math.round((distanceMeters / moving) * 1000) / 1000 : null,
+    avgSpeedMps:
+      moving > 0 && distanceMeters > 1 ? Math.round((distanceMeters / moving) * 1000) / 1000 : null,
     maxSpeedMps: maxSpeed == null ? null : Math.round(maxSpeed * 1000) / 1000,
     avgPaceSecondsPerKm:
       moving > 0 && distanceMeters >= 100 ? Math.round(moving / (distanceMeters / 1000)) : null,
@@ -625,7 +605,10 @@ export function summarizeTrack(
 
 // ── Display formatting ─────────────────────────────────────────────────────
 
-export function formatDistance(meters: number | null | undefined, unit: "km" | "mi" = "km"): string {
+export function formatDistance(
+  meters: number | null | undefined,
+  unit: "km" | "mi" = "km",
+): string {
   if (meters == null || !Number.isFinite(meters)) return "—";
   if (unit === "mi") {
     const miles = meters / 1609.344;
@@ -674,7 +657,6 @@ export function validateWorkoutForSave(
   if (points.length < MIN_GPS_POINTS_TO_SAVE)
     return "This workout has no GPS track yet. Record at least a few seconds outdoors.";
   if (summary.durationSeconds < 10) return "That workout is too short to save.";
-  if (summary.distanceMeters <= 0)
-    return "No movement was recorded, so there is nothing to save.";
+  if (summary.distanceMeters <= 0) return "No movement was recorded, so there is nothing to save.";
   return null;
 }

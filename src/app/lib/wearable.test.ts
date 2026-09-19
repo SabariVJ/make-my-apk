@@ -1,10 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import {
-  isHeartRateFresh,
-  parseHeartRateMeasurement,
-  HR_STALE_MS,
-} from "./bleHeartRate";
+import { isHeartRateFresh, parseHeartRateMeasurement, HR_STALE_MS } from "./bleHeartRate";
 import {
   heartRateLost,
   normalizeBatteryLevel,
@@ -60,7 +56,10 @@ describe("BLE heart rate parsing (Bluetooth SIG 0x2A37)", () => {
 
   it("distinguishes sensor contact states", () => {
     assert.equal(parseHeartRateMeasurement(bytes(0x0a, 120))?.sensorContact, "supported_contact");
-    assert.equal(parseHeartRateMeasurement(bytes(0x08, 120))?.sensorContact, "supported_no_contact");
+    assert.equal(
+      parseHeartRateMeasurement(bytes(0x08, 120))?.sensorContact,
+      "supported_no_contact",
+    );
     assert.equal(
       parseHeartRateMeasurement(bytes(0x04, 120))?.sensorContact,
       "not_supported_or_no_contact",
@@ -91,7 +90,11 @@ describe("stale heart rate handling", () => {
     };
     assert.equal(heartRateLost(state, 1_000 + HR_STALE_MS + 1), true);
     // A new measurement restores freshness
-    state = reduceWearableEvent(state, { type: "heart_rate", reading: { ...reading, bpm: 151, timestampMs: 99_000 } }, 99_000);
+    state = reduceWearableEvent(
+      state,
+      { type: "heart_rate", reading: { ...reading, bpm: 151, timestampMs: 99_000 } },
+      99_000,
+    );
     assert.equal(state.heartRate?.bpm, 151);
     assert.equal(heartRateLost(state, 99_500), false);
   });
@@ -113,26 +116,47 @@ describe("wearable connection lifecycle reducer", () => {
     assert.equal(state.scanning, true);
     state = reduceWearableEvent(
       state,
-      { type: "devices_discovered", devices: [{ deviceId: "aa", name: "Strap", rssi: -60, hasHeartRateService: true }] },
+      {
+        type: "devices_discovered",
+        devices: [{ deviceId: "aa", name: "Strap", rssi: -60, hasHeartRateService: true }],
+      },
       1,
     );
     assert.equal(state.discovered.length, 1);
     state = reduceWearableEvent(state, { type: "connecting", deviceId: "aa" }, 2);
     assert.equal(state.connection, "connecting");
-    state = reduceWearableEvent(state, { type: "connected", device: { deviceId: "aa", name: "Strap" } }, 3);
+    state = reduceWearableEvent(
+      state,
+      { type: "connected", device: { deviceId: "aa", name: "Strap" } },
+      3,
+    );
     assert.equal(state.connection, "connected");
     assert.equal(state.device?.deviceId, "aa");
   });
 
   it("handles disconnect, permission denial and bluetooth unavailability", () => {
-    let state = reduceWearableEvent(base, { type: "connected", device: { deviceId: "aa", name: "Strap" } }, 0);
-    state = reduceWearableEvent(state, { type: "heart_rate", reading: { bpm: 140, timestampMs: 1, source: "ble" } }, 1);
+    let state = reduceWearableEvent(
+      base,
+      { type: "connected", device: { deviceId: "aa", name: "Strap" } },
+      0,
+    );
+    state = reduceWearableEvent(
+      state,
+      { type: "heart_rate", reading: { bpm: 140, timestampMs: 1, source: "ble" } },
+      1,
+    );
     state = reduceWearableEvent(state, { type: "disconnected" }, 2);
     assert.equal(state.connection, "disconnected");
     assert.equal(state.device, null);
     assert.equal(state.heartRate, null);
-    assert.equal(reduceWearableEvent(base, { type: "permission_denied" }, 0).connection, "permission_denied");
-    assert.equal(reduceWearableEvent(base, { type: "bluetooth_unavailable" }, 0).connection, "bluetooth_unavailable");
+    assert.equal(
+      reduceWearableEvent(base, { type: "permission_denied" }, 0).connection,
+      "permission_denied",
+    );
+    assert.equal(
+      reduceWearableEvent(base, { type: "bluetooth_unavailable" }, 0).connection,
+      "bluetooth_unavailable",
+    );
   });
 
   it("normalizes native payloads and rejects bad battery values", () => {

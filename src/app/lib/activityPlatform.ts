@@ -153,7 +153,11 @@ export async function saveGpsWorkout(
   if (!payload) {
     return { ok: false, error: "This workout has no GPS track to save." };
   }
-  const result = await call(client, "svj_save_gps_activity", payload as unknown as Record<string, unknown>);
+  const result = await call(
+    client,
+    "svj_save_gps_activity",
+    payload as unknown as Record<string, unknown>,
+  );
   if (!result.ok) return { ok: false, error: result.error };
   const envelope = result.data;
   if (!isRecord(envelope) || envelope.ok !== true || !isRecord(envelope.activity)) {
@@ -482,7 +486,9 @@ export async function fetchRoutes(
   const routes = result.data
     .map((row) => normalizeRoute(row))
     .filter((r): r is SavedRoute => r != null)
-    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.updatedAt.localeCompare(a.updatedAt));
+    .sort(
+      (a, b) => Number(b.favorite) - Number(a.favorite) || b.updatedAt.localeCompare(a.updatedAt),
+    );
   return { ok: true, routes };
 }
 
@@ -722,10 +728,7 @@ export async function fetchMyLiveShare(
  * Public reader for a share link. No account is involved and no identity is
  * returned: an expired, revoked or malformed token reads as inactive.
  */
-export async function fetchPublicLiveShare(
-  client: RpcClient,
-  token: string,
-): Promise<LiveShare> {
+export async function fetchPublicLiveShare(client: RpcClient, token: string): Promise<LiveShare> {
   const result = await call(client, "svj_get_public_live_share", { p_token: token });
   if (!result.ok) return { active: false };
   return normalizeLiveShare(result.data);

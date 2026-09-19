@@ -186,8 +186,7 @@ export const REWARD_ERRORS: Record<string, string> = {
   // the older name (for example between a code deploy and a migration deploy).
   SVJ_REWARD_MISSION_RUNNING: "Finish your active mission before starting another.",
   SVJ_REWARD_ASSIGNMENT_COMPLETED: "This mission has already been credited.",
-  SVJ_REWARD_ASSIGNMENT_EXPIRED:
-    "This mission's day has ended. Refresh to see today's missions.",
+  SVJ_REWARD_ASSIGNMENT_EXPIRED: "This mission's day has ended. Refresh to see today's missions.",
   SVJ_REWARD_MISSION_EXPIRED: "This mission's day has ended. Refresh to see today's missions.",
   SVJ_REWARD_MISSION_TOO_EARLY: "The minimum mission time has not elapsed on the server.",
 };

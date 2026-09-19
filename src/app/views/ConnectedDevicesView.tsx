@@ -91,7 +91,10 @@ export const ConnectedDevicesView: React.FC = () => {
       if (value.state === "connected" && typeof value.deviceId === "string") {
         dispatchUi({
           type: "connected",
-          device: { deviceId: value.deviceId, name: typeof value.name === "string" ? value.name : "BLE sensor" },
+          device: {
+            deviceId: value.deviceId,
+            name: typeof value.name === "string" ? value.name : "BLE sensor",
+          },
         });
       } else if (value.state === "disconnected") {
         dispatchUi({ type: "disconnected" });
@@ -151,7 +154,10 @@ export const ConnectedDevicesView: React.FC = () => {
       const result = await VjWearable.connect({ deviceId });
       dispatchUi({ type: "connected", device: result.device as BleDeviceInfo });
     } catch (error) {
-      dispatchUi({ type: "error", message: error instanceof Error ? error.message : "Connection failed" });
+      dispatchUi({
+        type: "error",
+        message: error instanceof Error ? error.message : "Connection failed",
+      });
       dispatchUi({ type: "disconnected" });
     }
   }, []);
@@ -190,7 +196,7 @@ export const ConnectedDevicesView: React.FC = () => {
             ? "Sensor signal lost"
             : hr
               ? `Direct Bluetooth sensor${hr.deviceName ? ` · ${hr.deviceName}` : ""}`
-              : CONNECTION_LABELS[state.connection] ?? "No sensor connected"}
+              : (CONNECTION_LABELS[state.connection] ?? "No sensor connected")}
         </p>
         {state.batteryPercent != null && (
           <p className="mt-1 flex items-center gap-1 text-[10px] font-mono text-[#8C8C90]">
@@ -199,15 +205,18 @@ export const ConnectedDevicesView: React.FC = () => {
         )}
         {!nativeAvailable && (
           <p className="mt-2 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono text-[#8C8C90]">
-            Direct Bluetooth sensors are available in the SVJ Android app. On web, Health
-            Connect devices still sync their workouts into your history.
+            Direct Bluetooth sensors are available in the SVJ Android app. On web, Health Connect
+            devices still sync their workouts into your history.
           </p>
         )}
       </div>
 
       {/* Connected device */}
       {state.device && (
-        <div className="rounded-2xl border border-[#C81E3A]/30 bg-[#C81E3A]/8 p-4" data-testid="connected-device">
+        <div
+          className="rounded-2xl border border-[#C81E3A]/30 bg-[#C81E3A]/8 p-4"
+          data-testid="connected-device"
+        >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Bluetooth className="h-4 w-4 text-[#E62846]" />
@@ -273,7 +282,10 @@ export const ConnectedDevicesView: React.FC = () => {
         </div>
 
         {state.error && (
-          <p className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[10px] font-mono text-red-300" data-testid="wearable-error">
+          <p
+            className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[10px] font-mono text-red-300"
+            data-testid="wearable-error"
+          >
             {state.error}
           </p>
         )}
@@ -321,10 +333,9 @@ export const ConnectedDevicesView: React.FC = () => {
           </span>
         </div>
         <p className="text-[11px] leading-relaxed text-[#8C8C90]">
-          Syncs authorized workouts, heart rate, steps and distance from supported
-          Android health and watch apps into SVJ — through Android's Health
-          Connect, with the exact permissions you grant. Manage it in{" "}
-          <span className="text-white">Profile → Settings → Integrations</span>.
+          Syncs authorized workouts, heart rate, steps and distance from supported Android health
+          and watch apps into SVJ — through Android's Health Connect, with the exact permissions you
+          grant. Manage it in <span className="text-white">Profile → Settings → Integrations</span>.
         </p>
       </div>
 
@@ -339,15 +350,25 @@ export const ConnectedDevicesView: React.FC = () => {
         <ul className="space-y-2 text-[11px] leading-relaxed text-[#8C8C90]">
           <li className="flex gap-2">
             <Bluetooth className="mt-0.5 h-3 w-3 shrink-0 text-[#E62846]" />
-            <span><span className="text-white">Direct Bluetooth</span> — works with compatible BLE heart-rate sensors that expose the standard Heart Rate Service (most chest straps and many bands).</span>
+            <span>
+              <span className="text-white">Direct Bluetooth</span> — works with compatible BLE
+              heart-rate sensors that expose the standard Heart Rate Service (most chest straps and
+              many bands).
+            </span>
           </li>
           <li className="flex gap-2">
             <Watch className="mt-0.5 h-3 w-3 shrink-0 text-[#E62846]" />
-            <span><span className="text-white">Health Connect</span> — syncs authorized health information from supported Android health/watch apps.</span>
+            <span>
+              <span className="text-white">Health Connect</span> — syncs authorized health
+              information from supported Android health/watch apps.
+            </span>
           </li>
           <li className="flex gap-2">
             <Activity className="mt-0.5 h-3 w-3 shrink-0 text-[#E62846]" />
-            <span><span className="text-white">Other watches</span> — may require the manufacturer's health app/SDK and may not support direct real-time heart-rate streaming.</span>
+            <span>
+              <span className="text-white">Other watches</span> — may require the manufacturer's
+              health app/SDK and may not support direct real-time heart-rate streaming.
+            </span>
           </li>
         </ul>
       </div>

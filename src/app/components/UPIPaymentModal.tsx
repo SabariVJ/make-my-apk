@@ -41,7 +41,6 @@ export const UPIPaymentModal: React.FC = () => {
   const webUrl = buildWhatsAppWebUrl(supportMessage);
   const mailtoUrl = buildActivationMailto(supportMessage);
 
-
   if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 
   const handleSimulatePayment = () => {
@@ -82,7 +81,6 @@ export const UPIPaymentModal: React.FC = () => {
       setNumberCopied(false);
     }
   };
-
 
   return (
     <AnimatePresence>
@@ -278,12 +276,13 @@ export const UPIPaymentModal: React.FC = () => {
                   </a>
                   <p className="text-[11px] text-[#8C8C90] leading-relaxed">
                     If WhatsApp doesn&apos;t open, message{" "}
-                    <span className="font-mono text-white select-all">{formatWhatsAppNumber()}</span>{" "}
+                    <span className="font-mono text-white select-all">
+                      {formatWhatsAppNumber()}
+                    </span>{" "}
                     from your phone with the copied text.
                   </p>
                 </div>
               )}
-
             </div>
           )}
         </motion.div>

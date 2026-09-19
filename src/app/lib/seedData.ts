@@ -84,11 +84,13 @@ export function isSeedMember(entry: { id?: string | null; username?: string | nu
 }
 
 /** Drop every known seed record from a cached feed array. */
-export function stripSeedFeedPosts<T extends {
-  id?: string | null;
-  userId?: string | null;
-  username?: string | null;
-}>(posts: T[] | null | undefined): T[] {
+export function stripSeedFeedPosts<
+  T extends {
+    id?: string | null;
+    userId?: string | null;
+    username?: string | null;
+  },
+>(posts: T[] | null | undefined): T[] {
   if (!Array.isArray(posts)) return [];
   return posts.filter((post) => !isSeedFeedPost(post));
 }

@@ -12,7 +12,8 @@ export interface HeartRateMeasurement {
   /** Beats per minute. Always present in a well-formed packet. */
   bpm: number;
   /** Sensor contact feature support + detected contact, from flags 1-2. */
-  sensorContact: "unsupported" | "not_supported_or_no_contact" | "supported_no_contact" | "supported_contact";
+  sensorContact:
+    "unsupported" | "not_supported_or_no_contact" | "supported_no_contact" | "supported_contact";
   /** Calories burned so far by the sensor. Only when flag 3 is set. */
   energyExpendedJoules?: number;
   /** RR intervals in milliseconds (1/1024 s units converted). Only when flag 4 is set. */
@@ -26,7 +27,9 @@ const CONTACT_DETECTED = 0x02;
 const ENERGY_PRESENT = 0x10;
 const RR_PRESENT = 0x20;
 
-export function parseHeartRateMeasurement(data: Uint8Array | ArrayBuffer): HeartRateMeasurement | null {
+export function parseHeartRateMeasurement(
+  data: Uint8Array | ArrayBuffer,
+): HeartRateMeasurement | null {
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
   // Flags (1) + at least one HR byte.
   if (bytes.length < 2) return null;

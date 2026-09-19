@@ -295,7 +295,11 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
           : "—",
       icon: <Mountain className="h-3 w-3 text-[#8C8C90]" />,
     },
-    { label: "Steps", value: activity.stepCount.toLocaleString(), icon: <Footprints className="h-3 w-3 text-[#8C8C90]" /> },
+    {
+      label: "Steps",
+      value: activity.stepCount.toLocaleString(),
+      icon: <Footprints className="h-3 w-3 text-[#8C8C90]" />,
+    },
     {
       label: "Heart rate",
       value: activity.avgHeartRate != null ? `${activity.avgHeartRate} bpm` : "—",
@@ -403,7 +407,10 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
               </div>
               <div className="font-mono text-lg font-bold text-white">
                 Split {fastest.index} · {formatClock(fastest.durationSeconds)} ·{" "}
-                {formatPace(Math.round(fastest.durationSeconds / (fastest.distanceMeters / 1000)), unit)}
+                {formatPace(
+                  Math.round(fastest.durationSeconds / (fastest.distanceMeters / 1000)),
+                  unit,
+                )}
               </div>
             </div>
           )}
@@ -465,10 +472,28 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             <ResponsiveContainer width="100%" height={190}>
               <LineChart data={paceData} margin={{ top: 10, right: 6, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatClock(v)} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  tickLine={false}
+                  axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: number) => formatClock(v)}
+                />
                 <Tooltip {...chartTooltip()} formatter={(value: number) => formatClock(value)} />
-                <Line type="monotone" dataKey="pace" stroke="#E62846" strokeWidth={2} dot={false} connectNulls />
+                <Line
+                  type="monotone"
+                  dataKey="pace"
+                  stroke="#E62846"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -488,8 +513,19 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             <ResponsiveContainer width="100%" height={190}>
               <LineChart data={heartData} margin={{ top: 10, right: 6, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} axisLine={false} tickLine={false} domain={["dataMin - 10", "dataMax + 10"]} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  tickLine={false}
+                  axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={["dataMin - 10", "dataMax + 10"]}
+                />
                 <Tooltip {...chartTooltip()} />
                 <Line type="monotone" dataKey="hr" stroke="#F59E0B" strokeWidth={2} dot={false} />
               </LineChart>
@@ -517,10 +553,27 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} tickLine={false} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }} axisLine={false} tickLine={false} domain={["dataMin - 10", "dataMax + 10"]} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  tickLine={false}
+                  axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={["dataMin - 10", "dataMax + 10"]}
+                />
                 <Tooltip {...chartTooltip()} />
-                <Area type="monotone" dataKey="elevation" stroke="#E62846" fill="url(#svj-elevation)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="elevation"
+                  stroke="#E62846"
+                  fill="url(#svj-elevation)"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -641,9 +694,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             </>
           )}
 
-          {trackError && (
-            <p className="text-[10px] font-mono text-[#8C8C90]">{trackError}</p>
-          )}
+          {trackError && <p className="text-[10px] font-mono text-[#8C8C90]">{trackError}</p>}
         </div>
       )}
     </div>

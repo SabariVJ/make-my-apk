@@ -73,10 +73,7 @@ export function isNativeWearableAvailable(): boolean {
 }
 
 /** Validate a native heartRateMeasurement event payload before use. */
-export function normalizeWearableHeartRate(
-  raw: unknown,
-  nowMs: number,
-): LiveHeartRate | null {
+export function normalizeWearableHeartRate(raw: unknown, nowMs: number): LiveHeartRate | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const value = raw as Record<string, unknown>;
   const measurement = parseHeartRateMeasurement(
@@ -136,24 +133,64 @@ export type WearableEvent =
  * Pure reducer for connection lifecycle + stale-HR handling. The UI renders
  * exclusively from this state, so it is fully testable without hardware.
  */
-export function reduceWearableEvent(state: WearableState, event: WearableEvent, nowMs: number): WearableState {
+export function reduceWearableEvent(
+  state: WearableState,
+  event: WearableEvent,
+  nowMs: number,
+): WearableState {
   switch (event.type) {
     case "scan_started":
-      return { ...state, scanning: true, discovered: [], connection: state.connection === "connected" ? state.connection : "scanning", error: null };
+      return {
+        ...state,
+        scanning: true,
+        discovered: [],
+        connection: state.connection === "connected" ? state.connection : "scanning",
+        error: null,
+      };
     case "scan_stopped":
-      return { ...state, scanning: false, connection: state.device ? "connected" : state.connection === "scanning" ? "disconnected" : state.connection };
+      return {
+        ...state,
+        scanning: false,
+        connection: state.device
+          ? "connected"
+          : state.connection === "scanning"
+            ? "disconnected"
+            : state.connection,
+      };
     case "devices_discovered":
       return { ...state, discovered: event.devices };
     case "connecting":
       return { ...state, scanning: false, connection: "connecting" };
     case "connected":
-      return { ...state, scanning: false, connection: "connected", device: event.device, error: null };
+      return {
+        ...state,
+        scanning: false,
+        connection: "connected",
+        device: event.device,
+        error: null,
+      };
     case "disconnected":
-      return { ...state, connection: "disconnected", device: null, heartRate: null, batteryPercent: null };
+      return {
+        ...state,
+        connection: "disconnected",
+        device: null,
+        heartRate: null,
+        batteryPercent: null,
+      };
     case "permission_denied":
-      return { ...state, scanning: false, connection: "permission_denied", error: "Bluetooth permission denied" };
+      return {
+        ...state,
+        scanning: false,
+        connection: "permission_denied",
+        error: "Bluetooth permission denied",
+      };
     case "bluetooth_unavailable":
-      return { ...state, scanning: false, connection: "bluetooth_unavailable", error: "Bluetooth is off or unavailable" };
+      return {
+        ...state,
+        scanning: false,
+        connection: "bluetooth_unavailable",
+        error: "Bluetooth is off or unavailable",
+      };
     case "heart_rate":
       return { ...state, heartRate: event.reading };
     case "battery":

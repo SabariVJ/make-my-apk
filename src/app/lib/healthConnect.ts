@@ -56,11 +56,7 @@ export interface HealthConnectPlugin {
   isAvailable?: () => Promise<unknown>;
   checkPermissions?: (options: { types: string[] }) => Promise<unknown>;
   requestPermissions?: (options: { types: string[] }) => Promise<unknown>;
-  readRecords?: (options: {
-    type: string;
-    startMs: number;
-    endMs: number;
-  }) => Promise<unknown>;
+  readRecords?: (options: { type: string; startMs: number; endMs: number }) => Promise<unknown>;
   openSettings?: () => Promise<unknown>;
 }
 
@@ -126,9 +122,7 @@ export async function requestHealthConnectPermissions(
  * Re-check a type immediately before reading it. Permission revocation is
  * respected on every call rather than cached at setup time.
  */
-export async function hasGranted(
-  type: HealthConnectType,
-): Promise<boolean> {
+export async function hasGranted(type: HealthConnectType): Promise<boolean> {
   const permissions = await checkHealthConnectPermissions([type]);
   return permissions[type] === "granted";
 }
@@ -200,7 +194,8 @@ export function normalizeImportedWorkout(raw: unknown): ImportedWorkout | null {
     endedAtMs: endMs,
     durationSeconds,
     stepCount: Math.max(0, Math.round(stepCountRaw)),
-    distanceMeters: distanceRaw != null && distanceRaw >= 0 && distanceRaw <= 500_000 ? distanceRaw : null,
+    distanceMeters:
+      distanceRaw != null && distanceRaw >= 0 && distanceRaw <= 500_000 ? distanceRaw : null,
     caloriesEstimate:
       caloriesRaw != null && caloriesRaw >= 0 && caloriesRaw <= 20_000 ? caloriesRaw : null,
     avgHeartRate: hrRaw != null && hrRaw >= 20 && hrRaw <= 260 ? Math.round(hrRaw) : null,
@@ -276,7 +271,11 @@ export async function readExerciseSessions(
     return { ok: false, workouts: [], error: "Health Connect is not available on this device." };
   }
   if (!(await hasGranted("exerciseSessions"))) {
-    return { ok: false, workouts: [], error: "Health Connect workouts permission was not granted." };
+    return {
+      ok: false,
+      workouts: [],
+      error: "Health Connect workouts permission was not granted.",
+    };
   }
   try {
     const raw = await plugin.readRecords({ type: "exerciseSessions", startMs, endMs });

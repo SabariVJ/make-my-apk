@@ -1,10 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { currentPaceSecondsPerKm } from "../views/WorkoutRecorder";
-import {
-  createTileViewport,
-  createTileViewportAtZoom,
-} from "../components/ActivityMap";
+import { createTileViewport, createTileViewportAtZoom } from "../components/ActivityMap";
 import { GpsWorkoutRecorder, createMemoryStorage } from "../lib/gpsRecorder";
 import type { TrackPoint } from "../lib/gpsActivity";
 
@@ -19,7 +16,16 @@ function nextPoint(previous: TrackPoint, meters: number, accuracy = 5): TrackPoi
   };
 }
 
-const START: TrackPoint = { lat: 12.9716, lng: 77.5946, t: 0, ele: null, accuracy: 5, hr: null, cad: null, moving: true };
+const START: TrackPoint = {
+  lat: 12.9716,
+  lng: 77.5946,
+  t: 0,
+  ele: null,
+  accuracy: 5,
+  hr: null,
+  cad: null,
+  moving: true,
+};
 
 describe("stabilized current pace", () => {
   it("returns null for a short, jittery early session (the 2:34/km bug)", () => {
@@ -84,7 +90,7 @@ describe("stabilized current pace", () => {
 describe("map viewport touch interaction", () => {
   const points = [
     { lat: 12.9716, lng: 77.5946 },
-    { lat: 12.9800, lng: 77.6050 },
+    { lat: 12.98, lng: 77.605 },
   ];
 
   it("creates a zoom-locked viewport with a center", () => {
@@ -95,7 +101,13 @@ describe("map viewport touch interaction", () => {
 
   it("renders a user pinch-zoom viewport around the same center", () => {
     const fit = createTileViewport(points, 400, 220);
-    const zoomed = createTileViewportAtZoom(fit.centerLat, fit.centerLng, Math.min(19, fit.zoom + 2), 400, 220);
+    const zoomed = createTileViewportAtZoom(
+      fit.centerLat,
+      fit.centerLng,
+      Math.min(19, fit.zoom + 2),
+      400,
+      220,
+    );
     assert.equal(zoomed.zoom, Math.min(19, fit.zoom + 2));
     const before = fit.project(points[0]!.lat, points[0]!.lng);
     const after = zoomed.project(points[0]!.lat, points[0]!.lng);
@@ -139,10 +151,13 @@ describe("recorder heart-rate ingestion", () => {
     recorder.setLocationAdapter(null);
     await recorder.start("running");
     time += 5_000;
-    assert.equal(recorder.ingest({ lat: 12.9716, lng: 77.5946, accuracy: 5, timestampMs: time }), true);
+    assert.equal(
+      recorder.ingest({ lat: 12.9716, lng: 77.5946, accuracy: 5, timestampMs: time }),
+      true,
+    );
     time += 1_000;
     assert.equal(recorder.ingestHeartRate(143, time), true);
-    const points = recorder.session?.points ?? [];
+    const points = recorder.current?.points ?? [];
     assert.equal(points[points.length - 1]?.hr, 143);
     await recorder.discard();
   });
@@ -154,10 +169,10 @@ describe("recorder heart-rate ingestion", () => {
     await recorder.start("running");
     time += 5_000;
     recorder.ingest({ lat: 12.9716, lng: 77.5946, accuracy: 5, timestampMs: time });
-    const before = recorder.session?.points.length ?? 0;
+    const before = recorder.current?.points.length ?? 0;
     assert.equal(recorder.ingestHeartRate(0, time + 1_000), false);
     assert.equal(recorder.ingestHeartRate(999, time + 1_000), false);
-    assert.equal(recorder.session?.points.length, before);
+    assert.equal(recorder.current?.points.length, before);
     await recorder.discard();
   });
 
@@ -171,7 +186,7 @@ describe("recorder heart-rate ingestion", () => {
     assert.equal(recorder.ingestHeartRate(120, time), true);
     time += 3_000;
     recorder.ingest({ lat: 12.9716, lng: 77.5946, accuracy: 5, timestampMs: time });
-    const points = recorder.session?.points ?? [];
+    const points = recorder.current?.points ?? [];
     assert.equal(points.length, 1);
     await recorder.discard();
   });

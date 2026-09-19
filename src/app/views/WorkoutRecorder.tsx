@@ -57,7 +57,11 @@ const QUALITY_STYLES: Record<string, string> = {
 export function currentPaceSecondsPerKm(
   points: readonly TrackPoint[],
   windowSeconds = 30,
-  options: { minWindowSeconds?: number; minDistanceMeters?: number; maxAccuracyMeters?: number } = {},
+  options: {
+    minWindowSeconds?: number;
+    minDistanceMeters?: number;
+    maxAccuracyMeters?: number;
+  } = {},
 ): number | null {
   const minWindowSeconds = options.minWindowSeconds ?? 20;
   const minDistanceMeters = options.minDistanceMeters ?? 40;
@@ -162,9 +166,9 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
   );
   React.useEffect(() => {
     if (!plannedRoute) return;
-    const match = (
-      ["running", "walking", "hiking", "cycling"] as GpsActivityType[]
-    ).find((type) => type === plannedRoute.activityType);
+    const match = (["running", "walking", "hiking", "cycling"] as GpsActivityType[]).find(
+      (type) => type === plannedRoute.activityType,
+    );
     if (match) setActivityType(match);
   }, [plannedRoute]);
 
@@ -294,15 +298,8 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Metric
-          label="Elapsed"
-          value={formatClock(session?.durationSeconds ?? 0)}
-          accent
-        />
-        <Metric
-          label="Distance"
-          value={formatDistance(summary?.distanceMeters ?? 0, splitUnit)}
-        />
+        <Metric label="Elapsed" value={formatClock(session?.durationSeconds ?? 0)} accent />
+        <Metric label="Distance" value={formatDistance(summary?.distanceMeters ?? 0, splitUnit)} />
         <Metric label="Current pace" value={formatPace(currentPace, splitUnit)} />
         <Metric label="Average pace" value={formatPace(summary?.avgPaceSecondsPerKm, splitUnit)} />
         <Metric
@@ -348,9 +345,8 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
       {plannedRoute && (
         <div className="flex items-center gap-2 rounded-xl border border-[#C81E3A]/25 bg-[#C81E3A]/8 px-3 py-2">
           <span className="flex-1 text-[10px] font-mono text-white">
-            Following route: <span className="text-[#E62846]">{plannedRoute.name}</span> · {
-              plannedRouteSummary(plannedRoute)
-            }
+            Following route: <span className="text-[#E62846]">{plannedRoute.name}</span> ·{" "}
+            {plannedRouteSummary(plannedRoute)}
           </span>
           {onClearPlannedRoute && (
             <button
@@ -461,9 +457,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
       {(summary?.splits.length ?? 0) > 0 && (
         <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-white">
-              Splits
-            </span>
+            <span className="text-xs font-mono uppercase tracking-widest text-white">Splits</span>
             {summary?.fastestSplitIndex != null && (
               <span className="text-[10px] font-mono text-[#E62846]">
                 Fastest: split {summary.fastestSplitIndex}
@@ -531,9 +525,11 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                 <button
                   type="button"
                   onClick={() =>
-                    void navigator.clipboard?.writeText(liveShareUrl(liveShare.token!)).catch(() => {
-                      /* clipboard unavailable */
-                    })
+                    void navigator.clipboard
+                      ?.writeText(liveShareUrl(liveShare.token!))
+                      .catch(() => {
+                        /* clipboard unavailable */
+                      })
                   }
                   data-testid="copy-live-link"
                   className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"

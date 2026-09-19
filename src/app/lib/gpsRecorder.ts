@@ -168,6 +168,11 @@ export class GpsWorkoutRecorder {
   private readonly listeners = new Set<(session: WorkoutSession) => void>();
 
   private session: WorkoutSession | null = null;
+
+  /** Current session snapshot (read-only access for bridges/tests). */
+  get current(): WorkoutSession | null {
+    return this.session;
+  }
   private location: LocationAdapter | null;
   private unsubscribeLocation: (() => void) | null = null;
   private lastPointAtMs = 0;
@@ -202,10 +207,6 @@ export class GpsWorkoutRecorder {
         // A broken listener must never break recording.
       }
     }
-  }
-
-  get current(): WorkoutSession | null {
-    return this.session;
   }
 
   setLocationAdapter(adapter: LocationAdapter | null): void {
@@ -316,7 +317,8 @@ export class GpsWorkoutRecorder {
     if (!this.session) return false;
     if (this.session.state !== "recording") return false;
     if (this.session.points.length >= MAX_SESSION_POINTS) return false;
-    if (sample.heartRate != null) this.lastHeartRate = { bpm: sample.heartRate, atMs: sample.timestampMs };
+    if (sample.heartRate != null)
+      this.lastHeartRate = { bpm: sample.heartRate, atMs: sample.timestampMs };
 
     const t = sample.timestampMs - this.session.startedAtMs;
     let point: TrackPoint = {
@@ -330,9 +332,8 @@ export class GpsWorkoutRecorder {
       moving: true,
     };
 
-    const previous = this.session.points.length > 0
-      ? this.session.points[this.session.points.length - 1]!
-      : null;
+    const previous =
+      this.session.points.length > 0 ? this.session.points[this.session.points.length - 1]! : null;
 
     // Auto pause decides whether this interval counts as movement.
     if (this.autoPauseEnabled && previous != null) {
@@ -426,7 +427,11 @@ export class GpsWorkoutRecorder {
     if (!this.session) return;
     if (!canTransition(this.session.state, "paused")) return;
     if (manual) this.autoPause.reset();
-    this.session = { ...this.session, state: "paused", autoPaused: manual ? false : this.session.autoPaused };
+    this.session = {
+      ...this.session,
+      state: "paused",
+      autoPaused: manual ? false : this.session.autoPaused,
+    };
     this.refreshDuration();
     this.persist();
     this.emit();
@@ -458,10 +463,7 @@ export class GpsWorkoutRecorder {
     this.emit();
     await this.stopLocation();
     const endedAtMs = this.now();
-    const durationSeconds = Math.max(
-      0,
-      Math.round((endedAtMs - this.session.startedAtMs) / 1000),
-    );
+    const durationSeconds = Math.max(0, Math.round((endedAtMs - this.session.startedAtMs) / 1000));
     this.session = {
       ...this.session,
       state: "stopping",
@@ -595,9 +597,7 @@ export function readQueue(storage: SessionStorage): WorkoutSession[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (entry): entry is WorkoutSession =>
-        Boolean(entry) &&
-        typeof entry.clientSessionId === "string" &&
-        Array.isArray(entry.points),
+        Boolean(entry) && typeof entry.clientSessionId === "string" && Array.isArray(entry.points),
     );
   } catch {
     return [];
@@ -627,7 +627,7 @@ export async function flushOfflineQueue(
   save: (session: WorkoutSession) => Promise<SyncOutcome>,
   onProgress?: (session: WorkoutSession, outcome: SyncOutcome) => void,
 ): Promise<{ synced: number; failed: number }> {
-  let queue = readQueue(storage);
+  const queue = readQueue(storage);
   let synced = 0;
   let failed = 0;
   const remaining: WorkoutSession[] = [];

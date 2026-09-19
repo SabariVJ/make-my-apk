@@ -129,7 +129,6 @@ export const INITIAL_CHALLENGES: DailyChallenge[] = [
   },
 ];
 
-
 export const INITIAL_REWARDS: RewardItem[] = [
   {
     id: "rew-1",
@@ -267,4 +266,3 @@ export const INITIAL_USER: UserProfile = {
   achievements: [],
   badges: [],
 };
-

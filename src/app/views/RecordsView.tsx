@@ -1,18 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AlertCircle,
-  Flame,
-  Flag,
-  Loader2,
-  RefreshCw,
-  Trash2,
-  Trophy,
-} from "lucide-react";
-import {
-  SVJ_STREET_TILES,
-  createTileViewport,
-  type MapBounds,
-} from "../components/ActivityMap";
+import { AlertCircle, Flame, Flag, Loader2, RefreshCw, Trash2, Trophy } from "lucide-react";
+import { SVJ_STREET_TILES, createTileViewport, type MapBounds } from "../components/ActivityMap";
 import {
   HEATMAP_RANGES,
   HEATMAP_RANGE_LABELS,
@@ -70,15 +58,9 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
   height = 260,
 }) => {
   const width = 400;
-  const mapPoints = useMemo(
-    () => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })),
-    [cells],
-  );
+  const mapPoints = useMemo(() => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })), [cells]);
 
-  const viewport = useMemo(
-    () => createTileViewport(mapPoints, width, height),
-    [mapPoints, height],
-  );
+  const viewport = useMemo(() => createTileViewport(mapPoints, width, height), [mapPoints, height]);
 
   const maxWeight = useMemo(
     () => cells.reduce((max, cell) => Math.max(max, cell.weight), 0),
@@ -114,8 +96,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
         viewport.tiles.map((tile) => (
           <img
             key={`${tile.z}/${tile.x}/${tile.y}`}
-            src={SVJ_STREET_TILES.urlTemplate!
-              .replace("{z}", String(tile.z))
+            src={SVJ_STREET_TILES.urlTemplate!.replace("{z}", String(tile.z))
               .replace("{x}", String(tile.x))
               .replace("{y}", String(tile.y))}
             alt=""
@@ -313,7 +294,9 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
                   </div>
                   <div className="mt-0.5 text-[9px] font-mono text-[#8C8C90]">
                     {record.activityType}
-                    {record.achievedAt ? ` · ${new Date(record.achievedAt).toLocaleDateString()}` : ""}
+                    {record.achievedAt
+                      ? ` · ${new Date(record.achievedAt).toLocaleDateString()}`
+                      : ""}
                   </div>
                 </div>
               ))}
@@ -398,8 +381,8 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
           )}
           {!heatmapLoading && !heatmapError && <HeatmapCanvas cells={cells} />}
           <p className="text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-            Your heatmap is private and built only from workouts SVJ recorded on your own device.
-            It is never shared with other members or used for ranking.
+            Your heatmap is private and built only from workouts SVJ recorded on your own device. It
+            is never shared with other members or used for ranking.
           </p>
         </div>
       )}
@@ -478,9 +461,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
                       className="flex items-center justify-between rounded-lg border border-white/5 bg-black/30 px-2.5 py-1.5"
                     >
                       <span className="text-[10px] font-mono text-[#8C8C90]">
-                        {attempt.startedAt
-                          ? new Date(attempt.startedAt).toLocaleDateString()
-                          : "—"}
+                        {attempt.startedAt ? new Date(attempt.startedAt).toLocaleDateString() : "—"}
                       </span>
                       <span className="text-[11px] font-mono text-white">
                         {formatClock(attempt.durationSeconds)}

@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BatteryMedium, Clock, MapPin, Radio, Route as RouteIcon, ShieldCheck } from "lucide-react";
 import { ActivityMap } from "../app/components/ActivityMap";
-import { formatClock, formatDistance, GPS_ACTIVITY_LABELS, type TrackPoint } from "../app/lib/gpsActivity";
+import {
+  formatClock,
+  formatDistance,
+  GPS_ACTIVITY_LABELS,
+  type TrackPoint,
+} from "../app/lib/gpsActivity";
 import {
   activityRpcClient,
   fetchPublicLiveShare,
@@ -87,7 +92,7 @@ function LiveSharePage() {
   const elapsedSeconds =
     view === "active" && share?.lastElapsedSeconds != null
       ? share.lastElapsedSeconds + Math.max(0, Math.round((nowMs - loadedAtRef.current) / 1000))
-      : share?.lastElapsedSeconds ?? null;
+      : (share?.lastElapsedSeconds ?? null);
 
   const label =
     share?.activityType && share.activityType in GPS_ACTIVITY_LABELS
@@ -197,15 +202,7 @@ function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-function Stat({
-  icon,
-  label,
-  children,
-}: {
-  icon: ReactNode;
-  label: string;
-  children: ReactNode;
-}) {
+function Stat({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="rounded-xl border border-white/5 bg-[#0B0B0C] p-3">
       <div className="flex items-center gap-1.5 text-[#8C8C90]">

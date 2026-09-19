@@ -25,7 +25,9 @@ import {
 import { encodePolyline } from "./gpsActivity";
 
 /** Minimal injected RPC client: records calls, returns scripted responses. */
-function fakeClient(responses: Record<string, { data?: unknown; error?: { message: string } | null }>) {
+function fakeClient(
+  responses: Record<string, { data?: unknown; error?: { message: string } | null }>,
+) {
   const calls: { fn: string; args?: Record<string, unknown> }[] = [];
   const client = {
     rpc: async (fn: string, args?: Record<string, unknown>) => {
@@ -115,10 +117,7 @@ describe("route display helpers", () => {
   });
 
   it("omits elevation when it was not measured", () => {
-    assert.equal(
-      plannedRouteSummary({ distanceMeters: 900, elevationGainMeters: null }),
-      "900 m",
-    );
+    assert.equal(plannedRouteSummary({ distanceMeters: 900, elevationGainMeters: null }), "900 m");
   });
 
   it("formats elevation and previous-attempt time with a dash fallback", () => {
@@ -141,7 +140,12 @@ describe("fetchRoutes", () => {
 
   it("sorts favourites first, then most recently updated", async () => {
     const favourite = { ...ROUTE_ROW, id: "route-2", favorite: true, name: "Hill repeats" };
-    const older = { ...ROUTE_ROW, id: "route-3", name: "Old loop", updated_at: "2026-08-01T00:00:00.000Z" };
+    const older = {
+      ...ROUTE_ROW,
+      id: "route-3",
+      name: "Old loop",
+      updated_at: "2026-08-01T00:00:00.000Z",
+    };
     const { client } = fakeClient({ svj_list_routes: { data: [older, ROUTE_ROW, favourite] } });
     const result = await fetchRoutes(client);
     assert.deepEqual(
@@ -266,7 +270,10 @@ describe("normalizeActivityTrack", () => {
   it("drops malformed points and survives an empty track", () => {
     const track = normalizeActivityTrack({
       activityId: "a1",
-      points: [{ lat: "x", lng: 2, t: 0 }, { lat: 1, lng: 2, t: 0 }],
+      points: [
+        { lat: "x", lng: 2, t: 0 },
+        { lat: 1, lng: 2, t: 0 },
+      ],
     });
     assert.equal(track!.points.length, 1);
   });
@@ -279,7 +286,13 @@ describe("normalizeActivityTrack", () => {
 describe("GPS records", () => {
   it("normalizes server records", () => {
     const records = normalizeGpsRecords([
-      { recordType: "fastest_1km", activityType: "running", value: 250, activityId: "a1", achievedAt: "2026-09-01T00:00:00Z" },
+      {
+        recordType: "fastest_1km",
+        activityType: "running",
+        value: 250,
+        activityId: "a1",
+        achievedAt: "2026-09-01T00:00:00Z",
+      },
     ]);
     assert.equal(records.length, 1);
     assert.equal(records[0]!.value, 250);
@@ -326,18 +339,12 @@ describe("personal heatmap", () => {
     // The user-facing complaint "still heatmap?" was the heatmap drawing as
     // SVG density dots with no map behind them. Pin the component source to
     // the real OSM slippy-map viewport so a regression shows up immediately.
-    const view = await readFile(
-      new URL("../views/RecordsView.tsx", import.meta.url),
-      "utf8",
-    );
+    const view = await readFile(new URL("../views/RecordsView.tsx", import.meta.url), "utf8");
     assert.match(view, /createTileViewport/);
     assert.match(view, /SVJ_STREET_TILES/);
     assert.doesNotMatch(view, /projectPoints/);
     // And the tile provider itself must still be the real public OSM service.
-    const map = await readFile(
-      new URL("../components/ActivityMap.tsx", import.meta.url),
-      "utf8",
-    );
+    const map = await readFile(new URL("../components/ActivityMap.tsx", import.meta.url), "utf8");
     assert.match(map, /tile\.openstreetmap\.org/);
     // The abstract projection helper must no longer be used for the heatmap.
     assert.doesNotMatch(view, /projectPoints/);
@@ -379,7 +386,11 @@ describe("SVJ Live Share", () => {
   it("only reports an active share as active", () => {
     assert.equal(normalizeLiveShare({ active: false }).active, false);
     assert.equal(normalizeLiveShare(null).active, false);
-    const share = normalizeLiveShare({ active: true, token: "t", expiresAt: "2026-09-19T10:00:00Z" });
+    const share = normalizeLiveShare({
+      active: true,
+      token: "t",
+      expiresAt: "2026-09-19T10:00:00Z",
+    });
     assert.equal(share.active, true);
     assert.equal(share.token, "t");
   });

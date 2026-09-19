@@ -15,16 +15,8 @@ import {
   WorkoutExercise,
   MealEntry,
 } from "../types";
-import {
-  INITIAL_USER,
-  INITIAL_CHALLENGES,
-  INITIAL_REWARDS,
-  TIERS,
-} from "../data/initialData";
-import {
-  stripSeedFeedPosts,
-  stripSeedMembers,
-} from "../lib/seedData";
+import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_REWARDS, TIERS } from "../data/initialData";
+import { stripSeedFeedPosts, stripSeedMembers } from "../lib/seedData";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginAvatar } from "@/lib/avatar";
 import {

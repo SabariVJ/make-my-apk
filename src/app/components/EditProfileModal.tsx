@@ -151,9 +151,12 @@ export const EditProfileModal: React.FC = () => {
         oldOwnedPath &&
         oldOwnedPath !== ownedAvatarRef(saved.avatarUrl, user.id)
       ) {
-        await supabase.storage.from("avatars").remove([oldOwnedPath]).catch(() => {
-          /* orphaned old object — a failed cleanup never fails the save */
-        });
+        await supabase.storage
+          .from("avatars")
+          .remove([oldOwnedPath])
+          .catch(() => {
+            /* orphaned old object — a failed cleanup never fails the save */
+          });
       }
       setIsEditProfileOpen(false);
     } catch (cause) {

@@ -70,8 +70,7 @@ export interface SaveExtras {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const num = (v: unknown): number | null =>
-  typeof v === "number" && Number.isFinite(v) ? v : null;
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 // ── Period helpers (local-calendar semantics, no UTC shifting) ─────────────
 
@@ -97,7 +96,9 @@ export function isoDateOf(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function periodLabel(goal: Pick<GoalDto, "periodStart" | "periodEnd" | "periodType">): string {
+export function periodLabel(
+  goal: Pick<GoalDto, "periodStart" | "periodEnd" | "periodType">,
+): string {
   if (goal.periodType === "weekly") return "This Week";
   const month = new Date(`${goal.periodStart}T00:00:00`);
   if (Number.isNaN(month.getTime())) return goal.periodStart;
@@ -114,7 +115,10 @@ export function validateGoalInput(input: {
   periodEnd: unknown;
   activityType?: unknown;
 }): string | null {
-  if (typeof input.metric !== "string" || !(GOAL_METRICS as readonly string[]).includes(input.metric))
+  if (
+    typeof input.metric !== "string" ||
+    !(GOAL_METRICS as readonly string[]).includes(input.metric)
+  )
     return "Choose a goal metric.";
   const target = num(input.targetValue);
   if (target === null || target <= 0 || target > 10_000_000)
@@ -153,9 +157,10 @@ export function normalizeGoal(value: unknown): GoalDto | null {
   if (!value || typeof value !== "object") return null;
   const g = value as Record<string, unknown>;
   const id = typeof g.id === "string" ? g.id : null;
-  const metric = typeof g.metric === "string" && (GOAL_METRICS as readonly string[]).includes(g.metric)
-    ? (g.metric as GoalMetric)
-    : null;
+  const metric =
+    typeof g.metric === "string" && (GOAL_METRICS as readonly string[]).includes(g.metric)
+      ? (g.metric as GoalMetric)
+      : null;
   const periodType =
     typeof g.period_type === "string" && (GOAL_PERIODS as readonly string[]).includes(g.period_type)
       ? (g.period_type as GoalPeriod)
@@ -279,10 +284,14 @@ export async function listGoals(
   includeCompleted = true,
 ): Promise<{ ok: boolean; goals: GoalDto[]; error?: string }> {
   try {
-    const { data, error } = await callRpc("svj_list_goals", { p_include_completed: includeCompleted });
+    const { data, error } = await callRpc("svj_list_goals", {
+      p_include_completed: includeCompleted,
+    });
     if (error) return { ok: false, goals: [], error: error.message || "Couldn't load goals." };
     const result = unwrap(data, "goals", normalizeGoal);
-    return result.ok ? { ok: true, goals: result.items } : { ok: false, goals: [], error: result.error };
+    return result.ok
+      ? { ok: true, goals: result.items }
+      : { ok: false, goals: [], error: result.error };
   } catch (e) {
     return { ok: false, goals: [], error: e instanceof Error ? e.message : "Network error." };
   }
@@ -326,7 +335,8 @@ export async function updateGoal(
   targetValue: number,
 ): Promise<{ ok: boolean; goal?: GoalDto; error?: string }> {
   const target = num(targetValue);
-  if (!goalId || target === null || target <= 0) return { ok: false, error: "Invalid goal update." };
+  if (!goalId || target === null || target <= 0)
+    return { ok: false, error: "Invalid goal update." };
   try {
     const { data, error } = await callRpc("svj_update_goal", {
       p_goal_id: goalId,

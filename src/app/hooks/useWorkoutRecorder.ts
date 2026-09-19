@@ -63,7 +63,11 @@ export interface UseWorkoutRecorder {
 }
 
 export function useWorkoutRecorder(): UseWorkoutRecorder {
-  const [liveHeartRate, setLiveHeartRate] = useState<{ bpm: number; source: string; deviceName?: string } | null>(null);
+  const [liveHeartRate, setLiveHeartRate] = useState<{
+    bpm: number;
+    source: string;
+    deviceName?: string;
+  } | null>(null);
   const recorder = useMemo(
     () =>
       new GpsWorkoutRecorder({
@@ -74,7 +78,6 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
   );
 
   const [session, setSession] = useState<WorkoutSession | null>(null);
-  let wearableCleanup: (() => void) | null = null;
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
   const [pendingSync, setPendingSync] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -133,12 +136,17 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
     // Live BLE heart rate: feed real strap measurements into the recorder and
     // surface the freshest reading to the HR card. Stale readings degrade to
     // null here, so the UI shows "—" instead of a frozen BPM.
+    let wearableCleanup: (() => void) | null = null;
     if (isNativeWearableAvailable()) {
       let wearableHandle: { remove: () => Promise<void> } | null = null;
       void VjWearable.addListener("heartRateMeasurement", (event) => {
         const reading = normalizeWearableHeartRate(event, Date.now());
         if (!reading) return;
-        setLiveHeartRate({ bpm: reading.bpm, source: reading.source, deviceName: reading.deviceName });
+        setLiveHeartRate({
+          bpm: reading.bpm,
+          source: reading.source,
+          deviceName: reading.deviceName,
+        });
         void recorder.ingestHeartRate(reading.bpm, reading.timestampMs);
       }).then((handle) => {
         wearableHandle = handle;

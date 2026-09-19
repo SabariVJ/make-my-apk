@@ -7,6 +7,7 @@
 //   • native↔local reconciliation (an unmatched live service is not continued)
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   canRecordWith,
   normalizeNativeSample,
@@ -206,5 +207,37 @@ describe("reconcileWorkoutStates", () => {
     const result = reconcileWorkoutStates(active(null), "abc");
     assert.equal(result?.matchesLocal, false);
     assert.equal(result?.orphaned, true);
+  });
+
+  it("a matched recovery requires an explicit native pause", () => {
+    // Contract of the recovery flow in useWorkoutRecorder: when reconciliation
+    // reports matchesLocal, the hook must call setNativeWorkoutPaused(true)
+    // BEFORE showing the recovery notice, so the native service is really
+    // paused and no location is collected while the UI says "paused".
+    // This test pins the hook source so the ordering cannot regress.
+    const hook = readFileSync(
+      new URL("../src/app/hooks/useWorkoutRecorder.ts", import.meta.url),
+      "utf8",
+    );
+    const pauseCall = hook.indexOf("await setNativeWorkoutPaused(true);");
+    const notice = hook.indexOf(
+      "Recovered the active workout. It is paused — tap Resume to continue.",
+    );
+    assert.ok(pauseCall >= 0, "recovery must pause the native recording");
+    assert.ok(notice >= 0, "recovery must show the recovery notice");
+    assert.ok(
+      pauseCall < notice,
+      "native pause must happen BEFORE the recovery notice is shown",
+    );
+    // The pause must live inside the matchesLocal branch, not on the orphan path.
+    const matchesBranch = hook.slice(hook.indexOf("if (reconciliation.matchesLocal)"), notice);
+    assert.match(matchesBranch, /setNativeWorkoutPaused\(true\)/);
+    // Resume flows through the same bridge call with the existing session —
+    // the same UUID and points, no new activity is created.
+    const resumeFn = hook.slice(hook.indexOf("const resume = useCallback"),
+      hook.indexOf("const finish = useCallback"));
+    assert.match(resumeFn, /recorder\.resume\(\)/);
+    assert.match(resumeFn, /setNativeWorkoutPaused\(false\)/);
+    assert.doesNotMatch(resumeFn, /new GpsWorkoutRecorder|recorder\.start\(/);
   });
 });

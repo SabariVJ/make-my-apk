@@ -107,6 +107,10 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
         const reconciliation = await reconcileNativeWorkout(recovered?.activityId ?? null);
         if (!reconciliation) return;
         if (reconciliation.matchesLocal) {
+          // The native service may still be actively collecting. Recovery must
+          // present a genuinely PAUSED workout: pause the native recording
+          // first (same UUID, same points), and only then show the notice.
+          await setNativeWorkoutPaused(true);
           setNotice("Recovered the active workout. It is paused — tap Resume to continue.");
           return;
         }

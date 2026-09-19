@@ -137,6 +137,19 @@ describe("the native SVJ activity platform is wired", () => {
     assert.doesNotMatch(manifest, /ACCESS_BACKGROUND_LOCATION/);
   });
 
+  it("the plugin declares no permission SVJ cannot use", async () => {
+    const plugin = await readFile(
+      join(root, "android/app/src/main/java/app/lovable/svj/VjWorkoutPlugin.java"),
+      "utf8",
+    );
+    // The bridge must not declare or request background location either.
+    assert.doesNotMatch(
+      plugin,
+      /requestPermissionForAlias\("backgroundLocation"/,
+      "background location must never be requested",
+    );
+  });
+
   it("location is only collected between an explicit start and stop", async () => {
     const service = await readFile(
       join(root, "android/app/src/main/java/app/lovable/svj/VjWorkoutService.java"),
@@ -146,6 +159,88 @@ describe("the native SVJ activity platform is wired", () => {
     assert.match(service, /SVJ is recording your activity/);
     // ...and must not start collecting before an explicit start command.
     assert.match(service, /if \(!active \|\| paused \|\| location == null\) return;/);
+  });
+});
+
+describe("Health Connect is read-only and matches the supported record types", () => {
+  const manifestPath = join(root, "android/app/src/main/AndroidManifest.xml");
+
+  // One manifest permission per record type the Kotlin bridge can read.
+  const REQUIRED_READ_PERMISSIONS = [
+    "android.permission.health.READ_STEPS",
+    "android.permission.health.READ_DISTANCE",
+    "android.permission.health.READ_EXERCISE",
+    "android.permission.health.READ_HEART_RATE",
+    "android.permission.health.READ_RESTING_HEART_RATE",
+    "android.permission.health.READ_SLEEP",
+    "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+    "android.permission.health.READ_WEIGHT",
+  ];
+
+  it("declares every READ permission for the supported record types", async () => {
+    const manifest = await readFile(manifestPath, "utf8");
+    const missing = REQUIRED_READ_PERMISSIONS.filter(
+      (permission) => !manifest.includes(`<uses-permission android:name="${permission}" />`),
+    );
+    assert.deepEqual(missing, [], "missing Health Connect read permissions");
+  });
+
+  it("declares NO Health Connect write permission", async () => {
+    const manifest = await readFile(manifestPath, "utf8");
+    assert.doesNotMatch(manifest, /android\.permission\.health\.WRITE_/);
+  });
+
+  it("declares the required permission-rationale activity", async () => {
+    const manifest = await readFile(manifestPath, "utf8");
+    assert.match(manifest, /androidx\.health\.ACTION_SHOW_PERMISSIONS_RATIONALE/);
+    assert.match(manifest, /VIEW_PERMISSION_USAGE/);
+    assert.match(manifest, /android\.intent\.category\.HEALTH_PERMISSIONS/);
+  });
+
+  it("the rationale activity reuses SVJ's own privacy destination", async () => {
+    const rationale = await readFile(
+      join(root,
+        "android/app/src/main/java/app/lovable/svj/HealthPermissionsRationaleActivity.java"),
+      "utf8",
+    );
+    assert.match(rationale, /app\.lovable\.svj:\/\/privacy/);
+    // And SVJ ships that privacy destination in the router.
+    await stat(join(root, "src/routes/privacy.tsx"));
+  });
+
+  it("no background health read is declared or implemented", async () => {
+    const manifest = await readFile(manifestPath, "utf8");
+    assert.doesNotMatch(manifest, /READ_HEALTH_DATA_IN_BACKGROUND/);
+    const plugin = await readFile(
+      join(root, "android/app/src/main/java/app/lovable/svj/VjHealthConnectPlugin.kt"),
+      "utf8",
+    );
+    assert.doesNotMatch(plugin, /BackgroundRead|backgroundRead/);
+  });
+
+  it("the Kotlin bridge has no duplicate imports and never writes", async () => {
+    const plugin = await readFile(
+      join(root, "android/app/src/main/java/app/lovable/svj/VjHealthConnectPlugin.kt"),
+      "utf8",
+    );
+    const importLines = plugin
+      .split("\n")
+      .filter((line) => /^import /.test(line));
+    assert.equal(new Set(importLines).size, importLines.length, "duplicate import found");
+    // Read-only: insert/update/delete of Health Connect records must not exist.
+    assert.doesNotMatch(plugin, /insertRecords|updateRecords|deleteRecords|WriteRecordsRequest/);
+    // Revocation is respected: the grant is re-read before every read.
+    assert.match(plugin, /grantedPermissions\(\)/);
+  });
+
+  it("the client type list matches the manifest permission families", async () => {
+    const bridge = await readFile(join(root, "src/app/lib/healthConnect.ts"), "utf8");
+    for (const type of [
+      "steps", "distance", "exerciseSessions", "heartRate",
+      "restingHeartRate", "sleep", "calories", "weight",
+    ]) {
+      assert.ok(bridge.includes(`"${type}"`), `client type list is missing ${type}`);
+    }
   });
 });
 

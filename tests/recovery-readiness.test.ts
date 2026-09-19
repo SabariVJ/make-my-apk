@@ -111,10 +111,9 @@ describe("client wiring", () => {
   });
 
   test("Train exposes a RECOVERY section without a new bottom tab", () => {
-    assert.match(
-      activityView,
-      /TrainSection = "activity" \| "history" \| "goals" \| "progress" \| "recovery"/,
-    );
+    // The Train sections may grow (external recording, routes, records…), and
+    // Recovery must remain one of them rather than moving to a bottom tab.
+    assert.match(activityView, /type TrainSection =[\s\S]{0,400}?\| "recovery";/);
     assert.match(activityView, /\{ id: "recovery", label: "Recovery" \}/);
     assert.match(activityView, /section === "recovery" && <TrainRecovery \/>/);
   });

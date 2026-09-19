@@ -15,6 +15,7 @@ import {
   Trophy,
   Target,
 } from "lucide-react";
+import { GpsActivityDetail } from "./GpsActivityDetail";
 import { useActivityOptional, type ActivityTypeFromLib } from "../context/ActivityContext";
 import {
   ACTIVITY_TYPES,
@@ -495,6 +496,18 @@ const ActivityDetail: React.FC<{
           </div>
         )}
       </dl>
+
+      {/*
+       * GPS workout enrichment: route map, splits, performance/HR/elevation
+       * charts, provenance, and the "save as route" / "create segment" actions
+       * that feed the SVJ route library. Embedded so the existing detail screen
+       * stays the single place a history row opens.
+       */}
+      {activity.source === "svj_native" && (
+        <div className="mt-4 border-t border-white/5 pt-4">
+          <GpsActivityDetail activity={activity} embedded />
+        </div>
+      )}
 
       {isStrength && (
         <div className="mt-4 space-y-3" data-testid="strength-detail">

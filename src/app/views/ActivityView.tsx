@@ -19,6 +19,10 @@ import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 import { TrainGoals, TrainProgress } from "./TrainGoals";
 import { TrainRecovery } from "./TrainRecovery";
 import { TrainStrength } from "./TrainStrength";
+import { RouteLibrary } from "./RouteLibrary";
+import { RecordsView } from "./RecordsView";
+import { WorkoutRecorder } from "./WorkoutRecorder";
+import type { SavedRoute } from "../lib/activityPlatform";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -234,7 +238,15 @@ export const ActivityView: React.FC = () => {
   return <ActivityViewContent activity={activity} />;
 };
 
-type TrainSection = "activity" | "history" | "goals" | "progress" | "recovery";
+type TrainSection =
+  | "activity"
+  | "record"
+  | "history"
+  | "routes"
+  | "records"
+  | "goals"
+  | "progress"
+  | "recovery";
 
 const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ activity }) => {
   const {
@@ -275,6 +287,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
   const [section, setSection] = useState<TrainSection>("activity");
   // Structured strength is a flow inside Train, not another navigation tab.
   const [strengthOpen, setStrengthOpen] = useState(false);
+  // A saved route the athlete chose to follow outdoors.
+  const [plannedRoute, setPlannedRoute] = useState<SavedRoute | null>(null);
 
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
   const chart7 = history7.map((d) => ({
@@ -351,11 +365,14 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       </button>
 
       {/* Train internal navigation: only working sections are exposed. */}
-      <div className="mb-5 flex gap-2" data-testid="train-sections">
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1" data-testid="train-sections">
         {(
           [
-            { id: "activity", label: "Activity" },
+            { id: "activity", label: "Overview" },
+            { id: "record", label: "Record" },
             { id: "history", label: "History" },
+            { id: "routes", label: "Routes" },
+            { id: "records", label: "Records" },
             { id: "goals", label: "Goals" },
             { id: "progress", label: "Progress" },
             { id: "recovery", label: "Recovery" },
@@ -365,7 +382,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             key={s.id}
             type="button"
             onClick={() => setSection(s.id)}
-            className={`flex-1 rounded-xl border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`shrink-0 rounded-xl border px-2.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
               section === s.id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
@@ -379,6 +396,27 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {section === "goals" && <TrainGoals />}
       {section === "progress" && <TrainProgress />}
       {section === "recovery" && <TrainRecovery />}
+
+      {/* Native outdoor recording into the existing activity pipeline. */}
+      {section === "record" && (
+        <WorkoutRecorder
+          plannedRoute={plannedRoute}
+          onClearPlannedRoute={() => setPlannedRoute(null)}
+        />
+      )}
+
+      {/* Route library: save, rename, favourite and reuse own routes. */}
+      {section === "routes" && (
+        <RouteLibrary
+          onStartRoute={(route) => {
+            setPlannedRoute(route);
+            setSection("record");
+          }}
+        />
+      )}
+
+      {/* GPS records, private heatmap and personal segments. */}
+      {section === "records" && <RecordsView />}
 
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (

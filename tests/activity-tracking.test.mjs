@@ -269,7 +269,10 @@ before(async () => {
             "@tanstack/react-start": `export const useServerFn=fn=>fn;`,
             "@/integrations/supabase/client": `export const supabase={rpc:(...a)=>globalThis.__svjTracking.supabase.rpc(...a)}; export const hasSupabaseConfig=()=>globalThis.__svjTracking.supabase != null;`,
             "motion/react": `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,...rest}=props;return React.createElement(tag,rest,children)}});`,
-            recharts: `export const Bar=()=>null,CartesianGrid=Bar,Tooltip=Bar,XAxis=Bar,YAxis=Bar,BarChart=Bar;export const ResponsiveContainer=({children})=>children;`,
+            // Chart primitives render as null in this lightweight harness. The
+            // stub must still name every export the real chart consumers use
+            // (the activity screens and the GPS detail charts).
+            recharts: `export const Bar=()=>null,CartesianGrid=Bar,Tooltip=Bar,XAxis=Bar,YAxis=Bar,BarChart=Bar,Line=Bar,LineChart=Bar,Area=Bar,AreaChart=Bar;export const ResponsiveContainer=({children})=>children;`,
           };
           builder.onResolve({ filter: /.*/ }, (args) =>
             Object.hasOwn(modules, args.path) ? { path: args.path, namespace: "mock" } : null,
@@ -1250,9 +1253,20 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
     };
     await mount();
     const tabs = screen.getByTestId("train-sections");
-    // Update 05 adds the RECOVERY section inside Train (still no new
-    // bottom-navigation tab).
-    assert.equal(tabs.querySelectorAll("button").length, 5, "no new bottom-nav tab");
+    // Update 05 added RECOVERY inside Train; the native activity platform adds
+    // Record / Routes / Records the same way. All of them stay internal
+    // sections — the bottom navigation never gains a tab for them.
+    assert.equal(
+      tabs.querySelectorAll("button").length,
+      8,
+      "sections live inside Train, not in the bottom navigation",
+    );
+    for (const label of ["Overview", "Record", "History", "Routes", "Records", "Recovery"]) {
+      assert.ok(
+        screen.getAllByRole("button", { name: label }).length > 0,
+        `Train is missing the ${label} section`,
+      );
+    }
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "History" }));

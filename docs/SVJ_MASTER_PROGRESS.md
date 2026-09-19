@@ -710,3 +710,39 @@ landed in `f9c8e34`. The native remainder is documented in
 
 No external fitness provider integration exists anywhere in runtime source; this
 is pinned by `tests/provider-free.test.mjs`.
+
+---
+
+## Activity map / heatmap fix (continuation of `7204a86`)
+
+**Starting SHA:** `7204a86` — **Final SHA:** `bf85a94` (remote verified).
+
+**Root cause of "still heatmap?":** the previous run fixed the *route* map
+(`7204a86` gave ActivityMap a real OpenStreetMap slippy-map basemap, GPS first
+fix, and recentering), but the **personal heatmap** in Records → Heatmap still
+drew abstract SVG density dots with no geography behind them. The user was
+looking at the heatmap screen, not the route map.
+
+**Fix (`bf85a94`):** `HeatmapCanvas` in `src/app/views/RecordsView.tsx` now
+renders through the same `createTileViewport` + `SVJ_STREET_TILES` OSM layer as
+the route map — density cells sit on real street tiles with attribution, and
+center on the athlete's own data. No API key, no second mapping stack, no fake
+data. Pinned by a new source-level regression test in
+`activityPlatform.test.ts` ("renders on a real geographic basemap, not an
+abstract grid"), which fails if the heatmap ever reverts to `projectPoints` or
+if the OSM tile provider disappears.
+
+**Validation:** `bun tsc -b --noEmit` PASS · full suite 629 tests / 627 pass /
+0 fail / 2 skipped (unchanged baseline skips) · `bun run build` PASS ·
+`git diff --check` clean · `./gradlew assembleDebug` **BUILD SUCCESSFUL**
+(local JDK 21 + Android SDK 36) — map change is web-only, native untouched.
+
+**Migrations:** none added, none modified, none required for this fix. The
+native platform migrations (`20260921000000`, `20260923000000`–
+`20260923020000`) remain the exact live deployment order documented in
+`SVJ_NATIVE_ACTIVITY_PLATFORM.md`.
+
+**Unchanged and intact:** membership self-service, Founder lifetime, Plus
+entitlements, 60-Day self-service, Activity/Strength, server-authoritative
+XP/stats, personalized tasks, Community/rivalry, Live Share, Health Connect
+reads, provider-free guarantee (all pinned by the existing suites, all green).

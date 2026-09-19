@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -11,24 +11,80 @@ import {
   Heart,
   UserPlus,
   Filter,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  RefreshCw,
+  Inbox,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
 import { FriendsPanel } from "../components/FriendsPanel";
+import { AvatarImage } from "../components/AvatarImage";
 import { useFriends } from "../hooks/useFriends";
+import {
+  createRivalry,
+  getRivalries,
+  cancelRivalry,
+  type RivalryData,
+} from "@/lib/rivalry.functions";
 
 export const CommunityView: React.FC = () => {
-  const { feed, toggleReaction, addComment, setSelectedMemberModal, leaderboard, user } = useSVJ();
+  const {
+    feed,
+    toggleReaction,
+    addComment,
+    setSelectedMemberModal,
+    setComparingMember,
+    leaderboard,
+    user,
+  } = useSVJ();
   const [activeSubTab, setActiveSubTab] = useState<"feed" | "directory" | "friends">("feed");
   const [searchQuery, setSearchQuery] = useState("");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
-  const friendsApi = useFriends({
-    username: user.username,
-    displayName: user.name,
-    avatar: user.avatar,
-    totalXP: user.totalXP,
-    currentStreak: user.currentStreak,
-  });
+  const [rivalries, setRivalries] = useState<RivalryData[]>([]);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  /** Rivalry feedback shown inline inside the Members tab (in-app, SVJ-styled). */
+  const [rivalryFeedback, setRivalryFeedback] = useState<{
+    kind: "success" | "error";
+    text: string;
+    retryId?: string;
+  } | null>(null);
+  const friendsApi = useFriends();
+
+  const loadRivalries = useCallback(async () => {
+    try {
+      const res = await getRivalries();
+      if (Array.isArray(res)) setRivalries(res);
+    } catch {
+      /* polling refresh — a transient failure must not blank the tab */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRivalries();
+  }, [loadRivalries]);
+
+  /** Get rivalry state between current user and another member */
+  const getRivalryState = (
+    otherId: string,
+  ): "none" | "outgoing_pending" | "incoming_pending" | "active" => {
+    for (const r of rivalries) {
+      if (
+        r.status === "cancelled" ||
+        r.status === "declined" ||
+        r.status === "completed" ||
+        r.status === "expired"
+      )
+        continue;
+      const isChallenger = r.challengerId === user.id && r.opponentId === otherId;
+      const isOpponent = r.opponentId === user.id && r.challengerId === otherId;
+      if (isChallenger && r.status === "pending") return "outgoing_pending";
+      if (isOpponent && r.status === "pending") return "incoming_pending";
+      if ((isChallenger || isOpponent) && r.status === "active") return "active";
+    }
+    return "none";
+  };
 
   const reactionEmojis: { type: ReactionType; emoji: string; label: string }[] = [
     { type: "fire", emoji: "🔥", label: "Fire" },
@@ -38,7 +94,21 @@ export const CommunityView: React.FC = () => {
     { type: "wolf", emoji: "🐺", label: "Apex" },
   ];
 
-  const filteredMembers = leaderboard.filter(
+  const directoryMembers: LeaderboardEntry[] = friendsApi.members.map((member) => ({
+    id: member.id,
+    username: member.username || member.display_name || "member",
+    avatar: member.avatar_url || "",
+    totalXP: member.total_xp,
+    weeklyXP: 0,
+    monthlyXP: 0,
+    streak: member.current_streak,
+    rank: member.rank,
+    rankDelta: 0,
+    tier: "Initiate",
+    country: "",
+    bio: "",
+  }));
+  const filteredMembers = directoryMembers.filter(
     (m) =>
       m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.tier.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -49,6 +119,58 @@ export const CommunityView: React.FC = () => {
     if (text) {
       addComment(activityId, text);
       setCommentInputs((prev) => ({ ...prev, [activityId]: "" }));
+    }
+  };
+
+  const handleSendRivalry = async (opponentId: string) => {
+    // Identity is resolved from the authenticated account id, never from
+    // display names, handles or avatars. An obvious self-action makes no
+    // network request at all.
+    if (opponentId === user.id) {
+      setRivalryFeedback({ kind: "error", text: "You cannot challenge your own account." });
+      return;
+    }
+    // A single in-flight request per opponent: repeated taps are ignored
+    // instead of creating duplicate requests.
+    if (sendingId) return;
+    setSendingId(opponentId);
+    setRivalryFeedback(null);
+    try {
+      const res = await createRivalry({ data: { opponentId } });
+      if (res?.error || !res?.ok) {
+        setRivalryFeedback({
+          kind: "error",
+          text: res?.error || "Could not send the rivalry request. Please retry.",
+          retryId: opponentId,
+        });
+      } else {
+        if (res?.rivalry) {
+          setRivalries((prev) => [res.rivalry!, ...prev]);
+        } else {
+          void loadRivalries();
+        }
+        const target = friendsApi.members.find((m) => m.id === opponentId);
+        const handle =
+          target?.username || target?.display_name
+            ? `@${target.username || target.display_name}`
+            : "that member";
+        setRivalryFeedback({
+          kind: "success",
+          text: res?.existing
+            ? `A request to ${handle} is already waiting for a response.`
+            : `Request sent — waiting for ${handle}.`,
+        });
+      }
+    } catch (err) {
+      // A rejected request must never leave the button stuck or crash the view.
+      setRivalryFeedback({
+        kind: "error",
+        text:
+          err instanceof Error ? err.message : "Could not send the rivalry request. Please retry.",
+        retryId: opponentId,
+      });
+    } finally {
+      setSendingId(null);
     }
   };
 
@@ -107,6 +229,17 @@ export const CommunityView: React.FC = () => {
       ) : activeSubTab === "feed" ? (
         /* ACTIVITY FEED TAB */
         <div className="space-y-4">
+          {feed.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
+              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
+              <p className="font-anton text-sm uppercase tracking-wide text-white">
+                No activity yet
+              </p>
+              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
+                Your verified SVJ activity and your friends&apos; milestones will appear here.
+              </p>
+            </div>
+          )}
           {feed.map((item, index) => {
             const userReaction = item.userReactions[user.id];
 
@@ -129,9 +262,9 @@ export const CommunityView: React.FC = () => {
                     }}
                   >
                     <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
-                      <img
+                      <AvatarImage
                         src={item.userAvatar}
-                        alt={item.username}
+                        name={item.username}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -200,9 +333,9 @@ export const CommunityView: React.FC = () => {
                           key={`${c.id}-${cIdx}`}
                           className="p-2.5 rounded-xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2.5"
                         >
-                          <img
+                          <AvatarImage
                             src={c.avatar}
-                            alt={c.username}
+                            name={c.username}
                             className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
                           />
                           <div className="flex-1">
@@ -260,39 +393,143 @@ export const CommunityView: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredMembers.map((m) => (
-              <motion.div
-                key={m.id}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => setSelectedMemberModal(m)}
-                className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
-                    <img src={m.avatar} alt={m.username} className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-anton text-sm text-white uppercase">{m.username}</span>
-                      {m.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
-                    </div>
-                    <div className="text-[10px] font-mono text-[#8C8C90]">
-                      {m.tier} • {m.totalXP.toLocaleString()} XP
-                    </div>
-                    <div className="text-[10px] font-mono text-orange-400 mt-0.5">
-                      🔥 {m.streak} day streak
-                    </div>
-                  </div>
-                </div>
+          {/* In-app rivalry feedback banner (SVJ-styled, replaces browser dialogs) */}
+          {activeSubTab === "directory" && rivalryFeedback && (
+            <div
+              role={rivalryFeedback.kind === "error" ? "alert" : "status"}
+              className={`flex items-start justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-xs font-mono ${
+                rivalryFeedback.kind === "error"
+                  ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+              }`}
+            >
+              <span className="flex items-start gap-2">
+                {rivalryFeedback.kind === "error" ? (
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                )}
+                {rivalryFeedback.text}
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {rivalryFeedback.kind === "error" && rivalryFeedback.retryId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const retryId = rivalryFeedback.retryId;
+                      setRivalryFeedback(null);
+                      if (retryId) void handleSendRivalry(retryId);
+                    }}
+                    className="flex items-center gap-1 rounded-lg border border-rose-500/40 px-2 py-1 text-[10px] font-bold uppercase hover:bg-rose-500/20"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Retry
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setRivalryFeedback(null)}
+                  className="rounded-lg px-1.5 py-1 text-[10px] uppercase opacity-70 hover:opacity-100"
+                  aria-label="Dismiss message"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+          )}
 
-                <div className="text-right">
-                  <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
-                    Rank #{m.rank}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+          {filteredMembers.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
+              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
+              <p className="font-anton text-sm uppercase tracking-wide text-white">
+                No members to show yet
+              </p>
+              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
+                As real SVJ members join and appear in the directory, they will show up here.
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {filteredMembers.map((m) => {
+              const isSelf = m.id === user.id;
+              const rivalryState = isSelf ? "none" : getRivalryState(m.id);
+
+              return (
+                <motion.div
+                  key={m.id}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setSelectedMemberModal(m)}
+                  className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
+                      <AvatarImage
+                        src={m.avatar}
+                        name={m.username}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-anton text-sm text-white uppercase">
+                          {m.username}
+                        </span>
+                        {m.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
+                      </div>
+                      <div className="text-[10px] font-mono text-[#8C8C90]">
+                        {m.tier} • {m.totalXP.toLocaleString()} XP
+                      </div>
+                      <div className="text-[10px] font-mono text-orange-400 mt-0.5">
+                        🔥 {m.streak} day streak
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
+                      Rank #{m.rank}
+                    </span>
+                    {/* Self accounts never get opponent actions; stale clicks are
+                        resolved against the authenticated id inside the handler. */}
+                    {!isSelf && rivalryState === "none" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleSendRivalry(m.id);
+                        }}
+                        disabled={sendingId === m.id || !!sendingId}
+                        className="px-3 py-1.5 rounded-xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {sendingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        OUTPERFORM
+                      </button>
+                    )}
+                    {rivalryState === "outgoing_pending" && (
+                      <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold">
+                        REQUEST SENT
+                      </span>
+                    )}
+                    {rivalryState === "incoming_pending" && (
+                      <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] font-mono font-bold">
+                        PENDING
+                      </span>
+                    )}
+                    {rivalryState === "active" && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setComparingMember(m);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                      >
+                        VIEW RIVALRY
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       )}

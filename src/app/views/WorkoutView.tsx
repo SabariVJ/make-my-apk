@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Dumbbell, Plus, Trash2, Save, History, TrendingUp, Zap, X, Layers } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { WorkoutExercise } from "../types";
+import { summarizeWorkout } from "../lib/activity";
 
 type Tab = "log" | "templates" | "history";
 
@@ -26,6 +27,7 @@ export const WorkoutView: React.FC = () => {
   const [name, setName] = useState("");
   const [exercises, setExercises] = useState<WorkoutExercise[]>([blankExercise()]);
   const [trendExercise, setTrendExercise] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const updateExercise = (id: string, patch: Partial<WorkoutExercise>) =>
     setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...patch } : ex)));
@@ -39,15 +41,7 @@ export const WorkoutView: React.FC = () => {
       ),
     );
 
-  const totals = useMemo(() => {
-    const sets = exercises.reduce((s, ex) => s + ex.sets.filter((st) => st.reps > 0).length, 0);
-    const volume = exercises.reduce(
-      (s, ex) => s + ex.sets.reduce((a, st) => a + st.reps * st.weight, 0),
-      0,
-    );
-    const xp = sets ? Math.max(25, Math.min(400, sets * 15 + Math.round(volume / 100))) : 0;
-    return { sets, volume, xp };
-  }, [exercises]);
+  const totals = useMemo(() => summarizeWorkout(exercises), [exercises]);
 
   const exerciseNames = useMemo(() => {
     const names = new Set<string>();
@@ -79,7 +73,12 @@ export const WorkoutView: React.FC = () => {
   };
 
   const handleLog = () => {
-    logWorkout(name, exercises);
+    const result = logWorkout(name, exercises);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setSaveError(null);
     reset();
     setTab("history");
   };
@@ -150,6 +149,7 @@ export const WorkoutView: React.FC = () => {
             className="space-y-4"
           >
             <input
+              aria-label="Session name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Session name (e.g. Push Day)"
@@ -163,6 +163,7 @@ export const WorkoutView: React.FC = () => {
                     {String(exIdx + 1).padStart(2, "0")}
                   </span>
                   <input
+                    aria-label={`Exercise ${exIdx + 1} name`}
                     value={ex.name}
                     onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
                     placeholder="Exercise name"
@@ -193,17 +194,19 @@ export const WorkoutView: React.FC = () => {
                       <input
                         type="number"
                         min={0}
+                        aria-label={`Exercise ${exIdx + 1}, set ${i + 1} reps`}
                         value={st.reps}
                         onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
-                        className="bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                        className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
                       />
                       <input
                         type="number"
                         min={0}
                         step={2.5}
+                        aria-label={`Exercise ${exIdx + 1}, set ${i + 1} weight`}
                         value={st.weight}
                         onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
-                        className="bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                        className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
                       />
                       {ex.sets.length > 1 ? (
                         <button
@@ -264,6 +267,11 @@ export const WorkoutView: React.FC = () => {
               </div>
             </div>
 
+            {saveError && (
+              <p role="alert" className="text-sm text-rose-300">
+                {saveError}
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => saveWorkoutTemplate(name || "Untitled Template", exercises)}
@@ -274,7 +282,7 @@ export const WorkoutView: React.FC = () => {
               </button>
               <button
                 onClick={handleLog}
-                disabled={totals.sets === 0 || !exercises.some((e) => e.name.trim())}
+                disabled={!totals.valid}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl svj-crimson-gradient text-white font-inter font-bold text-sm disabled:opacity-40 svj-card-glow cursor-pointer"
               >
                 <Dumbbell className="w-4 h-4" /> Log workout

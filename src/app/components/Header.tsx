@@ -1,10 +1,13 @@
 import React from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import { Flame, Zap, Crown, Shield, Mail } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { AvatarImage } from "./AvatarImage";
 
 export const Header: React.FC = () => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   return (
     <header className="sticky top-0 z-40 bg-[#0B0B0C]/90 backdrop-blur-md border-b border-white/5 px-4 py-3 sm:px-6">
@@ -35,7 +38,7 @@ export const Header: React.FC = () => {
               )}
             </div>
             <p className="text-[10px] text-[#8C8C90] font-mono tracking-tight uppercase">
-              {user.isFounder ? "FOUNDER OWNER" : `${user.tier} Tier`} • #{user.memberId}
+              {user.isFounder ? "FOUNDER" : `${user.tier} Tier`} • #{user.memberId}
             </p>
           </div>
         </div>
@@ -48,18 +51,16 @@ export const Header: React.FC = () => {
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsGoogleAuthModalOpen(true)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold cursor-pointer border transition-all ${
-              user.isFounder
-                ? "bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10"
-                : user.email
-                  ? "bg-white/5 border-emerald-500/30 text-emerald-400"
-                  : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
+              user.email
+                ? "bg-white/5 border-emerald-500/30 text-emerald-400"
+                : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
             }`}
             title="Google / Gmail Account Settings"
           >
             {user.isFounder ? (
               <>
-                <Crown className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span className="hidden sm:inline text-[11px]">Owner Account</span>
+                <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline text-[11px]">Account</span>
               </>
             ) : user.email ? (
               <>
@@ -114,7 +115,7 @@ export const Header: React.FC = () => {
           </motion.div>
 
           {/* SVJ Plus Upgrade Button */}
-          {!user.isPremium ? (
+          {!user.isPremium && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -124,7 +125,8 @@ export const Header: React.FC = () => {
               <Crown className="w-3.5 h-3.5" />
               <span>Plus</span>
             </motion.button>
-          ) : (
+          )}
+          {user.isPremium && (
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
               <Crown className="w-3 h-3" />
               <span>{user.isFounder ? "FOUNDER" : "VIP ACTIVE"}</span>
@@ -138,7 +140,11 @@ export const Header: React.FC = () => {
             onClick={() => setIsEditProfileOpen(true)}
             className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-[#C81E3A]/80 cursor-pointer shadow-md"
           >
-            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            <AvatarImage
+              src={user.avatar}
+              name={user.name}
+              className="w-full h-full object-cover"
+            />
           </motion.button>
         </div>
       </div>

@@ -63,10 +63,11 @@ export const TrialGate: React.FC<{
     console.log("[SVJ] deep-link effect mounted; registering appUrlOpen listener (native)");
 
     const listener = CapApp.addListener("appUrlOpen", async ({ url }) => {
-      console.log("[SVJ] appUrlOpen fired — raw URL:", url);
+      // Sanitized: never log raw OAuth URLs which contain codes/tokens
+      console.log("[SVJ] appUrlOpen fired");
 
       if (!url.includes("app.lovable.svj://auth/callback")) {
-        console.warn("[SVJ] appUrlOpen URL did not match callback scheme/path:", url);
+        console.warn("[SVJ] appUrlOpen URL did not match callback scheme/path");
         return;
       }
 
@@ -80,7 +81,7 @@ export const TrialGate: React.FC<{
         fragParams.get("error");
 
       if (oauthError) {
-        console.warn("[SVJ] OAuth provider returned an error:", oauthError);
+        console.warn("[SVJ] OAuth provider returned an error");
         emitOAuthError(oauthError);
         await Browser.close();
         return;
@@ -94,10 +95,10 @@ export const TrialGate: React.FC<{
         if (error) {
           // Log the REAL error object (PKCE verifier mismatch, invalid grant, …)
           // so native logcat shows the actual failure, not just the UI message.
-          console.error("[SVJ] exchangeCodeForSession failed:", error);
+          console.error("[SVJ] exchangeCodeForSession failed:", error?.message ?? "unknown");
           emitOAuthError(error.message);
         } else {
-          console.info("[SVJ] PKCE exchange succeeded for user:", data.user?.id);
+          console.info("[SVJ] PKCE exchange succeeded");
         }
       } else {
         // Legacy implicit flow fallback: tokens in the URL fragment.
@@ -106,10 +107,7 @@ export const TrialGate: React.FC<{
         if (access_token && refresh_token) {
           await supabase.auth.setSession({ access_token, refresh_token });
         } else {
-          const keys = Array.from(new Set([...query.keys(), ...fragParams.keys()]));
-          console.warn(
-            `[SVJ] OAuth deep link carried no code or tokens (params: ${keys.join(", ") || "none"})`,
-          );
+          console.warn("[SVJ] OAuth deep link carried no code or tokens");
           emitOAuthError("Google sign-in did not return a session. Please try again.");
         }
       }

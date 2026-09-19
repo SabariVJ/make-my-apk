@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Crown, Check, ShieldCheck, Sparkles, ArrowRight, Zap, Flame, Lock } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
+import { buildWhatsAppUrl, buildPlusActivationMessage } from "@/lib/whatsapp";
 
 /** Format an ISO timestamp to a friendly locale string. Returns null on failure. */
 function safeFormatDate(iso: string | null): string | null {
@@ -20,10 +22,12 @@ function safeFormatDate(iso: string | null): string | null {
   }
 }
 
-export const PaywallModal: React.FC = () => {
+export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const { user, isPlusMember, plusExpiresAt, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen } =
     useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
+
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   if (!isPaywallOpen) return null;
 
@@ -69,6 +73,7 @@ export const PaywallModal: React.FC = () => {
   ];
 
   const handleStartTrial = () => {
+    if (isAndroid) return; // No external payment on Google Play
     setIsPaywallOpen(false);
     setIsUPIModalOpen(true);
   };
@@ -156,6 +161,13 @@ export const PaywallModal: React.FC = () => {
                   })}
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={onOpenPlan}
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+              >
+                Open MY SVJ PLAN
+              </button>
             </div>
           )}
 
@@ -196,6 +208,13 @@ export const PaywallModal: React.FC = () => {
                 </p>
                 <RedeemPlusCodeForm />
               </div>
+              <button
+                type="button"
+                onClick={onOpenPlan}
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+              >
+                Open MY SVJ PLAN
+              </button>
             </div>
           )}
 
@@ -277,7 +296,7 @@ export const PaywallModal: React.FC = () => {
                     Monthly
                   </div>
                   <div className="text-2xl font-anton text-white">
-                    ₹149
+                    ₹99
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / month</span>
                   </div>
                   <p className="text-[10px] font-mono text-[#8C8C90] mt-1">Billed every month</p>
@@ -299,11 +318,14 @@ export const PaywallModal: React.FC = () => {
                     Yearly
                   </div>
                   <div className="text-2xl font-anton text-white flex items-baseline gap-1">
-                    ₹999
+                    <span className="text-xs font-mono text-[#8C8C90] line-through font-normal">
+                      ₹1,200
+                    </span>
+                    ₹599
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / year</span>
                   </div>
                   <p className="text-[10px] font-mono text-emerald-400 mt-1 font-semibold">
-                    Save ₹689 vs monthly
+                    50% OFF — Save ₹600 vs monthly
                   </p>
                 </div>
               </div>
@@ -338,26 +360,63 @@ export const PaywallModal: React.FC = () => {
 
               {/* CTA & Guarantees */}
               <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleStartTrial}
-                  className="w-full py-4 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl shadow-[#C81E3A]/40 cursor-pointer"
-                >
-                  <span>Upgrade to SVJ Plus</span>
-                  <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                {isAndroid ? (
+                  <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 text-center space-y-2">
+                    <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
+                      In-app purchases are not available on Google Play. Visit{" "}
+                      <a
+                        href="https://svjfitness.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#C81E3A] underline"
+                      >
+                        svjfitness.com
+                      </a>{" "}
+                      to upgrade to SVJ Plus.
+                    </p>
+                    <p className="text-[10px] font-mono text-[#8C8C90] mt-2">
+                      Already paid? Contact support to activate your subscription:
+                    </p>
+                    <a
+                      href={buildWhatsAppUrl(
+                        buildPlusActivationMessage({
+                          name: user.name,
+                          email: user.email,
+                          id: user.id,
+                        }),
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 transition-colors mt-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                      </svg>
+                      Contact SVJ Support on WhatsApp
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleStartTrial}
+                      className="w-full py-4 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl shadow-[#C81E3A]/40 cursor-pointer"
+                    >
+                      <span>Upgrade to SVJ Plus</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </motion.button>
 
-                <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    Secure Payment
-                  </span>
-                  <span>•</span>
-                  <span>Instant Access</span>
-                  <span>•</span>
-                  <span>Cancel Anytime</span>
-                </div>
+                    <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
+                      <span className="flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        Secure Payment
+                      </span>
+                      <span>•</span>
+                      <span>Cancel Anytime</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

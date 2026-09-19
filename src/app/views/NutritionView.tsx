@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Apple, Plus, Trash2, Flame, Target, CalendarDays, Check } from "lucide-react";
+import { Apple, Plus, Trash2, Flame, Target, CalendarDays, Check, Scale, X } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { MealEntry } from "../types";
+import { BodyProfileView } from "./BodyProfileView";
 
 const MEAL_TYPES: MealEntry["mealType"][] = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
@@ -14,6 +15,8 @@ export const NutritionView: React.FC = () => {
   const [mealType, setMealType] = useState<MealEntry["mealType"]>("Breakfast");
   const [goalDraft, setGoalDraft] = useState(String(calorieGoal));
   const [editingGoal, setEditingGoal] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [showBodyProfile, setShowBodyProfile] = useState(false);
 
   const todayKey = new Date().toDateString();
 
@@ -60,7 +63,12 @@ export const NutritionView: React.FC = () => {
     e.preventDefault();
     const kcal = parseInt(calories, 10);
     if (!name.trim() || !kcal || kcal <= 0) return;
-    logMeal(name, kcal, mealType);
+    const result = logMeal(name, kcal, mealType);
+    if (!result.ok) {
+      setSaveError(result.error);
+      return;
+    }
+    setSaveError(null);
     setName("");
     setCalories("");
   };
@@ -82,6 +90,33 @@ export const NutritionView: React.FC = () => {
           <p className="text-xs text-[#8C8C90]">Log your intake. Consistency earns XP.</p>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowBodyProfile(true)}
+        className="w-full rounded-2xl border border-[#C81E3A]/35 bg-[#C81E3A]/10 p-4 text-left transition-colors hover:bg-[#C81E3A]/15"
+      >
+        <span className="flex items-center gap-2 font-anton text-sm uppercase tracking-wide text-white">
+          <Scale className="h-4 w-4 text-[#C81E3A]" /> Body profile & nutrition goals
+        </span>
+        <span className="mt-1 block text-xs text-[#8C8C90]">
+          Calculate and update your BMI, calorie target and protein target.
+        </span>
+      </button>
+
+      {showBodyProfile && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-24 pt-14">
+          <BodyProfileView />
+          <button
+            type="button"
+            onClick={() => setShowBodyProfile(false)}
+            className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            aria-label="Close body profile"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
       {/* Daily total ring / bar */}
       <div className="rounded-2xl bg-[#141416] border border-white/10 p-5">
@@ -158,12 +193,14 @@ export const NutritionView: React.FC = () => {
 
         <div className="flex gap-2">
           <input
+            aria-label="Meal name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Grilled chicken & rice"
-            className="flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
           <input
+            aria-label="Calories"
             type="number"
             inputMode="numeric"
             value={calories}
@@ -203,6 +240,11 @@ export const NutritionView: React.FC = () => {
           First log each day: <span className="text-[#C81E3A] font-medium">+60 XP</span>, Discipline
           +2, Physical +1. Extra entries +10 XP.
         </p>
+        {saveError && (
+          <p role="alert" className="text-sm text-rose-300">
+            {saveError}
+          </p>
+        )}
       </form>
 
       {/* Today's entries */}

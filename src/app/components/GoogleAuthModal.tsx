@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle2, ShieldCheck, Mail, Crown, LogOut, Loader2 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { AvatarImage } from "./AvatarImage";
 
 export const GoogleAuthModal: React.FC = () => {
-  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } =
-    useSVJ();
+  const { user, isGoogleAuthModalOpen, setIsGoogleAuthModalOpen, logoutGmail } = useSVJ();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [succeeded, setSucceeded] = useState(false);
@@ -105,9 +105,9 @@ export const GoogleAuthModal: React.FC = () => {
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
                   <div className="flex items-center gap-3">
-                    <img
+                    <AvatarImage
                       src={user.avatar}
-                      alt={user.name}
+                      name={user.name}
                       className="w-12 h-12 rounded-xl object-cover border-2 border-[#C81E3A]"
                     />
                     <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ export const GoogleAuthModal: React.FC = () => {
                         <span className="font-bold text-white text-sm truncate">{user.name}</span>
                         {user.isFounder && (
                           <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-                            <Crown className="w-3 h-3" /> Founder Owner
+                            <Crown className="w-3 h-3" /> Founder
                           </span>
                         )}
                       </div>

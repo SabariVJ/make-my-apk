@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { showPrivacyChoices } from "../components/NativeBannerAd";
 import { motion } from "motion/react";
 import {
   User,
@@ -21,39 +23,52 @@ import {
   BookOpen,
   X,
   LogOut,
+  AlertCircle,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSVJ } from "../context/SVJContext";
 import { MembershipCard } from "../components/MembershipCard";
-import { EVOLUTION_THEMES } from "../components/DarkCinematicOnboardingModal";
 import { AvatarFrame } from "../components/AvatarFrame";
+import { AvatarImage } from "../components/AvatarImage";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
+import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
 
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
-  const [activeTab, setActiveTab] = useState<"analytics" | "badges" | "achievements">("analytics");
-  const { friends, loading: friendsLoading } = useFriends();
+  const [activeTab, setActiveTab] = useState<"analytics">("analytics");
+  const [showTransformation, setShowTransformation] = useState(false);
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const isAndroid = Capacitor.getPlatform() === "android";
+  const { friends, loading: friendsLoading } = useFriends(!isAndroid);
 
   const handleSignOut = async () => {
+    if (signingOut) return; // a second click must never submit twice
     setSigningOut(true);
+    setSignOutError(null);
     try {
       await queryClient.cancelQueries();
       queryClient.clear();
       await supabase.auth.signOut();
       // TrialGate listens to onAuthStateChange and swaps in the login screen.
+      setShowLogoutDialog(false);
+    } catch (err) {
+      // Failure keeps the session: surface a readable message with retry.
+      setSignOutError(
+        err instanceof Error
+          ? err.message
+          : "Could not sign out. Check your connection and try again.",
+      );
     } finally {
       setSigningOut(false);
     }
   };
-
-  const currentTheme =
-    EVOLUTION_THEMES.find((t) => t.id === user.evolutionTheme) || EVOLUTION_THEMES[0];
 
   return (
     <div className="space-y-6 pb-24">
@@ -125,126 +140,58 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Digital Membership Card Section */}
-      <MembershipCard user={user} />
+      <MembershipCard user={user} /> {/* Friends List — hidden on Android Play release */}
+      {!isAndroid && friends.length > 0 && (
+        <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#C81E3A]" /> Friends
+            </h2>
+            <span className="text-[10px] font-mono text-[#8C8C90]">{friends.length} connected</span>
+          </div>
 
-      {/* Friends List */}
-      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#C81E3A]" /> Friends
-          </h2>
-          <span className="text-[10px] font-mono text-[#8C8C90]">{friends.length} connected</span>
-        </div>
-
-        {friendsLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin text-[#C81E3A]" />
-        ) : friends.length === 0 ? (
-          <p className="text-xs font-mono text-[#8C8C90]">
-            No friends yet — head to Community → Friends to search members and send requests.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {friends.map((f) => (
-              <div
-                key={f.friendship_id}
-                className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
-              >
-                {f.avatar_url ? (
-                  <img
+          {friendsLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-[#C81E3A]" />
+          ) : friends.length === 0 ? (
+            <p className="text-xs font-mono text-[#8C8C90]">
+              No friends yet — head to Community → Friends to search members and send requests.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {friends.map((f) => (
+                <div
+                  key={f.friendship_id}
+                  className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
+                >
+                  <AvatarImage
                     src={f.avatar_url}
-                    alt={f.username ?? "friend"}
+                    name={f.username ?? f.display_name}
                     className="w-10 h-10 rounded-xl object-cover border border-white/10"
                   />
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-[#17171A] border border-white/10 flex items-center justify-center font-anton text-white uppercase">
-                    {(f.username ?? f.display_name ?? "V").slice(0, 1)}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-anton text-sm text-white uppercase truncate">
-                    @{f.username ?? f.display_name ?? "Voyager"}
-                  </p>
-                  <div className="flex items-center gap-3 text-[10px] font-mono mt-0.5">
-                    <span className="text-[#C81E3A] flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> {f.total_xp.toLocaleString()} XP
-                    </span>
-                    <span className="text-orange-400 flex items-center gap-1">
-                      <Flame className="w-3 h-3" /> {f.current_streak}d
-                    </span>
+                  <div className="min-w-0">
+                    <p className="font-anton text-sm text-white uppercase truncate">
+                      @{f.username ?? f.display_name ?? "Voyager"}
+                    </p>
+                    <div className="flex items-center gap-3 text-[10px] font-mono mt-0.5">
+                      <span className="text-[#C81E3A] flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> {f.total_xp.toLocaleString()} XP
+                      </span>
+                      <span className="text-orange-400 flex items-center gap-1">
+                        <Flame className="w-3 h-3" /> {f.current_streak}d
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Navigation Sub-Tabs */}
-      <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
-        <button
-          onClick={() => setActiveTab("analytics")}
-          className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === "analytics"
-              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
-              : "text-[#8C8C90] hover:text-white"
-          }`}
-        >
-          XP Analytics
-        </button>
-        <button
-          onClick={() => setActiveTab("badges")}
-          className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === "badges"
-              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
-              : "text-[#8C8C90] hover:text-white"
-          }`}
-        >
-          Badges ({user.badges.filter((b) => b.unlocked).length})
-        </button>
-        <button
-          onClick={() => setActiveTab("achievements")}
-          className={`flex-1 py-2 rounded-xl font-semibold transition-all cursor-pointer ${
-            activeTab === "achievements"
-              ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
-              : "text-[#8C8C90] hover:text-white"
-          }`}
-        >
-          Achievements
-        </button>
-      </div>
-
-      {activeTab === "analytics" && (
-        /* ANALYTICS TAB */
-        <div className="space-y-4">
-          {/* Evolution Theme Banner Card */}
-          <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-5 overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#C81E3A] flex-shrink-0">
-                <img
-                  src={currentTheme.image}
-                  alt={currentTheme.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{currentTheme.icon}</span>
-                  <span className="font-anton text-xl text-white uppercase tracking-wider">
-                    {currentTheme.name}
-                  </span>
-                </div>
-                <div className="text-[10px] font-mono text-[#C81E3A] uppercase font-bold tracking-wider">
-                  {currentTheme.tagline}
-                </div>
-                <p className="text-xs text-[#8C8C90] mt-1 font-inter italic">
-                  "{currentTheme.desc}"
-                </p>
-              </div>
+              ))}
             </div>
-          </div>
-
+          )}
+        </div>
+      )}
+      {activeTab === "analytics" && (
+        /* ANALYTICS TAB — the fabricated emoji badge grid and achievement list
+            that lived beside it were removed with their tabs. */
+        <div className="space-y-4">
           {/* 6 Dynamic Character Stat Attributes Hexagon Radar */}
           <div className="p-6 rounded-3xl bg-[#17171A] border border-white/10 space-y-4 shadow-2xl overflow-hidden relative">
             <div className="flex items-center justify-between text-xs font-mono">
@@ -258,7 +205,8 @@ export const ProfileView: React.FC = () => {
                 </span>
               </div>
               <span className="text-[#C81E3A] font-bold">
-                LEVEL {user.level || 1} ({user.leagueRank || "APPRENTICE I"})
+                LEVEL {user.level || 1}
+                {!isAndroid && <> ({user.leagueRank || "APPRENTICE I"})</>}
               </span>
             </div>
 
@@ -389,87 +337,149 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
-
-      {activeTab === "badges" && (
-        /* BADGES TAB */
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {user.badges.map((badge) => (
-            <div
-              key={badge.id}
-              className={`p-4 rounded-2xl border text-center space-y-2 ${
-                badge.unlocked
-                  ? "bg-[#17171A] border-white/10"
-                  : "bg-[#17171A]/40 border-white/5 opacity-50"
-              }`}
-            >
-              <div className="text-3xl">{badge.icon}</div>
-              <div className="font-anton text-sm text-white uppercase">{badge.name}</div>
-              <p className="text-[10px] text-[#8C8C90] font-inter line-clamp-2">
-                {badge.description}
-              </p>
-              <span
-                className={`inline-block px-2 py-0.5 rounded text-[9px] font-mono ${
-                  badge.unlocked
-                    ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800"
-                    : "bg-zinc-900 text-zinc-500"
-                }`}
-              >
-                {badge.unlocked ? "Unlocked" : "Locked"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === "achievements" && (
-        /* ACHIEVEMENTS TAB */
-        <div className="space-y-3">
-          {user.achievements.map((ach) => (
-            <div
-              key={ach.id}
-              className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
-                ach.unlocked
-                  ? "bg-[#17171A] border-white/10"
-                  : "bg-[#17171A]/40 border-white/5 opacity-60"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-2xl p-2.5 rounded-xl bg-[#0B0B0C] border border-white/10">
-                  {ach.icon}
-                </div>
-                <div>
-                  <h3 className="font-anton text-sm text-white uppercase">{ach.title}</h3>
-                  <p className="text-xs text-[#8C8C90] font-inter">{ach.description}</p>
-                  {ach.unlockedAt && (
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      Unlocked on {ach.unlockedAt}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <span className="font-mono text-xs font-bold text-[#C81E3A]">
-                  +{ach.xpReward} XP
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Account actions */}
-      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4">
+      {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Progress</h3>
         <button
           type="button"
-          onClick={handleSignOut}
+          onClick={() => setShowTransformation(true)}
+          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          <BarChart3 className="w-4 h-4" />
+          Transformation Report
+        </button>
+      </div>
+      {/* Transformation Report overlay */}
+      {showTransformation && (
+        <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
+          <TransformationReportView />
+          <button
+            type="button"
+            onClick={() => setShowTransformation(false)}
+            className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {/* Account actions */}
+      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+        {isAndroid && (
+          <button
+            type="button"
+            onClick={() => void showPrivacyChoices()}
+            className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Shield className="w-4 h-4" />
+            Privacy Choices
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setSignOutError(null);
+            setShowLogoutDialog(true);
+          }}
           disabled={signingOut}
           className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
         >
           <LogOut className="w-4 h-4" />
-          {signingOut ? "Signing out…" : "Log out"}
+          Log out
         </button>
+        <a
+          href="mailto:sabarivj777@gmail.com?subject=SVJ%20Support%20%2F%20Account%20Verification"
+          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          <Mail className="w-4 h-4" />
+          Email Us
+        </a>
+        <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
+          Opens a draft addressed to SVJ Support. You choose what to paste and send.
+        </p>
+        <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
+          <a href="/delete-account" className="text-[#C81E3A] hover:text-[#A0182E]">
+            Delete Account
+          </a>
+          <span>•</span>
+          <a href="/privacy" className="hover:text-white">
+            Privacy
+          </a>
+          <span>•</span>
+          <a href="/terms" className="hover:text-white">
+            Terms
+          </a>
+        </div>
       </div>
+      {/* Log out confirmation dialog (in-app, SVJ-styled) */}
+      {showLogoutDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-dialog-title"
+            className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#17171A] p-6 shadow-2xl"
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-2">
+                  <LogOut className="h-4 w-4 text-[#E62846]" />
+                </div>
+                <h2
+                  id="logout-dialog-title"
+                  className="font-anton text-lg uppercase tracking-wide text-white"
+                >
+                  Log out of SVJ?
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLogoutDialog(false)}
+                disabled={signingOut}
+                aria-label="Cancel logout"
+                className="rounded-full bg-white/5 p-1.5 text-[#8C8C90] transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-xs font-inter leading-relaxed text-[#B8B8C0]">
+              You will be signed out of SVJ on this device. Your account, cloud progress and profile
+              photo remain safe — nothing is deleted. Sign back in anytime to continue where you
+              left off.
+            </p>
+            {signOutError && (
+              <div
+                role="alert"
+                className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-mono text-rose-300"
+              >
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{signOutError}</span>
+              </div>
+            )}
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutDialog(false)}
+                disabled={signingOut}
+                className="flex-1 rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                disabled={signingOut}
+                className="flex-1 rounded-xl bg-[#C81E3A] py-2.5 font-anton text-xs uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {signingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {signingOut ? "Signing out…" : "Log out"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sparkles, Flame, Crown, Shield } from "lucide-react";
+import { useAvatarUrl } from "../hooks/useAvatarUrl";
+import { avatarInitials } from "@/lib/avatar";
 
 interface AvatarFrameProps {
-  src: string;
+  src?: string | null;
   alt?: string;
   frameId?: string;
   size?: "sm" | "md" | "lg" | "xl";
@@ -22,6 +24,14 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
   showBadge = false,
   isFounder = false,
 }) => {
+  // Resolve private-bucket storage refs to signed URLs at render time.
+  const resolvedSrc = useAvatarUrl(src);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
   const sizeClasses = {
     sm: "w-8 h-8 rounded-lg",
     md: "w-10 h-10 rounded-xl",
@@ -72,7 +82,19 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
       <div
         className={`relative overflow-hidden bg-[#17171A] ${sizeClasses} ${frameGlowClass} transition-all duration-300`}
       >
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
+        {resolvedSrc && !failed ? (
+          <img
+            src={resolvedSrc}
+            alt={alt}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center font-anton text-white uppercase">
+            {avatarInitials(alt)}
+          </div>
+        )}
       </div>
 
       {showBadge && isFounder && (

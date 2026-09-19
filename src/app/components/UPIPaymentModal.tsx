@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -14,26 +15,71 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
+import {
+  resolveWhatsAppUrl,
+  buildWhatsAppAppUrl,
+  buildWhatsAppWebUrl,
+  buildActivationMailto,
+  buildPaymentConfirmationMessage,
+  formatWhatsAppNumber,
+  SVJ_WHATSAPP_NUMBER,
+} from "@/lib/whatsapp";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
+  const [showContactFallback, setShowContactFallback] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [numberCopied, setNumberCopied] = useState(false);
 
-  if (!isUPIModalOpen) return null;
+  const supportMessage = buildPaymentConfirmationMessage();
+  const isNative = Capacitor.isNativePlatform();
+  const supportUrl = resolveWhatsAppUrl(supportMessage, isNative);
+  const appUrl = buildWhatsAppAppUrl(supportMessage);
+  const webUrl = buildWhatsAppWebUrl(supportMessage);
+  const mailtoUrl = buildActivationMailto(supportMessage);
+
+  if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 
   const handleSimulatePayment = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      setIsUPIModalOpen(false);
-      window.open(
-        `https://wa.me/919790833416?text=${encodeURIComponent("Hi! I've paid for SVJ Plus. Please activate my account.")}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-    }, 1500);
+      // Never auto-navigate on the web: popups and WhatsApp web can be blocked
+      // by extensions, filters or embedded frames, leaving a dead tab.
+      setShowContactFallback(true);
+      if (isNative) {
+        try {
+          void import("@capacitor/browser").then(({ Browser }) =>
+            Browser.open({ url: supportUrl }),
+          );
+        } catch {
+          /* fallback panel already shown */
+        }
+      }
+    }, 900);
+  };
+
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(supportMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const handleCopyNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(`+${SVJ_WHATSAPP_NUMBER}`);
+      setNumberCopied(true);
+      setTimeout(() => setNumberCopied(false), 2000);
+    } catch {
+      setNumberCopied(false);
+    }
   };
 
   return (
@@ -180,7 +226,7 @@ export const UPIPaymentModal: React.FC = () => {
                   className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <span>Opening WhatsApp...</span>
+                    <span>Preparing contact options...</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
@@ -189,6 +235,54 @@ export const UPIPaymentModal: React.FC = () => {
                   )}
                 </motion.button>
               </div>
+
+              {showContactFallback && (
+                <div className="mt-3 p-3 rounded-xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
+                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                    Send us your payment details to activate SVJ Plus:
+                  </p>
+                  <a
+                    href={isNative ? supportUrl : appUrl}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    Open WhatsApp app
+                  </a>
+                  <a
+                    href={webUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Open in browser instead
+                  </a>
+                  <button
+                    onClick={handleCopyMessage}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
+                  >
+                    {copied ? "Message copied" : "Copy verification message"}
+                  </button>
+                  <button
+                    onClick={handleCopyNumber}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                  >
+                    {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
+                  </button>
+                  <a
+                    href={mailtoUrl}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Email us instead
+                  </a>
+                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                    If WhatsApp doesn&apos;t open, message{" "}
+                    <span className="font-mono text-white select-all">
+                      {formatWhatsAppNumber()}
+                    </span>{" "}
+                    from your phone with the copied text.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

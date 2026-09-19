@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 27-28: inherit shared colors and keep light icons on the dark navigation bar. -->
+    <style name="AppTheme" parent="Base.AppTheme">
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Base.AppTheme.NoActionBar">
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

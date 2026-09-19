@@ -127,6 +127,7 @@ export const SixtyDayChallengeView: React.FC = () => {
       setReflection("");
       setSelectedDay(null);
       queryClient.invalidateQueries({ queryKey: ["sixty-challenge"] });
+      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
       // XP is only applied client-side when the SERVER confirms it granted XP
       // for this completion (lastGrantedXp > 0). Replays/double-clicks return 0
       // and never touch the XP counters — exactly-once by construction.

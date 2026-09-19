@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Flame,
@@ -14,15 +15,45 @@ import {
   Sparkles,
   Filter,
   ChevronDown,
+  Pencil,
+  ClipboardCheck,
+  Loader2,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { useActivityOptional } from "../context/ActivityContext";
+import { TaskEditorDialog } from "../components/TaskEditorDialog";
+import { EarnPlusCard } from "../components/EarnPlusCard";
+import { ActivitySummaryCard } from "../components/ActivitySummaryCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
+import {
+  getPersonalizedChallenges,
+  refreshPersonalizedChallenges,
+  completePersonalizedTask,
+} from "@/lib/challenge-engine.server";
+import {
+  getAssessmentEntryState,
+  getUserStats,
+  type AssessmentEntryState,
+  type UserStatsData,
+} from "@/lib/personalization.functions";
+import { AssessmentView } from "./AssessmentView";
 
-export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOpenSixtyDay }) => {
-  const { challenges, toggleChallenge, addCustomChallenge, removeChallenge, user, leaderboard } =
-    useSVJ();
+export const ChallengesView: React.FC<{
+  onOpenSixtyDay?: () => void;
+  onOpenEarnPlus?: () => void;
+  onOpenActivity?: () => void;
+}> = ({ onOpenSixtyDay, onOpenEarnPlus, onOpenActivity }) => {
+  const {
+    challenges,
+    toggleChallenge,
+    addCustomChallenge,
+    updateCustomChallenge,
+    removeChallenge,
+    user,
+    leaderboard,
+  } = useSVJ();
 
   // Fetch server-authoritative challenge state to hide 60-Day CTA when completed
   const callGetState = useServerFn(getChallengeState);
@@ -41,6 +72,225 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
   const sixtyDayCompleted = sixtyDayQuery.data?.status === "completed";
   const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
+  const [showAssessment, setShowAssessment] = useState(false);
+  const editorTrigger = useRef<HTMLButtonElement | null>(null);
+
+  // Fetch personalized challenges from the server when assessment data exists
+  const callGetPersonalized = useServerFn(getPersonalizedChallenges);
+  const callRefreshPersonalized = useServerFn(refreshPersonalizedChallenges);
+  const callGetAssessmentEntryState = useServerFn(getAssessmentEntryState);
+  const callGetUserStats = useServerFn(getUserStats);
+  const personalizationQuery = useQuery<AssessmentEntryState>({
+    queryKey: ["assessment-entry-state"],
+    queryFn: () => callGetAssessmentEntryState({}) as Promise<AssessmentEntryState>,
+    retry: false,
+  });
+
+  useEffect(() => {
+    const saved = personalizationQuery.data;
+    if (saved?.shouldAutoOpen) {
+      setShowAssessment(true);
+    }
+  }, [personalizationQuery.data]);
+
+  const [refreshState, setRefreshState] = useState<
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "cooldown"; remainingMs: number }
+    | { status: "error"; message: string }
+    | { status: "success" }
+  >({ status: "idle" });
+
+  const personalizedQuery = useQuery<{
+    challenges: Array<{
+      id: string;
+      title: string;
+      description: string;
+      category: string;
+      difficulty: string;
+      xp: number;
+      durationMinutes: number;
+      status?: string;
+      completed?: boolean;
+      completedAt?: string | null;
+    }>;
+    focusAreas: string[];
+    reason: string;
+  } | null>({
+    queryKey: ["personalized-challenges"],
+    queryFn: async () => {
+      try {
+        return (await callGetPersonalized({})) as {
+          challenges: Array<{
+            id: string;
+            title: string;
+            description: string;
+            category: string;
+            difficulty: string;
+            xp: number;
+            durationMinutes: number;
+          }>;
+          focusAreas: string[];
+          reason: string;
+        };
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  const handleRefreshPersonalized = async () => {
+    setRefreshState({ status: "loading" });
+    try {
+      const result = (await callRefreshPersonalized({})) as {
+        ok: boolean;
+        cooldownRemainingMs: number;
+        challenges?: Array<{
+          id: string;
+          title: string;
+          description: string;
+          category: string;
+          difficulty: string;
+          xp: number;
+          durationMinutes: number;
+        }>;
+        focusAreas?: string[];
+        reason?: string;
+        error?: string;
+      };
+
+      if (!result.ok) {
+        if (result.cooldownRemainingMs > 0) {
+          setRefreshState({
+            status: "cooldown",
+            remainingMs: result.cooldownRemainingMs,
+          });
+        } else {
+          setRefreshState({ status: "error", message: result.error ?? "Refresh failed." });
+        }
+        return;
+      }
+
+      // Inject the refreshed set directly into the query cache so the UI
+      // updates immediately. The new IDs differ from the previous set, so the
+      // client merge layer (which deduplicates by title) will not re-add stale
+      // tasks.
+      // @ts-expect-error TanStack Query v5 exposes setData on the query observer,
+      // which is not surfaced through the shared UseQueryResult type in this
+      // project's generated types.
+      personalizedQuery.setData(
+        {
+          challenges: result.challenges ?? [],
+          focusAreas: result.focusAreas ?? [],
+          reason: result.reason ?? "",
+        },
+        { updatedAt: Date.now() },
+      );
+      // Also reload in the background so the cache is reconciled with the
+      // server after the refresh timestamp has been recorded.
+      void personalizedQuery.refetch({ cancelRefetch: false });
+      setRefreshState({ status: "success" });
+    } catch {
+      setRefreshState({ status: "error", message: "Could not refresh personalized tasks." });
+    }
+  };
+
+  const statsQuery = useQuery<UserStatsData | null>({
+    queryKey: ["user-stats"],
+    queryFn: async () => {
+      try {
+        return (await callGetUserStats({})) as UserStatsData | null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  const radarStats = statsQuery.data
+    ? {
+        physical: statsQuery.data.fitness,
+        ambition: statsQuery.data.confidence,
+        intellect: statsQuery.data.consistency,
+        mental: statsQuery.data.focus,
+        social: statsQuery.data.social,
+        discipline: statsQuery.data.discipline,
+      }
+    : user.stats;
+
+  // Merge personalized SERVER assignments with user's existing challenges.
+  // Personalized rows carry stable database IDs and server completion state,
+  // so they are never routed through the local toggleChallenge() path.
+  const displayChallenges = React.useMemo(() => {
+    const personalized = personalizedQuery.data?.challenges;
+    if (!personalized || personalized.length === 0) return challenges;
+
+    const personalizedChallenges: DailyChallenge[] = personalized.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      category: p.category as ChallengeCategory,
+      difficulty: p.difficulty as DailyChallenge["difficulty"],
+      xp: p.xp,
+      durationMinutes: p.durationMinutes,
+      completed: p.completed ?? false,
+      isCustom: false,
+      isPersonalized: true,
+    }));
+
+    // Deduplicate: keep personalized + user's custom challenges, skip duplicates by title
+    const personalizedTitles = new Set(personalizedChallenges.map((c) => c.title));
+    const userCustom = challenges.filter((c) => c.isCustom || !personalizedTitles.has(c.title));
+
+    return [...personalizedChallenges, ...userCustom];
+  }, [challenges, personalizedQuery.data]);
+
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const callCompletePersonalized = useServerFn(completePersonalizedTask);
+  const queryClient = useQueryClient();
+
+  const handleToggle = async (id: string) => {
+    // Personalized assignments complete through the server-validated RPC —
+    // never through the local toggleChallenge()/applyActivityXp path. This
+    // removes the false "This task is no longer available" error (their IDs
+    // are not local challenge IDs) and keeps XP server-controlled.
+    if (personalizedQuery.data?.challenges?.some((p) => p.id === id)) {
+      if (completingId) return;
+      setCompletingId(id);
+      setActionError(null);
+      try {
+        const result = (await callCompletePersonalized({ data: { assignmentId: id } })) as {
+          ok: boolean;
+          xpAwarded?: number;
+          statChanges?: Record<string, number>;
+          error?: string;
+        };
+        if (!result.ok) {
+          setActionError(result.error ?? "Could not complete the task.");
+          return;
+        }
+        // Refetch so the checked state comes from SERVER assignment state.
+        await personalizedQuery.refetch();
+        // Invalidate profile/XP + stats so Character Matrix, total XP and
+        // XP Today refresh from ledger-confirmed data. No optimistic writes.
+        void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+        void queryClient.invalidateQueries({ queryKey: ["profile"] });
+      } catch {
+        setActionError("Could not complete the task. Please retry.");
+      } finally {
+        setCompletingId(null);
+      }
+      return;
+    }
+
+    const result = toggleChallenge(id);
+    setActionError(result.ok ? null : result.error);
+  };
 
   const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalXP - a.totalXP);
   const myIndexInSorted = sortedLeaderboard.findIndex(
@@ -48,21 +298,33 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
   );
   const userRank = myIndexInSorted !== -1 ? myIndexInSorted + 1 : sortedLeaderboard.length;
 
-  // New Custom Challenge form state
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState<ChallengeCategory>("Physical");
-  const [newDifficulty, setNewDifficulty] = useState<DailyChallenge["difficulty"]>("Medium");
-  const [newXP, setNewXP] = useState(80);
-
   const filteredChallenges =
     selectedCategory === "All"
-      ? challenges
-      : challenges.filter((c) => c.category === selectedCategory);
+      ? displayChallenges
+      : displayChallenges.filter((c) => c.category === selectedCategory);
 
-  const completedCount = challenges.filter((c) => c.completed).length;
-  const totalCount = challenges.length;
+  const completedCount = displayChallenges.filter((c) => c.completed).length;
+  const totalCount = displayChallenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const todayXP = challenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  const todayXP = displayChallenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  // Automatic step-milestone XP + server-verified activity XP count toward
+  // the daily totals too. Server activity XP is the authoritative, capped,
+  // evidence-backed figure from the database — never device-local math.
+  const activity = useActivityOptional();
+  // Personalized-task XP comes only from the ledger; the local XP math above
+  // counts personalized rows too, so strip them out here to avoid double
+  // counting, then add the authoritative ledger figure.
+  const personalizedLocalXp = displayChallenges
+    .filter((c) => c.isPersonalized && c.completed)
+    .reduce((acc, c) => acc + c.xp, 0);
+  const totalTodayXp =
+    todayXP -
+    personalizedLocalXp +
+    (activity?.xpEarnedToday ?? 0) +
+    (activity?.serverActivityXpToday ?? 0) +
+    (activity?.personalizedXpToday ?? 0);
+
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const categories: (ChallengeCategory | "All")[] = [
     "All",
@@ -72,14 +334,6 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
     "Mindset",
     "Nutrition",
   ];
-
-  const handleCreateCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    addCustomChallenge(newTitle.trim(), newCategory, newDifficulty, newXP);
-    setNewTitle("");
-    setIsAddModalOpen(false);
-  };
 
   const getDifficultyBadge = (diff: DailyChallenge["difficulty"]) => {
     switch (diff) {
@@ -96,6 +350,42 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
 
   return (
     <div className="space-y-6 pb-24">
+      {!personalizationQuery.isLoading &&
+        !personalizationQuery.data?.personalization?.assessmentCompleted && (
+          <button
+            type="button"
+            onClick={() => setShowAssessment(true)}
+            className="w-full rounded-3xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-5 text-left"
+          >
+            <span className="flex items-center gap-2 font-anton text-base uppercase tracking-wide text-white">
+              <ClipboardCheck className="h-5 w-5 text-[#C81E3A]" /> Complete Your SVJ Assessment
+            </span>
+            <span className="mt-1 block text-xs text-[#8C8C90]">
+              Personalize challenges around your goals, interests and improvement areas.
+            </span>
+          </button>
+        )}
+      {showAssessment && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C]">
+          <AssessmentView
+            onComplete={() => {
+              setShowAssessment(false);
+              void personalizationQuery.refetch();
+              void personalizedQuery.refetch();
+              void statsQuery.refetch();
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowAssessment(false)}
+            className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            aria-label="Close assessment"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+      {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} />}
       {/* 60-Day Gauntlet CTA — hidden when server confirms completion */}
       {onOpenSixtyDay && !sixtyDayCompleted && !sixtyDayQuery.isLoading && (
         <button
@@ -152,13 +442,13 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </div>
 
         {/* Progress Metrics Row */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className={`grid gap-3 mb-6 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
           <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
             <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
               <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
               XP Today
             </div>
-            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{todayXP}</div>
+            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
@@ -172,30 +462,35 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Global Rank
+          {!isAndroid && (
+            <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                Global Rank
+              </div>
+              <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
             </div>
-            <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
-          </div>
+          )}
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1.5 mb-6">
           <div className="flex justify-between text-xs font-mono text-[#8C8C90]">
             <span>Daily XP Goal</span>
-            <span>{todayXP} / 500 XP</span>
+            <span>{totalTodayXp} / 500 XP</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round((todayXP / 500) * 100))}%` }}
+              animate={{ width: `${Math.min(100, Math.round((totalTodayXp / 500) * 100))}%` }}
               transition={{ duration: 0.8 }}
               className="h-full rounded-full bg-gradient-to-r from-[#E62846] to-[#C81E3A]"
             />
           </div>
         </div>
+
+        {/* Compact live Activity card — automatic step counter summary */}
+        {onOpenActivity && <ActivitySummaryCard onOpen={onOpenActivity} />}
 
         {/* 6 Dynamic Attribute Stats Hexagon Radar */}
         <div className="border-t border-white/10 pt-4 space-y-3">
@@ -215,16 +510,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
           </div>
 
           <HexagonRadarChart
-            stats={
-              user.stats || {
-                physical: 93,
-                mental: 91,
-                social: 87,
-                intellect: 84,
-                discipline: 93,
-                ambition: 95,
-              }
-            }
+            stats={radarStats}
             level={user.level}
             onStatClick={(statKey) => {
               // Quick filter by clicked attribute's category!
@@ -263,13 +549,42 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={(event) => {
+            editorTrigger.current = event.currentTarget;
+            setEditingTask(null);
+            setIsAddModalOpen(true);
+          }}
           className="px-3.5 py-1.5 rounded-xl bg-[#17171A] hover:bg-white/10 text-white border border-white/10 text-xs font-mono font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 text-[#C81E3A]" />
           <span>Add Task</span>
         </button>
       </div>
+
+      {actionError && (
+        <p role="alert" className="text-sm text-rose-300">
+          {actionError}
+        </p>
+      )}
+
+      {/* Personalized challenge insight — only for users who have completed the assessment */}
+      {personalizationQuery.data?.personalization?.assessmentCompleted &&
+        personalizedQuery.data && (
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/20">
+            <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
+            <div className="flex-1">
+              <p className="text-[11px] font-mono text-[#8C8C90]">
+                <span className="text-[#C81E3A] font-bold">Personalized</span> —{" "}
+                {personalizedQuery.data.reason}
+              </p>
+            </div>
+            <RefreshButton
+              onClick={handleRefreshPersonalized}
+              refreshState={refreshState}
+              disabled={refreshState.status === "loading"}
+            />
+          </div>
+        )}
 
       {/* Challenges List */}
       <div className="space-y-3">
@@ -281,7 +596,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onClick={() => toggleChallenge(challenge.id)}
+              onClick={() => handleToggle(challenge.id)}
               className={`group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                 challenge.completed
                   ? "bg-[#17171A]/40 border-white/5 opacity-75"
@@ -290,7 +605,15 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
             >
               <div className="flex items-start gap-3.5">
                 {/* Custom Checkbox */}
-                <div
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={challenge.completed}
+                  aria-label={`Complete ${challenge.title}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleToggle(challenge.id);
+                  }}
                   className={`mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
@@ -298,7 +621,7 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
                   }`}
                 >
                   {challenge.completed && <CheckCircle2 className="w-4 h-4" />}
-                </div>
+                </button>
 
                 <div>
                   <div className="flex items-center gap-2">
@@ -341,6 +664,21 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
 
               {/* XP Value Pill */}
               <div className="flex items-center gap-2 shrink-0">
+                {challenge.isCustom && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      editorTrigger.current = event.currentTarget;
+                      setEditingTask(challenge);
+                      setIsAddModalOpen(true);
+                    }}
+                    aria-label={`Edit ${challenge.title}`}
+                    className="p-1.5 rounded-lg text-[#A6A6AD] hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#C81E3A]"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -367,121 +705,74 @@ export const ChallengesView: React.FC<{ onOpenSixtyDay?: () => void }> = ({ onOp
         </AnimatePresence>
       </div>
 
-      {/* Bonus Elite Mission */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-[#17171A] to-[#0B0B0C] border border-amber-500/30 flex items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs font-mono text-amber-400 font-bold uppercase mb-1">
-            <Sparkles className="w-4 h-4" />
-            Bonus Streak Multiplier
-          </div>
-          <p className="text-xs text-[#8C8C90]">
-            Complete all daily challenges to unlock +200 Bonus XP & maintain daily streak status.
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <span className="font-anton text-xl text-amber-400">+200 XP</span>
-        </div>
-      </div>
-
-      {/* Add Custom Challenge Modal */}
-      <AnimatePresence>
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-                <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                  Add Custom Task
-                </h2>
-                <button
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="p-1 rounded-full bg-white/5 text-[#8C8C90] hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateCustom} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                    Task Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. 100 Kettlebell Swings"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as ChallengeCategory)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
-                    >
-                      {categories
-                        .filter((c) => c !== "All")
-                        .map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-[#8C8C90] uppercase mb-1">
-                      Difficulty
-                    </label>
-                    <select
-                      value={newDifficulty}
-                      onChange={(e) => {
-                        const diff = e.target.value as DailyChallenge["difficulty"];
-                        setNewDifficulty(diff);
-                        setNewXP(
-                          diff === "Easy"
-                            ? 50
-                            : diff === "Medium"
-                              ? 80
-                              : diff === "Hard"
-                                ? 120
-                                : 180,
-                        );
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-xs focus:outline-none"
-                    >
-                      <option value="Easy">Easy (50 XP)</option>
-                      <option value="Medium">Medium (80 XP)</option>
-                      <option value="Hard">Hard (120 XP)</option>
-                      <option value="Elite">Elite (180 XP)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase cursor-pointer"
-                  >
-                    Add Task to Mission
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <TaskEditorDialog
+        open={isAddModalOpen}
+        task={editingTask}
+        onOpenChange={setIsAddModalOpen}
+        returnFocus={editorTrigger.current}
+        onSave={(fields) =>
+          editingTask
+            ? updateCustomChallenge(editingTask.id, fields)
+            : addCustomChallenge(fields.title, fields.category, fields.difficulty)
+        }
+      />
     </div>
   );
 };
+
+/** Minimal refresh control for the personalized task section.
+ *
+ * Only a Renewal / cooldown UI is shown. There is no "Retake Assessment" or
+ * infinite regeneration path — the server enforces the one-time assessment
+ * gate and the refresh cooldown.
+ */
+function RefreshButton({
+  onClick,
+  refreshState,
+  disabled,
+}: {
+  onClick: () => void;
+  refreshState: {
+    status: "idle" | "loading" | "cooldown" | "error" | "success";
+    remainingMs?: number;
+    message?: string;
+  };
+  disabled: boolean;
+}) {
+  const isCooldown = refreshState.status === "cooldown" && refreshState.remainingMs != null;
+  const cooldownLabel = isCooldown ? formatCooldown(refreshState.remainingMs!) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || refreshState.status === "loading" || isCooldown}
+      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold shrink-0 cursor-pointer transition-colors ${
+        disabled || refreshState.status === "loading"
+          ? "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#8C8C90] cursor-not-allowed"
+          : refreshState.status === "success"
+            ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+            : isCooldown
+              ? "bg-amber-500/15 border border-amber-500/30 text-amber-400 cursor-not-allowed"
+              : "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#C81E3A] hover:bg-[#C81E3A]/25"
+      }`}
+      aria-label={cooldownLabel ?? "Renew personalized tasks"}
+    >
+      {refreshState.status === "loading" && (
+        <Loader2 className="h-3 w-3 animate-spin inline-block" />
+      )}
+      {refreshState.status === "success" && "Renewed"}
+      {refreshState.status === "error" && "Error"}
+      {isCooldown && cooldownLabel}
+      {refreshState.status === "idle" && "Refresh"}
+    </button>
+  );
+}
+
+function formatCooldown(ms: number): string {
+  const seconds = Math.ceil(ms / 1000);
+  if (seconds < 60) return `Cooldown ${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `Cooldown ${minutes}m ${secs}s` : `Cooldown ${minutes}m`;
+}

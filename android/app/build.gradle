@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+// Kotlin is required only for the Health Connect bridge: the Health Connect
+// client's read APIs are coroutine-based.
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "app.lovable.svj"
@@ -16,8 +19,52 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
+            def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
+            def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+
+            def allPresent = keystorePath && keystorePassword && keyAlias && keyPassword
+            if (allPresent) {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Fail explicitly when signing credentials are missing so an
+            // unsigned release AAB is never silently produced.
+            signingConfig signingConfigs.release
+            def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
+            def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
+            def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+            def signingReady = keystorePath && keystorePassword && keyAlias && keyPassword
+            project.gradle.taskGraph.whenReady { graph ->
+                if (signingReady) return
+                // Match only the app project's release artifact tasks.
+                // Debug, help, sync, lint, install, test tasks must not require credentials.
+                // `task.path` is the fully-qualified task path (e.g. ':app:assembleRelease').
+                // Task has no `projectPath` property, so match on the supported
+                // `path` / `name` properties instead.
+                def needsReleaseSigning = graph.allTasks.any { task ->
+                    task.path.startsWith(':app:') &&
+                    (task.name ==~ /assembleRelease.*/ || task.name ==~ /bundleRelease.*/)
+                }
+                if (needsReleaseSigning) {
+                    throw new GradleException(
+                        'Release signing requires SVJ_KEYSTORE_PATH, SVJ_KEYSTORE_PASSWORD, ' +
+                        'SVJ_KEY_ALIAS, and SVJ_KEY_PASSWORD environment variables. ' +
+                        'Set them before building a release artifact.'
+                    )
+                }
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -40,6 +87,17 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Android's on-device Health Connect store (not a third-party service).
+    implementation "androidx.health.connect:connect-client:$healthConnectVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
+}
+
+// Match the module's Java 21 target so the Kotlin and Java compilations agree.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
 
 apply from: 'capacitor.build.gradle'

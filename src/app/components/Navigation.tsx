@@ -1,4 +1,5 @@
 import React from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import {
   Flame,
@@ -11,11 +12,15 @@ import {
   CalendarCheck,
   KeyRound,
   LogOut,
+  Gift,
+  Activity,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 
 export type ActiveTab =
   | "challenges"
+  | "activity"
+  | "earn"
   | "workouts"
   | "nutrition"
   | "community"
@@ -24,7 +29,9 @@ export type ActiveTab =
   | "plus"
   | "redeem"
   | "signout"
-  | "profile";
+  | "profile"
+  | "plan"
+  | "transform";
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -39,9 +46,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   restricted = false,
 }) => {
   const { user } = useSVJ();
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const allNavItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
+    { id: "activity", label: "Activity", icon: Activity },
     { id: "workouts", label: "Train", icon: Dumbbell },
     { id: "nutrition", label: "Fuel", icon: Apple },
     { id: "community", label: "Community", icon: Users },
@@ -51,21 +60,35 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  // Restricted shell: 60-Day Challenge, Redeem Code, Profile, Sign Out
+  // The free earning path must outlive the seven-day introductory trial.
   const restrictedNavItems: typeof allNavItems = [
+    { id: "earn", label: "Earn Plus", icon: Gift },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "redeem", label: "Redeem Code", icon: KeyRound },
     { id: "profile", label: "Profile", icon: User },
     { id: "signout", label: "Sign Out", icon: LogOut },
   ];
-  const navItems = restricted ? restrictedNavItems : allNavItems;
+  const navItems = restricted
+    ? restrictedNavItems
+    : allNavItems.filter((item) => {
+        // Android Play: hide Leaderboard (unfinished social claim)
+        if (isAndroid && item.id === "leaderboard") {
+          return false;
+        }
+        // Hide transform tab from nav — accessible only from Profile
+        if (item.id === "transform") {
+          return false;
+        }
+        return true;
+      });
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">
       <div className="max-w-2xl mx-auto flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive =
+            activeTab === item.id || (activeTab === "earn" && item.id === "challenges");
 
           return (
             <button

@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
+import { EngagementProvider } from "./context/EngagementContext";
+import { ActivityProvider } from "./context/ActivityContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
 import { ChallengesView } from "./views/ChallengesView";
+import { ActivityView } from "./views/ActivityView";
+import { EarnPlusView } from "./views/EarnPlusView";
 import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
 import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
+import { SvjPlanView } from "./views/SvjPlanView";
+import { TransformationReportView } from "./views/TransformationReportView";
 import { ProfileView } from "./views/ProfileView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
@@ -16,7 +23,6 @@ import { LevelUpModal } from "./components/LevelUpModal";
 import { UPIPaymentModal } from "./components/UPIPaymentModal";
 import { PaywallModal } from "./components/PaywallModal";
 import { FirstTimeOnboardingModal } from "./components/FirstTimeOnboardingModal";
-import { DarkCinematicOnboardingModal } from "./components/DarkCinematicOnboardingModal";
 import { GoogleAuthModal } from "./components/GoogleAuthModal";
 import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
@@ -51,12 +57,24 @@ const AppContent: React.FC<{
   locked?: boolean;
   lockEmail?: string | null;
 }> = ({ locked = false, lockEmail = null }) => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
+  const isAndroid = Capacitor.getPlatform() === "android";
+  // Android Play: prevent stale tabs (community/leaderboard hidden on native)
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (locked) return "sixty";
+    return "challenges";
+  });
 
   useEffect(() => {
     setShowTrialNotice(locked);
   }, [locked]);
+
+  // Android Play: reset hidden tabs if they somehow become active
+  useEffect(() => {
+    if (isAndroid && activeTab === "leaderboard") {
+      setActiveTab("challenges");
+    }
+  }, [activeTab, isAndroid]);
 
   const {
     user,
@@ -66,8 +84,7 @@ const AppContent: React.FC<{
     selectedMemberModal,
     setSelectedMemberModal,
     setIsPaywallOpen,
-    isDarkOnboardingOpen,
-    setIsDarkOnboardingOpen,
+    storageError,
   } = useSVJ();
   const queryClient = useQueryClient();
 
@@ -95,8 +112,14 @@ const AppContent: React.FC<{
     }
     if (tab === "plus") {
       setIsPaywallOpen(true);
-    } else if (locked && tab !== "sixty" && tab !== "redeem" && tab !== "profile") {
-      // Restricted shell: only sixty, redeem, and profile are allowed.
+    } else if (
+      locked &&
+      tab !== "sixty" &&
+      tab !== "redeem" &&
+      tab !== "profile" &&
+      tab !== "earn"
+    ) {
+      // Free reward missions remain available after the trial, not premium tabs.
       return;
     } else {
       setActiveTab(tab);
@@ -125,10 +148,20 @@ const AppContent: React.FC<{
                 Your 7-Day Trial Has Ended
               </h2>
               <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
-                Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a
-                reward code, manage your profile, or upgrade to SVJ Plus.
+                You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and
+                your profile, or view SVJ Plus membership details.
               </p>
               <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrialNotice(false);
+                    setActiveTab("earn");
+                  }}
+                  className="w-full rounded-xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
+                >
+                  Open Earn Plus
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -152,16 +185,29 @@ const AppContent: React.FC<{
         )}
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+          {storageError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+            >
+              {storageError}
+            </p>
+          )}
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">
             <p className="font-anton text-sm uppercase tracking-wider text-amber-300">
               Your 7-Day Trial Has Ended
             </p>
             <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
-              Full SVJ access is locked. You can still complete the 60-Day Challenge, redeem a
+              You can still use Earn Plus daily missions, complete the 60-Day Challenge, redeem a
               reward code, manage your profile or sign out.
             </p>
           </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "plan" && (
+            <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+          )}
+          {activeTab === "transform" && <TransformationReportView />}
+          {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
             <div className="space-y-4">
               <h2 className="font-anton text-xl uppercase tracking-wider text-white">
@@ -179,8 +225,13 @@ const AppContent: React.FC<{
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
 
         {/* Global Modals still available in restricted shell */}
-        <UPIPaymentModal />
-        <PaywallModal />
+        {!isAndroid && <UPIPaymentModal />}
+        <PaywallModal
+          onOpenPlan={() => {
+            setIsPaywallOpen(false);
+            setActiveTab("plan");
+          }}
+        />
         <EditProfileModal />
         <GoogleAuthModal />
 
@@ -197,14 +248,32 @@ const AppContent: React.FC<{
 
       {/* Main View Area */}
       <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
-        {activeTab === "challenges" && (
-          <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
+        {storageError && (
+          <p
+            role="alert"
+            className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+          >
+            {storageError}
+          </p>
         )}
+        {activeTab === "challenges" && (
+          <ChallengesView
+            onOpenSixtyDay={() => handleTabChange("sixty")}
+            onOpenEarnPlus={() => handleTabChange("earn")}
+            onOpenActivity={() => handleTabChange("activity")}
+          />
+        )}
+        {activeTab === "activity" && <ActivityView />}
+        {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
         {activeTab === "workouts" && <WorkoutView />}
         {activeTab === "nutrition" && <NutritionView />}
         {activeTab === "community" && <CommunityView />}
         {activeTab === "leaderboard" && <LeaderboardView />}
         {activeTab === "sixty" && <SixtyDayChallengeView />}
+        {activeTab === "plan" && (
+          <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+        )}
+        {activeTab === "transform" && <TransformationReportView />}
         {activeTab === "profile" && <ProfileView />}
       </main>
 
@@ -213,6 +282,12 @@ const AppContent: React.FC<{
         member={selectedMemberModal}
         onClose={() => setSelectedMemberModal(null)}
         onCompare={(member) => {
+          // Never route a self-comparison into the rivalry modal — the modal
+          // also guards, but the shared handler is the primary boundary.
+          if (member.id === user.id) {
+            setSelectedMemberModal(null);
+            return;
+          }
           setSelectedMemberModal(null);
           setComparingMember(member);
         }}
@@ -222,14 +297,15 @@ const AppContent: React.FC<{
 
       <EditProfileModal />
       <LevelUpModal />
-      <UPIPaymentModal />
-      <PaywallModal />
+      {!isAndroid && <UPIPaymentModal />}
+      <PaywallModal
+        onOpenPlan={() => {
+          setIsPaywallOpen(false);
+          setActiveTab("plan");
+        }}
+      />
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
-      <DarkCinematicOnboardingModal
-        isOpen={isDarkOnboardingOpen}
-        onClose={() => setIsDarkOnboardingOpen(false)}
-      />
 
       {/* Bottom Sticky Navigation Bar */}
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
@@ -253,7 +329,11 @@ export default function App() {
           isPlusMember={status?.isPlusMember ?? null}
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
-          <AppContent locked={status?.locked} lockEmail={status?.email} />
+          <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
+            <ActivityProvider userId={status?.userId ?? null}>
+              <AppContent locked={status?.locked} lockEmail={status?.email} />
+            </ActivityProvider>
+          </EngagementProvider>
         </SVJProvider>
       )}
     </TrialGate>

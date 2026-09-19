@@ -287,6 +287,16 @@ export const AuthScreen: React.FC = () => {
         >
           {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
         </button>
+
+        <div className="flex items-center justify-center gap-3 text-[10px] font-mono text-[#8C8C90]">
+          <a href="/privacy" className="hover:text-white">
+            Privacy
+          </a>
+          <span>•</span>
+          <a href="/terms" className="hover:text-white">
+            Terms
+          </a>
+        </div>
       </motion.div>
     </div>
   );

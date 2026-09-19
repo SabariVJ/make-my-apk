@@ -14,12 +14,28 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import { LeaderboardEntry } from "../types";
 import { AvatarFrame } from "../components/AvatarFrame";
+import { useFriends } from "../hooks/useFriends";
 
 export const LeaderboardView: React.FC = () => {
-  const { leaderboard, user, setComparingMember, setSelectedMemberModal } = useSVJ();
+  const { user, setComparingMember, setSelectedMemberModal } = useSVJ();
+  const { members } = useFriends();
   const [filter, setFilter] = useState<"total" | "weekly" | "monthly" | "streak">("total");
 
-  const sortedLeaderboard = [...leaderboard].sort((a, b) => {
+  const serverLeaderboard: LeaderboardEntry[] = members.map((member) => ({
+    id: member.id,
+    username: member.username || member.display_name || "member",
+    avatar: member.avatar_url || "",
+    totalXP: member.total_xp,
+    weeklyXP: 0,
+    monthlyXP: 0,
+    streak: member.current_streak,
+    rank: member.rank,
+    rankDelta: 0,
+    tier: "Initiate",
+    country: "",
+    bio: "",
+  }));
+  const sortedLeaderboard = [...serverLeaderboard].sort((a, b) => {
     if (filter === "weekly") return b.weeklyXP - a.weeklyXP;
     if (filter === "monthly") return b.monthlyXP - a.monthlyXP;
     if (filter === "streak") return b.streak - a.streak;

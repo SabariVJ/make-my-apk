@@ -114,7 +114,7 @@ class VjHealthConnectPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun checkPermissions(call: PluginCall) {
+    override fun checkPermissions(call: PluginCall) {
         val types = requestedTypes(call)
         scope.launch {
             call.resolve(permissionSnapshot(types))
@@ -122,17 +122,17 @@ class VjHealthConnectPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun requestPermissions(call: PluginCall) {
+    override fun requestPermissions(call: PluginCall) {
         val types = requestedTypes(call)
         val healthClient = client()
         if (healthClient == null) {
             // Nothing to prompt for when Health Connect is not installed.
-            call.resolve(permissionSnapshot(types))
+            scope.launch { call.resolve(permissionSnapshot(types)) }
             return
         }
         val permissions = types.mapNotNull { readPermissions[it] }.toSet()
         if (permissions.isEmpty()) {
-            call.resolve(permissionSnapshot(types))
+            scope.launch { call.resolve(permissionSnapshot(types)) }
             return
         }
         pendingPermissionTypes = types
@@ -144,7 +144,7 @@ class VjHealthConnectPlugin : Plugin() {
             )
         } catch (error: Throwable) {
             Log.w(TAG, "permission intent failed", error)
-            call.resolve(permissionSnapshot(types))
+            scope.launch { call.resolve(permissionSnapshot(types)) }
         }
     }
 

@@ -61,6 +61,28 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- Required Health Connect privacy/rationale declaration. Shown when the
+             user asks why SVJ needs health data; it reuses SVJ's own privacy page
+             via the app's existing deep-link scheme (app.lovable.svj://privacy). -->
+        <activity
+            android:name=".HealthPermissionsRationaleActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android 14+ routes the same rationale through VIEW_PERMISSION_USAGE. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".HealthPermissionsRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
     </application>
 
     <!-- Permissions -->
@@ -94,26 +116,4 @@
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
-
-    <!-- Required Health Connect privacy/rationale declaration. Shown when the
-         user asks why SVJ needs health data; it reuses SVJ's own privacy page
-         via the app's existing deep-link scheme (app.lovable.svj://privacy). -->
-    <activity
-        android:name=".HealthPermissionsRationaleActivity"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
-        </intent-filter>
-    </activity>
-
-    <!-- Android 14+ routes the same rationale through VIEW_PERMISSION_USAGE. -->
-    <activity-alias
-        android:name="ViewPermissionUsageActivity"
-        android:exported="true"
-        android:targetActivity=".HealthPermissionsRationaleActivity">
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
-            <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-        </intent-filter>
-    </activity-alias>
 </manifest>

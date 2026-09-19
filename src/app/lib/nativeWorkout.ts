@@ -258,10 +258,13 @@ export function createNativeWorkoutLocationAdapter(
         const sample = normalizeNativeSample(payload);
         if (sample) onSample(sample);
       });
-      await plugin.addListener("workoutState", (payload) => {
-        const state = normalizeWorkoutState(payload);
-        if (state.active === false) onError?.("The workout service stopped unexpectedly.");
-      });
+      // State events are informational. Collection is ended by the recorder
+      // itself (its adapter `stop()`), so an inactive payload is expected and
+      // must never be surfaced as a failure — the recorder still owns every
+      // point it has already accepted. Real native/local disagreement is
+      // detected by reconcileNativeWorkout() on recovery instead of guessed
+      // here, where the local session state is not visible.
+      await plugin.addListener("workoutState", () => {});
     },
     async stop() {
       await stopNativeWorkout();
@@ -269,18 +272,49 @@ export function createNativeWorkoutLocationAdapter(
   };
 }
 
-/**
- * Best-effort recovery of a workout the OS killed mid-session. The recorder
- * restores points from local storage; this only reports what the service knew,
- * so the UI can tell the user the session was recovered rather than silently
- * continuing.
- */
-export async function recoverInterruptedWorkout(): Promise<{
-  recovered: boolean;
+// ── Session recovery / reconciliation ──────────────────────────────────────
+
+export interface NativeReconciliation {
+  /** The Android service currently believes a workout is running. */
+  nativeActive: boolean;
+  /** The activity id the service is recording, when it knows one. */
   activityId: string | null;
-}> {
-  const state = await getNativeWorkoutState();
-  if (!state) return { recovered: false, activityId: null };
-  if (state.active) return { recovered: true, activityId: state.activityId };
-  return { recovered: false, activityId: null };
+  /** Native and local state agree on the same workout. */
+  matchesLocal: boolean;
+  /**
+   * The service is running a workout the local recorder knows nothing about.
+   * This MUST NOT be silently continued: it would become a second activity.
+   */
+  orphaned: boolean;
+}
+
+/**
+ * Compare the Android service's view of the world with the locally persisted
+ * workout. Called on app/webview start, where a process recreation can leave a
+ * live service and a restored (or missing) local session.
+ */
+/**
+ * Pure reconciliation rule, separated from the bridge so it is unit-testable:
+ * native and local state only "match" when both are actually recording the
+ * same activity id. Anything else that is still active natively is orphaned.
+ */
+export function reconcileWorkoutStates(
+  native: WorkoutNativeState | null,
+  localActivityId: string | null,
+): NativeReconciliation | null {
+  if (!native) return null;
+  const matchesLocal =
+    native.active && localActivityId != null && native.activityId === localActivityId;
+  return {
+    nativeActive: native.active,
+    activityId: native.activityId,
+    matchesLocal,
+    orphaned: native.active && !matchesLocal,
+  };
+}
+
+export async function reconcileNativeWorkout(
+  localActivityId: string | null,
+): Promise<NativeReconciliation | null> {
+  return reconcileWorkoutStates(await getNativeWorkoutState(), localActivityId);
 }

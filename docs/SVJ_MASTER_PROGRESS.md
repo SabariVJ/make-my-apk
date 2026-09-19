@@ -689,3 +689,24 @@ commit e7d697c (migration fix):
 ---
 
 *End of Phase 01 audit. Next: Prompt 02.*
+
+---
+
+## Native activity platform (continuation of `f9c8e34`)
+
+The GPS recorder, route library, records, heatmap and personal segments were
+landed in `f9c8e34`. The native remainder is documented in
+[`SVJ_NATIVE_ACTIVITY_PLATFORM.md`](./SVJ_NATIVE_ACTIVITY_PLATFORM.md):
+
+- `VjWorkout` — a real Android foreground service that records GPS only between
+  an explicit start and stop, with a persistent "SVJ is recording your activity"
+  notification and `SharedPreferences`-backed state recovery.
+- `VjHealthConnect` — on-device Health Connect reads (granted types only,
+  re-checked before every read), deduplicated server-side before any XP.
+- `reconcileNativeWorkout` — matches a live Android service to the locally
+  persisted SVJ workout; unmatched sessions are stopped, never silently
+  continued into a second activity.
+- `/live/$token` — the public, identity-free SVJ Live Share page.
+
+No external fitness provider integration exists anywhere in runtime source; this
+is pinned by `tests/provider-free.test.mjs`.

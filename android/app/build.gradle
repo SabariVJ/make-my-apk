@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+// Kotlin is required only for the Health Connect bridge: the Health Connect
+// client's read APIs are coroutine-based.
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "app.lovable.svj"
@@ -84,6 +87,17 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Android's on-device Health Connect store (not a third-party service).
+    implementation "androidx.health.connect:connect-client:$healthConnectVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
+}
+
+// Match the module's Java 21 target so the Kotlin and Java compilations agree.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
 
 apply from: 'capacitor.build.gradle'

@@ -16,7 +16,12 @@ import {
   MIN_GPS_POINTS_TO_SAVE,
 } from "../lib/gpsActivity";
 import { createDefaultLocationAdapter, isNativeRecordingAvailable } from "../lib/locationAdapters";
-import { setNativeWorkoutPaused, startNativeWorkout, stopNativeWorkout } from "../lib/nativeWorkout";
+import {
+  reconcileNativeWorkout,
+  setNativeWorkoutPaused,
+  startNativeWorkout,
+  stopNativeWorkout,
+} from "../lib/nativeWorkout";
 import {
   activityRpcClient,
   saveGpsWorkout,
@@ -92,6 +97,27 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
       setNotice("Recovered an unfinished workout. It is paused — tap Resume to continue.");
     }
     setPendingSync(readQueue(recorderStorage()).length);
+
+    // Process/WebView recreation can leave the Android foreground service
+    // running against a local session that was restored — or, worse, one that
+    // is gone. Reconcile the two before the user can record anything, and
+    // never silently continue into a second activity.
+    if (isNativeRecordingAvailable()) {
+      void (async () => {
+        const reconciliation = await reconcileNativeWorkout(recovered?.activityId ?? null);
+        if (!reconciliation) return;
+        if (reconciliation.matchesLocal) {
+          setNotice("Recovered the active workout. It is paused — tap Resume to continue.");
+          return;
+        }
+        if (reconciliation.orphaned) {
+          await stopNativeWorkout();
+          setError(
+            "A recording from a previous session couldn't be matched to a saved workout, so it was stopped to avoid creating a duplicate activity.",
+          );
+        }
+      })();
+    }
 
     return () => {
       unsubscribe();

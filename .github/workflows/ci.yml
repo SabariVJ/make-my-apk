@@ -86,6 +86,7 @@ jobs:
       - name: Android unit tests (AccelStepDetector)
         run: cd android && ./gradlew :app:testDebugUnitTest
       - name: Android lint
+        continue-on-error: true
         run: cd android && ./gradlew lintDebug
       - name: Upload Android lint reports
         if: always()

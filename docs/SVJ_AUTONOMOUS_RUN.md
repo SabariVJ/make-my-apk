@@ -1,5 +1,64 @@
 # SVJ AUTONOMOUS RUN — STATE CHECKPOINT
 
+## MASTER ACTIVITY PLATFORM + STRAVA + EARN PLUS HARDENING
+
+### Phase 1 — Earn Plus stale mission-session fix (DONE — commit d7f4096)
+
+`supabase/migrations/20260921000000_earned_plus_stale_session_hardening.sql`
+(additive, idempotent):
+
+- Backfills `expired_at = expires_at` on every logically-open session whose
+  `expires_at` has passed. Before this, such a row stayed covered by
+  `reward_one_open_session_per_user` forever and the next start hit a raw 23505
+  that the UI misreported as "This action has already been recorded…".
+- `svj_start_daily_mission_impl` retires stale sessions before the open-session
+  check (and before the INSERT), then raises the domain error
+  `SVJ_REWARD_MISSION_ALREADY_RUNNING` for a genuinely live session.
+- `svj_complete_daily_mission_impl` now stamps BOTH
+  `reward_mission_assignments.completed_at` and
+  `reward_mission_sessions.completed_at`, so a completed mission can no longer
+  block the next start.
+- Qualifying days are reconciled to one per distinct `mission_completion`
+  policy day (the per-mission increment overcounted). Reward XP untouched.
+- Reward economics, policy rows, the unique index, the reward service-role
+  lockdown and the self-service entry points are unchanged.
+
+Tests: `tests/earned-plus-self-service-db.test.mjs` — 37/37 pass, including new
+real-PostgreSQL cases for stale-session recovery, completion stamping,
+qualifying-day reconciliation, retry exactly-once and replayed request ids.
+
+### Phase 2 — Strava integration (DONE — see docs/STRAVA_INTEGRATION.md)
+
+`supabase/migrations/20260922000000_strava_integration.sql` (additive,
+idempotent): `source = 'strava'` on `svj_activities`; server-only
+`svj_strava_connections` + `svj_strava_oauth_states` (RLS-forced, no client
+grants); six `service_role`-only RPCs; two `authenticated`-only owner RPCs; and
+`svj_process_activity_rewards_impl(uuid, uuid)` — the existing reward body
+extracted verbatim so the public `svj_process_activity_rewards(uuid)` keeps its
+exact signature/grants and merely delegates. Reuses the existing activity + XP
+pipeline: no second activity table, no duplicated reward math.
+
+Code: `src/lib/strava.ts` (pure helpers), `src/lib/strava.server.ts` (OAuth +
+sync, server-only), `src/lib/strava.functions.ts` (server functions),
+`src/routes/strava.callback.tsx` (OAuth return),
+`src/app/components/StravaConnectionCard.tsx` (Profile).
+
+Tests: `tests/strava-db.test.mjs` 15/15 (grants, isolation, idempotent import,
+rewards-refactor regression), `tests/strava.test.ts` 17/17 (pure helpers).
+
+**ACTION REQUIRED before Strava can be used:** apply the migration, then set
+`STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` in Settings → Environment
+(optionally `STRAVA_REDIRECT_URI`). No keys are present in this workspace, so
+the Profile card currently shows the neutral "not enabled" note.
+
+### Validation (this run)
+
+- `bun tsc -b --noEmit` — PASS
+- `bun run test` — 491 tests, **489 pass / 0 fail / 2 skipped** (the 2 skipped
+  are the PGlite suites that self-skip under a polluted DOM; run them isolated)
+
+---
+
 CURRENT_REMOTE_SHA: b1ea348c887c597bdc06fa983d083fbe9f0e3a66
 LAST_COMPLETED_UPDATE: Earn Plus production-upgrade safety (trigger upgrades inside 20260920000000) — commit b1ea348
 NEXT_UPDATE: 09 — Profile + Avatar + Settings

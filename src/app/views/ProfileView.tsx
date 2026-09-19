@@ -36,6 +36,7 @@ import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
 import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
+import StravaConnectionCard from "../components/StravaConnectionCard";
 
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
@@ -362,6 +363,8 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       )}
+      {/* Connected apps — Strava import (optional integration). */}
+      <StravaConnectionCard />
       {/* Account actions */}
       <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
         {isAndroid && (

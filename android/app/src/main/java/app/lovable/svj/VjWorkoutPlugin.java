@@ -172,6 +172,16 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
   }
 
   @PluginMethod
+  public void getLastLocation(PluginCall call) {
+    Location location = VjWorkoutService.lastLocation(getContext());
+    if (location == null) {
+      call.resolve(new JSObject());
+      return;
+    }
+    call.resolve(sampleOf(location));
+  }
+
+  @PluginMethod
   public void getBattery(PluginCall call) {
     JSObject result = new JSObject();
     Integer level = batteryPercent();

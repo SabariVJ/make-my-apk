@@ -17,7 +17,9 @@ import {
 } from "../lib/gpsActivity";
 import { createDefaultLocationAdapter, isNativeRecordingAvailable } from "../lib/locationAdapters";
 import {
+  canRecordWith,
   reconcileNativeWorkout,
+  requestWorkoutPermissions,
   setNativeWorkoutPaused,
   startNativeWorkout,
   stopNativeWorkout,
@@ -126,21 +128,17 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
     return () => {
       unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorder]);
 
   // ── Offline queue flush ─────────────────────────────────────────────────
   const syncPending = useCallback(async () => {
     const client = activityRpcClient();
     if (!client) return;
-    await flushOfflineQueue(
-      recorderStorage(),
-      async (queued): Promise<SyncOutcome> => {
-        const result = await saveGpsWorkout(client, queued);
-        if (!result.ok) return { ok: false, error: result.error };
-        return { ok: true, duplicate: result.duplicate };
-      },
-    );
+    await flushOfflineQueue(recorderStorage(), async (queued): Promise<SyncOutcome> => {
+      const result = await saveGpsWorkout(client, queued);
+      if (!result.ok) return { ok: false, error: result.error };
+      return { ok: true, duplicate: result.duplicate };
+    });
     setPendingSync(readQueue(recorderStorage()).length);
   }, []);
 
@@ -181,6 +179,14 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
       setNotice(null);
       setLastSavedId(null);
       try {
+        if (isNativeRecordingAvailable()) {
+          const permissions = await requestWorkoutPermissions();
+          if (!canRecordWith(permissions)) {
+            throw new Error(
+              "Precise or approximate location permission is required. Open Android Settings → Apps → SVJ → Permissions → Location, then allow it while using the app.",
+            );
+          }
+        }
         await recorder.start(activityType, { splitUnit });
         if (isNativeRecordingAvailable()) {
           // One stable activity id ties the native service and the JS session

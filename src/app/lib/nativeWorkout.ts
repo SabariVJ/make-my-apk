@@ -51,6 +51,7 @@ export interface WorkoutPlugin {
   resumeWorkout?: () => Promise<unknown>;
   stopWorkout?: () => Promise<unknown>;
   getState?: () => Promise<unknown>;
+  getLastLocation?: () => Promise<unknown>;
   addListener?: (
     event: string,
     handler: (payload: unknown) => void,
@@ -91,12 +92,20 @@ export function normalizeWorkoutPermissions(raw: unknown): WorkoutPermissions {
 export async function checkWorkoutPermissions(): Promise<WorkoutPermissions> {
   const plugin = workoutPlugin();
   if (!plugin?.checkPermissions) {
-    return { location: "unavailable", backgroundLocation: "unavailable", notifications: "unavailable" };
+    return {
+      location: "unavailable",
+      backgroundLocation: "unavailable",
+      notifications: "unavailable",
+    };
   }
   try {
     return normalizeWorkoutPermissions(await plugin.checkPermissions());
   } catch {
-    return { location: "unavailable", backgroundLocation: "unavailable", notifications: "unavailable" };
+    return {
+      location: "unavailable",
+      backgroundLocation: "unavailable",
+      notifications: "unavailable",
+    };
   }
 }
 
@@ -116,7 +125,7 @@ export async function requestWorkoutPermissions(): Promise<WorkoutPermissions> {
  * away). Refusing background location must NOT block recording.
  */
 export function canRecordWith(permissions: WorkoutPermissions): boolean {
-  return permissions.location !== "denied" && permissions.location !== "unavailable";
+  return permissions.location === "granted";
 }
 
 // ── Sample validation ──────────────────────────────────────────────────────
@@ -130,7 +139,8 @@ export function normalizeNativeSample(raw: unknown): RawLocationSample | null {
   const timestampMs = value.timestampMs ?? value.time;
   if (typeof lat !== "number" || !Number.isFinite(lat) || lat < -90 || lat > 90) return null;
   if (typeof lng !== "number" || !Number.isFinite(lng) || lng < -180 || lng > 180) return null;
-  if (typeof timestampMs !== "number" || !Number.isFinite(timestampMs) || timestampMs <= 0) return null;
+  if (typeof timestampMs !== "number" || !Number.isFinite(timestampMs) || timestampMs <= 0)
+    return null;
 
   const optional = (candidate: unknown, min: number, max: number): number | null =>
     typeof candidate === "number" &&
@@ -222,9 +232,11 @@ export async function stopNativeWorkout(): Promise<void> {
 
 /** Foreground-service battery/notification state, when the device exposes it. */
 export async function readBatteryPercent(): Promise<number | null> {
-  const plugin = workoutPlugin() as (WorkoutPlugin & {
-    getBattery?: () => Promise<unknown>;
-  }) | null;
+  const plugin = workoutPlugin() as
+    | (WorkoutPlugin & {
+        getBattery?: () => Promise<unknown>;
+      })
+    | null;
   if (!plugin?.getBattery) return null;
   try {
     const raw = await plugin.getBattery();
@@ -245,9 +257,7 @@ export async function readBatteryPercent(): Promise<number | null> {
  * arrive from the service (not from the WebView), so a locked screen or a
  * backgrounded app keeps recording.
  */
-export function createNativeWorkoutLocationAdapter(
-  plugin: WorkoutPlugin | null,
-): LocationAdapter {
+export function createNativeWorkoutLocationAdapter(plugin: WorkoutPlugin | null): LocationAdapter {
   return {
     async start(onSample, onError) {
       if (!plugin?.addListener) {
@@ -265,6 +275,13 @@ export function createNativeWorkoutLocationAdapter(
       // detected by reconcileNativeWorkout() on recovery instead of guessed
       // here, where the local session state is not visible.
       await plugin.addListener("workoutState", () => {});
+      // A foreground service can receive its first fix before the WebView has
+      // attached (or while it is being recreated). Replay the persisted fix so
+      // the route UI never waits forever for a second movement callback.
+      if (plugin.getLastLocation) {
+        const cached = normalizeNativeSample(await plugin.getLastLocation());
+        if (cached) onSample(cached);
+      }
     },
     async stop() {
       await stopNativeWorkout();

@@ -52,10 +52,7 @@ describe("normalizeNativeSample", () => {
   });
 
   it("rejects out-of-range coordinates", () => {
-    assert.equal(
-      normalizeNativeSample({ lat: 91, lng: 0, timestampMs: 1_700_000_000_000 }),
-      null,
-    );
+    assert.equal(normalizeNativeSample({ lat: 91, lng: 0, timestampMs: 1_700_000_000_000 }), null);
     assert.equal(
       normalizeNativeSample({ lat: 0, lng: -181, timestampMs: 1_700_000_000_000 }),
       null,
@@ -225,19 +222,52 @@ describe("reconcileWorkoutStates", () => {
     );
     assert.ok(pauseCall >= 0, "recovery must pause the native recording");
     assert.ok(notice >= 0, "recovery must show the recovery notice");
-    assert.ok(
-      pauseCall < notice,
-      "native pause must happen BEFORE the recovery notice is shown",
-    );
+    assert.ok(pauseCall < notice, "native pause must happen BEFORE the recovery notice is shown");
     // The pause must live inside the matchesLocal branch, not on the orphan path.
     const matchesBranch = hook.slice(hook.indexOf("if (reconciliation.matchesLocal)"), notice);
     assert.match(matchesBranch, /setNativeWorkoutPaused\(true\)/);
     // Resume flows through the same bridge call with the existing session —
     // the same UUID and points, no new activity is created.
-    const resumeFn = hook.slice(hook.indexOf("const resume = useCallback"),
-      hook.indexOf("const finish = useCallback"));
+    const resumeFn = hook.slice(
+      hook.indexOf("const resume = useCallback"),
+      hook.indexOf("const finish = useCallback"),
+    );
     assert.match(resumeFn, /recorder\.resume\(\)/);
     assert.match(resumeFn, /setNativeWorkoutPaused\(false\)/);
     assert.doesNotMatch(resumeFn, /new GpsWorkoutRecorder|recorder\.start\(/);
+  });
+});
+
+describe("native first-fix and map regression", () => {
+  it("requests location before creating a recorder session", () => {
+    const hook = readFileSync(
+      new URL("../src/app/hooks/useWorkoutRecorder.ts", import.meta.url),
+      "utf8",
+    );
+    const start = hook.slice(
+      hook.indexOf("const start = useCallback"),
+      hook.indexOf("const pause = useCallback"),
+    );
+    assert.ok(start.indexOf("requestWorkoutPermissions()") < start.indexOf("recorder.start("));
+    assert.match(start, /canRecordWith\(permissions\)/);
+  });
+
+  it("replays the native service's retained location after bridge attachment", () => {
+    const bridge = readFileSync(
+      new URL("../src/app/lib/nativeWorkout.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(bridge, /plugin\.getLastLocation/);
+    assert.match(bridge, /normalizeNativeSample\(await plugin\.getLastLocation\(\)\)/);
+  });
+
+  it("shows a no-key street basemap instead of an empty black surface", () => {
+    const map = readFileSync(
+      new URL("../src/app/components/ActivityMap.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(map, /tile\.openstreetmap\.org\/\{z\}\/\{x\}\/\{y\}\.png/);
+    assert.match(map, /© OpenStreetMap contributors/);
+    assert.match(map, /tileProvider = SVJ_STREET_TILES/);
   });
 });

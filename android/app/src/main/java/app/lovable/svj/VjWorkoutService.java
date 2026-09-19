@@ -63,6 +63,10 @@ public class VjWorkoutService extends Service {
   private static final String KEY_STARTED_AT = "started_at";
   private static final String KEY_POINT_COUNT = "point_count";
   private static final String KEY_LAST_FIX_AT = "last_fix_at";
+  private static final String KEY_LAST_LAT = "last_lat";
+  private static final String KEY_LAST_LNG = "last_lng";
+  private static final String KEY_LAST_ACCURACY = "last_accuracy";
+  private static final String KEY_LAST_ALTITUDE = "last_altitude";
   private static final String KEY_AUTO_PAUSE = "auto_pause";
 
   private static final String CHANNEL_ID = "svj_workout";
@@ -146,6 +150,23 @@ public class VjWorkoutService extends Service {
 
   public static void clearState(Context context) {
     prefs(context).edit().clear().apply();
+  }
+
+  /** Last fix retained for WebView/plugin reattachment. Never starts collection. */
+  @Nullable
+  public static Location lastLocation(Context context) {
+    SharedPreferences store = prefs(context);
+    if (!store.getBoolean(KEY_ACTIVE, false)) return null;
+    if (!store.contains(KEY_LAST_LAT) || !store.contains(KEY_LAST_LNG)) return null;
+    Location location = new Location("svj-cache");
+    location.setLatitude(Double.longBitsToDouble(store.getLong(KEY_LAST_LAT, 0L)));
+    location.setLongitude(Double.longBitsToDouble(store.getLong(KEY_LAST_LNG, 0L)));
+    location.setTime(store.getLong(KEY_LAST_FIX_AT, 0L));
+    if (store.contains(KEY_LAST_ACCURACY)) location.setAccuracy(store.getFloat(KEY_LAST_ACCURACY, 0f));
+    if (store.contains(KEY_LAST_ALTITUDE)) {
+      location.setAltitude(Double.longBitsToDouble(store.getLong(KEY_LAST_ALTITUDE, 0L)));
+    }
+    return location;
   }
 
   // ── Service lifecycle ───────────────────────────────────────────────────
@@ -303,7 +324,38 @@ public class VjWorkoutService extends Service {
     }
     if (!registered) {
       Log.w(TAG, "No location provider is enabled");
+      return;
     }
+
+    // LocationManager does not guarantee that the first callback arrives
+    // promptly. Seed the UI with a recent provider fix while a fresh GPS fix is
+    // acquired, otherwise the map can remain blank for minutes on some OEMs.
+    Location seed = newestRecentLastKnownLocation();
+    if (seed != null) {
+      seed.setTime(System.currentTimeMillis());
+      main.post(() -> onFix(seed));
+    }
+  }
+
+  @Nullable
+  private Location newestRecentLastKnownLocation() {
+    if (locationManager == null) return null;
+    Location newest = null;
+    String[] providers = {LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER,
+        LocationManager.PASSIVE_PROVIDER};
+    for (String provider : providers) {
+      try {
+        Location candidate = locationManager.getLastKnownLocation(provider);
+        if (candidate != null && (newest == null || candidate.getTime() > newest.getTime())) {
+          newest = candidate;
+        }
+      } catch (SecurityException | IllegalArgumentException e) {
+        Log.w(TAG, "Could not read last location from " + provider, e);
+      }
+    }
+    // Do not draw a stale position from an earlier trip.
+    if (newest == null || System.currentTimeMillis() - newest.getTime() > 5 * 60_000L) return null;
+    return newest;
   }
 
   private void stopLocationUpdates() {
@@ -321,10 +373,16 @@ public class VjWorkoutService extends Service {
     if (!active || paused || location == null) return;
     pointCount += 1;
     lastFixAtMs = System.currentTimeMillis();
-    prefs(this).edit()
+    SharedPreferences.Editor editor = prefs(this).edit()
         .putInt(KEY_POINT_COUNT, pointCount)
-        .putLong(KEY_LAST_FIX_AT, lastFixAtMs)
-        .apply();
+        .putLong(KEY_LAST_FIX_AT, location.getTime())
+        .putLong(KEY_LAST_LAT, Double.doubleToRawLongBits(location.getLatitude()))
+        .putLong(KEY_LAST_LNG, Double.doubleToRawLongBits(location.getLongitude()));
+    if (location.hasAccuracy()) editor.putFloat(KEY_LAST_ACCURACY, location.getAccuracy());
+    if (location.hasAltitude()) {
+      editor.putLong(KEY_LAST_ALTITUDE, Double.doubleToRawLongBits(location.getAltitude()));
+    }
+    editor.apply();
     for (Listener listener : LISTENERS) {
       try {
         listener.onLocationSample(location);

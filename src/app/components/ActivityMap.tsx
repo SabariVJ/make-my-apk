@@ -6,12 +6,10 @@ import type { TrackPoint } from "../lib/gpsActivity";
  * SVJ route map.
  *
  * The route is drawn from SVJ-owned GPS points as vector geometry, so it needs
- * no map SDK, no API key and no network — it always renders offline, including
- * on the Android recording screen. The component is provider-neutral: tiles are
- * an optional background layer supplied through `MapTileProvider`, and the
- * renderer works identically with a raster/vector tile layer or with none,
- * which keeps a future MapLibre-compatible basemap a drop-in concern instead of
- * a rewrite. No external fitness branding or styling is used anywhere.
+ * no map SDK or API key. A street basemap is shown by default, while the SVJ
+ * route geometry still renders when tiles are unavailable. The component is
+ * provider-neutral: tiles are supplied through `MapTileProvider`, so a future
+ * hosted raster/vector source can be substituted without changing recording.
  */
 export interface MapTileProvider {
   /** Stable id, e.g. "svj-none" or a self-hosted vector style id. */
@@ -21,7 +19,12 @@ export interface MapTileProvider {
   attribution?: string;
 }
 
-/** Default: geometry only. Offline, private, zero third-party requests. */
+/** Public street basemap; no API key is required. */
+export const SVJ_STREET_TILES: MapTileProvider = {
+  id: "openstreetmap",
+  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  attribution: "© OpenStreetMap contributors",
+};
 export const SVJ_VECTOR_ONLY_TILES: MapTileProvider = { id: "svj-vector-only" };
 
 export interface MapBounds {
@@ -39,7 +42,7 @@ export interface ActivityMapProps {
   variant?: "preview" | "hero";
   showStartFinish?: boolean;
   showCurrentPosition?: boolean;
-  /** Optional basemap layer; the default draws no tiles at all. */
+  /** Optional basemap layer; defaults to the public OpenStreetMap tile service. */
   tileProvider?: MapTileProvider;
   /**
    * A saved route the athlete is following. Drawn as a dashed reference line,
@@ -108,6 +111,78 @@ export function buildPath(projected: readonly { x: number; y: number }[]): strin
     .join(" ");
 }
 
+const TILE_SIZE = 256;
+
+function mercatorWorld(lat: number, lng: number, zoom: number) {
+  const scale = TILE_SIZE * 2 ** zoom;
+  const safeLat = Math.max(-85.0511, Math.min(85.0511, lat));
+  const sin = Math.sin((safeLat * Math.PI) / 180);
+  return {
+    x: ((lng + 180) / 360) * scale,
+    y: (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale,
+  };
+}
+
+/** Build a slippy-map viewport without an SDK or API key. */
+export function createTileViewport(
+  points: readonly { lat: number; lng: number }[],
+  width: number,
+  height: number,
+) {
+  const valid = points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+  // Before the first fix, show India rather than an empty black rectangle. The
+  // viewport immediately recentres to the athlete when a fix arrives.
+  const centerLat = valid.length
+    ? valid.reduce((sum, point) => sum + point.lat, 0) / valid.length
+    : 20.5937;
+  const centerLng = valid.length
+    ? valid.reduce((sum, point) => sum + point.lng, 0) / valid.length
+    : 78.9629;
+
+  let zoom = valid.length ? 16 : 4;
+  if (valid.length > 1) {
+    for (; zoom > 3; zoom -= 1) {
+      const world = valid.map((point) => mercatorWorld(point.lat, point.lng, zoom));
+      const spanX =
+        Math.max(...world.map((point) => point.x)) - Math.min(...world.map((point) => point.x));
+      const spanY =
+        Math.max(...world.map((point) => point.y)) - Math.min(...world.map((point) => point.y));
+      if (spanX <= width - 56 && spanY <= height - 56) break;
+    }
+  }
+
+  const center = mercatorWorld(centerLat, centerLng, zoom);
+  const originX = center.x - width / 2;
+  const originY = center.y - height / 2;
+  const count = 2 ** zoom;
+  const tiles: Array<{ z: number; x: number; y: number; left: number; top: number }> = [];
+  const minTileX = Math.floor(originX / TILE_SIZE);
+  const maxTileX = Math.floor((originX + width) / TILE_SIZE);
+  const minTileY = Math.floor(originY / TILE_SIZE);
+  const maxTileY = Math.floor((originY + height) / TILE_SIZE);
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    if (tileY < 0 || tileY >= count) continue;
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      const wrappedX = ((tileX % count) + count) % count;
+      tiles.push({
+        z: zoom,
+        x: wrappedX,
+        y: tileY,
+        left: tileX * TILE_SIZE - originX,
+        top: tileY * TILE_SIZE - originY,
+      });
+    }
+  }
+  return {
+    zoom,
+    tiles,
+    project(lat: number, lng: number) {
+      const world = mercatorWorld(lat, lng, zoom);
+      return { x: world.x - originX, y: world.y - originY };
+    },
+  };
+}
+
 export const ActivityMap: React.FC<ActivityMapProps> = ({
   points,
   bounds,
@@ -115,7 +190,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   variant = "preview",
   showStartFinish = true,
   showCurrentPosition = false,
-  tileProvider = SVJ_VECTOR_ONLY_TILES,
+  tileProvider = SVJ_STREET_TILES,
   guidePoints,
   className,
   emptyMessage = "No route recorded",
@@ -124,44 +199,59 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const width = 400;
   const viewportHeight = fullscreen ? 620 : height;
 
-  const resolvedBounds = useMemo(() => {
-    if (bounds) return bounds;
-    const combined: TrackPoint[] = [
+  const mapPoints = useMemo<TrackPoint[]>(
+    () => [
       ...points,
       ...(guidePoints ?? []).map((point, index) => ({ ...point, t: index })),
-    ];
-    return computeBounds(combined);
-  }, [bounds, points, guidePoints]);
-  const projected = useMemo(() => {
-    if (!resolvedBounds || points.length === 0) return [];
-    return projectPoints(points, resolvedBounds, width, viewportHeight);
-  }, [points, resolvedBounds, viewportHeight]);
+      ...(bounds
+        ? [
+            { lat: bounds.minLat, lng: bounds.minLng, t: 0 },
+            { lat: bounds.maxLat, lng: bounds.maxLng, t: 1 },
+          ]
+        : []),
+    ],
+    [points, guidePoints, bounds],
+  );
+  const mapViewport = useMemo(
+    () => createTileViewport(mapPoints, width, viewportHeight),
+    [mapPoints, viewportHeight],
+  );
+
+  const projected = useMemo(
+    () => points.map((point) => mapViewport.project(point.lat, point.lng)),
+    [points, mapViewport],
+  );
 
   const path = useMemo(() => buildPath(projected), [projected]);
   const start = projected[0];
   const end = projected[projected.length - 1];
 
   const guidePath = useMemo(() => {
-    if (!guidePoints || guidePoints.length < 2 || !resolvedBounds) return "";
-    const asTrack: TrackPoint[] = guidePoints.map((point, index) => ({ ...point, t: index }));
-    return buildPath(projectPoints(asTrack, resolvedBounds, width, viewportHeight));
-  }, [guidePoints, resolvedBounds, viewportHeight]);
+    if (!guidePoints || guidePoints.length < 2) return "";
+    return buildPath(guidePoints.map((point) => mapViewport.project(point.lat, point.lng)));
+  }, [guidePoints, mapViewport]);
 
-  const body =
-    projected.length < 2 ? (
-      <div
-        className="flex flex-col items-center justify-center gap-1.5 text-center"
-        style={{ height: viewportHeight }}
-        data-testid="activity-map-empty"
-      >
-        <MapPin className="h-5 w-5 text-[#8C8C90]" />
-        <p className="px-6 text-[11px] font-mono text-[#8C8C90]">{emptyMessage}</p>
-      </div>
-    ) : (
+  const body = (
+    <div className="relative overflow-hidden" style={{ height: viewportHeight }}>
+      {tileProvider.urlTemplate &&
+        mapViewport.tiles.map((tile) => (
+          <img
+            key={`${tile.z}/${tile.x}/${tile.y}`}
+            src={tileProvider
+              .urlTemplate!.replace("{z}", String(tile.z))
+              .replace("{x}", String(tile.x))
+              .replace("{y}", String(tile.y))}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="pointer-events-none absolute max-w-none select-none"
+            style={{ left: tile.left, top: tile.top, width: 256, height: 256 }}
+          />
+        ))}
       <svg
         viewBox={`0 0 ${width} ${viewportHeight}`}
         preserveAspectRatio="xMidYMid meet"
-        className="w-full"
+        className="absolute inset-0 w-full"
         style={{ height: viewportHeight }}
         role="img"
         aria-label="SVJ recorded route"
@@ -177,18 +267,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           </filter>
         </defs>
 
-        {/* Basemap layer: nothing by default (offline, provider-neutral). */}
-        {tileProvider.urlTemplate ? (
-          <image
-            href={tileProvider.urlTemplate}
-            x={0}
-            y={0}
-            width={width}
-            height={viewportHeight}
-            opacity={0.35}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        ) : (
+        {!tileProvider.urlTemplate && (
           <>
             {Array.from({ length: 7 }, (_, i) => (
               <line
@@ -248,7 +327,14 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
 
         {showStartFinish && start && (
           <g data-testid="map-start">
-            <circle cx={start.x} cy={start.y} r={6} fill="#0B0B0C" stroke="#22C55E" strokeWidth={2.5} />
+            <circle
+              cx={start.x}
+              cy={start.y}
+              r={6}
+              fill="#0B0B0C"
+              stroke="#22C55E"
+              strokeWidth={2.5}
+            />
             <circle cx={start.x} cy={start.y} r={2} fill="#22C55E" />
           </g>
         )}
@@ -259,13 +345,38 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           </g>
         )}
         {showCurrentPosition && end && (
-          <circle cx={end.x} cy={end.y} r={11} fill="none" stroke="#E62846" strokeWidth={1} opacity={0.5}>
+          <circle
+            cx={end.x}
+            cy={end.y}
+            r={11}
+            fill="none"
+            stroke="#E62846"
+            strokeWidth={1}
+            opacity={0.5}
+          >
             <animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.55;0;0.55" dur="2.4s" repeatCount="indefinite" />
+            <animate
+              attributeName="opacity"
+              values="0.55;0;0.55"
+              dur="2.4s"
+              repeatCount="indefinite"
+            />
           </circle>
         )}
       </svg>
-    );
+      {projected.length < 2 && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/20 text-center"
+          data-testid="activity-map-empty"
+        >
+          <MapPin className="h-5 w-5 text-white/80" />
+          <p className="rounded bg-black/65 px-3 py-1.5 text-[11px] font-mono text-white/80">
+            {emptyMessage}
+          </p>
+        </div>
+      )}
+    </div>
+  );
 
   const chrome = (
     <>

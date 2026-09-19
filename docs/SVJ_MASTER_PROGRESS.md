@@ -746,3 +746,81 @@ native platform migrations (`20260921000000`, `20260923000000`–
 entitlements, 60-Day self-service, Activity/Strength, server-authoritative
 XP/stats, personalized tasks, Community/rivalry, Live Share, Health Connect
 reads, provider-free guarantee (all pinned by the existing suites, all green).
+
+---
+
+## 2026-09-19 — Real wearable / health sensor support (BLE HR) + map/pace/heatmap hardening
+
+**Starting SHA:** `d7db117`  **Final SHA:** `cbe08cf` (verified equal to
+`origin/release/play-v1-compliance`)
+
+**Commits:**
+- `b0ab6c3` feat(wearables): add BLE heart-rate sensors, map touch controls and stabilized live pace
+- `c30c0fd` style: apply prettier and eslint fixes to wearable/map changes
+- `cbe08cf` style: prefer-const for auth-preview storage timer
+
+### Wearable architecture
+
+- **Sensor sources:** `phone` (existing pedometer), `ble` (NEW — standard
+  Bluetooth SIG Heart Rate Service), `health_connect` (existing plugin). A
+  `WearableProvider` bridge (`src/app/lib/wearable.ts`) normalizes native
+  payloads and reduces connection lifecycle events; live HR follows the
+  deterministic priority direct-BLE → nothing (Health Connect is historical
+  data only and is never presented as a live stream).
+- **BLE parsing** (`src/app/lib/bleHeartRate.ts`, mirrored in Java): flag-driven
+  Heart Rate Measurement (0x2A37) parsing — 8/16-bit BPM, sensor contact,
+  energy expended, RR intervals (1/1024 s → ms, plausibility-filtered). No
+  field is fabricated; malformed packets are dropped. BPM bounded 1–250.
+- **Android plugin** `VjWearablePlugin.java`: BLE scan filtered to 0x180D,
+  GATT connect, notification subscription (CCCD 0x2902), battery (0x180F),
+  body sensor location (0x2A38), serialized GATT queue, Android 12+
+  `BLUETOOTH_SCAN` (neverForLocation) / `BLUETOOTH_CONNECT` runtime
+  permissions, 20 s bounded scan window, no pairing dialogs, no vendor SDKs.
+- **UI:** Activity → Devices tab (`ConnectedDevicesView`): live HR with
+  stale→"signal lost" handling (12 s), battery, scan/connect/disconnect/forget,
+  Health Connect entry, and honest compatibility notes (Direct Bluetooth vs
+  Health Connect vs other watches — no "all smartwatches" claim).
+- **Recorder integration:** `GpsWorkoutRecorder.ingestHeartRate()` attributes
+  live strap readings to the newest track point; HR summary aggregates only
+  real measurements. HR never grants XP — Update 04 server-authoritative
+  pipeline untouched.
+
+### Map / pace / heatmap fixes
+
+- **Map touch:** pinch zoom (3–19), drag pan, recenter control; user
+  interaction pauses GPS auto-recentering until they tap recenter
+  (`createTileViewportAtZoom`).
+- **Pace:** live pace stays "—" until a 20 s window with ≥40 m plausible
+  displacement exists; low-accuracy (>30 m) segments excluded. Fixes the
+  "2:34/km from 49 m / 7 s" first-fix extrapolation.
+- **Heatmap:** explicit loading, error+retry, and empty states — a blank map
+  is never silent. (RPC `svj_get_activity_heatmap` verified present in
+  migration `20260923010000`; data absence now renders a clear message.)
+
+### Migrations
+
+None added or modified. Documented live deployment order unchanged:
+`20260921000000_earned_plus_stale_session_hardening.sql`,
+`20260923000000_native_activity_track_storage.sql`,
+`20260923010000_native_activity_rpcs.sql`,
+`20260923020000_native_activity_live_share.sql`.
+
+### Tests & builds
+
+- Web: **651 pass / 0 fail / 2 skipped** (new: BLE parser, wearable reducer +
+  stale handling, map viewport math, pace stabilization, recorder HR
+  ingestion; Train-nav test updated for the Devices section).
+- `bun tsc -b --noEmit` PASS · `bun run build` PASS · `bunx cap sync android`
+  PASS · `git diff --check` clean.
+- Android local: `assembleDebug` + `testDebugUnitTest` **BUILD SUCCESSFUL**
+  (29 unit tests incl. 6 new HeartRatePacketTest cases).
+- CI run **35460513751** at final SHA `cbe08cf`: Web Checks ✓, Reward
+  Database ✓, **Android Debug Build ✓ — debug-apk artifact belongs to the
+  final commit.**
+
+### Intact (all suites green)
+
+Membership self-service, Founder lifetime, Plus entitlements, 60-Day
+self-service, Activity/Strength, server-authoritative XP/stats, personalized
+tasks, Community/rivalry, Live Share, Health Connect read-only, provider-free
+guarantee. No external fitness provider was added.

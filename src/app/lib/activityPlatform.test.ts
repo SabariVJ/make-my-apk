@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -319,6 +320,27 @@ describe("personal heatmap", () => {
       ]),
       [{ lat: 1, lng: 2, weight: 3 }],
     );
+  });
+
+  it("renders on a real geographic basemap, not an abstract grid", async () => {
+    // The user-facing complaint "still heatmap?" was the heatmap drawing as
+    // SVG density dots with no map behind them. Pin the component source to
+    // the real OSM slippy-map viewport so a regression shows up immediately.
+    const view = await readFile(
+      new URL("../views/RecordsView.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(view, /createTileViewport/);
+    assert.match(view, /SVJ_STREET_TILES/);
+    assert.doesNotMatch(view, /projectPoints/);
+    // And the tile provider itself must still be the real public OSM service.
+    const map = await readFile(
+      new URL("../components/ActivityMap.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(map, /tile\.openstreetmap\.org/);
+    // The abstract projection helper must no longer be used for the heatmap.
+    assert.doesNotMatch(view, /projectPoints/);
   });
 });
 

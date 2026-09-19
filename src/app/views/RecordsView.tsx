@@ -8,7 +8,11 @@ import {
   Trash2,
   Trophy,
 } from "lucide-react";
-import { projectPoints, type MapBounds } from "../components/ActivityMap";
+import {
+  SVJ_STREET_TILES,
+  createTileViewport,
+  type MapBounds,
+} from "../components/ActivityMap";
 import {
   HEATMAP_RANGES,
   HEATMAP_RANGE_LABELS,
@@ -32,7 +36,6 @@ import {
   formatPace,
   formatSpeed,
   type GpsActivityType,
-  type TrackPoint,
 } from "../lib/gpsActivity";
 
 type Section = "records" | "heatmap" | "segments";
@@ -55,43 +58,37 @@ export function recordLabel(recordType: string): string {
 }
 
 /**
- * Private heatmap of your own SVJ GPS activity. Renders as vector density
- * cells so it needs no tile provider and no third-party requests.
+ * Private heatmap of your own SVJ GPS activity.
+ *
+ * Renders on the same real OpenStreetMap basemap as the activity route map,
+ * so density cells sit on the streets the athlete actually ran — not on an
+ * abstract grid. Cells stay pure SVJ-owned aggregates; the tile layer comes
+ * from the public OSM service with no API key.
  */
 export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: number }> = ({
   cells,
   height = 260,
 }) => {
   const width = 400;
-  const bounds: MapBounds | null = useMemo(() => {
-    if (cells.length === 0) return null;
-    let minLat = Infinity;
-    let minLng = Infinity;
-    let maxLat = -Infinity;
-    let maxLng = -Infinity;
-    for (const cell of cells) {
-      minLat = Math.min(minLat, cell.lat);
-      maxLat = Math.max(maxLat, cell.lat);
-      minLng = Math.min(minLng, cell.lng);
-      maxLng = Math.max(maxLng, cell.lng);
-    }
-    return { minLat, minLng, maxLat, maxLng };
-  }, [cells]);
+  const mapPoints = useMemo(
+    () => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })),
+    [cells],
+  );
+
+  const viewport = useMemo(
+    () => createTileViewport(mapPoints, width, height),
+    [mapPoints, height],
+  );
 
   const maxWeight = useMemo(
     () => cells.reduce((max, cell) => Math.max(max, cell.weight), 0),
     [cells],
   );
 
-  const projected = useMemo(() => {
-    if (!bounds) return [];
-    const asPoints: TrackPoint[] = cells.map((cell, index) => ({
-      lat: cell.lat,
-      lng: cell.lng,
-      t: index,
-    }));
-    return projectPoints(asPoints, bounds, width, height);
-  }, [bounds, cells, height]);
+  const projected = useMemo(
+    () => cells.map((cell) => viewport.project(cell.lat, cell.lng)),
+    [cells, viewport],
+  );
 
   if (cells.length === 0) {
     return (
@@ -110,12 +107,27 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
 
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
+      className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
       data-testid="heatmap"
     >
+      {SVJ_STREET_TILES.urlTemplate &&
+        viewport.tiles.map((tile) => (
+          <img
+            key={`${tile.z}/${tile.x}/${tile.y}`}
+            src={SVJ_STREET_TILES.urlTemplate!
+              .replace("{z}", String(tile.z))
+              .replace("{x}", String(tile.x))
+              .replace("{y}", String(tile.y))}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="pointer-events-none absolute max-w-none select-none"
+            style={{ left: tile.left, top: tile.top, width: 256, height: 256 }}
+          />
+        ))}
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full"
+        className="absolute inset-0 w-full"
         style={{ height }}
         role="img"
         aria-label="Personal activity heatmap"
@@ -135,6 +147,11 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
           );
         })}
       </svg>
+      {SVJ_STREET_TILES.attribution && (
+        <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
+          {SVJ_STREET_TILES.attribution}
+        </span>
+      )}
     </div>
   );
 };

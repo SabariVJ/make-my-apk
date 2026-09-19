@@ -29,6 +29,9 @@ public class MainActivity extends BridgeActivity {
             registerPlugin(VjHealthConnectPlugin.class);
         }
 
+        // Standard BLE wearable sensors (Heart Rate Service chest straps/bands).
+        registerPlugin(VjWearablePlugin.class);
+
         super.onCreate(savedInstanceState);
     }
 }

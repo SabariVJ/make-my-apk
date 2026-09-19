@@ -316,6 +316,7 @@ export class GpsWorkoutRecorder {
     if (!this.session) return false;
     if (this.session.state !== "recording") return false;
     if (this.session.points.length >= MAX_SESSION_POINTS) return false;
+    if (sample.heartRate != null) this.lastHeartRate = { bpm: sample.heartRate, atMs: sample.timestampMs };
 
     const t = sample.timestampMs - this.session.startedAtMs;
     let point: TrackPoint = {
@@ -388,6 +389,31 @@ export class GpsWorkoutRecorder {
 
   private currentSteps(): number {
     return this.session?.steps ?? 0;
+  }
+
+  private lastHeartRate: { bpm: number; atMs: number } | null = null;
+
+  /**
+   * Record a standalone wearable heart-rate reading (BLE strap) against the
+   * active session. GPS points arrive far less often than HR notifications,
+   * so HR is stored on the most recent track point it can be attributed to;
+   * summary aggregates only real measurements, never interpolations.
+   */
+  ingestHeartRate(bpm: number, atMs: number, maxAgeMs = 15_000): boolean {
+    if (!this.session) return false;
+    if (!Number.isFinite(bpm) || bpm <= 0 || bpm > 300) return false;
+    if (this.session.state !== "recording" && this.session.state !== "paused") return false;
+    this.lastHeartRate = { bpm, atMs };
+    const points = this.session.points;
+    if (points.length === 0) return true;
+    const last = points[points.length - 1]!;
+    if (atMs - (this.session.startedAtMs + last.t) > maxAgeMs) return true; // too old to attribute
+    if (last.hr != null && last.hr === bpm) return true;
+    const updated = [...points.slice(0, -1), { ...last, hr: bpm }];
+    this.session = { ...this.session, points: updated };
+    this.persist();
+    this.emit();
+    return true;
   }
 
   private refreshDuration(): void {

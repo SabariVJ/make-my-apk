@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Maximize2, MapPin, Minimize2, Navigation } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import { Crosshair, Maximize2, MapPin, Minimize2, Navigation } from "lucide-react";
 import type { TrackPoint } from "../lib/gpsActivity";
 
 /**
@@ -123,6 +123,54 @@ function mercatorWorld(lat: number, lng: number, zoom: number) {
   };
 }
 
+/**
+ * Build a slippy-map viewport at an explicit zoom around an explicit center,
+ * with an optional world-pixel offset. Used for user pan/zoom; the point-fit
+ * variant below is the automatic default.
+ */
+export function createTileViewportAtZoom(
+  centerLat: number,
+  centerLng: number,
+  zoom: number,
+  width: number,
+  height: number,
+  offsetXPx = 0,
+  offsetYPx = 0,
+) {
+  const center = mercatorWorld(centerLat, centerLng, zoom);
+  const originX = center.x - width / 2 - offsetXPx;
+  const originY = center.y - height / 2 - offsetYPx;
+  const count = 2 ** zoom;
+  const tiles: Array<{ z: number; x: number; y: number; left: number; top: number }> = [];
+  const minTileX = Math.floor(originX / TILE_SIZE);
+  const maxTileX = Math.floor((originX + width) / TILE_SIZE);
+  const minTileY = Math.floor(originY / TILE_SIZE);
+  const maxTileY = Math.floor((originY + height) / TILE_SIZE);
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
+    if (tileY < 0 || tileY >= count) continue;
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
+      const wrappedX = ((tileX % count) + count) % count;
+      tiles.push({
+        z: zoom,
+        x: wrappedX,
+        y: tileY,
+        left: tileX * TILE_SIZE - originX,
+        top: tileY * TILE_SIZE - originY,
+      });
+    }
+  }
+  return {
+    zoom,
+    centerLat,
+    centerLng,
+    tiles,
+    project(lat: number, lng: number) {
+      const world = mercatorWorld(lat, lng, zoom);
+      return { x: world.x - originX, y: world.y - originY };
+    },
+  };
+}
+
 /** Build a slippy-map viewport without an SDK or API key. */
 export function createTileViewport(
   points: readonly { lat: number; lng: number }[],
@@ -175,6 +223,8 @@ export function createTileViewport(
   }
   return {
     zoom,
+    centerLat,
+    centerLng,
     tiles,
     project(lat: number, lng: number) {
       const world = mercatorWorld(lat, lng, zoom);
@@ -199,6 +249,78 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const width = 400;
   const viewportHeight = fullscreen ? 620 : height;
 
+  // ── Touch interaction: pinch zoom, drag pan, recenter ──────────────────
+  // User pan/zoom is respected: while the user is manually inspecting the
+  // map, automatic recentering to the newest GPS point pauses until they tap
+  // the recenter control.
+  const [userZoom, setUserZoom] = useState<number | null>(null);
+  const [userPan, setUserPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [followGps, setFollowGps] = useState(true);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const gesture = useRef<{
+    mode: "none" | "pan" | "pinch";
+    lastX: number;
+    lastY: number;
+    startDistance: number;
+    startZoom: number;
+  }>({ mode: "none", lastX: 0, lastY: 0, startDistance: 0, startZoom: 16 });
+
+  const pinchDistance = (touches: React.TouchList): number | null => {
+    if (touches.length < 2) return null;
+    const a = touches[0]!;
+    const b = touches[1]!;
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  };
+
+  const onTouchStart = (event: React.TouchEvent) => {
+    if (event.touches.length >= 2) {
+      const distance = pinchDistance(event.touches);
+      if (distance != null) {
+        gesture.current = {
+          mode: "pinch",
+          lastX: 0,
+          lastY: 0,
+          startDistance: distance,
+          startZoom: userZoom ?? mapViewport.zoom,
+        };
+      }
+    } else if (event.touches.length === 1) {
+      const touch = event.touches[0]!;
+      gesture.current = { mode: "pan", lastX: touch.clientX, lastY: touch.clientY, startDistance: 0, startZoom: 16 };
+    }
+  };
+
+  const onTouchMove = (event: React.TouchEvent) => {
+    const mode = gesture.current.mode;
+    if (mode === "pinch") {
+      const distance = pinchDistance(event.touches);
+      if (distance != null && gesture.current.startDistance > 0) {
+        const scale = distance / gesture.current.startDistance;
+        const next = Math.min(19, Math.max(3, gesture.current.startZoom + Math.log2(scale)));
+        setUserZoom(next);
+        setFollowGps(false);
+      }
+    } else if (mode === "pan" && event.touches.length === 1) {
+      const touch = event.touches[0]!;
+      const dx = touch.clientX - gesture.current.lastX;
+      const dy = touch.clientY - gesture.current.lastY;
+      gesture.current.lastX = touch.clientX;
+      gesture.current.lastY = touch.clientY;
+      setUserPan((previous) => ({ x: previous.x + dx, y: previous.y + dy }));
+      setFollowGps(false);
+    }
+  };
+
+  const onTouchEnd = () => {
+    gesture.current.mode = "none";
+  };
+
+  const recenter = () => {
+    setUserZoom(null);
+    setUserPan({ x: 0, y: 0 });
+    setFollowGps(true);
+  };
+
   const mapPoints = useMemo<TrackPoint[]>(
     () => [
       ...points,
@@ -212,10 +334,27 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
     ],
     [points, guidePoints, bounds],
   );
-  const mapViewport = useMemo(
+  const fitViewport = useMemo(
     () => createTileViewport(mapPoints, width, viewportHeight),
     [mapPoints, viewportHeight],
   );
+
+  // When the user has zoomed or panned, recompute the viewport at their zoom,
+  // keeping the fit-center geo position anchored and applying their screen
+  // pan in world pixels at the new zoom.
+  const mapViewport = useMemo(() => {
+    const zoom = userZoom ?? fitViewport.zoom;
+    if (userZoom == null && userPan.x === 0 && userPan.y === 0) return fitViewport;
+    return createTileViewportAtZoom(
+      fitViewport.centerLat,
+      fitViewport.centerLng,
+      zoom,
+      width,
+      viewportHeight,
+      userPan.x,
+      userPan.y,
+    );
+  }, [mapPoints, fitViewport, userZoom, userPan, viewportHeight]);
 
   const projected = useMemo(
     () => points.map((point) => mapViewport.project(point.lat, point.lng)),
@@ -232,7 +371,16 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   }, [guidePoints, mapViewport]);
 
   const body = (
-    <div className="relative overflow-hidden" style={{ height: viewportHeight }}>
+    <div
+      ref={containerRef}
+      className="relative touch-none overflow-hidden"
+      style={{ height: viewportHeight }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+      data-testid="activity-map-surface"
+    >
       {tileProvider.urlTemplate &&
         mapViewport.tiles.map((tile) => (
           <img
@@ -393,6 +541,17 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       >
         {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
+      {!followGps && (
+        <button
+          type="button"
+          onClick={recenter}
+          aria-label="Recenter map on your position"
+          data-testid="map-recenter"
+          className="absolute bottom-8 right-3 rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <Crosshair className="h-3.5 w-3.5" />
+        </button>
+      )}
       {tileProvider.attribution && (
         <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {tileProvider.attribution}

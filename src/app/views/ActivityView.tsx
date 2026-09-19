@@ -21,6 +21,7 @@ import { TrainRecovery } from "./TrainRecovery";
 import { TrainStrength } from "./TrainStrength";
 import { RouteLibrary } from "./RouteLibrary";
 import { RecordsView } from "./RecordsView";
+import { ConnectedDevicesView } from "./ConnectedDevicesView";
 import { WorkoutRecorder } from "./WorkoutRecorder";
 import type { SavedRoute } from "../lib/activityPlatform";
 
@@ -244,6 +245,7 @@ type TrainSection =
   | "history"
   | "routes"
   | "records"
+  | "devices"
   | "goals"
   | "progress"
   | "recovery";
@@ -373,6 +375,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             { id: "history", label: "History" },
             { id: "routes", label: "Routes" },
             { id: "records", label: "Records" },
+            { id: "devices", label: "Devices" },
             { id: "goals", label: "Goals" },
             { id: "progress", label: "Progress" },
             { id: "recovery", label: "Recovery" },
@@ -417,6 +420,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
 
       {/* GPS records, private heatmap and personal segments. */}
       {section === "records" && <RecordsView />}
+      {section === "devices" && <ConnectedDevicesView />}
 
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (

@@ -1254,14 +1254,15 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
     await mount();
     const tabs = screen.getByTestId("train-sections");
     // Update 05 added RECOVERY inside Train; the native activity platform adds
-    // Record / Routes / Records the same way. All of them stay internal
-    // sections — the bottom navigation never gains a tab for them.
+    // Record / Routes / Records the same way, and wearables add Connected
+    // Devices. All of them stay internal sections — the bottom navigation
+    // never gains a tab for them.
     assert.equal(
       tabs.querySelectorAll("button").length,
-      8,
+      9,
       "sections live inside Train, not in the bottom navigation",
     );
-    for (const label of ["Overview", "Record", "History", "Routes", "Records", "Recovery"]) {
+    for (const label of ["Overview", "Record", "History", "Routes", "Records", "Recovery", "Devices"]) {
       assert.ok(
         screen.getAllByRole("button", { name: label }).length > 0,
         `Train is missing the ${label} section`,

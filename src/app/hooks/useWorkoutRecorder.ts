@@ -16,6 +16,7 @@ import {
   MIN_GPS_POINTS_TO_SAVE,
 } from "../lib/gpsActivity";
 import { createDefaultLocationAdapter, isNativeRecordingAvailable } from "../lib/locationAdapters";
+import { isNativeWearableAvailable, normalizeWearableHeartRate, VjWearable } from "../lib/wearable";
 import {
   canRecordWith,
   reconcileNativeWorkout,
@@ -34,6 +35,8 @@ import {
 } from "../lib/activityPlatform";
 
 export interface UseWorkoutRecorder {
+  /** Live BLE heart rate (null when absent/stale) — displayed on the HR card. */
+  liveHeartRate: { bpm: number; source: string; deviceName?: string } | null;
   session: WorkoutSession | null;
   summary: WorkoutSummary | null;
   points: WorkoutSession["points"];
@@ -60,6 +63,7 @@ export interface UseWorkoutRecorder {
 }
 
 export function useWorkoutRecorder(): UseWorkoutRecorder {
+  const [liveHeartRate, setLiveHeartRate] = useState<{ bpm: number; source: string; deviceName?: string } | null>(null);
   const recorder = useMemo(
     () =>
       new GpsWorkoutRecorder({
@@ -70,6 +74,7 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
   );
 
   const [session, setSession] = useState<WorkoutSession | null>(null);
+  let wearableCleanup: (() => void) | null = null;
   const [summary, setSummary] = useState<WorkoutSummary | null>(null);
   const [pendingSync, setPendingSync] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -125,8 +130,25 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
       })();
     }
 
+    // Live BLE heart rate: feed real strap measurements into the recorder and
+    // surface the freshest reading to the HR card. Stale readings degrade to
+    // null here, so the UI shows "—" instead of a frozen BPM.
+    if (isNativeWearableAvailable()) {
+      let wearableHandle: { remove: () => Promise<void> } | null = null;
+      void VjWearable.addListener("heartRateMeasurement", (event) => {
+        const reading = normalizeWearableHeartRate(event, Date.now());
+        if (!reading) return;
+        setLiveHeartRate({ bpm: reading.bpm, source: reading.source, deviceName: reading.deviceName });
+        void recorder.ingestHeartRate(reading.bpm, reading.timestampMs);
+      }).then((handle) => {
+        wearableHandle = handle;
+      });
+      wearableCleanup = () => void wearableHandle?.remove();
+    }
+
     return () => {
       unsubscribe();
+      wearableCleanup?.();
     };
   }, [recorder]);
 
@@ -345,6 +367,7 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
   return {
     session,
     summary,
+    liveHeartRate,
     points: session?.points ?? [],
     pendingSync,
     busy,

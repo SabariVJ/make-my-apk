@@ -165,6 +165,8 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
   const [records, setRecords] = useState<GpsRecord[]>([]);
   const [segments, setSegments] = useState<PersonalSegment[]>([]);
   const [cells, setCells] = useState<HeatmapCell[]>([]);
+  const [heatmapLoading, setHeatmapLoading] = useState(false);
+  const [heatmapError, setHeatmapError] = useState<string | null>(null);
   const [range, setRange] = useState<HeatmapRange>("all");
   const [heatType, setHeatType] = useState<GpsActivityType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,9 +201,17 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
 
   const loadHeatmap = useCallback(async () => {
     if (!client) return;
+    setHeatmapLoading(true);
     const result = await fetchActivityHeatmap(client, { range, activityType: heatType });
-    if (result.ok) setCells(result.cells);
-    else setError(result.error ?? "Couldn't build your heatmap.");
+    if (result.ok) {
+      setCells(result.cells);
+      setHeatmapError(null);
+    } else {
+      // Distinguish a data problem (heatmap stays empty) from a request
+      // failure (explicit error) — a silently blank map is never acceptable.
+      setHeatmapError(result.error ?? "Couldn't build your heatmap.");
+    }
+    setHeatmapLoading(false);
   }, [client, heatType, range]);
 
   useEffect(() => {
@@ -359,7 +369,34 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               </button>
             ))}
           </div>
-          <HeatmapCanvas cells={cells} />
+          {heatmapLoading && (
+            <div
+              className="flex items-center justify-center rounded-2xl border border-white/8 bg-[#08080A]"
+              style={{ height: 260 }}
+              data-testid="heatmap-loading"
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-[#8C8C90]" />
+            </div>
+          )}
+          {!heatmapLoading && heatmapError && (
+            <div
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/5"
+              style={{ height: 260 }}
+              data-testid="heatmap-error"
+            >
+              <Flame className="h-5 w-5 text-red-400" />
+              <p className="px-6 text-center text-[11px] font-mono text-red-300">{heatmapError}</p>
+              <button
+                type="button"
+                onClick={() => void loadHeatmap()}
+                data-testid="heatmap-retry"
+                className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-white"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {!heatmapLoading && !heatmapError && <HeatmapCanvas cells={cells} />}
           <p className="text-[10px] font-mono leading-relaxed text-[#8C8C90]">
             Your heatmap is private and built only from workouts SVJ recorded on your own device.
             It is never shared with other members or used for ranking.

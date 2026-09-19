@@ -17,6 +17,9 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Supabase CLI local state
+supabase/.temp/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

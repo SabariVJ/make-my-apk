@@ -179,6 +179,17 @@ export const REWARD_ERRORS: Record<string, string> = {
   SVJ_REWARD_REQUEST_REUSED: "This request belongs to a different action. Refresh and try again.",
   SVJ_REWARD_PROFILE_NOT_FOUND: "Your profile could not be found. Refresh your sign-in.",
   SVJ_REWARD_ACCOUNT_NOT_FOUND: "Your account could not be verified. Sign in again.",
+
+  // Legacy aliases. Earlier revisions of the reward RPC bodies raised these
+  // names for the same conditions. Kept so the user always sees an intentional,
+  // sanitized message rather than a generic fallback if a database still emits
+  // the older name (for example between a code deploy and a migration deploy).
+  SVJ_REWARD_MISSION_RUNNING: "Finish your active mission before starting another.",
+  SVJ_REWARD_ASSIGNMENT_COMPLETED: "This mission has already been credited.",
+  SVJ_REWARD_ASSIGNMENT_EXPIRED:
+    "This mission's day has ended. Refresh to see today's missions.",
+  SVJ_REWARD_MISSION_EXPIRED: "This mission's day has ended. Refresh to see today's missions.",
+  SVJ_REWARD_MISSION_TOO_EARLY: "The minimum mission time has not elapsed on the server.",
 };
 
 export function isActiveEngagement(

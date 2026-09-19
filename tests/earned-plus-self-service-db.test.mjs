@@ -179,10 +179,14 @@ before(async () => {
   await execScript(
     await readFile("supabase/pending/20260903_earned_plus_qualifying_days_7.sql", "utf8"),
   );
-  // The migration under test, applied exactly as it will be deployed.
-  await execScript(
-    await readFile("supabase/migrations/20260920000000_earned_plus_self_service.sql", "utf8"),
-  );
+  // The migrations under test, applied exactly as they will be deployed:
+  // 20260920000000 is already live in production and the later hardening
+  // migrations ride on top of it in filename order.
+  for (const name of (await readdir("supabase/migrations"))
+    .filter((x) => x.endsWith(".sql") && x >= "20260920000000")
+    .sort()) {
+    await execScript(await readFile("supabase/migrations/" + name, "utf8"));
+  }
   await enable();
 });
 
@@ -318,7 +322,7 @@ describe(
             receipt.receipt.assignmentId,
             confirmation,
           ]),
-        (error) => /SVJ_REWARD_MISSION_TOO_EARLY/i.test(error.message),
+        (error) => /SVJ_REWARD_MINIMUM_TIME_NOT_MET/i.test(error.message),
       );
     });
 
@@ -673,6 +677,253 @@ describe(
       );
       assert.equal(profile.rows[0].is_plus_member, false, "membership must stay unchanged");
       assert.notEqual(profile.rows[0].total_xp, 999999, "total_xp must stay unchanged");
+    });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Update 09 / Earn Plus hardening — 20260921000000_earned_plus_stale_session_hardening.sql
+// ---------------------------------------------------------------------------
+
+const HARDENING_MIGRATION =
+  "supabase/migrations/20260921000000_earned_plus_stale_session_hardening.sql";
+
+/** Push a started session's expiry into the past WITHOUT stamping expired_at,
+ *  reproducing exactly the stale-row state found in production. */
+async function expireSessionLeavingItOpen(assignmentId) {
+  await execute(
+    "UPDATE public.reward_mission_sessions SET started_at=clock_timestamp()-interval '2 hours', eligible_at=clock_timestamp()-interval '1 hour', expires_at=clock_timestamp()-interval '30 minutes' WHERE assignment_id=$1",
+    [assignmentId],
+  );
+}
+
+const start = (id, key, requestId = randomUUID()) =>
+  callSelfService("svj_start_my_daily_mission", "authenticated", id, [requestId, key]);
+const complete = (id, assignmentId, requestId = randomUUID()) =>
+  callSelfService("svj_complete_my_daily_mission", "authenticated", id, [
+    requestId,
+    assignmentId,
+    confirmation,
+  ]);
+
+async function startAndFinish(id, key) {
+  const receipt = (await start(id, key)).rows[0].result;
+  await makeReady(receipt.receipt.assignmentId);
+  const done = await complete(id, receipt.receipt.assignmentId);
+  return { start: receipt.receipt, done: done.rows[0].result.receipt };
+}
+
+describe(
+  "Earn Plus stale mission-session hardening (real SQL)",
+  { concurrency: false },
+  () => {
+    it("stale session (expired_at NULL, expires_at in the past) cannot block a new mission", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const first = (await start(id, "focused-practice")).rows[0].result;
+      await expireSessionLeavingItOpen(first.receipt.assignmentId);
+
+      // Before the fix this INSERT collided with reward_one_open_session_per_user
+      // (23505). It must now succeed and open a genuinely new session.
+      const second = (await start(id, "plan-and-reflect")).rows[0].result;
+      assert.equal(second.replayed, false);
+      assert.notEqual(second.receipt.assignmentId, first.receipt.assignmentId);
+
+      const open = await execute(
+        "SELECT count(*)::int AS n FROM public.reward_mission_sessions WHERE user_id=$1 AND completed_at IS NULL AND expired_at IS NULL",
+        [id],
+      );
+      assert.equal(open.rows[0].n, 1, "exactly one session may stay open");
+    });
+
+    it("stale sessions are stamped with their own deterministic expiry instant", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const first = (await start(id, "focused-practice")).rows[0].result;
+      await expireSessionLeavingItOpen(first.receipt.assignmentId);
+      await start(id, "plan-and-reflect");
+
+      const row = await execute(
+        "SELECT expired_at IS NOT NULL AS stamped, expired_at = expires_at AS deterministic FROM public.reward_mission_sessions WHERE assignment_id=$1",
+        [first.receipt.assignmentId],
+      );
+      assert.equal(row.rows[0].stamped, true, "the stale session must be closed");
+      assert.equal(row.rows[0].deterministic, true, "expired_at must equal expires_at");
+    });
+
+    it("a genuinely live mission still blocks a second start", async () => {
+      if (skipAll) return;
+      const id = await account();
+      await start(id, "focused-practice");
+      await assert.rejects(
+        () => start(id, "plan-and-reflect"),
+        (error) => /SVJ_REWARD_MISSION_ALREADY_RUNNING/i.test(error.message),
+      );
+    });
+
+    it("completion stamps BOTH the assignment and its session", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const receipt = (await start(id, "plan-and-reflect")).rows[0].result;
+      await makeReady(receipt.receipt.assignmentId);
+      await complete(id, receipt.receipt.assignmentId);
+
+      const row = await execute(
+        "SELECT a.completed_at AS a_done, s.completed_at AS s_done, s.confirmation_text AS text FROM public.reward_mission_assignments a JOIN public.reward_mission_sessions s ON s.assignment_id = a.id WHERE a.id=$1",
+        [receipt.receipt.assignmentId],
+      );
+      assert.ok(row.rows[0].a_done, "assignment.completed_at must be set");
+      assert.ok(row.rows[0].s_done, "session.completed_at must be set");
+      assert.equal(row.rows[0].text, confirmation);
+    });
+
+    it("the next mission can start immediately after a completion", async () => {
+      if (skipAll) return;
+      const id = await account();
+      await startAndFinish(id, "plan-and-reflect");
+      const next = (await start(id, "focused-practice")).rows[0].result;
+      assert.equal(next.replayed, false);
+      assert.ok(next.receipt.assignmentId, "a fresh assignment must be issued");
+    });
+
+    it("two missions on one policy day add exactly ONE qualifying day", async () => {
+      if (skipAll) return;
+      const id = await account();
+      await startAndFinish(id, "plan-and-reflect");
+      await startAndFinish(id, "focused-practice");
+      const wallet = await execute(
+        "SELECT reward_xp, qualifying_days FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(wallet.rows[0].reward_xp, 100, "Reward XP still accumulates per mission");
+      assert.equal(wallet.rows[0].qualifying_days, 1, "one qualifying day per policy day");
+    });
+
+    it("three missions in one day still yield exactly one qualifying day", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const before = await totalXp(id);
+      await startAndFinish(id, "plan-and-reflect"); // 300s minimum
+      await startAndFinish(id, "intentional-movement"); // 600s
+      await startAndFinish(id, "focused-practice"); // 900s -> 150/150 cap
+      const wallet = await execute(
+        "SELECT reward_xp, qualifying_days FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(wallet.rows[0].reward_xp, 150);
+      assert.equal(wallet.rows[0].qualifying_days, 1);
+      assert.equal((await totalXp(id)) - before, 150, "three missions credit 150 profile XP");
+    });
+
+    it("a later policy day adds the next qualifying day", async () => {
+      if (skipAll) return;
+      const id = await account();
+      await startAndFinish(id, "plan-and-reflect");
+      const day = (
+        await execute(
+          "SELECT (clock_timestamp() AT TIME ZONE reward_timezone)::date AS d FROM public.reward_policies WHERE campaign_id=$1",
+          [campaign],
+        )
+      ).rows[0].d;
+      // Same shape as a real yesterday completion, written by the server role.
+      await asRole(
+        "service_role",
+        null,
+        "INSERT INTO public.reward_xp_ledger(user_id,campaign_id,policy_day,kind,source_key,reward_xp_delta) VALUES ($1,$2,$3::date-1,'mission_completion',gen_random_uuid(),50)",
+        [id, campaign, day],
+      );
+      await execScript(await readFile(HARDENING_MIGRATION, "utf8"));
+      const wallet = await execute(
+        "SELECT qualifying_days, last_qualifying_day FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(wallet.rows[0].qualifying_days, 2, "two distinct policy days = two days");
+      const iso = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10));
+      assert.equal(
+        iso(wallet.rows[0].last_qualifying_day),
+        iso(day),
+        "last day tracks the ledger",
+      );
+    });
+
+    it("qualifying-day reconciliation repairs a historically overcounted wallet", async () => {
+      if (skipAll) return;
+      const id = await account();
+      await startAndFinish(id, "plan-and-reflect");
+      await startAndFinish(id, "focused-practice");
+      await execute("UPDATE public.reward_wallets SET qualifying_days=99 WHERE user_id=$1", [id]);
+      const before = await execute(
+        "SELECT reward_xp FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      await execScript(await readFile(HARDENING_MIGRATION, "utf8"));
+      const after = await execute(
+        "SELECT qualifying_days, reward_xp FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(after.rows[0].qualifying_days, 1, "reconciled from the ledger");
+      assert.equal(
+        after.rows[0].reward_xp,
+        before.rows[0].reward_xp,
+        "legitimate Reward XP must never be altered by the repair",
+      );
+    });
+
+    it("the hardening migration is idempotent and preserves the open-session index", async () => {
+      if (skipAll) return;
+      await execScript(await readFile(HARDENING_MIGRATION, "utf8"));
+      const index = await execute(
+        "SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='reward_one_open_session_per_user'",
+      );
+      assert.equal(index.rows.length, 1, "the unique open-session index must survive");
+      assert.match(index.rows[0].indexdef, /completed_at IS NULL/);
+      assert.match(index.rows[0].indexdef, /expired_at IS NULL/);
+    });
+
+    it("backfill closes every logically-open expired session", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const first = (await start(id, "focused-practice")).rows[0].result;
+      await expireSessionLeavingItOpen(first.receipt.assignmentId);
+      const before = await execute(
+        "SELECT count(*)::int AS n FROM public.reward_mission_sessions WHERE completed_at IS NULL AND expired_at IS NULL AND expires_at <= clock_timestamp()",
+      );
+      assert.ok(before.rows[0].n >= 1, "the stale row must exist before the backfill");
+      await execScript(await readFile(HARDENING_MIGRATION, "utf8"));
+      const after = await execute(
+        "SELECT count(*)::int AS n FROM public.reward_mission_sessions WHERE completed_at IS NULL AND expired_at IS NULL AND expires_at <= clock_timestamp()",
+      );
+      assert.equal(after.rows[0].n, 0, "no expired session may stay logically open");
+    });
+
+    it("completion retry stays exactly-once and rewards once", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const before = await totalXp(id);
+      const receipt = (await start(id, "plan-and-reflect")).rows[0].result;
+      await makeReady(receipt.receipt.assignmentId);
+      const requestId = randomUUID();
+      await complete(id, receipt.receipt.assignmentId, requestId);
+      const replay = (await complete(id, receipt.receipt.assignmentId, requestId)).rows[0].result;
+      assert.equal(replay.replayed, true);
+      const wallet = await execute(
+        "SELECT reward_xp, qualifying_days FROM public.reward_wallets WHERE user_id=$1",
+        [id],
+      );
+      assert.equal(wallet.rows[0].reward_xp, 50, "a retry must not award twice");
+      assert.equal(wallet.rows[0].qualifying_days, 1);
+      assert.equal((await totalXp(id)) - before, 50, "profile XP must be awarded exactly once");
+    });
+
+    it("re-using a request id for a different mission is rejected", async () => {
+      if (skipAll) return;
+      const id = await account();
+      const requestId = randomUUID();
+      await start(id, "plan-and-reflect", requestId);
+      await assert.rejects(
+        () => start(id, "focused-practice", requestId),
+        (error) => /SVJ_REWARD_REQUEST_REUSED/i.test(error.message),
+      );
     });
   },
 );

@@ -142,3 +142,105 @@ jobs:
           name: svj-wear-debug-apk
           path: android/wear/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+  # Release PREPARATION only — nothing here publishes to Google Play. It builds
+  # upload-ready release App Bundles, proves phone and wear share one signing
+  # identity, and emits a safe metadata report. Signing uses an ephemeral
+  # CI-generated validation keystore unless SVJ production secrets are present;
+  # the certificate fingerprint in the report is all that is logged.
+  android-release-validation:
+    name: Android Release Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Prepare Capacitor assets directory
+        run: mkdir -p android/app/src/main/assets
+      - name: Capacitor sync
+        run: npm run cap:sync
+      - name: Provision signing identity
+        env:
+          SVJ_KEYSTORE_PATH_B64: ${{ secrets.SVJ_KEYSTORE_PATH_B64 }}
+          SVJ_KEYSTORE_PASSWORD: ${{ secrets.SVJ_KEYSTORE_PASSWORD }}
+          SVJ_KEY_ALIAS: ${{ secrets.SVJ_KEY_ALIAS }}
+          SVJ_KEY_PASSWORD: ${{ secrets.SVJ_KEY_PASSWORD }}
+        run: |
+          if [ -n "$SVJ_KEYSTORE_PATH_B64" ]; then
+            echo "$SVJ_KEYSTORE_PATH_B64" | base64 -d > /tmp/svj-release.keystore
+            echo "Using provided upload keystore."
+          else
+            # Ephemeral validation keystore — clearly not the production upload
+            # key. Fingerprints of BOTH artifacts are compared against each
+            # other, which is the invariant release preparation must prove.
+            keytool -genkeypair -v \
+              -keystore /tmp/svj-release.keystore -storepass svj-validation-only \
+              -alias svj-validation -keyalg RSA -keysize 2048 -validity 1 \
+              -dname "CN=SVJ Validation (not for release), O=SVJ"
+            SVJ_KEYSTORE_PASSWORD=svj-validation-only
+            SVJ_KEY_ALIAS=svj-validation
+            SVJ_KEY_PASSWORD=svj-validation-only
+            echo "No production keystore configured; using an EPHEMERAL VALIDATION key (artifacts are not release-signable)."
+          fi
+          echo "SVJ_KEYSTORE_PATH=/tmp/svj-release.keystore" >> "$GITHUB_ENV"
+          echo "SVJ_KEYSTORE_PASSWORD=$SVJ_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "SVJ_KEY_ALIAS=$SVJ_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "SVJ_KEY_PASSWORD=$SVJ_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Phone release bundle
+        run: cd android && ./gradlew :app:bundleRelease
+      - name: Wear release bundle
+        run: cd android && ./gradlew :wear:bundleRelease
+      - name: Release unit tests
+        run: cd android && ./gradlew :app:testReleaseUnitTest :wear:testReleaseUnitTest
+      - name: Verify phone and wear share one signing identity
+        run: |
+          PHONE_AAB=$(ls android/app/build/outputs/bundle/release/*.aab)
+          WEAR_AAB=$(ls android/wear/build/outputs/bundle/release/*.aab)
+          keytool -printcert -jarfile "$PHONE_AAB" | grep "SHA256:" | head -1 | sed 's/^/phone:    /' > /tmp/fingerprints.txt
+          keytool -printcert -jarfile "$WEAR_AAB" | grep "SHA256:" | head -1 | sed 's/^/wear:     /' >> /tmp/fingerprints.txt
+          cat /tmp/fingerprints.txt
+          P=$(grep '^phone:' /tmp/fingerprints.txt | awk '{print $2}')
+          W=$(grep '^wear:' /tmp/fingerprints.txt | awk '{print $2}')
+          if [ "$P" != "$W" ]; then
+            echo "::error::Phone and Wear release artifacts have DIFFERENT signing certificates — the Wear OS Data Layer will not connect."
+            exit 1
+          fi
+      - name: Release metadata report
+        run: |
+          PHONE_AAB=$(ls android/app/build/outputs/bundle/release/*.aab)
+          WEAR_AAB=$(ls android/wear/build/outputs/bundle/release/*.aab)
+          {
+            echo "git SHA:            $(git rev-parse HEAD)"
+            echo "phone app id:       app.lovable.svj"
+            echo "wear app id:        app.lovable.svj"
+            echo "phone versionCode:  100100  versionName: 1.0  targetSdk 36  minSdk 24"
+            echo "wear  versionCode:  200100  versionName: 1.0  targetSdk 36  minSdk 26"
+            grep "SHA256:" /tmp/fingerprints.txt | head -1 | sed 's/^/cert /'
+            echo "phone AAB: $(basename "$PHONE_AAB")  sha256=$(sha256sum "$PHONE_AAB" | awk '{print $1}')"
+            echo "wear  AAB: $(basename "$WEAR_AAB")  sha256=$(sha256sum "$WEAR_AAB" | awk '{print $1}')"
+          } | tee release-metadata.txt
+      - name: Upload phone release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: svj-phone-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+      - name: Upload wear release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: svj-wear-release-aab
+          path: android/wear/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+      - name: Upload release metadata report
+        uses: actions/upload-artifact@v4
+        with:
+          name: svj-release-metadata
+          path: release-metadata.txt
+          if-no-files-found: error

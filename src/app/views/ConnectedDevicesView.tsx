@@ -513,10 +513,22 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
         )}
 
         {connection === "companion_missing" && (
-          <p className="mt-3 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-            SVJ Wear OS app required on your watch. Install it on the watch from the Play Store,
-            then reopen this screen — pairing the watch over Bluetooth is not enough on its own.
-          </p>
+          <div className="mt-3 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+            <p data-testid="wear-companion-missing">SVJ is not installed on your watch.</p>
+            <a
+              href="https://play.google.com/store/apps/details?id=app.lovable.svj"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="wear-install-on-watch"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#FF4D6D] transition-colors hover:bg-[#C81E3A]/25"
+            >
+              Install on watch
+            </a>
+            <p className="mt-1.5">
+              On a paired Wear OS watch the Play Store offers SVJ for the watch automatically.
+              Pairing over Bluetooth alone is not enough.
+            </p>
+          </div>
         )}
         {connection === "unavailable" && (
           <p className="mt-3 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]">

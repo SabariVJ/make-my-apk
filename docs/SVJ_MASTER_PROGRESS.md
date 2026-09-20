@@ -1042,3 +1042,30 @@ existing user data was touched.
 None for this change. The native-platform migrations listed above still need
 applying to the live database when the corresponding release is deployed (a
 deployment step, not a code change).
+
+---
+
+# SVJ Wearables V3 — Google Play production distribution
+
+**START SHA** `f384b6fcbcbc95c7b92228ebcec9df0706c09e5d`
+
+## Changed
+- `android/wear/build.gradle`: applicationId `app.lovable.svj.wear` → **`app.lovable.svj`** (Data Layer requires identical package ID + signing cert between phone and watch). Namespace stays `app.lovable.svj.wear`. versionCode 200100. Env-driven release signing with hard failure when secrets are missing.
+- `android/app/build.gradle`: versionCode 1 → **100100** (form-factor band scheme; phone id untouched). Signing-config Groovy shadowing fixed (renamed env locals).
+- `android/wear/src/main/AndroidManifest.xml`: explicit `com.google.android.wearable.standalone=false` (companion phone required for accounts/sync/rewards).
+- `ConnectedDevicesView`: companion-missing state is now **INSTALL ON WATCH** → SVJ Play Store page (no adb / Developer Options / sideload guidance).
+- CI: new **Android Release Validation** job — `bundleRelease` for both modules, release unit tests, `keytool` SHA-256 fingerprint equality check (fails on mismatch), safe metadata report, artifacts `svj-phone-release-aab` / `svj-wear-release-aab`. Uses production keystore secrets when configured, otherwise a clearly-labeled ephemeral validation key. Nothing auto-publishes.
+
+## Verified locally
+- Release AABs build: app-release.aab (7.7 MB), wear-release.aab (2.3 MB) — signed with the same ephemeral validation key, fingerprints **identical** (`keytool -printcert -jarfile`).
+- **No native `.so` libraries in either bundle** → 64-bit / 16 KB page-size requirements satisfied by inspection.
+- `:app` + `:wear` debug unit tests: 45/45 pass. Release unit tests: pass.
+- Debug APKs: app-debug.apk, wear-debug.apk.
+- Web: 731 tests (729 pass, 2 baseline skips), tsc clean, build clean, prettier/eslint clean. `tests/play-release.test.ts` pins package identity, version bands, watch targeting, standalone metadata, signing hygiene and install UX.
+- lintVital was excluded from the LOCAL bundle run only (container OOM on the extra lint JVM); CI runs the full task.
+
+## Migrations
+Added: none. Applied: none.
+
+## Manual next step (Play Console)
+Configure Google Play App Signing + generate/store the upload keystore as repo secrets (`SVJ_KEYSTORE_PATH_B64`, `SVJ_KEYSTORE_PASSWORD`, `SVJ_KEY_ALIAS`, `SVJ_KEY_PASSWORD`), then upload the AABs to closed tracks. Checklist: `docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md`.

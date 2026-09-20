@@ -10,7 +10,10 @@ android {
         applicationId "app.lovable.svj"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Play versioning scheme (docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md):
+        // phone builds live in the 100000 band, wear builds in the 200000 band,
+        // with MAJOR*10000 + MINOR*100 + PATCH added. 1.0.0 -> 100100.
+        versionCode 100100
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -23,15 +26,15 @@ android {
         release {
             def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
             def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
-            def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
-            def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+            def keyAliasEnv = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPasswordEnv = System.getenv('SVJ_KEY_PASSWORD') ?: ''
 
-            def allPresent = keystorePath && keystorePassword && keyAlias && keyPassword
+            def allPresent = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv
             if (allPresent) {
                 storeFile file(keystorePath)
                 storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+                keyAlias keyAliasEnv
+                keyPassword keyPasswordEnv
             }
         }
     }
@@ -43,9 +46,9 @@ android {
             signingConfig signingConfigs.release
             def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
             def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
-            def keyAlias = System.getenv('SVJ_KEY_ALIAS') ?: ''
-            def keyPassword = System.getenv('SVJ_KEY_PASSWORD') ?: ''
-            def signingReady = keystorePath && keystorePassword && keyAlias && keyPassword
+            def keyAliasEnv = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPasswordEnv = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+            def signingReady = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv
             project.gradle.taskGraph.whenReady { graph ->
                 if (signingReady) return
                 // Match only the app project's release artifact tasks.

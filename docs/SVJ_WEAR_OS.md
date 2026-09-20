@@ -156,3 +156,17 @@ for the app to run — a watch without them simply reports fewer capabilities.
 * No physical watch has been used by this environment: sensor readings,
   reconnection, and the Data Layer have been exercised by unit tests and by
   code review only.
+
+## Play distribution (Wearables V3)
+
+The watch app ships from the **same Play listing** as the phone app
+(`app.lovable.svj`) — the Wear applicationId was aligned to the phone app
+because the Data Layer requires identical package ID and signing certificate.
+Form-factor version codes: phone `100100+`, wear `200100+`. Release artifacts
+are upload-ready AABs (`svj-phone-release.aab`, `svj-wear-release.aab`) built
+by CI's *Android Release Validation* job, which also proves both artifacts
+share one signing certificate. Full guide and Play Console checklist:
+`docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md`.
+
+The Devices screen no longer mentions adb: a missing watch companion shows
+`INSTALL ON WATCH`, deep-linking to SVJ's Play Store page.

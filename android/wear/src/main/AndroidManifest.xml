@@ -15,6 +15,16 @@
         android:supportsRtl="true"
         android:theme="@style/WearAppTheme">
 
+        <!-- SVJ on the watch records real workouts, survives phone
+             disconnection (offline outbox) and reconnects on its own, but
+             accounts, activity sync and rewards all run through the SVJ phone
+             app / SVJ backend. The honest Play declaration is therefore NOT
+             standalone: the companion phone app is required for the full
+             experience. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
+
         <uses-library
             android:name="com.google.android.wearable"
             android:required="false" />

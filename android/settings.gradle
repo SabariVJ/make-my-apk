@@ -1,4 +1,7 @@
 include ':app'
+// SVJ Wear OS companion — built from this same repository, alongside the phone
+// app. It is a native Kotlin app (no Capacitor/WebView on the watch).
+include ':wear'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
 

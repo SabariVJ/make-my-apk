@@ -90,6 +90,10 @@ dependencies {
 
     // Android's on-device Health Connect store (not a third-party service).
     implementation "androidx.health.connect:connect-client:$healthConnectVersion"
+
+    // Wear OS Data Layer: discovery of, and messaging with, the SVJ Wear OS
+    // companion app that ships from this same repository (module `:wear`).
+    implementation "com.google.android.gms:play-services-wearable:$playServicesWearableVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
 }
 

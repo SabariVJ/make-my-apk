@@ -1,0 +1,60 @@
+// SVJ Wear OS companion.
+//
+// A native Kotlin Wear OS app that lives in the same repository as the SVJ
+// phone app and talks to it over the Wear OS Data Layer. It is deliberately
+// independent of Capacitor: the watch never loads the web app, and the phone
+// module is untouched by this module's dependencies.
+//
+// The UI is built with the framework views rather than Compose for Wear OS:
+// this project is built inside a memory-constrained container where the plain
+// Android toolchain already has to be run with a reduced heap and a single
+// worker, and adding a second full UI toolchain (Compose compiler + runtime)
+// to the build would risk the phone build as well. Views are a fully supported
+// Wear OS approach and keep the watch APK small, which matters for watch
+// battery and install size.
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace = "app.lovable.svj.wear"
+    compileSdk = rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "app.lovable.svj.wear"
+        // Wear OS 3 / API 30 is the practical floor for phones paired with SVJ;
+        // 26 keeps the module buildable against the same toolchain while the
+        // runtime features used (sensors, foreground service, Data Layer) are
+        // all available well below it.
+        minSdk = 26
+        targetSdk = rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    // Wear OS Data Layer (capability/node discovery, messages, durable outbox).
+    implementation "com.google.android.gms:play-services-wearable:$playServicesWearableVersion"
+    // NotificationCompat for the ongoing workout notification.
+    implementation "androidx.core:core:$androidxCoreVersion"
+
+    testImplementation "junit:junit:$junitVersion"
+}

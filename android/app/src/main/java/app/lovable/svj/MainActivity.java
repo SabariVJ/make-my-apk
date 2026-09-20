@@ -32,6 +32,10 @@ public class MainActivity extends BridgeActivity {
         // Standard BLE wearable sensors (Heart Rate Service chest straps/bands).
         registerPlugin(VjWearablePlugin.class);
 
+        // SVJ Wear OS companion: Wearable Data Layer discovery, the durable
+        // inbox of watch messages, and commands sent back to the watch.
+        registerPlugin(VjWearPlugin.class);
+
         super.onCreate(savedInstanceState);
     }
 }

@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Activity,
   BatteryMedium,
@@ -23,6 +30,19 @@ import {
   type BleDeviceInfo,
 } from "../lib/wearable";
 import { isHeartRateFresh } from "../lib/bleHeartRate";
+import {
+  WEAR_CAPABILITY_LABELS,
+  WEAR_CONNECTION_LABELS,
+  describeWearCapabilities,
+  getHeartRateSourcePreference,
+  isNativeWearAvailable,
+  setHeartRateSourcePreference,
+  subscribeHeartRateSourcePreference,
+  wearConnectionState,
+  VjWear,
+  type HeartRateSourcePreference,
+} from "../lib/wearOs";
+import { getWearCompanionSnapshot, subscribeWearCompanion } from "../lib/wearCompanion";
 
 const initialState: WearableState = {
   connection: "disconnected",
@@ -179,6 +199,8 @@ export const ConnectedDevicesView: React.FC = () => {
 
   return (
     <div className="space-y-4" data-testid="connected-devices">
+      <WearDevicesSection now={now} />
+
       {/* Live heart rate summary */}
       <div className="rounded-2xl border border-white/8 bg-[#0B0B0C] p-4">
         <div className="mb-2 flex items-center gap-2">
@@ -371,6 +393,182 @@ export const ConnectedDevicesView: React.FC = () => {
             </span>
           </li>
         </ul>
+      </div>
+    </div>
+  );
+};
+
+const HEART_RATE_SOURCE_OPTIONS: {
+  value: HeartRateSourcePreference;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "auto", label: "Automatic", hint: "Bluetooth strap first, then SVJ Watch" },
+  { value: "ble", label: "Bluetooth sensor", hint: "Always prefer the chest strap" },
+  { value: "wear_os", label: "SVJ Watch", hint: "Always prefer the watch" },
+];
+
+function lastSeenLabel(ageMs: number | null): string {
+  if (ageMs == null) return "Never";
+  const seconds = Math.round(ageMs / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  return minutes < 60 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago`;
+}
+
+/**
+ * My Devices → SVJ Watch, plus the live heart-rate source selector.
+ *
+ * The watch row is driven entirely by what the Wear OS Data Layer actually
+ * reports: an app that is merely installed is never shown as connected, and
+ * capabilities come from the watch's own declaration rather than from a model
+ * name.
+ */
+const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
+  const companion = useSyncExternalStore(subscribeWearCompanion, getWearCompanionSnapshot);
+  const preference = useSyncExternalStore(
+    subscribeHeartRateSourcePreference,
+    getHeartRateSourcePreference,
+  );
+  const nativeWear = useMemo(() => isNativeWearAvailable(), []);
+  const connection = wearConnectionState(companion.status, now);
+  const capabilities = describeWearCapabilities(companion.status.capabilities);
+  const workout = companion.workout;
+
+  const stopWatchWorkout = useCallback(async () => {
+    await VjWear.sendCommand?.({ type: "finish", sessionId: workout?.sessionId }).catch(
+      () => undefined,
+    );
+  }, [workout?.sessionId]);
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-[#0B0B0C] p-4" data-testid="wear-devices">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Watch className="h-4 w-4 text-[#E62846]" />
+          <span className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90]">
+            My devices
+          </span>
+        </div>
+        <span
+          className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]"
+          data-testid="wear-connection"
+        >
+          {WEAR_CONNECTION_LABELS[connection]}
+        </span>
+      </div>
+
+      <div
+        className="rounded-xl border border-white/8 bg-black/40 p-3"
+        data-testid="wear-watch-card"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold text-white">SVJ Watch</p>
+            <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+              Wear OS companion
+            </p>
+          </div>
+          {connection === "connected" && (
+            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-mono uppercase text-emerald-400">
+              Live
+            </span>
+          )}
+        </div>
+
+        <dl className="mt-3 space-y-1 text-[10px] font-mono text-[#8C8C90]">
+          <div className="flex justify-between gap-2">
+            <dt>Capabilities</dt>
+            <dd className="text-right text-white">
+              {capabilities.length > 0
+                ? capabilities.map((key) => WEAR_CAPABILITY_LABELS[key]).join(" • ")
+                : "None reported"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Last seen</dt>
+            <dd className="text-right text-white">
+              {lastSeenLabel(companion.status.lastSeenAgeMs)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Workout</dt>
+            <dd className="text-right text-white" data-testid="wear-workout-state">
+              {workout
+                ? `${workout.state}${workout.heartRate != null ? ` · ${workout.heartRate} bpm` : ""}`
+                : "No active watch workout"}
+            </dd>
+          </div>
+        </dl>
+
+        {workout && (
+          <button
+            type="button"
+            onClick={() => void stopWatchWorkout()}
+            data-testid="wear-stop-workout"
+            className="mt-3 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
+          >
+            Finish watch workout
+          </button>
+        )}
+
+        {connection === "companion_missing" && (
+          <p className="mt-3 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+            SVJ Wear OS app required on your watch. Install it on the watch from the Play Store,
+            then reopen this screen — pairing the watch over Bluetooth is not enough on its own.
+          </p>
+        )}
+        {connection === "unavailable" && (
+          <p className="mt-3 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+            {nativeWear
+              ? "Wear OS is not available on this device."
+              : "The SVJ Watch bridge runs in the SVJ Android app. Open SVJ on your phone to connect your watch."}
+          </p>
+        )}
+        {connection === "reconnecting" && (
+          <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10px] font-mono leading-relaxed text-amber-300">
+            The watch is out of range. A running watch workout keeps recording on the watch and
+            syncs when it reconnects.
+          </p>
+        )}
+      </div>
+
+      {/* Heart-rate source selection: both transports can be live at once, so
+          the user decides, and only the selected source feeds the workout. */}
+      <div className="mt-3">
+        <p className="mb-2 text-[10px] font-mono uppercase tracking-widest text-[#8C8C90]">
+          Heart rate source
+        </p>
+        <div className="space-y-1" role="radiogroup" aria-label="Heart rate source">
+          {HEART_RATE_SOURCE_OPTIONS.map((option) => {
+            const selected = preference === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                data-testid={`hr-source-${option.value}`}
+                onClick={() => setHeartRateSourcePreference(option.value)}
+                className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
+                  selected
+                    ? "border-[#C81E3A]/50 bg-[#C81E3A]/15"
+                    : "border-white/8 bg-black/40 hover:border-white/20"
+                }`}
+              >
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                    selected ? "bg-[#E62846]" : "border border-white/30"
+                  }`}
+                />
+                <span className="flex-1">
+                  <span className="block text-[11px] font-bold text-white">{option.label}</span>
+                  <span className="block text-[9px] font-mono text-[#8C8C90]">{option.hint}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

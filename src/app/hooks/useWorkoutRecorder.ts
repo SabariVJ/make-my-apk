@@ -18,6 +18,18 @@ import {
 import { createDefaultLocationAdapter, isNativeRecordingAvailable } from "../lib/locationAdapters";
 import { isNativeWearableAvailable, normalizeWearableHeartRate, VjWearable } from "../lib/wearable";
 import {
+  chooseHeartRateSource,
+  preferredSourceForArbitration,
+  subscribeHeartRateSourcePreference,
+  wearMeasurementToHeartRate,
+  type HeartRateCandidate,
+} from "../lib/wearOs";
+import {
+  onWearHeartRateSample,
+  onWearWorkoutSummary,
+  startWearCompanion,
+} from "../lib/wearCompanion";
+import {
   canRecordWith,
   reconcileNativeWorkout,
   requestWorkoutPermissions,
@@ -34,9 +46,17 @@ import {
   type LiveShare,
 } from "../lib/activityPlatform";
 
+export interface LiveHeartRateDisplay {
+  bpm: number;
+  source: string;
+  deviceName?: string;
+  /** "live" while the selected source is healthy, "reconnecting" when degraded. */
+  status: "live" | "reconnecting";
+}
+
 export interface UseWorkoutRecorder {
-  /** Live BLE heart rate (null when absent/stale) — displayed on the HR card. */
-  liveHeartRate: { bpm: number; source: string; deviceName?: string } | null;
+  /** Live heart rate (null when absent/stale) — displayed on the HR card. */
+  liveHeartRate: LiveHeartRateDisplay | null;
   session: WorkoutSession | null;
   summary: WorkoutSummary | null;
   points: WorkoutSession["points"];
@@ -63,11 +83,7 @@ export interface UseWorkoutRecorder {
 }
 
 export function useWorkoutRecorder(): UseWorkoutRecorder {
-  const [liveHeartRate, setLiveHeartRate] = useState<{
-    bpm: number;
-    source: string;
-    deviceName?: string;
-  } | null>(null);
+  const [liveHeartRate, setLiveHeartRate] = useState<LiveHeartRateDisplay | null>(null);
   const recorder = useMemo(
     () =>
       new GpsWorkoutRecorder({
@@ -133,30 +149,76 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
       })();
     }
 
-    // Live BLE heart rate: feed real strap measurements into the recorder and
-    // surface the freshest reading to the HR card. Stale readings degrade to
-    // null here, so the UI shows "—" instead of a frozen BPM.
-    let wearableCleanup: (() => void) | null = null;
+    // ── Live heart rate: BLE strap and SVJ Watch, with explicit arbitration ─
+    // Both sources publish real measurements; exactly one is selected (the
+    // user's choice first, then the BLE strap, then the watch). Only a freshly
+    // selected sample is folded into the workout, so a reading is never double
+    // counted and the two sources are never averaged together.
+    const candidates: { ble: HeartRateCandidate; wear: HeartRateCandidate } = {
+      ble: { reading: null, lastSampleMs: null },
+      wear: { reading: null, lastSampleMs: null },
+    };
+    const ingestedAt = { ble: 0, wear_os: 0 };
+
+    const applyHeartRate = () => {
+      const selection = chooseHeartRateSource(
+        { preferred: preferredSourceForArbitration(), ble: candidates.ble, wear: candidates.wear },
+        Date.now(),
+      );
+      if (!selection.reading || !selection.source) {
+        setLiveHeartRate(null);
+        return;
+      }
+      const source = selection.source;
+      if (selection.reading.timestampMs > ingestedAt[source]) {
+        ingestedAt[source] = selection.reading.timestampMs;
+        void recorder.ingestHeartRate(selection.reading.bpm, selection.reading.timestampMs);
+      }
+      setLiveHeartRate({
+        bpm: selection.reading.bpm,
+        source,
+        deviceName:
+          source === "wear_os"
+            ? (selection.reading.deviceName ?? "SVJ Watch")
+            : selection.reading.deviceName,
+        status: selection.degraded ? "reconnecting" : "live",
+      });
+    };
+
+    const cleanups: (() => void)[] = [];
     if (isNativeWearableAvailable()) {
       let wearableHandle: { remove: () => Promise<void> } | null = null;
       void VjWearable.addListener("heartRateMeasurement", (event) => {
         const reading = normalizeWearableHeartRate(event, Date.now());
         if (!reading) return;
-        setLiveHeartRate({
-          bpm: reading.bpm,
-          source: reading.source,
-          deviceName: reading.deviceName,
-        });
-        void recorder.ingestHeartRate(reading.bpm, reading.timestampMs);
+        candidates.ble = { reading, lastSampleMs: reading.timestampMs };
+        applyHeartRate();
       }).then((handle) => {
         wearableHandle = handle;
       });
-      wearableCleanup = () => void wearableHandle?.remove();
+      cleanups.push(() => void wearableHandle?.remove());
     }
+
+    // The SVJ Watch streams real heart rate while its own workout is running.
+    // The companion controller owns the native listeners and the inbox.
+    startWearCompanion();
+    cleanups.push(
+      onWearHeartRateSample((measurement) => {
+        const reading = wearMeasurementToHeartRate(measurement);
+        if (!reading) return;
+        candidates.wear = { reading, lastSampleMs: reading.timestampMs };
+        applyHeartRate();
+      }),
+      subscribeHeartRateSourcePreference(() => applyHeartRate()),
+    );
+    // Staleness must be visible: a silent strap degrades to "—" instead of
+    // freezing the last BPM on screen forever.
+    const hrTicker = window.setInterval(applyHeartRate, 2000);
 
     return () => {
       unsubscribe();
-      wearableCleanup?.();
+      window.clearInterval(hrTicker);
+      for (const cleanup of cleanups) cleanup();
     };
   }, [recorder]);
 
@@ -171,6 +233,22 @@ export function useWorkoutRecorder(): UseWorkoutRecorder {
     });
     setPendingSync(readQueue(recorderStorage()).length);
   }, []);
+
+  // A completed watch workout is imported by the companion controller through
+  // the canonical server pipeline; here we only surface the outcome and make
+  // sure the local offline queue is flushed.
+  useEffect(
+    () =>
+      onWearWorkoutSummary((summary, duplicate) => {
+        setNotice(
+          duplicate
+            ? "That watch workout is already in your SVJ history."
+            : `Watch workout saved · ${summary.activityType}`,
+        );
+        void syncPending();
+      }),
+    [syncPending],
+  );
 
   useEffect(() => {
     void syncPending();

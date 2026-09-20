@@ -71,6 +71,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   manual: "Logged manually",
   strength_log: "Structured strength",
   health_connect: "Health Connect",
+  wear_os: "SVJ Watch",
 };
 
 export function sourceLabel(source: string): string {

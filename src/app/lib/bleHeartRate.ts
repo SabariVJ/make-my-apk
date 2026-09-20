@@ -88,7 +88,7 @@ export const BATTERY_LEVEL_UUID = "00002a19-0000-1000-8000-00805f9b34fb";
 export interface LiveHeartRate {
   bpm: number;
   timestampMs: number;
-  source: "ble" | "health_connect";
+  source: "ble" | "health_connect" | "wear_os";
   deviceName?: string;
   deviceId?: string;
   sensorContact?: HeartRateMeasurement["sensorContact"];

@@ -329,7 +329,9 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           icon={<Heart className="h-3 w-3 text-[#E62846]" />}
           hint={
             liveHeartRate
-              ? `${liveHeartRate.deviceName ?? "Chest sensor"} · live`
+              ? `${liveHeartRate.deviceName ?? (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")} · ${
+                  liveHeartRate.status === "reconnecting" ? "reconnecting" : "live"
+                }`
               : summary?.maxHeartRate != null
                 ? `avg ${summary.avgHeartRate ?? "—"} · max ${summary.maxHeartRate} bpm`
                 : "No sensor connected"

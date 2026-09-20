@@ -764,6 +764,12 @@ export interface PlatformActivityInput {
   distanceMeters?: number | null;
   caloriesEstimate?: number | null;
   avgHeartRate?: number | null;
+  /**
+   * Where the workout came from. The server derives the stored activity
+   * `source` from this value ('health_connect' or 'wear_os') instead of
+   * trusting client text, so provenance can never be misreported.
+   */
+  devicePlatform?: "health_connect" | "wear_os";
 }
 
 /**
@@ -787,6 +793,7 @@ export async function importPlatformActivity(
     p_distance_meters: input.distanceMeters ?? null,
     p_calories_estimate: input.caloriesEstimate ?? null,
     p_avg_heart_rate: input.avgHeartRate ?? null,
+    p_device_platform: input.devicePlatform ?? "health_connect",
   });
   if (!result.ok) return { ok: false, error: result.error };
   if (!isRecord(result.data) || result.data.ok !== true) {

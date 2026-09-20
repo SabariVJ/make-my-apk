@@ -34,7 +34,16 @@ export const STEP_COMPATIBLE_ACTIVITY_TYPES: ReadonlySet<ActivityType> = new Set
 // 'strength_log' (Update 03) is written only by the structured strength save
 // RPC — it is never sent by the client. It is accepted here so structured
 // workouts appear in history with their own provenance.
-export const ACTIVITY_SOURCES = ["svj_native", "manual", "strength_log"] as const;
+// 'health_connect' (device platform import) and 'wear_os' (the SVJ Wear OS
+// companion) are written only by the server import RPC — never directly by the
+// client. They are listed so history can render their real provenance.
+export const ACTIVITY_SOURCES = [
+  "svj_native",
+  "manual",
+  "strength_log",
+  "health_connect",
+  "wear_os",
+] as const;
 export type ActivitySource = (typeof ACTIVITY_SOURCES)[number];
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {

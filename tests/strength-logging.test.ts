@@ -760,11 +760,18 @@ describe("strength UI wiring", () => {
     assert.match(lib, /svj_create_custom_exercise/);
   });
 
-  it("exposes strength as a Train section without adding a bottom-nav tab", () => {
-    const view = read("src/app/views/ActivityView.tsx");
-    assert.match(view, /import \{ TrainStrength \} from "\.\/TrainStrength"/);
-    assert.match(view, /<TrainStrength onExit=/);
-    assert.match(view, /data-testid="open-strength"/);
+  it("surfaces Structured Strength on Train without adding a bottom-nav tab", () => {
+    const train = read("src/app/views/WorkoutView.tsx");
+    assert.match(train, /import \{ TrainStrength \} from "\.\/TrainStrength"/);
+    assert.match(train, /<TrainStrength onExit=/);
+    assert.match(train, /<StructuredStrengthCard/);
+    const card = read("src/app/components/StructuredStrengthCard.tsx");
+    assert.match(card, /data-testid="structured-strength-start"/);
+
+    // The entry point moved to Train; it must not be duplicated in Activity.
+    const activity = read("src/app/views/ActivityView.tsx");
+    assert.doesNotMatch(activity, /import \{ TrainStrength \} from "\.\/TrainStrength"/);
+    assert.doesNotMatch(activity, /data-testid="open-strength"/);
   });
 
   it("preserves the Update 01 history RPC fix and the membership architecture", () => {

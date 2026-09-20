@@ -6,14 +6,19 @@ import assert from "node:assert/strict";
 // These tests validate the filtering predicate used by Navigation.tsx to decide
 // which tabs are visible on Android vs web.
 
+// Primary bottom navigation (post navigation-cleanup).
 const ALL_NAV_ITEMS = [
   { id: "challenges", label: "Challenges" },
+  { id: "activity", label: "Activity" },
   { id: "workouts", label: "Train" },
   { id: "nutrition", label: "Fuel" },
+  { id: "plus", label: "Plus" },
+];
+
+// Secondary destinations, shown in the right rail (desktop) / drawer (mobile).
+const UTILITY_NAV_ITEMS = [
   { id: "community", label: "Community" },
   { id: "leaderboard", label: "Leaderboard" },
-  { id: "sixty", label: "60 Day" },
-  { id: "plus", label: "Plus" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -26,7 +31,7 @@ const RESTRICTED_NAV_ITEMS = [
 ];
 
 /**
- * Mirrors the Navigation.tsx filtering logic after the fix.
+ * Mirrors the filtering logic in UtilityNav.visibleUtilityItems().
  * On Android: only hide Leaderboard. On web: show everything.
  */
 function filterNavItems(items, isAndroid) {
@@ -37,40 +42,43 @@ function filterNavItems(items, isAndroid) {
 }
 
 describe("Navigation — Android tab visibility", () => {
-  it("shows Plus tab on Android", () => {
-    const tabs = filterNavItems(ALL_NAV_ITEMS, true);
-    const ids = tabs.map((t) => t.id);
+  it("keeps Plus in the primary navigation on Android", () => {
+    const ids = ALL_NAV_ITEMS.map((t) => t.id);
     assert.ok(ids.includes("plus"), "Plus tab must be visible on Android");
   });
 
-  it("shows Community tab on Android", () => {
-    const tabs = filterNavItems(ALL_NAV_ITEMS, true);
-    const ids = tabs.map((t) => t.id);
-    assert.ok(ids.includes("community"), "Community tab must be visible on Android");
+  it("keeps the primary navigation to five destinations", () => {
+    assert.deepEqual(
+      ALL_NAV_ITEMS.map((t) => t.id),
+      ["challenges", "activity", "workouts", "nutrition", "plus"],
+      "60 Day / Community / Leaderboard / Profile must not be bottom-nav tabs",
+    );
   });
 
-  it("hides Leaderboard tab on Android", () => {
-    const tabs = filterNavItems(ALL_NAV_ITEMS, true);
-    const ids = tabs.map((t) => t.id);
+  it("shows Community in the utility destinations on Android", () => {
+    const ids = filterNavItems(UTILITY_NAV_ITEMS, true).map((t) => t.id);
+    assert.ok(ids.includes("community"), "Community must stay reachable on Android");
+    assert.ok(ids.includes("profile"), "Profile must stay reachable on Android");
+  });
+
+  it("hides Leaderboard on Android", () => {
+    const ids = filterNavItems(UTILITY_NAV_ITEMS, true).map((t) => t.id);
     assert.ok(!ids.includes("leaderboard"), "Leaderboard must be hidden on Android");
   });
 
-  it("shows all tabs on web", () => {
-    const tabs = filterNavItems(ALL_NAV_ITEMS, false);
-    assert.equal(tabs.length, ALL_NAV_ITEMS.length, "Web must show all tabs");
-  });
-
-  it("shows all expected Android full-mode tabs", () => {
-    const tabs = filterNavItems(ALL_NAV_ITEMS, true);
-    const ids = tabs.map((t) => t.id);
-    const expected = ["challenges", "workouts", "nutrition", "community", "sixty", "plus", "profile"];
-    assert.deepEqual(ids.sort(), expected.sort(), "Android full-mode tabs must match");
+  it("shows every utility destination on web", () => {
+    const tabs = filterNavItems(UTILITY_NAV_ITEMS, false);
+    assert.equal(tabs.length, UTILITY_NAV_ITEMS.length, "Web must show all utility tabs");
   });
 
   it("restricted shell is unchanged regardless of platform", () => {
     const restrictedAndroid = RESTRICTED_NAV_ITEMS;
     const restrictedWeb = RESTRICTED_NAV_ITEMS;
-    assert.deepEqual(restrictedAndroid, restrictedWeb, "Restricted tabs must be platform-independent");
+    assert.deepEqual(
+      restrictedAndroid,
+      restrictedWeb,
+      "Restricted tabs must be platform-independent",
+    );
   });
 });
 
@@ -102,8 +110,12 @@ describe("AppContent — handleTabChange Plus behavior", () => {
   it("sets activeTab to 'plus' and opens paywall on all platforms", () => {
     let activeTab = "challenges";
     let paywallOpen = false;
-    const setActiveTab = (tab) => { activeTab = tab; };
-    const setIsPaywallOpen = (open) => { paywallOpen = open; };
+    const setActiveTab = (tab) => {
+      activeTab = tab;
+    };
+    const setIsPaywallOpen = (open) => {
+      paywallOpen = open;
+    };
 
     // Simulate handleTabChange for "plus" tab (post-fix)
     const tab = "plus";
@@ -121,7 +133,9 @@ describe("AppContent — Android tab reset guard", () => {
   it("resets leaderboard tab on Android but not plus or community", () => {
     const isAndroid = true;
     let tab = "leaderboard";
-    const setActiveTab = (t) => { tab = t; };
+    const setActiveTab = (t) => {
+      tab = t;
+    };
 
     // Simulate the useEffect guard
     if (isAndroid && tab === "leaderboard") {

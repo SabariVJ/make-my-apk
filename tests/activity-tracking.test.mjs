@@ -243,6 +243,7 @@ before(async () => {
       contents: `
       export { ActivityProvider, useActivity } from './src/app/context/ActivityContext';
       export { ActivityView } from './src/app/views/ActivityView';
+      export { TrainStrength } from './src/app/views/TrainStrength';
       export { vjAddMeasurementListener, vjStartTracking, vjStopTracking } from './src/app/lib/vj-pedometer';
     `,
       resolveDir: process.cwd(),
@@ -1080,9 +1081,19 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
       },
     };
   }
+  // Structured Strength now lives under Train (its entry card is asserted
+  // statically in strength-logging.test.ts). These tests exercise the logger
+  // itself, so they mount it directly.
   async function openStrength() {
+    client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
     await act(async () => {
-      fireEvent.click(screen.getByTestId("open-strength"));
+      view = render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(app.TrainStrength, { onExit: () => {} }),
+        ),
+      );
     });
     assert.ok(screen.getByTestId("strength-logger"));
     await act(async () => {
@@ -1117,7 +1128,6 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
       calls.push(args);
       return { data: strengthEnvelope(args), error: null };
     });
-    await mount();
     await openStrength();
 
     await act(async () => {
@@ -1170,7 +1180,6 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
       if (failing) return { data: null, error: { message: "network down" } };
       return { data: strengthEnvelope(args, { duplicate: true }), error: null };
     });
-    await mount();
     await openStrength();
     await act(async () => {
       fillSet(0, 12, 50);
@@ -1262,7 +1271,15 @@ describe("structured strength logging (Update 03)", { concurrency: false, timeou
       9,
       "sections live inside Train, not in the bottom navigation",
     );
-    for (const label of ["Overview", "Record", "History", "Routes", "Records", "Recovery", "Devices"]) {
+    for (const label of [
+      "Overview",
+      "Record",
+      "History",
+      "Routes",
+      "Records",
+      "Recovery",
+      "Devices",
+    ]) {
       assert.ok(
         screen.getAllByRole("button", { name: label }).length > 0,
         `Train is missing the ${label} section`,

@@ -117,14 +117,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # The Gradle settings script references the Capacitor modules, so the
-      # Node dependencies have to be present even though the watch app itself
-      # is a plain Kotlin module.
+      # The watch app is a plain Kotlin module, but the Gradle build still
+      # configures the Capacitor phone module, which needs both the Node
+      # dependencies and the generated Cordova/Capacitor files from `cap sync`.
       - run: npm ci
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
+      - name: Prepare Capacitor assets directory
+        run: mkdir -p android/app/src/main/assets
+      - name: Capacitor sync
+        run: npm run cap:sync
       - name: Wear OS unit tests
         run: cd android && ./gradlew :wear:testDebugUnitTest
       - name: Android lint (wear)

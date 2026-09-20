@@ -46,7 +46,14 @@ async function exists(relativePath) {
   }
 }
 
-const SOURCE_DIRS = ["src", "android/app/src/main/java", "supabase/migrations"];
+const SOURCE_DIRS = [
+  "src",
+  "android/app/src/main/java",
+  // The SVJ Wear OS companion is SVJ's own watch app: it must stay free of
+  // any external fitness provider just like the phone app.
+  "android/wear/src/main",
+  "supabase/migrations",
+];
 
 // The specific integration surface the removed commit introduced. Any of these
 // returning would mean an external provider is wired back into SVJ.
@@ -97,6 +104,63 @@ describe("no external fitness provider integration remains", () => {
   it("the generated route tree contains no provider route", async () => {
     const tree = await readFile(join(root, "src/routeTree.gen.ts"), "utf8");
     assert.doesNotMatch(tree, /strava/i);
+  });
+});
+
+describe("the SVJ Wear OS companion is part of this repository", () => {
+  it("the watch module exists and is registered in the same Gradle build", async () => {
+    assert.ok(await exists("android/wear/build.gradle"), "wear module build file");
+    assert.ok(await exists("android/wear/src/main/AndroidManifest.xml"), "wear manifest");
+    const settings = await readFile(join(root, "android/settings.gradle"), "utf8");
+    assert.match(settings, /include ':wear'/);
+  });
+
+  it("the watch app is a real Wear OS app, not a shrunk phone app", async () => {
+    const manifest = await readFile(
+      join(root, "android/wear/src/main/AndroidManifest.xml"),
+      "utf8",
+    );
+    assert.match(manifest, /android\.hardware\.type\.watch/, "declared as a Wear OS app");
+    assert.match(manifest, /foregroundServiceType="health"/, "real foreground workout service");
+    assert.match(manifest, /svj_wear_companion/, "advertises its capability for discovery");
+    assert.match(manifest, /BODY_SENSORS/);
+    assert.match(manifest, /com\.google\.android\.gms\.wearable\.MESSAGE_RECEIVED/);
+    assert.doesNotMatch(manifest, /BACKGROUND_/i, "no background sensor permission is requested");
+  });
+
+  it("the phone discovers the watch through the Data Layer, not Bluetooth scanning", async () => {
+    assert.ok(await exists("android/app/src/main/java/app/lovable/svj/VjWearPlugin.java"));
+    assert.ok(
+      await exists("android/app/src/main/java/app/lovable/svj/VjWearListenerService.java"),
+      "a listener service buffers watch messages while the app is closed",
+    );
+    const plugin = await readFile(
+      join(root, "android/app/src/main/java/app/lovable/svj/VjWearPlugin.java"),
+      "utf8",
+    );
+    assert.match(plugin, /CapabilityClient/, "uses Wear OS capability discovery");
+    assert.doesNotMatch(
+      plugin,
+      /BluetoothLeScanner|startScan\(/,
+      "never scans Bluetooth to find the watch",
+    );
+    const manifest = await readFile(join(root, "android/app/src/main/AndroidManifest.xml"), "utf8");
+    assert.match(manifest, /VjWearListenerService/);
+    assert.match(manifest, /svj_phone_app/, "advertises itself so the watch can find its phone");
+  });
+
+  it("watch workouts reach the existing server pipeline with wear_os provenance", async () => {
+    const companion = await readFile(join(root, "src/app/lib/wearCompanion.ts"), "utf8");
+    assert.match(companion, /importPlatformActivity/, "uses the canonical import RPC");
+    assert.match(companion, /devicePlatform: "wear_os"/);
+    assert.doesNotMatch(companion, /awardXp|total_xp|is_plus_member/, "never grants rewards itself");
+    const migration = await readFile(
+      join(root, "supabase/migrations/20260924000000_wear_os_activity_source.sql"),
+      "utf8",
+    );
+    assert.match(migration, /'wear_os'/);
+    assert.match(migration, /svj_import_platform_activity/);
+    assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i, "additive only");
   });
 });
 

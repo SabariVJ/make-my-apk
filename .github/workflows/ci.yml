@@ -61,8 +61,9 @@ jobs:
       - name: Native reward transaction and RLS tests
         run: npm run test:rewards:postgres
 
-  android-debug:
-    name: Android Debug Build
+  # The SVJ phone app (Capacitor + native plugins).
+  android-phone:
+    name: Android Phone Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,11 +84,11 @@ jobs:
         run: npm run cap:sync
       - name: Android theme regression tests
         run: python3 scripts/test_android_themes.py
-      - name: Android unit tests (AccelStepDetector)
+      - name: Android unit tests (phone plugins)
         run: cd android && ./gradlew :app:testDebugUnitTest
       - name: Android lint
         continue-on-error: true
-        run: cd android && ./gradlew lintDebug
+        run: cd android && ./gradlew :app:lintDebug
       - name: Upload Android lint reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,11 +98,43 @@ jobs:
             android/app/build/reports/lint-results-debug.*
             android/app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
           if-no-files-found: warn
-      - name: Android assembleDebug
-        run: cd android && ./gradlew assembleDebug
-      - name: Upload debug APK
+      - name: Android assembleDebug (phone)
+        run: cd android && ./gradlew :app:assembleDebug
+      - name: Upload phone APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
+          name: svj-phone-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  # The SVJ Wear OS companion (native Kotlin, same repository).
+  wear-os:
+    name: Wear OS Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # The Gradle settings script references the Capacitor modules, so the
+      # Node dependencies have to be present even though the watch app itself
+      # is a plain Kotlin module.
+      - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Wear OS unit tests
+        run: cd android && ./gradlew :wear:testDebugUnitTest
+      - name: Android lint (wear)
+        continue-on-error: true
+        run: cd android && ./gradlew :wear:lintDebug
+      - name: Android assembleDebug (wear)
+        run: cd android && ./gradlew :wear:assembleDebug
+      - name: Upload Wear OS APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: svj-wear-debug-apk
+          path: android/wear/build/outputs/apk/debug/*.apk
           if-no-files-found: error

@@ -5,6 +5,7 @@ import { EngagementProvider } from "./context/EngagementContext";
 import { ActivityProvider } from "./context/ActivityContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
+import { UtilityRail, UtilityDrawer } from "./components/UtilityNav";
 import { ChallengesView } from "./views/ChallengesView";
 import { ActivityView } from "./views/ActivityView";
 import { EarnPlusView } from "./views/EarnPlusView";
@@ -58,6 +59,7 @@ const AppContent: React.FC<{
   lockEmail?: string | null;
 }> = ({ locked = false, lockEmail = null }) => {
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
+  const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   // Android Play: prevent stale tabs (community/leaderboard hidden on native)
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
@@ -244,10 +246,19 @@ const AppContent: React.FC<{
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
       {/* Top Bar Header */}
-      <Header />
+      <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
 
-      {/* Main View Area */}
-      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+      {/* Secondary destinations: right rail on desktop, drawer on phones. */}
+      <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />
+      <UtilityDrawer
+        open={utilityMenuOpen}
+        onClose={() => setUtilityMenuOpen(false)}
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+      />
+
+      {/* Main View Area — right padding reserves the rail so it never covers content. */}
+      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6 lg:max-w-5xl lg:pr-28">
         {storageError && (
           <p
             role="alert"

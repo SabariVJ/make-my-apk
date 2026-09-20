@@ -1,12 +1,9 @@
 import React from "react";
-import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import {
   Flame,
   Dumbbell,
   Apple,
-  Users,
-  Trophy,
   Crown,
   User,
   CalendarCheck,
@@ -40,27 +37,39 @@ interface NavigationProps {
   restricted?: boolean;
 }
 
+/**
+ * Tabs that live INSIDE one of the five primary destinations. Mapping them here
+ * keeps the parent destination highlighted (60-Day under Challenges, Earn Plus
+ * and the plan/report under Challenges too) instead of dropping the athlete's
+ * sense of place.
+ */
+const CLUSTERED_TABS: Partial<Record<ActiveTab, ActiveTab>> = {
+  sixty: "challenges",
+  earn: "challenges",
+  plan: "challenges",
+  transform: "challenges",
+};
+
 export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   setActiveTab,
   restricted = false,
 }) => {
   const { user } = useSVJ();
-  const isAndroid = Capacitor.getPlatform() === "android";
 
+  // Primary destinations only. Community / Leaderboard / Profile moved to the
+  // right-side utility rail (desktop) and utility drawer (mobile); 60-Day moved
+  // into Challenges. Their routes, data and permissions are unchanged.
   const allNavItems = [
     { id: "challenges", label: "Challenges", icon: Flame },
     { id: "activity", label: "Activity", icon: Activity },
     { id: "workouts", label: "Train", icon: Dumbbell },
     { id: "nutrition", label: "Fuel", icon: Apple },
-    { id: "community", label: "Community", icon: Users },
-    { id: "leaderboard", label: "Leaderboard", icon: Trophy },
-    { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
-    { id: "profile", label: "Profile", icon: User },
   ];
 
-  // The free earning path must outlive the seven-day introductory trial.
+  // The free earning path must outlive the seven-day introductory trial, so the
+  // restricted shell keeps its own (unchanged) set of destinations.
   const restrictedNavItems: typeof allNavItems = [
     { id: "earn", label: "Earn Plus", icon: Gift },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
@@ -68,32 +77,25 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "profile", label: "Profile", icon: User },
     { id: "signout", label: "Sign Out", icon: LogOut },
   ];
-  const navItems = restricted
-    ? restrictedNavItems
-    : allNavItems.filter((item) => {
-        // Android Play: hide Leaderboard (unfinished social claim)
-        if (isAndroid && item.id === "leaderboard") {
-          return false;
-        }
-        // Hide transform tab from nav — accessible only from Profile
-        if (item.id === "transform") {
-          return false;
-        }
-        return true;
-      });
+  const navItems = restricted ? restrictedNavItems : allNavItems;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3">
+    <nav
+      data-testid="primary-navigation"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3"
+    >
       <div className="max-w-2xl mx-auto flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            activeTab === item.id || (activeTab === "earn" && item.id === "challenges");
+          const isActive = activeTab === item.id || CLUSTERED_TABS[activeTab] === item.id;
 
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveTab(item.id as ActiveTab)}
+              aria-current={isActive ? "page" : undefined}
+              data-testid={`primary-nav-${item.id}`}
               className="relative flex flex-col items-center gap-1 py-1 px-1.5 sm:px-3 rounded-xl transition-all cursor-pointer group"
             >
               {isActive && (

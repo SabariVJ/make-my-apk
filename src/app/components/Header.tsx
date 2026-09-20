@@ -1,11 +1,19 @@
 import React from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
-import { Flame, Zap, Crown, Shield, Mail } from "lucide-react";
+import { Flame, Zap, Crown, Shield, Mail, Menu } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { AvatarImage } from "./AvatarImage";
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{
+  /**
+   * Opens the mobile utility drawer (Community / Leaderboard / Profile).
+   * Desktop/tablet reach the same destinations through the right-side rail, so
+   * the trigger is only rendered below the `lg` breakpoint. Omitted entirely in
+   * the restricted post-trial shell.
+   */
+  onOpenUtilityMenu?: () => void;
+}> = ({ onOpenUtilityMenu }) => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const isAndroid = Capacitor.getPlatform() === "android";
 
@@ -131,6 +139,19 @@ export const Header: React.FC = () => {
               <Crown className="w-3 h-3" />
               <span>{user.isFounder ? "FOUNDER" : "VIP ACTIVE"}</span>
             </div>
+          )}
+
+          {/* Utility menu — phones get Community / Leaderboard / Profile here. */}
+          {onOpenUtilityMenu && (
+            <button
+              type="button"
+              onClick={onOpenUtilityMenu}
+              aria-label="Open SVJ menu"
+              data-testid="utility-menu-trigger"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#17171A] text-[#8C8C90] transition-colors hover:text-white lg:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
           )}
 
           {/* User Avatar */}

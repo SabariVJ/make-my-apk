@@ -421,10 +421,9 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-[10px] font-mono text-[#C81E3A] uppercase tracking-widest mb-1">
+          <div className="flex items-center gap-2 text-[11px] font-inter text-[#C81E3A] uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5" />
             <span>MY SVJ PLAN</span>
             {!isPlus && (
@@ -436,13 +435,13 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
             Your Weekly Blueprint
           </h1>
-          <p className="text-xs font-mono text-[#8C8C90] mt-1">{weekLabel}</p>
+          <p className="text-xs font-inter text-[#8C8C90] mt-1">{weekLabel}</p>
         </div>
       </div>
 
       {!isPlus ? (
         /* Upgrade prompt for free users */
-        <div className="p-6 rounded-2xl bg-[#17171A] border border-white/10 text-center space-y-4">
+        <div className="p-6 rounded-2xl bg-[#17171A] border border-white/[0.06] text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center mx-auto">
             <Sparkles className="w-8 h-8 text-[#C81E3A]" />
           </div>
@@ -471,16 +470,16 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
       ) : (
         <>
           {/* Average Score */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#17171A] border border-white/10">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
             <div>
-              <span className="text-[10px] font-mono text-[#8C8C90] uppercase">Overall Score</span>
+              <span className="text-[11px] font-inter text-[#8C8C90] uppercase">Overall Score</span>
               <div className="font-mono text-3xl font-bold text-white mt-0.5">{avgScore}</div>
             </div>
             <div className="text-right space-y-1">
-              <div className="text-[10px] font-mono text-[#8C8C90]">
+              <div className="text-[11px] font-inter text-[#8C8C90]">
                 Strongest: <span className="text-emerald-400">{strongest[0]}</span>
               </div>
-              <div className="text-[10px] font-mono text-[#8C8C90]">
+              <div className="text-[11px] font-inter text-[#8C8C90]">
                 Focus Area: <span className="text-amber-400">{weakest[0]}</span>
               </div>
             </div>
@@ -491,7 +490,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
           {/* Weekly Analysis — real stored data only (stat deltas vs
               assessment baseline, recorded activity trend, recovery trend). */}
-          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10">
+          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/[0.06]">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="font-anton text-sm uppercase tracking-wider text-white">
@@ -621,35 +620,33 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           </div>
 
           {/* Week Summary */}
-          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10">
+          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/[0.06]">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="font-anton text-sm uppercase tracking-wider text-white">
                 Week Summary
               </h3>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5">
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="svj-stat p-3">
                 <div className="font-mono text-xl font-bold text-white">
                   {user.totalChallengesCompleted}
                 </div>
-                <div className="text-[10px] font-mono text-[#8C8C90] uppercase">
-                  Challenges Done
-                </div>
+                <div className="text-[11px] font-inter text-[#8C8C90]">Challenges Done</div>
               </div>
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5">
+              <div className="svj-stat p-3">
                 <div className="font-mono text-xl font-bold text-[#C81E3A]">
                   {user.currentStreak}
                 </div>
-                <div className="text-[10px] font-mono text-[#8C8C90] uppercase">Day Streak</div>
+                <div className="text-[11px] font-inter text-[#8C8C90]">Day Streak</div>
               </div>
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5">
+              <div className="svj-stat p-3">
                 <div className="font-mono text-xl font-bold text-white">{goals.length}</div>
-                <div className="text-[10px] font-mono text-[#8C8C90] uppercase">Active Goals</div>
+                <div className="text-[11px] font-inter text-[#8C8C90]">Active Goals</div>
               </div>
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5">
+              <div className="svj-stat p-3">
                 <div className="font-mono text-xl font-bold text-emerald-400">+{user.weeklyXP}</div>
-                <div className="text-[10px] font-mono text-[#8C8C90] uppercase">XP This Week</div>
+                <div className="text-[11px] font-inter text-[#8C8C90]">XP This Week</div>
               </div>
             </div>
           </div>

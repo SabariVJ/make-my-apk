@@ -170,31 +170,31 @@ const HistoryPanel: React.FC<{
     averageActiveKcal: number;
   };
 }> = ({ title, history, summary }) => (
-  <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5">
+  <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
     <div className="flex items-center gap-2 mb-3">
       <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-      <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
+      <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
         {title}
       </span>
     </div>
     <div className="grid grid-cols-3 gap-2 mb-4">
-      <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 text-center">
-        <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-0.5">Avg Steps</div>
+      <div className="svj-stat p-2.5 text-center">
+        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg Steps</div>
         <div className="font-mono text-sm font-bold text-white">
           {summary.averageSteps.toLocaleString()}
         </div>
       </div>
-      <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 text-center">
-        <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-0.5">Best Day</div>
-        <div className="font-mono text-sm font-bold text-[#E62846]">
+      <div className="svj-stat p-2.5 text-center">
+        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Best Day</div>
+        <div className="font-mono text-sm font-bold text-[#C81E3A]">
           {summary.bestDay ? summary.bestDay.steps.toLocaleString() : "—"}
         </div>
         {summary.bestDay && (
-          <div className="text-[9px] font-mono text-[#8C8C90]">{summary.bestDay.label}</div>
+          <div className="text-[10px] font-inter text-[#8C8C90]">{summary.bestDay.label}</div>
         )}
       </div>
-      <div className="rounded-xl bg-black/40 border border-white/5 p-2.5 text-center">
-        <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-0.5">Avg KCAL</div>
+      <div className="svj-stat p-2.5 text-center">
+        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg KCAL</div>
         <div className="font-mono text-sm font-bold text-amber-400">
           {summary.averageActiveKcal.toLocaleString()}
         </div>
@@ -202,11 +202,11 @@ const HistoryPanel: React.FC<{
     </div>
     <div className="space-y-3">
       <div>
-        <div className="text-[10px] font-mono uppercase text-[#8C8C90] mb-1">Daily Steps</div>
+        <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Daily Steps</div>
         <StepChart data={history} />
       </div>
       <div>
-        <div className="text-[10px] font-mono uppercase text-[#8C8C90] mb-1">
+        <div className="text-[11px] font-inter text-[#8C8C90] mb-1">
           Daily Calories Burned (est.)
         </div>
         <KcalChart data={history} />
@@ -224,11 +224,11 @@ export const ActivityView: React.FC = () => {
   const activity = useActivityOptional();
   if (!activity) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 text-center space-y-2">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-6 text-center space-y-2">
         <p className="font-anton text-lg uppercase tracking-wider text-white">
           Activity Unavailable
         </p>
-        <p className="text-xs font-mono text-[#8C8C90]">
+        <p className="text-xs font-inter text-[#8C8C90]">
           Reload the app to reconnect step tracking.
         </p>
       </div>
@@ -311,12 +311,12 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
           <h1 className="font-anton text-2xl uppercase tracking-wider text-white">Activity</h1>
         </div>
         <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-mono uppercase ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
             trackingStatus === "tracking"
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+              ? "bg-emerald-500/10 text-emerald-400"
               : trackingStatus === "starting"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-                : "border-white/10 bg-black/40 text-[#8C8C90]"
+                ? "bg-amber-500/10 text-amber-400"
+                : "bg-white/[0.04] text-[#8C8C90]"
           }`}
         >
           {trackingStatus === "tracking" ? (
@@ -331,7 +331,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {/* Always visible: the Activity screen must never be silently stuck. */}
       <p
         role="status"
-        className="mb-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] font-mono text-[#8C8C90]"
+        className="mb-3 rounded-lg bg-[#0b0b0c] border border-white/[0.04] px-3 py-2 text-[11px] font-inter text-[#8C8C90]"
       >
         {statusMessage}
       </p>
@@ -343,7 +343,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             void stopTracking();
           else void startTracking();
         }}
-        className="mb-5 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
+        className="mb-5 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
       >
         {trackingStatus === "update-required"
           ? "APP UPDATE REQUIRED"
@@ -373,10 +373,10 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             key={s.id}
             type="button"
             onClick={() => setSection(s.id)}
-            className={`shrink-0 rounded-xl border px-2.5 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-inter font-medium transition-colors ${
               section === s.id
-                ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
-                : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
+                ? "bg-[#C81E3A]/15 text-white"
+                : "bg-white/[0.04] text-[#8C8C90] hover:text-white"
             }`}
           >
             {s.label}
@@ -413,8 +413,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
         <>
-          <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90] mb-3">
+          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 mb-5">
+            <div className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
               Today&apos;s Activity
             </div>
             <div className="flex flex-col items-center">
@@ -457,60 +457,53 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
           </div>
 
           {/* Calories */}
-          <div className="rounded-2xl border border-amber-500/20 bg-[#0B0B0C] p-5 mb-5">
+          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
+                <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
                   Calories Burned
                 </span>
               </div>
-              <span className="text-[9px] font-mono uppercase text-[#8C8C90] border border-white/10 rounded px-1.5 py-0.5">
-                Estimate
-              </span>
+              <span className="text-[10px] font-inter text-[#8C8C90]">Estimate</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-black/40 border border-white/5 p-3">
-                <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">
-                  Active Calories
-                </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="svj-stat p-3">
+                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Active Calories</div>
                 <LiveNumber
                   value={activeKcal}
                   className="font-mono text-2xl font-bold text-amber-400"
                 />
-                <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">
+                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
                   KCAL · from movement
                 </div>
               </div>
-              <div className="rounded-xl bg-black/40 border border-white/5 p-3">
-                <div className="text-[9px] font-mono uppercase text-[#8C8C90] mb-1">
-                  Total Calories
-                </div>
+              <div className="svj-stat p-3">
+                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Total Calories</div>
                 <LiveNumber value={totalKcal} className="font-mono text-2xl font-bold text-white" />
-                <div className="text-[9px] font-mono text-[#8C8C90] mt-0.5">
+                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
                   KCAL · incl. resting burn
                 </div>
               </div>
             </div>
             <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-[10px] font-mono text-[#8C8C90]">
+              <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
                 <span>Active Calorie Goal</span>
                 <span>
                   {activeKcal.toLocaleString()} / {kcalGoal.toLocaleString()} KCAL
                 </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
+              <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${kcalPercent}%` }}
-                  transition={{ duration: 0.8 }}
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400"
                 />
               </div>
             </div>
-            <p className="mt-3 text-[9px] font-mono leading-relaxed text-[#8C8C90]">
-              Calorie values are estimates calculated from steps, distance and your SVJ body profile
-              — not medical measurements.
+            <p className="mt-3 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
+              Estimates from steps, distance and your body profile — not medical measurements.
             </p>
           </div>
         </>
@@ -531,10 +524,10 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       )}
 
       {/* How XP works */}
-      <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
+        <div className="flex items-center gap-2 mb-3">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
+          <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
             Step XP
           </span>
         </div>
@@ -549,17 +542,17 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             return (
               <div
                 key={m.steps}
-                className={`rounded-xl border p-2 text-center ${
-                  reached ? "border-[#C81E3A]/50 bg-[#C81E3A]/10" : "border-white/5 bg-black/40"
+                className={`rounded-xl p-2 text-center ${
+                  reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
                 }`}
               >
                 <div
-                  className={`font-mono text-xs font-bold ${reached ? "text-[#E62846]" : "text-[#8C8C90]"}`}
+                  className={`font-mono text-sm font-bold ${reached ? "text-[#C81E3A]" : "text-[#8C8C90]"}`}
                 >
                   {(m.steps / 1000).toFixed(1)}K
                 </div>
                 <div
-                  className={`text-[9px] font-mono ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
+                  className={`text-[10px] font-inter ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
                 >
                   +{m.xp} XP
                 </div>
@@ -567,10 +560,9 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             );
           })}
         </div>
-        <div className="mt-2 flex items-center gap-1.5 text-[9px] font-mono text-[#8C8C90]">
+        <div className="mt-3 flex items-center gap-1.5 text-[10px] font-inter text-[#8C8C90]">
           <TrendingUp className="w-3 h-3" />
-          XP is granted once per milestone per day and counts toward XP Today, your Daily XP Goal
-          and streak.
+          XP is granted once per milestone per day and counts toward your streak.
         </div>
       </div>
 

@@ -338,29 +338,29 @@ export const ChallengesView: React.FC<{
   const getDifficultyBadge = (diff: DailyChallenge["difficulty"]) => {
     switch (diff) {
       case "Easy":
-        return "bg-emerald-950/80 text-emerald-400 border-emerald-800";
+        return "bg-emerald-500/10 text-emerald-400";
       case "Medium":
-        return "bg-amber-950/80 text-amber-400 border-amber-800";
+        return "bg-amber-500/10 text-amber-400";
       case "Hard":
-        return "bg-rose-950/80 text-rose-400 border-rose-800";
+        return "bg-rose-500/10 text-rose-400";
       case "Elite":
-        return "bg-purple-950/80 text-purple-300 border-purple-800";
+        return "bg-purple-500/10 text-purple-300";
     }
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-5 pb-24">
       {!personalizationQuery.isLoading &&
         !personalizationQuery.data?.personalization?.assessmentCompleted && (
           <button
             type="button"
             onClick={() => setShowAssessment(true)}
-            className="w-full rounded-3xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-5 text-left"
+            className="w-full svj-card-crimson p-4 text-left svj-press"
           >
-            <span className="flex items-center gap-2 font-anton text-base uppercase tracking-wide text-white">
-              <ClipboardCheck className="h-5 w-5 text-[#C81E3A]" /> Complete Your SVJ Assessment
+            <span className="flex items-center gap-2 font-anton text-sm uppercase tracking-wide text-white">
+              <ClipboardCheck className="h-4 w-4 text-[#C81E3A]" /> Complete Your SVJ Assessment
             </span>
-            <span className="mt-1 block text-xs text-[#8C8C90]">
+            <span className="mt-1 block text-xs font-inter text-[#8C8C90]">
               Personalize challenges around your goals, interests and improvement areas.
             </span>
           </button>
@@ -398,41 +398,37 @@ export const ChallengesView: React.FC<{
       )}
 
       {/* Today's Mission Banner */}
-      <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-[#8C8C90] uppercase tracking-wider mb-1">
-              <span>Today's Mission</span>
-              <span>•</span>
-              <span className="text-[#C81E3A] font-bold">Daily Reset in 13h 42m</span>
+            <div className="flex items-center gap-2 text-[11px] font-inter text-[#8C8C90] uppercase tracking-wider mb-1">
+              <span>Today&apos;s Mission</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
               Forge Your Day
             </h1>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-xs font-mono flex items-center gap-1.5 text-orange-400">
+            <div className="px-3 py-1.5 rounded-xl bg-[#0b0b0c] border border-white/[0.04] text-xs font-inter flex items-center gap-1.5 text-orange-400">
               <Flame className="w-4 h-4 fill-orange-500/20" />
-              <span>{user.currentStreak} day streak</span>
+              <span>{user.currentStreak}d streak</span>
             </div>
           </div>
         </div>
 
-        {/* Progress Metrics Row */}
-        <div className={`grid gap-3 mb-6 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
-          <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+        {/* Progress Metrics — connected stat strip */}
+        <div className={`grid gap-2 mb-5 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className="svj-stat p-3">
+            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
               <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
               XP Today
             </div>
             <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+          <div className="svj-stat p-3">
+            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
               <Target className="w-3.5 h-3.5 text-emerald-400" />
               Completed
             </div>
@@ -443,8 +439,8 @@ export const ChallengesView: React.FC<{
           </div>
 
           {!isAndroid && (
-            <div className="p-3.5 rounded-2xl bg-[#0B0B0C] border border-white/5">
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+            <div className="svj-stat p-3">
+              <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 Global Rank
               </div>
@@ -454,17 +450,17 @@ export const ChallengesView: React.FC<{
         </div>
 
         {/* Progress Bar */}
-        <div className="space-y-1.5 mb-6">
-          <div className="flex justify-between text-xs font-mono text-[#8C8C90]">
+        <div className="space-y-1.5 mb-5">
+          <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
             <span>Daily XP Goal</span>
             <span>{totalTodayXp} / 500 XP</span>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
+          <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, Math.round((totalTodayXp / 500) * 100))}%` }}
-              transition={{ duration: 0.8 }}
-              className="h-full rounded-full bg-gradient-to-r from-[#E62846] to-[#C81E3A]"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
             />
           </div>
         </div>
@@ -472,21 +468,19 @@ export const ChallengesView: React.FC<{
         {/* Compact live Activity card — automatic step counter summary */}
         {onOpenActivity && <ActivitySummaryCard onOpen={onOpenActivity} />}
 
-        {/* 6 Dynamic Attribute Stats Hexagon Radar */}
-        <div className="border-t border-white/10 pt-4 space-y-3">
+        {/* Character Hexagon Matrix */}
+        <div className="border-t border-white/[0.06] pt-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-white font-bold flex items-center gap-1.5">
+              <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Character Hexagon Matrix (Level {user.level || 1})
+                Character Matrix — Level {user.level || 1}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold uppercase">
+              <span className="px-2 py-0.5 rounded-md bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
                 {user.leagueRank || "APPRENTICE I"}
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[#8C8C90]">
-              Complete challenges to expand stats
-            </span>
+            <span className="text-[11px] font-inter text-[#8C8C90]">Complete tasks to grow</span>
           </div>
 
           <HexagonRadarChart
@@ -512,15 +506,15 @@ export const ChallengesView: React.FC<{
 
       {/* Categories & Custom Task Button */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-inter font-medium transition-all shrink-0 cursor-pointer ${
                 selectedCategory === cat
-                  ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
-                  : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"
+                  ? "bg-[#C81E3A] text-white"
+                  : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/[0.04]"
               }`}
             >
               {cat}
@@ -534,27 +528,27 @@ export const ChallengesView: React.FC<{
             setEditingTask(null);
             setIsAddModalOpen(true);
           }}
-          className="px-3.5 py-1.5 rounded-xl bg-[#17171A] hover:bg-white/10 text-white border border-white/10 text-xs font-mono font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+          className="px-3 py-1.5 rounded-lg bg-[#17171A] hover:bg-white/[0.06] text-white border border-white/[0.06] text-[11px] font-inter font-medium flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4 text-[#C81E3A]" />
+          <Plus className="w-3.5 h-3.5 text-[#C81E3A]" />
           <span>Add Task</span>
         </button>
       </div>
 
       {actionError && (
-        <p role="alert" className="text-sm text-rose-300">
+        <p role="alert" className="text-sm font-inter text-rose-300">
           {actionError}
         </p>
       )}
 
-      {/* Personalized challenge insight — only for users who have completed the assessment */}
+      {/* Personalized challenge insight */}
       {personalizationQuery.data?.personalization?.assessmentCompleted &&
         personalizedQuery.data && (
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/20">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#17171A] border border-[#C81E3A]/10">
             <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
             <div className="flex-1">
-              <p className="text-[11px] font-mono text-[#8C8C90]">
-                <span className="text-[#C81E3A] font-bold">Personalized</span> —{" "}
+              <p className="text-[11px] font-inter text-[#8C8C90]">
+                <span className="text-[#C81E3A] font-semibold">Personalized</span> —{" "}
                 {personalizedQuery.data.reason}
               </p>
             </div>
@@ -577,10 +571,8 @@ export const ChallengesView: React.FC<{
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={() => handleToggle(challenge.id)}
-              className={`group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
-                challenge.completed
-                  ? "bg-[#17171A]/40 border-white/5 opacity-75"
-                  : "bg-[#17171A] border-white/10 hover:border-[#C81E3A]/40 shadow-lg"
+              className={`group p-4 rounded-xl bg-[#17171A] border border-white/[0.06] transition-colors cursor-pointer flex items-center justify-between gap-4 ${
+                challenge.completed ? "opacity-60" : "hover:border-white/[0.12]"
               }`}
             >
               <div className="flex items-start gap-3.5">
@@ -594,10 +586,10 @@ export const ChallengesView: React.FC<{
                     event.stopPropagation();
                     handleToggle(challenge.id);
                   }}
-                  className={`mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
+                  className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
-                      : "border-white/20 group-hover:border-[#C81E3A]"
+                      : "border-white/20 group-hover:border-[#C81E3A]/60"
                   }`}
                 >
                   {challenge.completed && <CheckCircle2 className="w-4 h-4" />}
@@ -606,14 +598,14 @@ export const ChallengesView: React.FC<{
                 <div>
                   <div className="flex items-center gap-2">
                     <h3
-                      className={`font-inter font-semibold text-sm ${
+                      className={`font-inter font-medium text-sm ${
                         challenge.completed ? "line-through text-[#8C8C90]" : "text-white"
                       }`}
                     >
                       {challenge.title}
                     </h3>
                     <span
-                      className={`px-2 py-0.5 rounded text-[9px] font-mono border ${getDifficultyBadge(
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-inter font-medium ${getDifficultyBadge(
                         challenge.difficulty,
                       )}`}
                     >
@@ -621,21 +613,21 @@ export const ChallengesView: React.FC<{
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#8C8C90] mt-1 font-inter line-clamp-1">
+                  <p className="text-xs font-inter text-[#8C8C90] mt-1 line-clamp-1">
                     {challenge.description}
                   </p>
 
-                  <div className="flex items-center gap-3 text-[10px] font-mono text-[#8C8C90] mt-2">
-                    <span className="text-[#C81E3A] font-semibold">{challenge.category}</span>
-                    <span>•</span>
+                  <div className="flex items-center gap-3 text-[11px] font-inter text-[#8C8C90] mt-2">
+                    <span className="text-[#C81E3A] font-medium">{challenge.category}</span>
+                    <span>·</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {challenge.durationMinutes}m
                     </span>
                     {challenge.completedAt && (
                       <>
-                        <span>•</span>
-                        <span className="text-emerald-400">Done at {challenge.completedAt}</span>
+                        <span>·</span>
+                        <span className="text-emerald-400">Done {challenge.completedAt}</span>
                       </>
                     )}
                   </div>
@@ -671,10 +663,10 @@ export const ChallengesView: React.FC<{
                   <X className="w-4 h-4" />
                 </button>
                 <div
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-inter font-semibold shrink-0 ${
                     challenge.completed
-                      ? "bg-emerald-950/30 text-emerald-400 border border-emerald-800/50"
-                      : "bg-[#0B0B0C] text-[#C81E3A] border border-white/10"
+                      ? "bg-emerald-500/10 text-emerald-400"
+                      : "bg-[#0b0b0c] text-[#C81E3A]"
                   }`}
                 >
                   +{challenge.xp} XP
@@ -721,20 +713,19 @@ function RefreshButton({
 }) {
   const isCooldown = refreshState.status === "cooldown" && refreshState.remainingMs != null;
   const cooldownLabel = isCooldown ? formatCooldown(refreshState.remainingMs!) : null;
-
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled || refreshState.status === "loading" || isCooldown}
-      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold shrink-0 cursor-pointer transition-colors ${
+      className={`px-2.5 py-1 rounded-lg text-[10px] font-inter font-semibold shrink-0 cursor-pointer transition-colors ${
         disabled || refreshState.status === "loading"
-          ? "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#8C8C90] cursor-not-allowed"
+          ? "bg-white/[0.04] text-[#8C8C90] cursor-not-allowed"
           : refreshState.status === "success"
-            ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+            ? "bg-emerald-500/10 text-emerald-400"
             : isCooldown
-              ? "bg-amber-500/15 border border-amber-500/30 text-amber-400 cursor-not-allowed"
-              : "bg-[#C81E3A]/15 border border-[#C81E3A]/30 text-[#C81E3A] hover:bg-[#C81E3A]/25"
+              ? "bg-amber-500/10 text-amber-400 cursor-not-allowed"
+              : "bg-[#C81E3A]/10 text-[#C81E3A] hover:bg-[#C81E3A]/20"
       }`}
       aria-label={cooldownLabel ?? "Renew personalized tasks"}
     >

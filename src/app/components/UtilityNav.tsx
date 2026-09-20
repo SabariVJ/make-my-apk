@@ -15,10 +15,10 @@ const UTILITY_ICONS: Record<string, typeof Users> = {
 const isActiveUtility = (itemId: ActiveTab, activeTab: ActiveTab) => activeTab === itemId;
 
 const railButtonClass = (active: boolean) =>
-  `relative flex w-full flex-col items-center gap-1 rounded-xl px-2 py-3 transition-colors ${
+  `relative flex w-full flex-col items-center gap-1 rounded-xl px-2 py-3 transition-colors svj-press ${
     active
       ? "bg-[#C81E3A]/15 text-[#F4F2ED]"
-      : "text-[#8C8C90] hover:bg-white/5 hover:text-[#F4F2ED]"
+      : "text-[#8C8C90] hover:bg-white/[0.04] hover:text-[#F4F2ED]"
   }`;
 
 /**
@@ -39,7 +39,7 @@ export const UtilityRail: React.FC<{
     <nav
       data-testid="utility-rail"
       aria-label="Utility navigation"
-      className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-1 rounded-l-2xl border border-r-0 border-white/10 bg-[#0B0B0C]/90 p-2 backdrop-blur-xl lg:flex"
+      className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-1 rounded-l-xl border border-r-0 border-white/[0.06] bg-[#0B0B0C]/90 p-1.5 backdrop-blur-xl lg:flex"
     >
       {items.map((item) => {
         const Icon = UTILITY_ICONS[item.id] ?? Users;
@@ -59,7 +59,7 @@ export const UtilityRail: React.FC<{
             <Icon
               className={`h-5 w-5 ${active ? "stroke-[2.5px] text-[#C81E3A]" : "stroke-[1.8px]"}`}
             />
-            <span className="font-mono text-[9px] font-semibold uppercase tracking-wider">
+            <span className="font-inter text-[9px] font-medium uppercase tracking-wider">
               {item.label}
             </span>
           </button>
@@ -103,17 +103,17 @@ export const UtilityDrawer: React.FC<{
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="absolute right-0 top-0 h-full w-64 max-w-[80vw] border-l border-white/10 bg-[#0B0B0C] p-4"
+            className="absolute right-0 top-0 h-full w-64 max-w-[80vw] border-l border-white/[0.06] bg-[#0B0B0C] p-4"
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-anton text-sm uppercase tracking-widest text-[#F4F2ED]">
+              <span className="font-anton text-sm uppercase tracking-wider text-[#F4F2ED]">
                 SVJ
               </span>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close menu"
-                className="rounded-lg border border-white/10 p-1.5 text-[#8C8C90] hover:text-white"
+                className="rounded-lg bg-white/[0.06] p-1.5 text-[#8C8C90] hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -132,10 +132,10 @@ export const UtilityDrawer: React.FC<{
                       setActiveTab(item.id);
                       onClose();
                     }}
-                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
                       active
-                        ? "border-[#C81E3A]/40 bg-[#C81E3A]/15 text-[#F4F2ED]"
-                        : "border-transparent text-[#8C8C90] hover:bg-white/5 hover:text-white"
+                        ? "bg-[#C81E3A]/15 text-[#F4F2ED]"
+                        : "text-[#8C8C90] hover:bg-white/[0.04] hover:text-white"
                     }`}
                   >
                     <Icon className={`h-5 w-5 ${active ? "text-[#C81E3A]" : "stroke-[1.8px]"}`} />

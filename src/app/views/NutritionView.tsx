@@ -94,12 +94,12 @@ export const NutritionView: React.FC = () => {
       <button
         type="button"
         onClick={() => setShowBodyProfile(true)}
-        className="w-full rounded-2xl border border-[#C81E3A]/35 bg-[#C81E3A]/10 p-4 text-left transition-colors hover:bg-[#C81E3A]/15"
+        className="w-full rounded-2xl bg-[#C81E3A]/10 border border-[#C81E3A]/15 p-4 text-left transition-colors hover:bg-[#C81E3A]/15 svj-press"
       >
         <span className="flex items-center gap-2 font-anton text-sm uppercase tracking-wide text-white">
           <Scale className="h-4 w-4 text-[#C81E3A]" /> Body profile & nutrition goals
         </span>
-        <span className="mt-1 block text-xs text-[#8C8C90]">
+        <span className="mt-1 block text-xs font-inter text-[#8C8C90]">
           Calculate and update your BMI, calorie target and protein target.
         </span>
       </button>
@@ -119,10 +119,12 @@ export const NutritionView: React.FC = () => {
       )}
 
       {/* Daily total ring / bar */}
-      <div className="rounded-2xl bg-[#141416] border border-white/10 p-5">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
         <div className="flex items-end justify-between mb-4">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-[#8C8C90] mb-1">Today</p>
+            <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-1">
+              Today
+            </p>
             <p className="text-4xl font-bold text-[#F4F2ED] leading-none">
               {todayTotal.toLocaleString()}
               <span className="text-sm font-medium text-[#8C8C90] ml-1.5">kcal</span>
@@ -164,16 +166,16 @@ export const NutritionView: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-2.5 w-full rounded-full bg-white/5 overflow-hidden">
+        <div className="h-2 w-full rounded-full bg-[#0b0b0c] overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
-            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className={`h-full rounded-full ${todayTotal > calorieGoal ? "bg-[#E4B44C]" : "bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"}`}
           />
         </div>
 
-        <div className="flex items-center justify-between mt-3 text-[11px] text-[#8C8C90]">
+        <div className="flex items-center justify-between mt-3 text-[11px] font-inter text-[#8C8C90]">
           <span>
             {todayMeals.length} item{todayMeals.length === 1 ? "" : "s"} logged
           </span>
@@ -187,9 +189,9 @@ export const NutritionView: React.FC = () => {
       {/* Add entry */}
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl bg-[#141416] border border-white/10 p-5 space-y-3"
+        className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 space-y-3"
       >
-        <p className="text-[11px] uppercase tracking-widest text-[#8C8C90]">Add food</p>
+        <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90]">Add food</p>
 
         <div className="flex gap-2">
           <input
@@ -229,14 +231,14 @@ export const NutritionView: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#C81E3A] hover:bg-[#A8172F] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40 svj-press"
           disabled={!name.trim() || !parseInt(calories, 10)}
         >
           <Plus className="w-4 h-4" />
           Log meal {!loggedToday && <span className="text-white/80">· +60 XP</span>}
         </button>
 
-        <p className="text-[11px] text-[#8C8C90] text-center">
+        <p className="text-[11px] font-inter text-[#8C8C90] text-center">
           First log each day: <span className="text-[#C81E3A] font-medium">+60 XP</span>, Discipline
           +2, Physical +1. Extra entries +10 XP.
         </p>
@@ -248,8 +250,8 @@ export const NutritionView: React.FC = () => {
       </form>
 
       {/* Today's entries */}
-      <div className="rounded-2xl bg-[#141416] border border-white/10 p-5">
-        <p className="text-[11px] uppercase tracking-widest text-[#8C8C90] mb-3">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
+        <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
           Today&apos;s log
         </p>
 
@@ -265,7 +267,7 @@ export const NutritionView: React.FC = () => {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-3 rounded-xl bg-[#0B0B0C] border border-white/10 px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-xl bg-[#0b0b0c] border border-white/[0.04] px-3 py-2.5"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#F4F2ED] truncate">{m.name}</p>
@@ -296,8 +298,8 @@ export const NutritionView: React.FC = () => {
       </div>
 
       {/* 7-day history */}
-      <div className="rounded-2xl bg-[#141416] border border-white/10 p-5">
-        <p className="text-[11px] uppercase tracking-widest text-[#8C8C90] mb-4 flex items-center gap-1.5">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
+        <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-4 flex items-center gap-1.5">
           <CalendarDays className="w-3.5 h-3.5" /> Last 7 days
         </p>
 

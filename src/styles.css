@@ -152,7 +152,7 @@
   }
 }
 
-/* ===== SVJ app design system ===== */
+/* ===== SVJ design system ===== */
 
 @theme {
   --font-anton: "Anton", sans-serif;
@@ -160,12 +160,14 @@
   --font-mono: "IBM Plex Mono", monospace;
 
   --color-svj-bg: #0b0b0c;
-  --color-svj-card: #17171a;
+  --color-svj-surface: #17171a;
+  --color-svj-surface-raised: #1e1e22;
   --color-svj-card-hover: #212126;
   --color-svj-crimson: #c81e3a;
   --color-svj-crimson-hover: #a0182e;
   --color-svj-text: #f4f2ed;
   --color-svj-secondary: #8c8c90;
+  --color-svj-muted: #5c5c60;
   --color-svj-gold: #d4af37;
   --color-svj-obsidian: #101014;
 }
@@ -182,33 +184,96 @@
     font-family: "IBM Plex Mono", monospace;
   }
 
-  .svj-card-glow {
-    box-shadow: 0 0 25px -5px rgba(200, 30, 58, 0.15);
+  /* ── Surface tokens ─────────────────────────────────────────────── */
+  .svj-surface {
+    background: #17171a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .svj-surface-raised {
+    background: #1e1e22;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .svj-inset {
+    background: #0b0b0c;
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .svj-text-gradient {
-    background: linear-gradient(135deg, #f4f2ed 0%, #8c8c90 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* ── Reduced visual noise: subtle surface instead of heavy glow ─── */
+  .svj-card-clean {
+    background: #17171a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+  }
+  .svj-card-crimson {
+    background: linear-gradient(135deg, #1e1114 0%, #17171a 100%);
+    border: 1px solid rgba(200, 30, 58, 0.15);
+    border-radius: 1rem;
+  }
+  .svj-card-gold {
+    background: linear-gradient(135deg, #1e1a10 0%, #17171a 100%);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 1rem;
   }
 
-  .svj-crimson-gradient {
-    background: linear-gradient(135deg, #e62846 0%, #c81e3a 50%, #800a1d 100%);
+  /* ── Stat pill: connected inline stat ───────────────────────────── */
+  .svj-stat {
+    background: #0b0b0c;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 0.75rem;
   }
 
-  .svj-gold-gradient {
-    background: linear-gradient(135deg, #ffe58f 0%, #d4af37 50%, #997a15 100%);
+  /* ── Typography helpers (reduce monospace for non-technical text) ── */
+  .svj-label {
+    font-family: "Inter", sans-serif;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: #8c8c90;
+  }
+  .svj-label-xs {
+    font-family: "Inter", sans-serif;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    color: #8c8c90;
+  }
+  .svj-heading {
+    font-family: "Anton", sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #f4f2ed;
   }
 
-  .svj-border-glow {
-    border-color: rgba(200, 30, 58, 0.3);
+  /* ── Motion tokens ──────────────────────────────────────────────── */
+  .svj-transition-fast {
+    transition: all 120ms ease-out;
+  }
+  .svj-transition {
+    transition: all 200ms ease-out;
+  }
+  .svj-transition-slow {
+    transition: all 350ms ease-out;
+  }
+
+  /* ── Interactive press feedback ─────────────────────────────────── */
+  .svj-press {
+    transition: transform 120ms ease-out;
+  }
+  .svj-press:active {
+    transform: scale(0.98);
+  }
+
+  /* ── Glow reserved for rare accent moments ─────────────────────── */
+  .svj-glow-crimson {
+    box-shadow: 0 0 20px -6px rgba(200, 30, 58, 0.18);
+  }
+  .svj-glow-gold {
+    box-shadow: 0 0 20px -6px rgba(212, 175, 55, 0.18);
   }
 }
 
-/* Custom scrollbars */
+/* ── Scrollbar ──────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: #0b0b0c;
@@ -221,31 +286,33 @@
   background: #c81e3a;
 }
 
-/* Glass & Card effects */
+/* ── Focus ring (consistent across interactive elements) ────────────── */
+:focus-visible {
+  outline: 2px solid rgba(200, 30, 58, 0.6);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Reduced motion: strip movement, keep state changes ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Glass & legacy utilities (kept for backward compat) ────────────── */
 .svj-glass {
-  background: rgba(23, 23, 26, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(23, 23, 26, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .svj-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Keyframes for subtle ambient animations */
-@keyframes crimson-pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-}
-
-.animate-crimson-pulse {
-  animation: crimson-pulse 4s infinite ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }

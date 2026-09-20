@@ -1069,3 +1069,49 @@ Added: none. Applied: none.
 
 ## Manual next step (Play Console)
 Configure Google Play App Signing + generate/store the upload keystore as repo secrets (`SVJ_KEYSTORE_PATH_B64`, `SVJ_KEYSTORE_PASSWORD`, `SVJ_KEY_ALIAS`, `SVJ_KEY_PASSWORD`), then upload the AABs to closed tracks. Checklist: `docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md`.
+
+---
+
+## UI / Motion System Cleanup (September 2026)
+
+Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
+
+### Visual System Changes
+- **Colors:** Added `svj-surface`, `svj-surface-raised`, `svj-muted` tokens; crimson borders reduced from 15-30% to 6-15% opacity across all cards
+- **Typography:** Replaced monospace labels with Inter throughout; monospace reserved for numeric readouts only (XP, HR, steps, timer, GPS)
+- **Spacing:** Standardized to 4-8-12-16-20-24-32 scale; removed random padding/gap values
+- **Cards:** Created shared card system (`svj-card-clean`, `svj-card-crimson`, `svj-card-gold`, `svj-stat`); removed heavy `shadow-2xl` and decorative `blur-3xl` glows
+- **Buttons:** Added `.svj-press` (scale 0.98 on active); removed `shadow-lg` from buttons; cleaned up focus rings
+
+### Motion System
+- Created `src/app/lib/motion.ts` with centralized timing presets (fast/normal/page/progress)
+- Added `prefers-reduced-motion: reduce` CSS media query that strips all animation
+- Added `.svj-transition-fast` (120ms), `.svj-transition` (200ms), `.svj-transition-slow` (350ms)
+- All animations use transform + opacity only — no layout thrashing
+
+### Shared Components
+- `SVJCard` — clean surface levels
+- `SVJSectionHeader` — consistent section titles with Inter + Anton
+- `SVJProgress` — animated progress bar
+- `SVJEmptyState` — icon + title + description + CTA
+- `SVJBadge` — compact inline badges
+
+### Screen Changes
+- **Challenges:** Removed blur glows, cleaned stat strip (connected `svj-stat` cards), cleaned category pills, cleaned difficulty badges, cleaned task cards
+- **Activity:** Cleaned status pill, tracking button, section tabs, progress ring wrapper, calorie cards, history panel, XP milestones — all font-mono → font-inter for non-numeric text
+- **Train:** StructuredStrengthCard cleaned — removed blur glow, Inter for labels
+- **Fuel (Nutrition):** Cleaned daily total, progress bar, meal form, history cards
+- **Plus (Plan):** Cleaned header, stat cards, week summary, mission cards — removed blur glows
+- **Header:** Removed heavy pill borders, reduced avatar shadow, cleaned streak/XP badges, removed animate-pulse from flame
+- **Navigation:** Cleaned active state border, added press feedback
+- **Utility Rail/Drawer:** Cleaned border opacity, Inter for labels, added press feedback
+
+### Tests
+- All 735 existing tests pass (0 failures, 2 baseline skips)
+- TypeScript: clean
+- Build: clean
+- Prettier: clean
+- ESLint: 0 errors
+
+### Migrations
+Added: none. Applied: none.

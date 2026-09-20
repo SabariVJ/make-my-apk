@@ -26,12 +26,10 @@ export function SixtyDayProgramCard({
     <section
       aria-label="60 Day Transformation"
       data-testid="sixty-day-program-card"
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1B1B1F] via-[#141417] to-[#17171A] p-5"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B1B1F] via-[#141417] to-[#17171A] border border-white/[0.06] p-5"
     >
-      <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#C81E3A]/12 blur-3xl" />
-
       <div className="relative">
-        <p className="mb-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-[#8C8C90]">
+        <p className="mb-2 flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#8C8C90]">
           <CalendarCheck className="h-3.5 w-3.5 text-[#C81E3A]" />
           Discipline program
         </p>
@@ -50,7 +48,7 @@ export function SixtyDayProgramCard({
 
         {notStarted ? (
           <>
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-[#B8B8C0]">
+            <p className="mt-2 max-w-md text-xs font-inter leading-relaxed text-[#B8B8C0]">
               60 days. Daily missions. One transformation. Miss a day and the program pauses — your
               progress is never lost.
             </p>
@@ -58,14 +56,14 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] focus-visible:outline-2 focus-visible:outline-rose-400"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
             >
               Start 60 Day <ArrowRight className="h-4 w-4" />
             </button>
           </>
         ) : completed ? (
           <>
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-[#B8B8C0]">
+            <p className="mt-2 max-w-md text-xs font-inter leading-relaxed text-[#B8B8C0]">
               All {summary.totalDays} days cleared. Your transformation report and reward code are
               ready.
             </p>
@@ -73,14 +71,14 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-rose-400"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/[0.10] svj-press"
             >
               View transformation <ArrowRight className="h-4 w-4" />
             </button>
           </>
         ) : (
           <>
-            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-widest">
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-inter text-[11px] uppercase tracking-wider">
               <span className="text-[#F4F2ED]">
                 Day {summary.currentDay} / {summary.totalDays}
               </span>
@@ -92,7 +90,7 @@ export function SixtyDayProgramCard({
             </p>
 
             <div
-              className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/8"
+              className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/[0.04]"
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={100}
@@ -105,22 +103,22 @@ export function SixtyDayProgramCard({
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-4 sm:grid-cols-3">
               <div>
-                <p className="font-mono text-[10px] uppercase text-[#8C8C90]">Missions</p>
+                <p className="font-inter text-[11px] text-[#8C8C90]">Missions</p>
                 <p className="mt-1 font-mono text-base font-bold text-white">
                   {summary.missionsCompleted}
                   <span className="text-xs text-[#8C8C90]"> / {summary.totalMissions}</span>
                 </p>
               </div>
               <div>
-                <p className="font-mono text-[10px] uppercase text-[#8C8C90]">Current streak</p>
+                <p className="font-inter text-[11px] text-[#8C8C90]">Current streak</p>
                 <p className="mt-1 flex items-center gap-1 font-mono text-base font-bold text-orange-300">
                   <Flame className="h-4 w-4" /> {summary.currentStreak}d
                 </p>
               </div>
               <div>
-                <p className="font-mono text-[10px] uppercase text-[#8C8C90]">Days cleared</p>
+                <p className="font-inter text-[11px] text-[#8C8C90]">Days cleared</p>
                 <p className="mt-1 font-mono text-base font-bold text-white">
                   {summary.daysCompleted}
                   <span className="text-xs text-[#8C8C90]"> / {summary.totalDays}</span>
@@ -132,7 +130,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25 focus-visible:outline-2 focus-visible:outline-rose-400"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A]/15 text-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider transition-colors hover:bg-[#C81E3A]/25 svj-press"
             >
               Continue program <ArrowRight className="h-4 w-4" />
             </button>
@@ -140,8 +138,8 @@ export function SixtyDayProgramCard({
         )}
 
         {loading && (
-          <p className="mt-3 flex items-center gap-1.5 font-mono text-[10px] uppercase text-[#8C8C90]">
-            <ShieldCheck className="h-3.5 w-3.5" /> Syncing program progress…
+          <p className="mt-3 flex items-center gap-1.5 font-inter text-[11px] text-[#8C8C90]">
+            <ShieldCheck className="h-3.5 w-3.5" /> Syncing progress…
           </p>
         )}
       </div>

@@ -82,7 +82,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <nav
       data-testid="primary-navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 py-2 sm:py-3"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/[0.06] py-2 sm:py-3"
     >
       {/* Compact centered dock — w-fit + gap keeps tabs grouped as one
           control instead of spreading across the viewport. Mobile uses
@@ -99,7 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id as ActiveTab)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
-              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-all cursor-pointer group min-w-[64px] md:min-w-[74px]"
+              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-colors cursor-pointer group min-w-[64px] md:min-w-[74px] svj-press"
             >
               {isActive && (
                 <motion.div
@@ -111,7 +111,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
               <div className="relative">
                 <Icon
-                  className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 ${
+                  className={`w-5 h-5 transition-colors duration-150 ${
                     isActive ? "text-[#C81E3A] stroke-[2.5px]" : "text-[#8C8C90] stroke-[1.8px]"
                   }`}
                 />

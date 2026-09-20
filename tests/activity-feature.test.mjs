@@ -116,7 +116,7 @@ test("calories are labeled as estimates and split active vs total", () => {
   assert.match(activityView, /Active Calories/);
   assert.match(activityView, /Total Calories/);
   assert.match(activityView, /Estimate/);
-  assert.match(activityView, /estimates calculated from steps, distance and your SVJ body profile/);
+  assert.match(activityView, /Estimates from steps, distance and your body profile/);
 });
 
 test("step-milestone XP cannot be double-awarded on the same day", () => {

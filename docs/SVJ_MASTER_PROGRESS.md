@@ -824,3 +824,92 @@ Membership self-service, Founder lifetime, Plus entitlements, 60-Day
 self-service, Activity/Strength, server-authoritative XP/stats, personalized
 tasks, Community/rivalry, Live Share, Health Connect read-only, provider-free
 guarantee. No external fitness provider was added.
+
+---
+
+## Wearables V2 — SVJ Wear OS companion (same repository)
+
+**Start SHA:** `433fe736b14930356ec64c9df600252a2cd57953`
+**Feature SHAs:** `70eeb85` (wear module + phone bridge) → `f32eb6f` (phone
+integration + migration) → `91b6bab` (tests + CI artifacts) → this docs commit.
+
+### What was built
+
+SVJ now ships an **SVJ Wear OS app** from this repository as the Gradle module
+`:wear` (`android/wear`), a native Kotlin watch app — no Capacitor, no WebView
+on the watch — that talks to the SVJ phone app over the Wear OS **Data Layer**.
+Full detail: `docs/SVJ_WEAR_OS.md`.
+
+| Area | Implementation |
+| --- | --- |
+| Watch module | `android/wear` — Kotlin, `app.lovable.svj.wear`, registered in `android/settings.gradle` |
+| Watch UI | Home (readiness, HR, phone state), activity picker, 3-2-1-GO countdown, live workout, sensors, connection |
+| Background | `WearWorkoutService` — `foregroundServiceType="health"` + ongoing *“SVJ is recording your workout”* notification; survives screen-off and navigation |
+| Watch sensors | `WearSensors` — real `TYPE_HEART_RATE` and `TYPE_STEP_COUNTER`; BODY_SENSORS / ACTIVITY_RECOGNITION checked and requested per device |
+| Session logic | `WearWorkoutSession` — pure state machine (idle/running/paused/finished), paused time excluded from moving time, stable session id, baselined steps |
+| HR statistics | `WearHeartRate` — real samples only; 20–250 BPM accepted, everything else rejected; a silent sensor goes stale instead of freezing a value |
+| Communication | Capability discovery (`svj_wear_companion` / `svj_phone_app`) + messages on `/svj/wear/{handshake,sample,state,summary,command}`; the phone is never found by BLE scanning |
+| Offline | Watch outbox + flush on reconnect; phone-side `WearInboxStore` buffers messages while SVJ is closed; active session persisted and restored **paused** |
+| Phone bridge | `VjWearPlugin` + `VjWearListenerService` (Capacitor plugin `VjWear`) |
+| Phone controller | `src/app/lib/wearCompanion.ts` — one listener owner, inbox drain/ack, completion import |
+| Contract/validation | `src/app/lib/wearOs.ts` — protocol v1, capability model, measurement validation, source arbitration, duplicate protection |
+| Source arbitration | Explicit selection → direct BLE strap → SVJ Watch → nothing. Health Connect is never presented as live; steps are never summed across phone and watch |
+| XP / security | Watch supplies evidence only; completions import through the existing `svj_import_platform_activity` into the existing pipeline. No client reward entry point |
+| Migration | `20260924000000_wear_os_activity_source.sql` — additive + idempotent: adds the `wear_os` source to the existing CHECK constraint and derives stored provenance from the submitting device platform |
+
+### Preserved (per spec §22–28, §34)
+
+BLE strap support (0x180D scanning, 0x2A37 parsing, RR intervals, battery, body
+sensor location, reconnect, stale watchdog) is untouched; Health Connect stays
+read-only and remains the historical/sync layer; the GPS map interaction,
+stabilised pace and heatmap fixes are untouched; no watch workout writes fake
+GPS coordinates, so heatmap/RECORDS behaviour is unchanged.
+
+### Validation
+
+| Check | Result |
+| --- | --- |
+| `bun tsc -b --noEmit` | PASS |
+| `bun run test` | **686 pass / 0 fail / 2 skipped** (688 total; +35 new wear tests) |
+| `bun run build` | PASS |
+| `npx prettier --check "src/**/*.{ts,tsx,css}"` | PASS |
+| `npx eslint src/` | 0 errors (39 pre-existing warnings) |
+| `git diff --check` | Clean |
+| `bunx cap sync android` | PASS |
+| `./gradlew :wear:testDebugUnitTest` | **BUILD SUCCESSFUL** — 16/16 watch tests |
+| `./gradlew :app:testDebugUnitTest` | **BUILD SUCCESSFUL** |
+| `./gradlew :wear:assembleDebug` | **BUILD SUCCESSFUL** → `wear-debug.apk` (~3.1 MB) |
+| `./gradlew :app:assembleDebug` | **BUILD SUCCESSFUL** → `app-debug.apk` (~10.6 MB) |
+
+Local Android builds ran with JDK 21 + Android SDK 36. The container has a 2 GB
+memory ceiling, so Gradle was run with a reduced heap, a single worker and
+in-process Kotlin compilation; the first attempt died with an OOM-killed daemon
+before the recipe was tightened.
+
+### CI
+
+`.github/workflows/ci.yml` now has four jobs: Web Checks, Reward Database,
+**Android Phone Build** (artifact `svj-phone-debug-apk`) and **Wear OS Build**
+(artifact `svj-wear-debug-apk`). Both APKs come from the same commit; the
+ambiguous `debug-apk` artifact name is gone.
+
+### Migrations
+
+- **Added (this release):** `20260924000000_wear_os_activity_source.sql` —
+  additive and idempotent; not yet applied to the live database.
+- **Still pending deployment** (from the native platform release):
+  `20260921000000_earned_plus_stale_session_hardening.sql`,
+  `20260923000000_native_activity_track_storage.sql`,
+  `20260923010000_native_activity_rpcs.sql`,
+  `20260923020000_native_activity_live_share.sql`, then
+  `20260924000000_wear_os_activity_source.sql`. Applying them is a deployment
+  step; the connected live database was not touched by this change.
+
+### Still requires real hardware
+
+Sensor readings, Data Layer delivery, reconnection and the watch UI have been
+exercised by unit tests and code review only. A physical Wear OS watch is
+required to confirm pairing, live heart rate on the phone, and offline
+round-trip. See the install/testing steps in `docs/SVJ_WEAR_OS.md`. No watch
+model has been tested; no compatibility beyond the declared API level is
+claimed.

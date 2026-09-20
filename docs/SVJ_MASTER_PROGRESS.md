@@ -913,3 +913,132 @@ required to confirm pairing, live heart rate on the phone, and offline
 round-trip. See the install/testing steps in `docs/SVJ_WEAR_OS.md`. No watch
 model has been tested; no compatibility beyond the declared API level is
 claimed.
+
+---
+
+## Navigation + Information Architecture Cleanup
+
+**Starting SHA:** `96eb931c758fda5fb9dcf99fe15a0a290d4eb00e`
+**Branch:** `release/play-v1-compliance`
+
+### Old → new hierarchy
+
+| Surface | Before | After |
+|---|---|---|
+| Bottom navigation | Challenges, Activity, Train, Fuel, Community, Leaderboard, 60 Day, Plus, Profile | **Challenges, Activity, Train, Fuel, Plus** |
+| 60-Day program | its own bottom-nav tab | premium card inside **Challenges** (below Earn Plus) |
+| Structured Strength | entry card inside Activity → Overview | headline card at the top of **Train** |
+| Community / Leaderboard / Profile | bottom-nav tabs | **right-side vertical rail** (desktop/tablet) + **header utility drawer** (phones) |
+
+No route was deleted. Tab navigation is pure React state (the shell never
+navigates), so there were no URL deep links to preserve — every existing entry
+point and view still mounts exactly as before.
+
+### 60-Day card
+
+New `src/app/components/SixtyDayProgramCard.tsx`, driven entirely by the
+server's existing `ChallengeState` from the query Challenges already ran (no
+second fetch, no duplicated state). Three honest states: **Start 60 Day**
+(not started), **Continue program** with `Day X / 60`, real mission count,
+current streak and a progress bar, and **View transformation** when the server
+reports completion. The CTA calls the existing `handleTabChange("sixty")`, so
+it opens the same 60-Day view as before.
+
+Progress maths live in a new pure module `src/lib/challengeProgress.ts`.
+`TOTAL_MISSIONS` is derived by summing the real per-day task lists in
+`challengeDays.ts` — the program does **not** use a uniform tasks-per-day count,
+so the card reports the true total (and true per-day cumulative) instead of a
+hardcoded `180`. A missing/unknown state resolves to *not started*; out-of-range
+values clamp rather than inflating progress.
+
+### Train
+
+`StructuredStrengthCard` leads the Train screen, above the existing Iron Log
+tools (which are unchanged). It opens the **existing** `TrainStrength` logger —
+no second logger was written. "Last session" is read from the canonical activity
+pipeline filtered to `source === "strength_log"` and is simply absent when the
+athlete has none; no program/split/next-workout data is invented, because SVJ has
+no such model.
+
+### Utility rail
+
+New `src/app/components/UtilityNav.tsx` (+ model in `src/lib/utilityNav.ts`, kept
+out of the component file per the project's react-refresh convention):
+
+- **Desktop/tablet:** `fixed right-0 top-1/2 -translate-y-1/2 hidden lg:flex`
+  vertical rail, ~72 px, icon + small uppercase label, SVJ red active state with
+  a red edge indicator, `aria-current="page"`.
+- **Phone:** the rail is not forced onto narrow screens. A `Menu` trigger in the
+  header (`lg:hidden`) opens a compact right-side drawer with the same three
+  destinations, so nothing becomes unreachable.
+- **Layout safety:** the page container adds `lg:pr-28` while the rail stays out
+  of document flow, so it can never cover content and no horizontal scrolling is
+  introduced.
+- Android Play still hides the unfinished Leaderboard claim (same rule as before,
+  now applied to the shared utility model).
+
+### Active-state mapping
+
+`CLUSTERED_TABS` in `Navigation.tsx` keeps the parent destination lit: 60-Day →
+**Challenges**, and Earn Plus / MY SVJ PLAN / transformation report → Challenges.
+Structured Strength runs inside the Train tab, so Train stays active on its own.
+
+### Files changed
+
+Added: `src/lib/challengeProgress.ts`, `src/app/lib/utilityNav.ts`,
+`src/app/components/UtilityNav.tsx`, `src/app/components/SixtyDayProgramCard.tsx`,
+`src/app/components/StructuredStrengthCard.tsx`, `tests/navigation.test.ts`.
+Edited: `src/app/components/Navigation.tsx`, `src/app/components/Header.tsx`,
+`src/app/App.tsx`, `src/app/views/ChallengesView.tsx`,
+`src/app/views/WorkoutView.tsx`, `src/app/views/ActivityView.tsx`,
+`package.json`, plus the strength/navigation assertions in
+`tests/activity-tracking.test.mjs`, `tests/strength-logging.test.ts` and
+`tests/android-features.test.mjs`.
+
+### Tests
+
+New `tests/navigation.test.ts` (29 cases) pins: the five primary destinations,
+the absence of 60 Day / Community / Leaderboard / Profile from the bottom bar,
+the 60-Day card's presence and real-state sources, Earn Plus preceding it,
+Structured Strength leading Train with the real last-session source, the rail's
+existence/order/red active state/routing, the reserved right padding, no
+horizontal overflow, mobile drawer reachability, and the 60-Day summary maths
+(unknown state, faithful progress, clamping, completion never inferred).
+
+Existing suites were updated rather than weakened: the structured-strength UI
+tests now mount the logger that moved (its entry card is asserted statically),
+and the Android mirror now describes the primary + utility split.
+
+| Check | Result |
+|---|---|
+| `bun tsc -b --noEmit` | PASS |
+| `bun run test` | **717 tests — 715 pass, 0 fail, 2 baseline skips** |
+| `bun run build` | PASS |
+| `bunx prettier --check "src/**/*.{ts,tsx,css}"` | PASS |
+| `bunx eslint src/` | 0 errors (40 pre-existing fast-refresh warnings) |
+| `git diff --check` | Clean |
+| `bunx cap sync android` | PASS |
+| `./gradlew :app:assembleDebug :wear:assembleDebug` | **BUILD SUCCESSFUL** — `app-debug.apk`, `wear-debug.apk` |
+| `./gradlew :app:testDebugUnitTest :wear:testDebugUnitTest` | **45 tests, 0 failures, 0 errors** (22 accel + 6 HR packet + 16 wear session + 1 example) |
+
+### Migrations
+
+None added, changed or applied. This change is presentation-only and touches no
+schema; the pending native-platform deployment order recorded above is unchanged.
+
+### Regressions explicitly checked
+
+Membership self-service, Founder lifetime, Plus entitlement and timed Plus,
+Earn Plus / redeem codes, 60-Day self-service rules and future-day locking,
+Activity, Strength, Activity history, Routes, Records, Heatmap, GPS/map/pace,
+BLE wearables, Health Connect, Wear OS companion, server-authoritative XP and
+stats (Update 04), personalized tasks, assessment/personalization, Community,
+friends, rivalry/Lock In & Outperform, profile/avatar — all covered by the
+existing suites, which remain green. No destructive migration was run and no
+existing user data was touched.
+
+### Remaining manual action
+
+None for this change. The native-platform migrations listed above still need
+applying to the live database when the corresponding release is deployed (a
+deployment step, not a code change).

@@ -82,9 +82,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <nav
       data-testid="primary-navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 px-1 py-2 sm:py-3"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/10 py-2 sm:py-3"
     >
-      <div className="max-w-2xl mx-auto flex items-center justify-around">
+      {/* Compact centered dock — w-fit + gap keeps tabs grouped as one
+          control instead of spreading across the viewport. Mobile uses
+          full-width grid-cols-5 for maximum touch-target size. */}
+      <div className="mx-auto w-fit grid grid-cols-5 gap-1 sm:flex sm:w-fit sm:justify-center sm:gap-1.5 md:gap-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id || CLUSTERED_TABS[activeTab] === item.id;
@@ -96,7 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id as ActiveTab)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
-              className="relative flex flex-col items-center gap-1 py-1 px-1.5 sm:px-3 rounded-xl transition-all cursor-pointer group"
+              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-all cursor-pointer group min-w-[64px] md:min-w-[74px]"
             >
               {isActive && (
                 <motion.div

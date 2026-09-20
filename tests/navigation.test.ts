@@ -158,6 +158,35 @@ describe("secondary destinations moved to the utility rail", () => {
   });
 });
 
+describe("primary nav spacing is compact", () => {
+  it("uses gap instead of full-width justify-around on desktop", () => {
+    assert.doesNotMatch(navigation, /justify-around/);
+    assert.doesNotMatch(navigation, /justify-between/);
+    assert.doesNotMatch(navigation, /justify-evenly/);
+  });
+
+  it("does not use flex-1 on nav items", () => {
+    assert.doesNotMatch(navigation, /\bflex-1\b/);
+  });
+
+  it("uses w-fit so the tab group stays compact instead of full-width", () => {
+    assert.match(navigation, /w-fit/);
+  });
+
+  it("applies consistent gap between tabs", () => {
+    assert.match(navigation, /gap-1/);
+  });
+
+  it("keeps a minimum touch target width on each tab", () => {
+    assert.match(navigation, /min-w-\[/);
+  });
+
+  it("uses grid on mobile and flex at sm+ for the compact dock", () => {
+    assert.match(navigation, /grid grid-cols-5/);
+    assert.match(navigation, /sm:flex/);
+  });
+});
+
 describe("mobile responsiveness", () => {
   it("renders the utility drawer for narrow screens", () => {
     assert.match(utilityNav, /UtilityDrawer/);

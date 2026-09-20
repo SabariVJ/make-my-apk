@@ -1,9 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useQuery } from "@tanstack/react-query";
 import { Dumbbell, Plus, Trash2, Save, History, TrendingUp, Zap, X, Layers } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { WorkoutExercise } from "../types";
 import { summarizeWorkout } from "../lib/activity";
+import { StructuredStrengthCard } from "../components/StructuredStrengthCard";
+import { TrainStrength } from "./TrainStrength";
+import { strengthRpcClient } from "../lib/strengthClient";
+import { listServerActivities, formatActivityDate } from "../lib/serverActivities";
 
 type Tab = "log" | "templates" | "history";
 
@@ -28,6 +33,26 @@ export const WorkoutView: React.FC = () => {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([blankExercise()]);
   const [trendExercise, setTrendExercise] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Structured Strength is a focused flow inside Train, not another nav tab.
+  const [strengthOpen, setStrengthOpen] = useState(false);
+
+  // Real last structured session — read from the canonical activity pipeline
+  // (`strength_log` provenance). No fabricated program/split state is shown.
+  const recentStrengthQuery = useQuery({
+    queryKey: ["train-last-strength"],
+    queryFn: async () => {
+      const client = strengthRpcClient();
+      if (!client) return null;
+      const result = await listServerActivities(() =>
+        client.rpc("svj_list_activities", { p_limit: 50 }),
+      );
+      if (!result.ok) return null;
+      const latest = result.activities.find((a) => a.source === "strength_log");
+      return latest ? formatActivityDate(latest.startedAt) : null;
+    },
+    staleTime: 60_000,
+    retry: false,
+  });
 
   const updateExercise = (id: string, patch: Partial<WorkoutExercise>) =>
     setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...patch } : ex)));
@@ -103,6 +128,14 @@ export const WorkoutView: React.FC = () => {
     { id: "history", label: "History", icon: History },
   ];
 
+  if (strengthOpen) {
+    return (
+      <div className="pb-24 pt-4 max-w-2xl mx-auto">
+        <TrainStrength onExit={() => setStrengthOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-28 space-y-5">
       {/* Header */}
@@ -117,7 +150,13 @@ export const WorkoutView: React.FC = () => {
         </div>
       </div>
 
-      {/* Sub tabs */}
+      {/* Structured Strength — the primary Train destination, always on top. */}
+      <StructuredStrengthCard
+        onStart={() => setStrengthOpen(true)}
+        lastSessionLabel={recentStrengthQuery.data ?? null}
+      />
+
+      {/* Training modes */}
       <div className="flex gap-2">
         {tabs.map((t) => {
           const Icon = t.icon;

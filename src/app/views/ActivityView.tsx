@@ -10,7 +10,6 @@ import {
   ActivitySquare,
   BarChart3,
   Cpu,
-  Dumbbell,
   AlertCircle,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -18,7 +17,6 @@ import { useActivityOptional, type ActivityContextValue } from "../context/Activ
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 import { TrainGoals, TrainProgress } from "./TrainGoals";
 import { TrainRecovery } from "./TrainRecovery";
-import { TrainStrength } from "./TrainStrength";
 import { RouteLibrary } from "./RouteLibrary";
 import { RecordsView } from "./RecordsView";
 import { ConnectedDevicesView } from "./ConnectedDevicesView";
@@ -287,8 +285,6 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
   );
 
   const [section, setSection] = useState<TrainSection>("activity");
-  // Structured strength is a flow inside Train, not another navigation tab.
-  const [strengthOpen, setStrengthOpen] = useState(false);
   // A saved route the athlete chose to follow outdoors.
   const [plannedRoute, setPlannedRoute] = useState<SavedRoute | null>(null);
 
@@ -303,14 +299,6 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
     steps: d.steps,
     activeKcal: d.activeKcal,
   }));
-
-  if (strengthOpen) {
-    return (
-      <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
-        <TrainStrength onExit={() => setStrengthOpen(false)} />
-      </div>
-    );
-  }
 
   return (
     <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
@@ -425,34 +413,6 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
         <>
-          {/* Structured strength entry — opens the dedicated interview-free logger. */}
-          <div
-            className="rounded-2xl border border-[#C81E3A]/25 bg-[#0B0B0C] p-4 mb-5"
-            data-testid="strength-entry"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-[#E62846]" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
-                    Structured Strength
-                  </span>
-                </div>
-                <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
-                  Log exercises, sets, reps and weight into your workout history.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStrengthOpen(true)}
-                data-testid="open-strength"
-                className="shrink-0 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white hover:bg-[#C81E3A]/30"
-              >
-                Open
-              </button>
-            </div>
-          </div>
-
           <div className="rounded-2xl border border-[#C81E3A]/25 bg-gradient-to-b from-[#C81E3A]/8 to-[#0B0B0C] p-5 mb-5">
             <div className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90] mb-3">
               Today&apos;s Activity

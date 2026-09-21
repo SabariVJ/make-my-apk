@@ -26,6 +26,12 @@ interface PersonalizedResult {
     difficulty: string;
     xp: number;
     durationMinutes: number;
+    /** Server assignment status ('active' | 'completed' | ...). */
+    status: string;
+    /** Server completion state — the ONLY source the UI trusts. */
+    completed: boolean;
+    /** ISO timestamp of server completion, when it exists. */
+    completedAt: string | null;
   }>;
   focusAreas: string[];
   reason: string;
@@ -137,6 +143,11 @@ function toResult(assignments: AssignmentRow[]): PersonalizedResult["challenges"
     difficulty: a.difficulty,
     xp: a.xp,
     durationMinutes: a.durationMinutes ?? DURATION_MAP[a.difficulty as ChallengeDifficulty] ?? 20,
+    // Completion state MUST survive serialization — dropping it made the UI
+    // re-render completed assignments as unchecked after every refetch.
+    status: a.status,
+    completed: a.completed,
+    completedAt: a.completedAt,
   }));
 }
 

@@ -237,7 +237,9 @@ export const ChallengesView: React.FC<{
       difficulty: p.difficulty as DailyChallenge["difficulty"],
       xp: p.xp,
       durationMinutes: p.durationMinutes,
+      // Server completion state is authoritative — never derived locally.
       completed: p.completed ?? false,
+      completedAt: p.completedAt ?? undefined,
       isCustom: false,
       isPersonalized: true,
     }));
@@ -260,7 +262,7 @@ export const ChallengesView: React.FC<{
     // removes the false "This task is no longer available" error (their IDs
     // are not local challenge IDs) and keeps XP server-controlled.
     if (personalizedQuery.data?.challenges?.some((p) => p.id === id)) {
-      if (completingId) return;
+      if (completingId) return; // prevent duplicate taps on the pending task
       setCompletingId(id);
       setActionError(null);
       try {
@@ -271,7 +273,12 @@ export const ChallengesView: React.FC<{
           error?: string;
         };
         if (!result.ok) {
-          setActionError(result.error ?? "Could not complete the task.");
+          // Friendly copy only — raw Postgres internals never reach users.
+          setActionError(
+            /could not find the function|PGRST202/i.test(result.error ?? "")
+              ? "Personalized task service is not available in this environment."
+              : (result.error ?? "Could not complete this task. Please retry."),
+          );
           return;
         }
         // Refetch so the checked state comes from SERVER assignment state.
@@ -281,7 +288,7 @@ export const ChallengesView: React.FC<{
         void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
         void queryClient.invalidateQueries({ queryKey: ["profile"] });
       } catch {
-        setActionError("Could not complete the task. Please retry.");
+        setActionError("Could not complete this task. Please retry.");
       } finally {
         setCompletingId(null);
       }
@@ -571,8 +578,12 @@ export const ChallengesView: React.FC<{
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={() => handleToggle(challenge.id)}
-              className={`group p-4 rounded-xl bg-[#17171A] border border-white/[0.06] transition-colors cursor-pointer flex items-center justify-between gap-4 ${
-                challenge.completed ? "opacity-60" : "hover:border-white/[0.12]"
+              className={`group p-4 rounded-xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
+                completingId === challenge.id
+                  ? "border-[#C81E3A]/40"
+                  : challenge.completed
+                    ? "border-white/[0.06] opacity-60"
+                    : "border-white/[0.06] hover:border-white/[0.12]"
               }`}
             >
               <div className="flex items-start gap-3.5">
@@ -581,7 +592,9 @@ export const ChallengesView: React.FC<{
                   type="button"
                   role="checkbox"
                   aria-checked={challenge.completed}
+                  aria-busy={completingId === challenge.id}
                   aria-label={`Complete ${challenge.title}`}
+                  disabled={completingId === challenge.id || challenge.completed}
                   onClick={(event) => {
                     event.stopPropagation();
                     handleToggle(challenge.id);
@@ -590,9 +603,13 @@ export const ChallengesView: React.FC<{
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
                       : "border-white/20 group-hover:border-[#C81E3A]/60"
-                  }`}
+                  } ${completingId === challenge.id ? "cursor-wait" : ""}`}
                 >
-                  {challenge.completed && <CheckCircle2 className="w-4 h-4" />}
+                  {completingId === challenge.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white/70" />
+                  ) : (
+                    challenge.completed && <CheckCircle2 className="w-4 h-4" />
+                  )}
                 </button>
 
                 <div>
@@ -616,6 +633,13 @@ export const ChallengesView: React.FC<{
                   <p className="text-xs font-inter text-[#8C8C90] mt-1 line-clamp-1">
                     {challenge.description}
                   </p>
+
+                  {/* Inline error for THIS task (plus the global alert above) */}
+                  {completingId === challenge.id && actionError && (
+                    <p role="status" className="text-[11px] font-inter text-rose-300 mt-1.5">
+                      {actionError}
+                    </p>
+                  )}
 
                   <div className="flex items-center gap-3 text-[11px] font-inter text-[#8C8C90] mt-2">
                     <span className="text-[#C81E3A] font-medium">{challenge.category}</span>
@@ -651,17 +675,22 @@ export const ChallengesView: React.FC<{
                     <Pencil className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeChallenge(challenge.id);
-                  }}
-                  aria-label={`Remove ${challenge.title}`}
-                  title={`Remove ${challenge.title}`}
-                  className="p-1.5 rounded-lg text-[#8C8C90] hover:text-[#C81E3A] hover:bg-[#C81E3A]/10 transition-colors cursor-pointer shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {/* Server-assigned personalized tasks are never locally
+                    removable — they are completed or replaced via the
+                    authorized Refresh flow only. */}
+                {!challenge.isPersonalized && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeChallenge(challenge.id);
+                    }}
+                    aria-label={`Remove ${challenge.title}`}
+                    title={`Remove ${challenge.title}`}
+                    className="p-1.5 rounded-lg text-[#8C8C90] hover:text-[#C81E3A] hover:bg-[#C81E3A]/10 transition-colors cursor-pointer shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
                 <div
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-inter font-semibold shrink-0 ${
                     challenge.completed

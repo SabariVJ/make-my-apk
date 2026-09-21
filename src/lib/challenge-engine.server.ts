@@ -15,7 +15,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ChallengeDifficulty } from "../app/types";
 import type { UserStatsData } from "./personalization.functions";
-import { selectPersonalizedChallenges, getChallengeInsights } from "./challenge-engine";
+import {
+  selectPersonalizedChallenges,
+  getChallengeInsights,
+  LOW_READINESS_SCORE,
+} from "./challenge-engine";
 
 interface PersonalizedResult {
   challenges: Array<{
@@ -35,6 +39,8 @@ interface PersonalizedResult {
   }>;
   focusAreas: string[];
   reason: string;
+  /** Set when low readiness softened today's difficulty; null otherwise. */
+  readinessNote: string | null;
 }
 
 /**
@@ -121,6 +127,32 @@ async function readPersonalization(
   };
 }
 
+/**
+ * The user's own latest readiness snapshot (RLS-scoped to their session).
+ * Used to soften suggested difficulty on depleted days — never to award or
+ * remove XP. Absent/unreadable readiness simply means "no adjustment".
+ */
+async function readReadiness(
+  client: Record<string, unknown>,
+  userId: string,
+): Promise<{ score: number; isLow: boolean } | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (client as any)
+      .from("svj_readiness_daily")
+      .select("score, readiness_date")
+      .eq("user_id", userId)
+      .order("readiness_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const score = Number(data?.score);
+    if (!Number.isFinite(score)) return null;
+    return { score, isLow: score < LOW_READINESS_SCORE };
+  } catch {
+    return null;
+  }
+}
+
 /** Serialize a template into the server RPC payload (server → server only). */
 function templatePayload(templates: ReturnType<typeof selectPersonalizedChallenges>) {
   return templates.map((t) => ({
@@ -169,10 +201,12 @@ export const getPersonalizedChallenges = createServerFn({ method: "GET" })
     const { assessmentCompleted, goals, stats } = await readPersonalization(client, context.userId);
 
     if (!assessmentCompleted) {
-      return { challenges: [], focusAreas: [], reason: ASSESSMENT_REASON };
+      return { challenges: [], focusAreas: [], reason: ASSESSMENT_REASON, readinessNote: null };
     }
 
-    const selected = selectPersonalizedChallenges(stats, goals, [], 6);
+    // Low readiness softens the suggested difficulty (never XP authority).
+    const readiness = await readReadiness(client, context.userId);
+    const selected = selectPersonalizedChallenges(stats, goals, [], 6, readiness);
     const insights = getChallengeInsights(stats, goals);
 
     const { data, error } = await client.rpc("svj_get_or_create_my_personalized_tasks", {
@@ -190,6 +224,9 @@ export const getPersonalizedChallenges = createServerFn({ method: "GET" })
       challenges: toResult(result.assignments ?? []),
       focusAreas: insights.focusAreas,
       reason: result.assigned ? insights.reason : (result.reason ?? insights.reason),
+      readinessNote: readiness?.isLow
+        ? "Recovery is low — today's suggestions are capped at Medium difficulty."
+        : null,
     };
   });
 
@@ -210,6 +247,7 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
       challenges?: PersonalizedResult["challenges"];
       focusAreas?: string[];
       reason?: string;
+      readinessNote?: string | null;
       error?: string;
     }> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -228,7 +266,8 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
         };
       }
 
-      const selected = selectPersonalizedChallenges(stats, goals, [], 6);
+      const readiness = await readReadiness(client, context.userId);
+      const selected = selectPersonalizedChallenges(stats, goals, [], 6, readiness);
       const insights = getChallengeInsights(stats, goals);
 
       // The RPC reserves the atomic cooldown AND swaps the set in one
@@ -283,6 +322,9 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
           ),
           focusAreas: insights.focusAreas,
           reason: insights.reason,
+          readinessNote: readiness?.isLow
+            ? "Recovery is low — today's suggestions are capped at Medium difficulty."
+            : null,
         };
       }
 
@@ -307,6 +349,9 @@ export const refreshPersonalizedChallenges = createServerFn({ method: "POST" })
         challenges: toResult(result.assignments ?? []),
         focusAreas: insights.focusAreas,
         reason: insights.reason,
+        readinessNote: readiness?.isLow
+          ? "Recovery is low — today's suggestions are capped at Medium difficulty."
+          : null,
       };
     },
   );

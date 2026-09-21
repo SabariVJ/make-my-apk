@@ -494,6 +494,25 @@ function computeCategoryWeights(
  * Determine appropriate difficulty range based on stat levels.
  * Returns [minDifficulty, maxDifficulty] as numeric indices.
  */
+export const LOW_READINESS_SCORE = 60;
+
+/**
+ * Recovery gating: when today's readiness is low, cap tomorrow's suggestions at
+ * Medium (Easy + Medium remain available) so a depleted user is not handed a
+ * Hard/Elite session. Never raises difficulty, and does nothing when readiness
+ * is unknown.
+ */
+export function softenForLowReadiness(
+  range: { min: number; max: number },
+  readiness: { score: number; isLow: boolean } | null,
+): { min: number; max: number } {
+  if (!readiness) return range;
+  const low = readiness.isLow || readiness.score < LOW_READINESS_SCORE;
+  if (!low) return range;
+  // DIFFICULTY_INDEX: Easy 0, Medium 1, Hard 2, Elite 3.
+  return { min: Math.min(range.min, 1), max: Math.min(range.max, 1) };
+}
+
 function difficultyRange(stats: UserStatsData | null): { min: number; max: number } {
   if (!stats) return { min: 0, max: 1 }; // Easy + Medium for new users
 
@@ -536,9 +555,10 @@ export function selectPersonalizedChallenges(
   goals: string[] = [],
   completedToday: string[] = [],
   count: number = 6,
+  readiness: { score: number; isLow: boolean } | null = null,
 ): ChallengeTemplate[] {
   const weights = computeCategoryWeights(stats, goals);
-  const diffRange = difficultyRange(stats);
+  const diffRange = softenForLowReadiness(difficultyRange(stats), readiness);
 
   // Weighted random selection
   const available = CHALLENGE_BANK.filter((t) => {

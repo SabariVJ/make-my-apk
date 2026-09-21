@@ -3,8 +3,8 @@
 // Server-derived deterministic readiness (activity load + optional daily
 // check-in). Every displayed input is labeled with its source:
 // "recorded activity" vs "your check-in". No AI, no medical claims.
-import React, { useCallback, useEffect, useState } from "react";
-import { HeartPulse, Loader2, RefreshCw } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { HeartPulse, Loader2, Moon, RefreshCw, TrendingUp } from "lucide-react";
 import {
   getMyReadiness,
   saveMyRecoveryCheckin,
@@ -12,6 +12,23 @@ import {
   type ReadinessData,
   type RecoveryHistoryPoint,
 } from "../lib/recovery";
+import { useSVJ } from "../context/SVJContext";
+import { readStoredJson, writeStoredJson } from "../lib/storage";
+import { localDayKey } from "../lib/taskCompletions";
+import {
+  DEFAULT_WAKE_HOUR,
+  RECOVERY_HISTORY_STORAGE_KEY,
+  bestSleepRange,
+  computeReadiness,
+  normalizeHistory,
+  readinessTrend,
+  recomputeSleepWindow,
+  taskLoadForDay,
+  taskLoadPoints,
+  upsertDayRecord,
+  type ReadinessResult,
+  type RecoveryDayRecord,
+} from "../lib/recoveryInsights";
 
 const LOAD_LABELS: Record<string, string> = {
   low: "Low",
@@ -107,9 +124,40 @@ const ScaleInput: React.FC<{
   </div>
 );
 
+/**
+ * Combined readiness for today: server activity load + client task load,
+ * blended with the manual check-in by the same transparent formula the server
+ * uses. Falls back to the server snapshot's own inputs when offline.
+ */
+function combine(
+  serverReadiness: ReadinessData | null,
+  rows: Parameters<typeof taskLoadPoints>[0],
+  checkin: {
+    sleepHours: number | null;
+    soreness: number | null;
+    energy: number | null;
+    perceivedRecovery: number | null;
+  },
+): ReadinessResult {
+  const task = taskLoadPoints(rows);
+  return computeReadiness({
+    activityLoadPoints: serverReadiness?.components.loadPoints7d ?? 0,
+    taskLoadPoints: task.points,
+    taskCount: task.taskCount,
+    checkin,
+    restDays: serverReadiness?.components.restDaysLast3 ?? null,
+  });
+}
+
 export const TrainRecovery: React.FC = () => {
+  // Task completions live on the client, so the task share of today's training
+  // load is computed here and combined with the server's activity load.
+  const { taskCompletions } = useSVJ();
   const [readiness, setReadiness] = useState<ReadinessData | null>(null);
   const [history, setHistory] = useState<RecoveryHistoryPoint[]>([]);
+  const [dayHistory, setDayHistory] = useState<RecoveryDayRecord[]>(() =>
+    normalizeHistory(readStoredJson(RECOVERY_HISTORY_STORAGE_KEY, [])),
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,9 +168,36 @@ export const TrainRecovery: React.FC = () => {
   const [energy, setEnergy] = useState<number | null>(null);
   const [perceived, setPerceived] = useState<number | null>(null);
 
+  /** Typed check-in values (the sleep field is a text input). */
+  const checkinValues = useMemo(() => {
+    const hours = sleepHours.trim() === "" ? null : Number(sleepHours);
+    return {
+      sleepHours: hours !== null && Number.isFinite(hours) ? hours : null,
+      soreness,
+      energy,
+      perceivedRecovery: perceived,
+    };
+  }, [sleepHours, soreness, energy, perceived]);
+
+  /** Today's combined reading, recomputed whenever tasks or inputs change. */
+  const today = useMemo(
+    () => combine(readiness, taskCompletions, checkinValues),
+    [readiness, taskCompletions, checkinValues],
+  );
+
+  /** Persist today's check-in + computed load so trends can be derived. */
+  const persistToday = useCallback((record: RecoveryDayRecord) => {
+    setDayHistory((previous) => {
+      const next = upsertDayRecord(previous, record);
+      writeStoredJson(RECOVERY_HISTORY_STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const stored = normalizeHistory(readStoredJson(RECOVERY_HISTORY_STORAGE_KEY, []));
     const r = await getMyReadiness();
     if (r.ok && r.readiness) {
       setReadiness(r.readiness);
@@ -137,12 +212,65 @@ export const TrainRecovery: React.FC = () => {
     }
     const h = await listMyRecoveryHistory(14);
     if (h.ok) setHistory(h.history ?? []);
+
+    // Backfill the local history with the server's own recorded days so trends
+    // and the sleep correlation use everything the user has actually logged.
+    let merged = stored;
+    if (h.ok && h.history) {
+      for (const point of h.history) {
+        const existing = merged.find((row) => row.date === point.date);
+        if (existing && existing.score > 0) continue;
+        merged = upsertDayRecord(merged, {
+          ...(existing ?? {
+            date: point.date,
+            checkin: { sleepHours: null, soreness: null, energy: null, perceivedRecovery: null },
+            activityLoadPoints: 0,
+            taskLoadPoints: 0,
+            totalLoadPoints: 0,
+            taskCount: 0,
+            recovery: "unknown" as const,
+            band: "low" as const,
+          }),
+          date: point.date,
+          score: point.score,
+          band: point.trainingLoad as RecoveryDayRecord["band"],
+          recovery: point.recovery as RecoveryDayRecord["recovery"],
+        });
+      }
+    }
+    writeStoredJson(RECOVERY_HISTORY_STORAGE_KEY, merged);
+    setDayHistory(merged);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Keep today's row current as tasks are completed or unchecked.
+  useEffect(() => {
+    if (loading) return;
+    const task = taskLoadPoints(taskCompletions);
+    persistToday({
+      date: localDayKey(),
+      checkin: checkinValues,
+      activityLoadPoints: readiness?.components.loadPoints7d ?? 0,
+      taskLoadPoints: task.points,
+      totalLoadPoints: today.components.totalLoadPoints,
+      band: today.band,
+      score: today.score,
+      recovery: today.recovery,
+      taskCount: task.taskCount,
+    });
+  }, [loading, readiness, taskCompletions, checkinValues, today, persistToday]);
+
+  const sleep = useMemo(() => bestSleepRange(dayHistory), [dayHistory]);
+  const window = useMemo(() => recomputeSleepWindow(sleep, today.band), [sleep, today.band]);
+  const trend = useMemo(() => readinessTrend(dayHistory, 7), [dayHistory]);
+  const todayTaskLoad = taskLoadForDay(
+    taskCompletions.filter((row) => !row.undoneAt),
+    localDayKey(),
+  );
 
   const submit = async () => {
     setSaving(true);
@@ -165,6 +293,30 @@ export const TrainRecovery: React.FC = () => {
       setSaved(true);
       const h = await listMyRecoveryHistory(14);
       if (h.ok) setHistory(h.history ?? []);
+      const task = taskLoadPoints(taskCompletions);
+      const combined = computeReadiness({
+        activityLoadPoints: result.readiness.components.loadPoints7d ?? 0,
+        taskLoadPoints: task.points,
+        taskCount: task.taskCount,
+        checkin: {
+          sleepHours: hours,
+          soreness,
+          energy,
+          perceivedRecovery: perceived,
+        },
+        restDays: result.readiness.components.restDaysLast3 ?? null,
+      });
+      persistToday({
+        date: localDayKey(),
+        checkin: { sleepHours: hours, soreness, energy, perceivedRecovery: perceived },
+        activityLoadPoints: result.readiness.components.loadPoints7d ?? 0,
+        taskLoadPoints: task.points,
+        totalLoadPoints: combined.components.totalLoadPoints,
+        band: combined.band,
+        score: combined.score,
+        recovery: combined.recovery,
+        taskCount: task.taskCount,
+      });
     } else {
       setError(result.error ?? "Check-in failed.");
     }
@@ -234,9 +386,9 @@ export const TrainRecovery: React.FC = () => {
                   Training Load
                 </p>
                 <p className="text-sm font-mono font-bold text-white">
-                  {LOAD_LABELS[readiness.trainingLoad] ?? readiness.trainingLoad}
+                  {LOAD_LABELS[today.band] ?? today.band}
                   <span className="ml-1.5 text-[9px] uppercase text-[#8C8C90]">
-                    from recorded activity
+                    {Math.round(today.components.totalLoadPoints)} pts · 7 days
                   </span>
                 </p>
               </div>
@@ -256,11 +408,47 @@ export const TrainRecovery: React.FC = () => {
             </div>
           </div>
 
-          {/* Today advice */}
-          <p className="mb-4 rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/10 px-3 py-2 text-xs font-mono text-white">
+          {/* Load breakdown — every number is labeled with its source */}
+          <div className="mb-3 grid grid-cols-2 gap-2" data-testid="recovery-load-breakdown">
+            <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+              <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+                Recorded activity
+              </p>
+              <p className="font-mono text-lg font-bold text-white">
+                {Math.round(today.components.activityLoadPoints)}
+                <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">pts / 7d</span>
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+              <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+                Completed tasks
+              </p>
+              <p className="font-mono text-lg font-bold text-white">
+                {Math.round(today.components.taskLoadPoints)}
+                <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">
+                  pts · {today.components.taskCount} task
+                  {today.components.taskCount === 1 ? "" : "s"}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Today advice + low-readiness flag */}
+          <p className="mb-3 rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/10 px-3 py-2 text-xs font-mono text-white">
             <span className="mr-1.5 font-bold uppercase text-[#C81E3A]">Today</span>
-            {readiness.todayAdvice}
+            {today.advice}
           </p>
+
+          {today.isLow && (
+            <p
+              role="status"
+              data-testid="recovery-low-flag"
+              className="mb-4 rounded-2xl border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-mono text-gold"
+            >
+              Readiness is low ({today.score}) — tomorrow's personalized tasks are capped at Medium
+              difficulty so you can recover.
+            </p>
+          )}
 
           {/* Daily check-in */}
           <div className="mb-3 rounded-2xl border border-white/5 bg-black/30 p-3">
@@ -330,31 +518,121 @@ export const TrainRecovery: React.FC = () => {
             )}
           </div>
 
-          {/* 14-day trend */}
-          {history.length > 0 && (
-            <div className="rounded-2xl border border-white/5 bg-black/30 p-3">
-              <p className="mb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
-                Last 14 days
+          {/* Tonight's sleep window — personal optimum adjusted for load */}
+          <div
+            className="mb-3 rounded-2xl border border-white/5 bg-black/30 p-3"
+            data-testid="recovery-sleep-window"
+          >
+            <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
+              <Moon className="h-3 w-3 text-gold" /> Tonight&apos;s sleep window
+            </p>
+            <p className="font-anton text-xl uppercase text-white">
+              {window.minHours}–{window.maxHours} h
+            </p>
+            <p className="mt-0.5 text-xs font-mono text-[#8C8C90]">
+              In bed {window.bedtimeFrom}–{window.bedtimeTo}{" "}
+              <span className="text-[#8C8C90]/70">
+                (assuming a {String(DEFAULT_WAKE_HOUR).padStart(2, "0")}:00 wake-up)
+              </span>
+            </p>
+            {window.loadAdjustmentMinutes > 0 && (
+              <p className="mt-1 text-[10px] font-mono uppercase text-gold">
+                +{window.loadAdjustmentMinutes} min added for a {LOAD_LABELS[today.band]} load day
               </p>
-              <div className="flex items-end gap-1" style={{ height: 48 }}>
-                {[...history].reverse().map((p) => (
-                  <div
-                    key={p.date}
-                    title={`${p.date}: ${p.score}`}
-                    className="flex-1 rounded-t-sm"
-                    style={{
-                      height: `${Math.max(6, p.score)}%`,
-                      backgroundColor: SCORE_COLOR(p.score),
-                      opacity: 0.85,
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="mt-1.5 text-[9px] font-mono text-[#8C8C90]">
-                Readiness score per day — {history.length} recorded
+            )}
+            <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">{window.note}</p>
+          </div>
+
+          {/* Personal best sleep — the user's OWN sleep vs next-day outcome */}
+          <div
+            className="mb-3 rounded-2xl border border-white/5 bg-black/30 p-3"
+            data-testid="recovery-best-sleep"
+          >
+            <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
+              <TrendingUp className="h-3 w-3 text-emerald-400" /> Your best sleep
+            </p>
+            {sleep.insufficientData ? (
+              <p className="text-[11px] font-mono text-[#8C8C90]">
+                Not enough history yet ({sleep.pairedDays} of 3 logged nights compared). Keep
+                checking in and this becomes your own number — never a generic one.
               </p>
+            ) : (
+              <>
+                <p className="font-anton text-xl uppercase text-emerald-400">
+                  {sleep.bestRangeLabel}
+                </p>
+                <p className="mt-0.5 text-xs font-mono text-[#8C8C90]">
+                  Best next-day energy ({sleep.best?.avgNextEnergy?.toFixed(1) ?? "—"}/5) across
+                  your last {sleep.pairedDays} logged nights.
+                </p>
+                {sleep.buckets.length > 1 && (
+                  <div className="mt-2 space-y-1">
+                    {sleep.buckets.map((bucket) => (
+                      <div
+                        key={bucket.fromHour}
+                        className="flex items-center gap-2 text-[10px] font-mono text-[#8C8C90]"
+                      >
+                        <span className="w-16 shrink-0">
+                          {bucket.fromHour}–{bucket.toHour} h
+                        </span>
+                        <span className="flex-1">
+                          <span
+                            className="block h-1.5 rounded-full bg-[#C81E3A]"
+                            style={{ width: `${((bucket.avgNextEnergy ?? 0) / 5) * 100}%` }}
+                          />
+                        </span>
+                        <span className="w-10 text-right">
+                          {bucket.avgNextEnergy?.toFixed(1) ?? "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* 7-day readiness + sleep trend */}
+          <div
+            className="rounded-2xl border border-white/5 bg-black/30 p-3"
+            data-testid="recovery-7day-trend"
+          >
+            <p className="mb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
+              7-day readiness &amp; sleep
+            </p>
+            <div className="flex items-end gap-2" style={{ height: 56 }}>
+              {trend.map((point) => (
+                <div key={point.date} className="flex flex-1 flex-col items-center gap-1">
+                  <span
+                    className="text-[9px] font-mono"
+                    style={{ color: SCORE_COLOR(point.score) }}
+                  >
+                    {point.hasData ? point.score : ""}
+                  </span>
+                  <div className="flex h-full w-full items-end">
+                    <div
+                      title={`${point.date}: readiness ${point.score}, sleep ${point.sleepHours ?? "—"} h`}
+                      className="w-full rounded-t-sm"
+                      style={{
+                        height: `${point.hasData ? Math.max(6, point.score) : 0}%`,
+                        backgroundColor: SCORE_COLOR(point.score),
+                        opacity: point.hasData ? 0.85 : 0.25,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-mono uppercase text-[#8C8C90]">
+                    {point.label}
+                  </span>
+                  <span className="text-[9px] font-mono text-gold">
+                    {point.sleepHours !== null ? `${point.sleepHours}h` : "·"}
+                  </span>
+                </div>
+              ))}
             </div>
-          )}
+            <p className="mt-1.5 text-[9px] font-mono text-[#8C8C90]">
+              Bars: readiness score · gold: hours slept ({history.length} server days recorded)
+            </p>
+          </div>
         </>
       )}
     </div>

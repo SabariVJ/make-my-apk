@@ -108,7 +108,7 @@ export const GoogleAuthModal: React.FC = () => {
                     <AvatarImage
                       src={user.avatar}
                       name={user.name}
-                      className="w-12 h-12 rounded-2xl object-cover border-2 border-[#C81E3A]"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-[#C81E3A]"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export const GoogleAuthModal: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsGoogleAuthModalOpen(false)}
-                  className="w-full py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold transition-colors cursor-pointer"
                 >
                   Return to Application
                 </button>
@@ -207,7 +207,7 @@ export const GoogleAuthModal: React.FC = () => {
                 <button
                   onClick={handleConnect}
                   disabled={busy}
-                  className="w-full py-3 rounded-2xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+                  className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
                 >
                   {busy ? (
                     <>

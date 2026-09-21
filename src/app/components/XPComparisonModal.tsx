@@ -144,7 +144,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 rounded-2xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
+                className="mt-5 rounded-xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
               >
                 Got it
               </button>
@@ -159,7 +159,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 </div>
 
                 {/* YOU Box */}
-                <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
+                <div className="p-4 rounded-full bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#C81E3A] mb-2">
                     <AvatarImage
                       src={user.avatar}
@@ -175,7 +175,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 </div>
 
                 {/* TARGET MEMBER Box */}
-                <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
+                <div className="p-4 rounded-full bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 mb-2">
                     <AvatarImage
                       src={member.avatar}
@@ -335,7 +335,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                   else void handleLockIn();
                 }}
                 disabled={sending || rivalry?.status === "pending"}
-                className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
+                className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
               >
                 <span>{sending ? "Sending…" : actionLabel}</span>
                 <ArrowRight className="w-4 h-4" />

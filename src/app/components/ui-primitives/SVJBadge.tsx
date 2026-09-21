@@ -21,7 +21,7 @@ export const SVJBadge: React.FC<{
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-2xl text-[10px] font-inter font-semibold tracking-wide uppercase ${styles[variant]} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-inter font-semibold tracking-wide uppercase ${styles[variant]} ${className}`}
     >
       {children}
     </span>

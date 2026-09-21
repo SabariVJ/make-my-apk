@@ -130,7 +130,7 @@ export const RewardsView: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-2xl bg-emerald-500 text-black font-mono text-xs font-bold shadow-2xl flex items-center gap-2"
+            className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500 text-black font-mono text-xs font-bold shadow-2xl flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
             <span>{toastMessage}</span>
@@ -180,7 +180,7 @@ export const RewardsView: React.FC = () => {
               <span className="font-anton text-sm text-white uppercase tracking-wide">
                 Weekly Vault Rotation (Season 14)
               </span>
-              <span className="px-2 py-0.5 rounded-2xl bg-gold/20 text-gold text-[9px] font-mono font-bold border border-gold/30 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-[9px] font-mono font-bold border border-gold/30 flex items-center gap-1">
                 <RefreshCw className="w-2.5 h-2.5 animate-spin" /> NEW REWARDS WEEKLY
               </span>
             </div>
@@ -224,7 +224,7 @@ export const RewardsView: React.FC = () => {
 
           <button
             onClick={() => setShowNextWeekPreview(true)}
-            className="px-3 py-2 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-gold" />
             <span>Next Batch Teaser</span>
@@ -244,7 +244,7 @@ export const RewardsView: React.FC = () => {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-2xl text-xs font-mono transition-all shrink-0 cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-mono transition-all shrink-0 cursor-pointer ${
               selectedCategory === cat
                 ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
                 : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"
@@ -286,7 +286,7 @@ export const RewardsView: React.FC = () => {
                   </div>
 
                   {item.isPremiumOnly && (
-                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded-2xl bg-gold text-black font-anton text-[9px] uppercase tracking-wider">
+                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-gold text-black font-anton text-[9px] uppercase tracking-wider">
                       SVJ PLUS EXCLUSIVE
                     </div>
                   )}
@@ -318,7 +318,7 @@ export const RewardsView: React.FC = () => {
                       return (
                         <button
                           onClick={() => handleAccessReward(item)}
-                          className={`px-4 py-2 rounded-2xl text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all ${
+                          className={`px-4 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all ${
                             isEquipped
                               ? "bg-gradient-to-r from-gold to-yellow-500 text-black shadow-gold/20"
                               : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white"
@@ -338,7 +338,7 @@ export const RewardsView: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => handleAccessReward(item)}
-                      className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all"
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all"
                     >
                       <Check className="w-4 h-4 text-emerald-200" />
                       <span>{item.actionLabel || "Access Reward"}</span>
@@ -347,7 +347,7 @@ export const RewardsView: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => redeemReward(item.id)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-anton tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-anton tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all ${
                       canAfford
                         ? "bg-[#C81E3A] hover:bg-[#A0182E] text-white shadow-lg shadow-[#C81E3A]/20"
                         : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -420,7 +420,7 @@ export const RewardsView: React.FC = () => {
                         </div>
                         <button
                           onClick={() => handleCopyCode(activeModalReward.code!)}
-                          className="px-3 py-1.5 rounded-2xl bg-emerald-500 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-emerald-400"
+                          className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-emerald-400"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           <span>Copy Passkey</span>
@@ -452,7 +452,7 @@ export const RewardsView: React.FC = () => {
                         </div>
                         <button
                           onClick={() => handleCopyCode(activeModalReward.code!)}
-                          className="px-4 py-2 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold flex items-center gap-2 cursor-pointer"
+                          className="px-4 py-2 rounded-lg bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold flex items-center gap-2 cursor-pointer"
                         >
                           <Copy className="w-4 h-4" />
                           <span>Copy Voucher Code</span>
@@ -467,7 +467,7 @@ export const RewardsView: React.FC = () => {
               <div className="pt-4 border-t border-white/10 flex justify-end">
                 <button
                   onClick={() => setActiveModalReward(null)}
-                  className="px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold cursor-pointer transition-colors"
+                  className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold cursor-pointer transition-colors"
                 >
                   Close Vault Item
                 </button>
@@ -563,7 +563,7 @@ export const RewardsView: React.FC = () => {
                 </span>
                 <button
                   onClick={() => setShowNextWeekPreview(false)}
-                  className="px-4 py-2 rounded-2xl bg-[#C81E3A] text-white font-mono text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-[#C81E3A] text-white font-mono text-xs font-bold cursor-pointer"
                 >
                   Got It
                 </button>

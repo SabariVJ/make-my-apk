@@ -161,7 +161,7 @@ const AppContent: React.FC<{
                     setShowTrialNotice(false);
                     setActiveTab("earn");
                   }}
-                  className="w-full rounded-2xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
+                  className="w-full rounded-xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
                 >
                   Open Earn Plus
                 </button>
@@ -171,14 +171,14 @@ const AppContent: React.FC<{
                     setShowTrialNotice(false);
                     setIsPaywallOpen(true);
                   }}
-                  className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
                 >
                   Explore SVJ Plus
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowTrialNotice(false)}
-                  className="w-full py-3 rounded-2xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
+                  className="w-full py-3 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
                 >
                   Continue in Limited Mode
                 </button>

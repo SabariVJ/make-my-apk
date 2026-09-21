@@ -147,7 +147,7 @@ export const UPIPaymentModal: React.FC = () => {
           ) : !showQR ? (
             /* Prompt: Would you like to pay via UPI? */
             <div className="space-y-5 text-center py-4">
-              <div className="relative w-28 h-28 rounded-2xl bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
+              <div className="relative w-28 h-28 rounded-lg bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
                 <img
                   src={upiQr.url}
                   alt="SVJ QR Code"
@@ -185,7 +185,7 @@ export const UPIPaymentModal: React.FC = () => {
             /* QR Code Scanner Display */
             <div className="space-y-5 text-center py-2">
               <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-2xl flex items-center justify-center overflow-hidden">
+                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
                   <img
                     src={upiQr.url}
                     alt="SVJ Official Payment QR Code"
@@ -223,7 +223,7 @@ export const UPIPaymentModal: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                   disabled={isProcessing}
                   onClick={handleSimulatePayment}
-                  className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <span>Preparing contact options...</span>
@@ -243,7 +243,7 @@ export const UPIPaymentModal: React.FC = () => {
                   </p>
                   <a
                     href={isNative ? supportUrl : appUrl}
-                    className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
                     Open WhatsApp app
@@ -252,25 +252,25 @@ export const UPIPaymentModal: React.FC = () => {
                     href={webUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
                   >
                     Open in browser instead
                   </a>
                   <button
                     onClick={handleCopyMessage}
-                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
                   >
                     {copied ? "Message copied" : "Copy verification message"}
                   </button>
                   <button
                     onClick={handleCopyNumber}
-                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
                   >
                     {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
                   </button>
                   <a
                     href={mailtoUrl}
-                    className="w-full py-2.5 rounded-2xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
                   >
                     Email us instead
                   </a>

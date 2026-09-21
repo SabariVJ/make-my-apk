@@ -30,7 +30,7 @@ const Avatar: React.FC<{ src: string | null; name: string }> = ({ src, name }) =
   <AvatarImage
     src={src}
     name={name}
-    className="w-11 h-11 rounded-2xl object-cover border border-white/10"
+    className="w-11 h-11 rounded-full object-cover border border-white/10"
   />
 );
 
@@ -166,7 +166,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             placeholder="Search members by username to add as friend..."
             value={query}
             onChange={(e) => void runSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -199,7 +199,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     onClick={() => void sendRequest(r.id)}
                     disabled={busyId === r.id}
-                    className="shrink-0 px-3 py-1.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-50 text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-50 text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer"
                   >
                     {busyId === r.id ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -220,7 +220,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
       )}
 
       {/* Section Tabs */}
-      <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
+      <div className="p-1 rounded-lg bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
         <button
           onClick={() => setActiveSection("friends")}
           className={`flex-1 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer ${
@@ -281,7 +281,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-white uppercase truncate">
@@ -296,7 +296,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void handleAcceptRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
                     >
                       {rivalryBusy === r.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -307,7 +307,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void handleDeclineRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] text-xs font-mono hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[#0B0B0C] border border-white/10 text-[#8C8C90] text-xs font-mono hover:text-white disabled:opacity-50 cursor-pointer"
                     >
                       Decline
                     </button>
@@ -331,7 +331,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-white uppercase truncate">
@@ -371,7 +371,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-emerald-400 uppercase">
@@ -389,7 +389,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     type="button"
                     onClick={() => setSelectedRivalry(r)}
-                    className="shrink-0 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                    className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
                   >
                     View Rivalry
                   </button>
@@ -430,7 +430,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   n.read ? "bg-[#17171A]/60 border-white/5" : "bg-[#17171A] border-[#C81E3A]/30"
                 }`}
               >
-                <div className="p-2 rounded-2xl bg-[#0B0B0C] shrink-0">
+                <div className="p-2 rounded-lg bg-[#0B0B0C] shrink-0">
                   {n.type === "rivalry_request" && <Swords className="w-4 h-4 text-[#C81E3A]" />}
                   {n.type === "rivalry_accepted" && <Check className="w-4 h-4 text-emerald-400" />}
                   {n.type === "rivalry_declined" && <X className="w-4 h-4 text-crimson" />}
@@ -489,7 +489,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void respond(r.friendship_id, "accepted")}
                       disabled={busyId === r.friendship_id}
-                      className="p-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
+                      className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
                       aria-label="Accept request"
                     >
                       <Check className="w-4 h-4" />
@@ -497,7 +497,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void respond(r.friendship_id, "declined")}
                       disabled={busyId === r.friendship_id}
-                      className="p-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="p-2 rounded-lg bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white disabled:opacity-50 cursor-pointer"
                       aria-label="Decline request"
                     >
                       <X className="w-4 h-4" />

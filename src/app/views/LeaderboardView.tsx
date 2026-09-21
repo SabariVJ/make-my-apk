@@ -98,7 +98,7 @@ export const LeaderboardView: React.FC = () => {
       </div>
 
       {/* Filter Tabs */}
-      <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
+      <div className="p-1 rounded-lg bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
         {(["total", "weekly", "monthly", "streak"] as const).map((tab) => (
           <button
             key={tab}

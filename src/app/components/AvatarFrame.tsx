@@ -33,17 +33,17 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
   }, [src]);
 
   const sizeClasses = {
-    sm: "w-8 h-8 rounded-lg",
-    md: "w-10 h-10 rounded-2xl",
-    lg: "w-16 h-16 rounded-2xl",
-    xl: "w-24 h-24 rounded-2xl",
+    sm: "w-8 h-8 rounded-full",
+    md: "w-10 h-10 rounded-full",
+    lg: "w-16 h-16 rounded-full",
+    xl: "w-24 h-24 rounded-full",
   }[size];
 
   const badgeSizeClasses = {
-    sm: "w-3 h-3 text-[8px]",
-    md: "w-4 h-4 text-[10px]",
-    lg: "w-5 h-5 text-xs",
-    xl: "w-6 h-6 text-xs",
+    sm: "w-3 h-3 rounded-full text-[8px]",
+    md: "w-4 h-4 rounded-full text-[10px]",
+    lg: "w-5 h-5 rounded-full text-xs",
+    xl: "w-6 h-6 rounded-full text-xs",
   }[size];
 
   // Determine frame styling

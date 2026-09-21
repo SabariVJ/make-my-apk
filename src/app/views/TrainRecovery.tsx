@@ -316,7 +316,7 @@ export const TrainRecovery: React.FC = () => {
               type="button"
               onClick={() => void submit()}
               disabled={saving}
-              className="mt-1 w-full rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
+              className="mt-1 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
             >
               {saving ? "SAVING…" : "SAVE CHECK-IN"}
             </button>

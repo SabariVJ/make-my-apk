@@ -56,7 +56,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
             >
               Start 60 Day <ArrowRight className="h-4 w-4" />
             </button>
@@ -71,7 +71,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white/[0.06] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/[0.10] svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/[0.10] svj-press"
             >
               View transformation <ArrowRight className="h-4 w-4" />
             </button>
@@ -130,7 +130,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A]/15 text-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider transition-colors hover:bg-[#C81E3A]/25 svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A]/15 text-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider transition-colors hover:bg-[#C81E3A]/25 svj-press"
             >
               Continue program <ArrowRight className="h-4 w-4" />
             </button>

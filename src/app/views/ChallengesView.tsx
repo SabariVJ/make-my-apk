@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Flame,
-  CheckCircle2,
+  Check,
   Plus,
   X,
   Clock,
@@ -41,6 +41,7 @@ import {
   type UserStatsData,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
+import { formatCompletedAt } from "../lib/dateFormat";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
@@ -484,7 +485,7 @@ export const ChallengesView: React.FC<{
                 <Sparkles className="w-3.5 h-3.5 text-gold" />
                 Character Matrix — Level {user.level || 1}
               </span>
-              <span className="px-2 py-0.5 rounded-2xl bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
+              <span className="px-2 py-0.5 rounded-full bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
                 {user.leagueRank || "APPRENTICE I"}
               </span>
             </div>
@@ -590,7 +591,7 @@ export const ChallengesView: React.FC<{
                 completingId === challenge.id
                   ? "border-[#C81E3A]/40"
                   : challenge.completed
-                    ? "border-white/[0.06] opacity-60"
+                    ? "border-white/[0.06] opacity-80"
                     : "border-white/[0.06] hover:border-white/[0.12]"
               }`}
             >
@@ -607,7 +608,7 @@ export const ChallengesView: React.FC<{
                     event.stopPropagation();
                     handleToggle(challenge.id);
                   }}
-                  className={`mt-0.5 w-5 h-5 rounded-2xl border flex items-center justify-center transition-colors shrink-0 ${
+                  className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
                       : "border-white/20 group-hover:border-[#C81E3A]/60"
@@ -616,7 +617,7 @@ export const ChallengesView: React.FC<{
                   {completingId === challenge.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-white/70" />
                   ) : (
-                    challenge.completed && <CheckCircle2 className="w-4 h-4" />
+                    challenge.completed && <Check className="w-3.5 h-3.5" strokeWidth={3} />
                   )}
                 </button>
 
@@ -624,13 +625,13 @@ export const ChallengesView: React.FC<{
                   <div className="flex items-center gap-2">
                     <h3
                       className={`font-inter font-medium text-sm ${
-                        challenge.completed ? "line-through text-[#8C8C90]" : "text-white"
+                        challenge.completed ? "text-[#8C8C90]" : "text-white"
                       }`}
                     >
                       {challenge.title}
                     </h3>
                     <span
-                      className={`px-1.5 py-0.5 rounded-2xl text-[9px] font-inter font-medium ${getDifficultyBadge(
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-inter font-medium ${getDifficultyBadge(
                         challenge.difficulty,
                       )}`}
                     >
@@ -656,10 +657,12 @@ export const ChallengesView: React.FC<{
                       <Clock className="w-3 h-3" />
                       {challenge.durationMinutes}m
                     </span>
-                    {challenge.completedAt && (
+                    {formatCompletedAt(challenge.completedAt) && (
                       <>
                         <span>·</span>
-                        <span className="text-emerald-400">Done {challenge.completedAt}</span>
+                        <span className="text-[#8C8C90]">
+                          {formatCompletedAt(challenge.completedAt)}
+                        </span>
                       </>
                     )}
                   </div>
@@ -700,9 +703,9 @@ export const ChallengesView: React.FC<{
                   </button>
                 )}
                 <div
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-inter font-semibold shrink-0 ${
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-inter font-semibold shrink-0 ${
                     challenge.completed
-                      ? "bg-emerald-500/10 text-emerald-400"
+                      ? "bg-[#C81E3A]/10 text-[#C81E3A]"
                       : "bg-[#0b0b0c] text-[#C81E3A]"
                   }`}
                 >

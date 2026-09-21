@@ -77,7 +77,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                       onClose();
                       onCompare(member);
                     }}
-                    className="px-3 py-1.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                    className="px-3 py-1.5 rounded-lg bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
                   >
                     <Swords className="w-3.5 h-3.5" />
                     <span>Compare XP</span>
@@ -142,7 +142,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                   onClick={() => {
                     triggerConfetti();
                   }}
-                  className="w-full py-2.5 rounded-2xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
                   <span>Send Respect &amp; Celebration 🔥</span>

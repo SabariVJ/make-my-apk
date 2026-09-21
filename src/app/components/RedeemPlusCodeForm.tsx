@@ -98,12 +98,12 @@ export const RedeemPlusCodeForm: React.FC<RedeemPlusCodeFormProps> = ({
               autoCorrect="off"
               autoCapitalize="characters"
               spellCheck={false}
-              className="flex-1 min-w-0 bg-[#0B0B0C] svj-border rounded-2xl px-3.5 py-2.5 text-sm font-mono tracking-widest text-[#F4F2ED] placeholder:text-[#8C8C90]/50 focus:outline-none focus:border-gold/60 uppercase"
+              className="flex-1 min-w-0 bg-[#0B0B0C] svj-border rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-widest text-[#F4F2ED] placeholder:text-[#8C8C90]/50 focus:outline-none focus:border-gold/60 uppercase"
             />
             <button
               onClick={() => void handleSubmit()}
               disabled={busy || !input.trim()}
-              className="px-4 py-2.5 rounded-2xl bg-gold hover:bg-gold disabled:opacity-50 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-gold hover:bg-gold disabled:opacity-50 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
             >
               {busy ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

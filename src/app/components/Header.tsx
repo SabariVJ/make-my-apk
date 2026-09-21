@@ -40,7 +40,7 @@ export const Header: React.FC<{
               <span className="font-anton tracking-wider text-base text-[#F4F2ED]">SVJ</span>
               {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
               {user.isFounder && (
-                <span className="px-1.5 py-0.2 rounded-2xl bg-gold/20 text-gold border border-gold/30 text-[9px] font-mono font-bold flex items-center gap-0.5">
+                <span className="px-1.5 py-0.2 rounded-full bg-gold/20 text-gold border border-gold/30 text-[9px] font-mono font-bold flex items-center gap-0.5">
                   <Crown className="w-2.5 h-2.5" /> FOUNDER
                 </span>
               )}

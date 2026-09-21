@@ -29,7 +29,7 @@ export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex shrink-0 items-center gap-1 rounded-2xl bg-white/[0.06] px-3 py-2 text-xs font-inter font-medium text-white hover:bg-white/[0.10] svj-press"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-inter font-medium text-white hover:bg-white/[0.10] svj-press"
         >
           Open Earn Plus <ArrowUpRight className="h-4 w-4" />
         </button>

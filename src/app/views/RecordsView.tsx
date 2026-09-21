@@ -129,7 +129,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
         })}
       </svg>
       {SVJ_STREET_TILES.attribution && (
-        <span className="absolute bottom-2 right-2 rounded-2xl bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {SVJ_STREET_TILES.attribution}
         </span>
       )}
@@ -234,7 +234,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
             key={entry.id}
             type="button"
             onClick={() => setSection(entry.id)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
               section === entry.id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
@@ -425,19 +425,19 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Best</div>
                   <div className="font-mono text-sm font-bold text-[#E62846]">
                     {formatClock(segment.bestDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Latest</div>
                   <div className="font-mono text-sm font-bold text-white">
                     {formatClock(segment.lastDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Change</div>
                   <div
                     className={`font-mono text-sm font-bold ${

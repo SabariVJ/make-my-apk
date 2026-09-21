@@ -177,7 +177,7 @@ export const SixtyDayChallengeView: React.FC = () => {
         </p>
         <button
           onClick={() => stateQuery.refetch()}
-          className="px-4 py-2 rounded-2xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
+          className="px-4 py-2 rounded-lg bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
         >
           Retry
         </button>
@@ -204,7 +204,7 @@ export const SixtyDayChallengeView: React.FC = () => {
   return (
     <div className="space-y-5 pb-28">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#17171A] border border-white/10 p-4 shadow-2xl">
+      <div className="relative overflow-hidden rounded-full bg-[#17171A] border border-white/10 p-4 shadow-2xl">
         <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-[#C81E3A]/15 blur-3xl animate-crimson-pulse pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -292,7 +292,7 @@ export const SixtyDayChallengeView: React.FC = () => {
           <button
             onClick={() => startMutation.mutate()}
             disabled={startMutation.isPending}
-            className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-60 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-2xl shadow-[#C81E3A]/30"
+            className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-60 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-2xl shadow-[#C81E3A]/30"
           >
             {startMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -366,7 +366,7 @@ export const SixtyDayChallengeView: React.FC = () => {
               <button
                 onClick={() => resumeMutation.mutate()}
                 disabled={resumeMutation.isPending}
-                className="px-4 py-2 rounded-2xl bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
+                className="px-4 py-2 rounded-lg bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Resume
@@ -555,7 +555,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                         onChange={(e) => setReflection(e.target.value)}
                         rows={3}
                         placeholder={selectedDef.checkin}
-                        className="w-full bg-[#17171A] svj-border rounded-2xl px-3 py-2.5 text-sm font-inter text-[#F4F2ED] placeholder:text-[#8C8C90]/60 focus:outline-none focus:border-[#C81E3A]/60 resize-none"
+                        className="w-full bg-[#17171A] svj-border rounded-xl px-3 py-2.5 text-sm font-inter text-[#F4F2ED] placeholder:text-[#8C8C90]/60 focus:outline-none focus:border-[#C81E3A]/60 resize-none"
                       />
                     </div>
 
@@ -576,7 +576,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                         })
                       }
                       disabled={!canComplete || completeMutation.isPending}
-                      className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-40 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-[#C81E3A]/25"
+                      className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-40 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-[#C81E3A]/25"
                     >
                       {completeMutation.isPending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -649,7 +649,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleCopy(state.code!)}
-                    className="mt-4 px-5 py-2.5 rounded-2xl bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-2 mx-auto cursor-pointer transition-colors"
+                    className="mt-4 px-5 py-2.5 rounded-xl bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-2 mx-auto cursor-pointer transition-colors"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Copied!" : "Copy code"}

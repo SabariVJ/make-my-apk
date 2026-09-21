@@ -28,7 +28,7 @@ import {
 import { useEngagement } from "../context/EngagementContext";
 
 const primaryButton =
-  "rounded-2xl bg-[#C81E3A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400";
+  "rounded-xl bg-[#C81E3A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400";
 const secondaryButton =
   "rounded-2xl border border-white/15 px-4 py-2 text-xs text-white hover:bg-white/5 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-rose-400";
 
@@ -158,7 +158,7 @@ function MissionCard({
             onChange={(event) => setConfirmation(event.target.value)}
             rows={3}
             aria-describedby={"reflection-help-" + mission.key}
-            className="w-full resize-y rounded-2xl border border-white/15 bg-[#0B0B0C] px-3 py-2 text-sm text-white outline-none placeholder:text-[#777780] focus:border-rose-400"
+            className="w-full resize-y rounded-xl border border-white/15 bg-[#0B0B0C] px-3 py-2 text-sm text-white outline-none placeholder:text-[#777780] focus:border-rose-400"
             placeholder="Describe the activity and your next useful step."
           />
           <p id={"reflection-help-" + mission.key} className="text-[11px] text-[#A1A1AA]">

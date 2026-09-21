@@ -199,7 +199,7 @@ export const NutritionView: React.FC = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Grilled chicken & rice"
-            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-2xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
           <input
             aria-label="Calories"
@@ -208,7 +208,7 @@ export const NutritionView: React.FC = () => {
             value={calories}
             onChange={(e) => setCalories(e.target.value)}
             placeholder="kcal"
-            className="w-24 bg-[#0B0B0C] border border-white/15 rounded-2xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="w-24 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -231,7 +231,7 @@ export const NutritionView: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40 svj-press"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40 svj-press"
           disabled={!name.trim() || !parseInt(calories, 10)}
         >
           <Plus className="w-4 h-4" />
@@ -267,7 +267,7 @@ export const NutritionView: React.FC = () => {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-3 rounded-2xl bg-[#0b0b0c] border border-white/[0.04] px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-xl bg-[#0b0b0c] border border-white/[0.04] px-3 py-2.5"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#F4F2ED] truncate">{m.name}</p>

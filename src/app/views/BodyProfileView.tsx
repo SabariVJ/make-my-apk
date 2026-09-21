@@ -368,7 +368,7 @@ export const BodyProfileView: React.FC = () => {
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="space-y-1">
@@ -400,7 +400,7 @@ export const BodyProfileView: React.FC = () => {
               value={height}
               onChange={(e) => setHeight(e.target.value)}
               placeholder="170"
-              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="space-y-1">
@@ -410,7 +410,7 @@ export const BodyProfileView: React.FC = () => {
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="70"
-              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
         </div>
@@ -475,7 +475,7 @@ export const BodyProfileView: React.FC = () => {
             value={targetWeight}
             onChange={(e) => setTargetWeight(e.target.value)}
             placeholder="65"
-            className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+            className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -483,7 +483,7 @@ export const BodyProfileView: React.FC = () => {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -608,7 +608,7 @@ export const BodyProfileView: React.FC = () => {
                     );
                     setNutritionDirty(true);
                   }}
-                  className={`px-3 py-1.5 rounded-2xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-mono font-bold transition-all cursor-pointer ${
                     active
                       ? "bg-gold/20 border border-gold/50 text-gold"
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -648,7 +648,7 @@ export const BodyProfileView: React.FC = () => {
               setSavingNutrition(false);
             }
           }}
-          className="w-full py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
+          className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
         >
           {savingNutrition
             ? "Saving..."

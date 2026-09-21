@@ -466,7 +466,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={desc}
                         type="button"
                         onClick={() => updateAnswer("socialSelfDescription", desc)}
-                        className={`px-3 py-1.5 rounded-2xl text-xs font-mono transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                           answers.socialSelfDescription === desc
                             ? "bg-[#C81E3A] text-white"
                             : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -820,7 +820,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             <button
               type="button"
               onClick={() => setCurrentStep((s) => s - 1)}
-              className="px-4 py-3 rounded-2xl border border-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+              className="px-4 py-3 rounded-xl border border-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>

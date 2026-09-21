@@ -99,12 +99,12 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id as ActiveTab)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
-              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-2xl transition-colors cursor-pointer group min-w-[64px] md:min-w-[74px] svj-press"
+              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-colors cursor-pointer group min-w-[64px] md:min-w-[74px] svj-press"
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTabGlow"
-                  className="absolute inset-0 bg-[#C81E3A]/15 rounded-2xl border border-[#C81E3A]/40"
+                  className="absolute inset-0 bg-[#C81E3A]/15 rounded-xl border border-[#C81E3A]/40"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}

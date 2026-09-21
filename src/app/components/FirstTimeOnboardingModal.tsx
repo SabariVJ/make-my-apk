@@ -139,7 +139,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Victor Archer"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
                   />
                 </div>
@@ -158,7 +158,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
                     placeholder="e.g. victor_svj"
-                    className="w-full pl-8 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
+                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
                   />
                 </div>
@@ -176,7 +176,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     key={goal}
                     type="button"
                     onClick={() => setSelectedGoal(goal)}
-                    className={`px-3 py-2 rounded-2xl text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
+                    className={`px-3 py-2 rounded-lg text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
                       selectedGoal === goal
                         ? "bg-[#C81E3A] text-white border-[#C81E3A] shadow-md"
                         : "bg-[#0B0B0C] text-[#8C8C90] border-white/10 hover:text-white"
@@ -198,7 +198,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="e.g. Obsessed with 1% compound progress daily."
-                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
               />
             </div>
 
@@ -214,7 +214,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. London, UK or Mumbai, India"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
               >
                 <Trophy className="w-5 h-5" />
                 <span>Save Profile</span>

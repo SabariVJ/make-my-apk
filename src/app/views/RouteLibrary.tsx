@@ -232,7 +232,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     type="button"
                     onClick={() => onStartRoute(route)}
                     data-testid="start-from-route"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                   >
                     <Play className="h-3.5 w-3.5" />
                     Start workout
@@ -244,7 +244,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     setEditing(route.id);
                     setDraftName(route.name);
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Rename
@@ -254,7 +254,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                   disabled={busy}
                   onClick={() => void remove(route)}
                   data-testid="delete-route"
-                  className="flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C8C90] disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C8C90] disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete

@@ -96,7 +96,7 @@ export function TaskEditorDialog({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="e.g. Read for 20 minutes"
-              className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#C81E3A]"
+              className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#C81E3A]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -164,13 +164,13 @@ export function TaskEditorDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-2xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5"
+              className="rounded-xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="min-w-0 flex-1 rounded-2xl bg-[#C81E3A] px-4 py-3 font-anton uppercase tracking-wider text-white hover:bg-[#A0182E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="min-w-0 flex-1 rounded-xl bg-[#C81E3A] px-4 py-3 font-anton uppercase tracking-wider text-white hover:bg-[#A0182E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               {task ? "Save Changes" : "Add Task to Mission"}
             </button>

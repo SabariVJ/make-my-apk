@@ -38,7 +38,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
         </div>
 
         <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-          <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-2xl flex items-center justify-center overflow-hidden">
+          <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
             <img
               src={upiQr.url}
               alt="SVJ Plus payment QR code"
@@ -72,7 +72,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleContactSupport}
-          className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer"
+          className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer"
         >
           <ExternalLink className="w-4 h-4" />
           <span>Request Upgrade</span>

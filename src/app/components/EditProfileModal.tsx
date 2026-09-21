@@ -254,7 +254,7 @@ export const EditProfileModal: React.FC = () => {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={80}
-                className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                 required
               />
             </div>
@@ -276,7 +276,7 @@ export const EditProfileModal: React.FC = () => {
                   minLength={3}
                   maxLength={30}
                   pattern="[a-z0-9_]{3,30}"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-8 pr-3.5 font-mono text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-8 pr-3.5 font-mono text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                   required
                 />
               </div>
@@ -291,7 +291,7 @@ export const EditProfileModal: React.FC = () => {
                 onChange={(event) => setBio(event.target.value)}
                 maxLength={280}
                 rows={2}
-                className="w-full resize-none rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                className="w-full resize-none rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
               />
             </div>
 
@@ -343,7 +343,7 @@ export const EditProfileModal: React.FC = () => {
                   onChange={(event) => setLocation(event.target.value)}
                   maxLength={100}
                   placeholder="e.g. Mumbai, India"
-                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-10 pr-3.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-10 pr-3.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                 />
               </div>
             </div>
@@ -395,7 +395,7 @@ export const EditProfileModal: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

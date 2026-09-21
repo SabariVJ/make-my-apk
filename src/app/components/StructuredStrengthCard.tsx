@@ -53,7 +53,7 @@ export function StructuredStrengthCard({
             type="button"
             onClick={onStart}
             data-testid="structured-strength-start"
-            className="ml-auto inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
+            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
           >
             {lastSessionLabel ? "Continue" : "Start workout"}
             <ArrowRight className="h-4 w-4" />

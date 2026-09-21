@@ -139,7 +139,7 @@ export const CompletedSessionCard: React.FC = () => {
         (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0) && (
           <div
             data-testid="activity-rewards"
-            className="mt-2 rounded-2xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
+            className="mt-2 rounded-full border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
           >
             {rewards.xpAwarded > 0 && (
               <p className="text-[11px] font-mono font-bold text-[#C81E3A]">
@@ -604,7 +604,7 @@ const ActivityDetail: React.FC<{
 };
 
 const DetailStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-2xl border border-white/5 bg-black/40 p-2 text-center">
+  <div className="rounded-full border border-white/5 bg-black/40 p-2 text-center">
     <div className="text-[9px] font-mono uppercase text-[#8C8C90]">{label}</div>
     <div className="font-mono text-sm font-bold text-white">{value}</div>
   </div>

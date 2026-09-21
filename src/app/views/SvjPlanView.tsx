@@ -289,7 +289,7 @@ function MissionCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h4 className="font-inter font-semibold text-sm text-white truncate">{title}</h4>
-          <span className={`px-1.5 py-0.5 rounded-2xl text-[9px] font-mono border ${diffColor}`}>
+          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono border ${diffColor}`}>
             {difficulty}
           </span>
         </div>
@@ -684,7 +684,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                 setSelectedMission(null);
                 onNavigateToChallenges?.();
               }}
-              className="mt-4 w-full rounded-2xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
+              className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
             >
               Go to Challenges
             </button>

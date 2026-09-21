@@ -343,7 +343,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             void stopTracking();
           else void startTracking();
         }}
-        className="mb-5 w-full rounded-2xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
+        className="mb-5 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
       >
         {trackingStatus === "update-required"
           ? "APP UPDATE REQUIRED"
@@ -539,7 +539,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             return (
               <div
                 key={m.steps}
-                className={`rounded-2xl p-2 text-center ${
+                className={`rounded-lg p-2 text-center ${
                   reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
                 }`}
               >
@@ -661,7 +661,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
               {debugInfo.notes.slice(0, 40).map((n, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded-2xl bg-gold/10 border border-gold/20 px-1.5 py-0.5 text-[9px] font-mono text-gold break-all"
+                  className="inline-block rounded-full bg-gold/10 border border-gold/20 px-1.5 py-0.5 text-[9px] font-mono text-gold break-all"
                 >
                   {n}
                 </span>
@@ -669,7 +669,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             </div>
           )}
           {debugInfo.lastError && (
-            <div className="mt-2 flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-2 text-[10px] font-mono text-crimson">
+            <div className="mt-2 flex items-start gap-2 rounded-full border border-crimson/30 bg-crimson/5 p-2 text-[10px] font-mono text-crimson">
               <AlertCircle className="mt-0.5 shrink-0" />
               <span>{debugInfo.lastError}</span>
             </div>

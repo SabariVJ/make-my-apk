@@ -317,7 +317,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             type="button"
             onClick={start}
             data-testid="strength-start"
-            className="mt-4 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-5 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white hover:bg-[#C81E3A]/30"
+            className="mt-4 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-5 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white hover:bg-[#C81E3A]/30"
           >
             START WORKOUT
           </button>
@@ -360,7 +360,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       aria-label={`Move ${draft.name} up`}
                       disabled={index === 0}
                       onClick={() => moveExercise(draft.id, -1)}
-                      className="rounded-2xl border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
+                      className="rounded-full border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
                     >
                       ↑
                     </button>
@@ -369,7 +369,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       aria-label={`Move ${draft.name} down`}
                       disabled={index === drafts.length - 1}
                       onClick={() => moveExercise(draft.id, 1)}
-                      className="rounded-2xl border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
+                      className="rounded-full border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
                     >
                       ↓
                     </button>
@@ -377,7 +377,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       type="button"
                       aria-label={`Remove ${draft.name}`}
                       onClick={() => removeExercise(draft.id)}
-                      className="rounded-2xl border border-white/10 p-1 text-[#8C8C90] hover:text-crimson"
+                      className="rounded-lg border border-white/10 p-1 text-[#8C8C90] hover:text-crimson"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -534,7 +534,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
           <div className="mt-3 space-y-2">
             {drafts.map((draft) => (
-              <div key={draft.id} className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
+              <div key={draft.id} className="rounded-full border border-white/5 bg-black/40 p-2.5">
                 <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-white">
                   {draft.name}
                 </p>
@@ -557,7 +557,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 onClick={() => void save()}
                 disabled={saving}
                 data-testid="strength-save"
-                className="mt-4 w-full rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                className="mt-4 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
               >
                 {saving ? "SAVING…" : "SAVE ACTIVITY"}
               </button>
@@ -696,7 +696,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-3 py-2.5 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+                  className="flex-1 rounded-full border border-white/10 bg-black/40 px-3 py-2.5 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
                 >
                   Log another
                 </button>
@@ -706,7 +706,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     reset();
                     onExit();
                   }}
-                  className="flex-1 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex-1 rounded-full border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                 >
                   Done
                 </button>

@@ -259,7 +259,7 @@ export const ConnectedDevicesView: React.FC = () => {
               type="button"
               onClick={() => void disconnect()}
               data-testid="wearable-disconnect"
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
             >
               <Unlink className="h-3 w-3" /> Disconnect
             </button>
@@ -267,7 +267,7 @@ export const ConnectedDevicesView: React.FC = () => {
               type="button"
               onClick={() => void forget()}
               data-testid="wearable-forget"
-              className="flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
+              className="flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
             >
               <Trash2 className="h-3 w-3" /> Forget
             </button>
@@ -289,7 +289,7 @@ export const ConnectedDevicesView: React.FC = () => {
             onClick={() => void scan()}
             disabled={state.scanning}
             data-testid="wearable-scan"
-            className="flex items-center gap-1.5 rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-full border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-50"
           >
             {state.scanning ? (
               <>
@@ -338,7 +338,7 @@ export const ConnectedDevicesView: React.FC = () => {
               type="button"
               onClick={() => void connect(device.deviceId)}
               data-testid={`wearable-connect-${device.deviceId}`}
-              className="rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+              className="rounded-full border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
             >
               Connect
             </button>
@@ -506,7 +506,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
             type="button"
             onClick={() => void stopWatchWorkout()}
             data-testid="wear-stop-workout"
-            className="mt-3 w-full rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
+            className="mt-3 w-full rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] transition-colors hover:text-white"
           >
             Finish watch workout
           </button>
@@ -520,7 +520,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
               target="_blank"
               rel="noopener noreferrer"
               data-testid="wear-install-on-watch"
-              className="mt-2 inline-flex w-full items-center justify-center rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#FF4D6D] transition-colors hover:bg-[#C81E3A]/25"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#FF4D6D] transition-colors hover:bg-[#C81E3A]/25"
             >
               Install on watch
             </a>
@@ -562,7 +562,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
                 aria-checked={selected}
                 data-testid={`hr-source-${option.value}`}
                 onClick={() => setHeartRateSourcePreference(option.value)}
-                className={`flex w-full items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
                   selected
                     ? "border-[#C81E3A]/50 bg-[#C81E3A]/15"
                     : "border-white/8 bg-black/40 hover:border-white/20"

@@ -559,7 +559,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
         </button>
       )}
       {tileProvider.attribution && (
-        <span className="absolute bottom-2 right-2 rounded-2xl bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {tileProvider.attribution}
         </span>
       )}

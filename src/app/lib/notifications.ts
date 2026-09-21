@@ -72,7 +72,9 @@ export interface NotificationPlannerInput {
 interface VjNotificationsPlugin {
   checkPermission(): Promise<{ granted: boolean }>;
   requestPermission(): Promise<{ granted: boolean }>;
-  replaceSchedules(options: { schedules: NativeNotificationSchedule[] }): Promise<{ scheduled: number }>;
+  replaceSchedules(options: {
+    schedules: NativeNotificationSchedule[];
+  }): Promise<{ scheduled: number }>;
   cancelAll(): Promise<void>;
   notifyNow(options: {
     id: number;
@@ -107,7 +109,10 @@ export function loadNotificationPreferences(userId: string): NotificationPrefere
       morningTime: validTime(parsed.morningTime, DEFAULT_NOTIFICATION_PREFERENCES.morningTime),
       eveningTime: validTime(parsed.eveningTime, DEFAULT_NOTIFICATION_PREFERENCES.eveningTime),
       recoveryTime: validTime(parsed.recoveryTime, DEFAULT_NOTIFICATION_PREFERENCES.recoveryTime),
-      nutritionTime: validTime(parsed.nutritionTime, DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime),
+      nutritionTime: validTime(
+        parsed.nutritionTime,
+        DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime,
+      ),
     };
   } catch {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES };
@@ -133,8 +138,7 @@ export function subscribeNotificationPreferences(
   if (typeof window === "undefined") return () => {};
   const handler = (event: Event) => {
     const detail = (event as CustomEvent).detail as
-      | { userId?: string; preferences?: NotificationPreferences }
-      | undefined;
+      { userId?: string; preferences?: NotificationPreferences } | undefined;
     if (detail?.userId === userId && detail.preferences) listener(detail.preferences);
   };
   window.addEventListener(EVENT_NAME, handler);

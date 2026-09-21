@@ -52,7 +52,10 @@ test("evening reminder disappears when every task is complete", () => {
     { ...base(), completedTasks: 5 },
     { ...DEFAULT_NOTIFICATION_PREFERENCES, enabled: true },
   );
-  assert.equal(plan.some((item) => item.id === 102), false);
+  assert.equal(
+    plan.some((item) => item.id === 102),
+    false,
+  );
 });
 
 test("Plus expiry schedules 7, 3, 1 day warnings and expiry", () => {
@@ -61,7 +64,10 @@ test("Plus expiry schedules 7, 3, 1 day warnings and expiry", () => {
     enabled: true,
   });
   for (const id of [207, 203, 201, 200]) {
-    assert.equal(plan.some((item) => item.id === id), true);
+    assert.equal(
+      plan.some((item) => item.id === id),
+      true,
+    );
   }
 });
 
@@ -70,7 +76,10 @@ test("lifetime/founder-style membership with no expiry creates no expiry alerts"
     { ...base(), plusExpiresAt: null },
     { ...DEFAULT_NOTIFICATION_PREFERENCES, enabled: true },
   );
-  assert.equal(plan.some((item) => item.id >= 200 && item.id <= 207), false);
+  assert.equal(
+    plan.some((item) => item.id >= 200 && item.id <= 207),
+    false,
+  );
 });
 
 test("weekly recap repeats every seven days", () => {

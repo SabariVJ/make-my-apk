@@ -38,9 +38,10 @@ export const NotificationCoordinator: React.FC = () => {
       [...user.xpHistory]
         .filter((row) => row.xp > 0)
         .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]?.date ?? null;
-    const active = engagement.state?.status === "ready" || engagement.state?.status === "disabled"
-      ? engagement.state
-      : null;
+    const active =
+      engagement.state?.status === "ready" || engagement.state?.status === "disabled"
+        ? engagement.state
+        : null;
     return {
       completedTasks,
       totalTasks: challenges.length,
@@ -88,14 +89,7 @@ export const NotificationCoordinator: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [
-    prefs,
-    signature,
-    plusExpiresAt,
-    user.name,
-    user.currentStreak,
-    user.weeklyXP,
-  ]);
+  }, [prefs, signature, plusExpiresAt, user.name, user.currentStreak, user.weeklyXP]);
 
   return null;
 };

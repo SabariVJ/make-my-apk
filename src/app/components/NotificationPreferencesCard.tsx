@@ -122,7 +122,8 @@ export const NotificationPreferencesCard: React.FC = () => {
 
       {!nativeAndroid && (
         <p className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-[#8C8C90]">
-          Preview mode: these preferences apply to the Android app, where SVJ can post system notifications.
+          Preview mode: these preferences apply to the Android app, where SVJ can post system
+          notifications.
         </p>
       )}
 
@@ -203,7 +204,9 @@ export const NotificationPreferencesCard: React.FC = () => {
           ["Nutrition", "nutritionTime"],
         ].map(([label, key]) => (
           <label key={key} className="rounded-xl border border-white/5 bg-black/30 p-2.5">
-            <span className="mb-1 block text-[9px] font-mono uppercase text-[#8C8C90]">{label}</span>
+            <span className="mb-1 block text-[9px] font-mono uppercase text-[#8C8C90]">
+              {label}
+            </span>
             <input
               type="time"
               value={prefs[key as keyof NotificationPreferences] as string}
@@ -239,7 +242,10 @@ export const NotificationPreferencesCard: React.FC = () => {
           </button>
         )}
         {notice && (
-          <span role="status" className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400">
+          <span
+            role="status"
+            className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400"
+          >
             <Check className="h-3.5 w-3.5" />
             {notice}
           </span>

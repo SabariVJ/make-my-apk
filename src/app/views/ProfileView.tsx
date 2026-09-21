@@ -36,8 +36,36 @@ import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
 import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
+import {
+  SUPPORT_EMAIL,
+  SUPPORT_SUBJECT,
+  copySupportEmail,
+  openSupportEmail,
+} from "../lib/supportEmail";
 
 export const ProfileView: React.FC = () => {
+  const [supportState, setSupportState] = useState<"idle" | "opening" | "fallback">("idle");
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
+  const handleEmailSupport = async () => {
+    setCopiedEmail(false);
+    setSupportState("opening");
+    const result = await openSupportEmail(SUPPORT_SUBJECT);
+    if (result.ok && result.method !== "copied") {
+      setSupportState("idle");
+    } else {
+      // Popup blocked / no email app / copy attempted — surface the fallback.
+      setSupportState("fallback");
+    }
+  };
+
+  const handleCopySupportEmail = async () => {
+    const ok = await copySupportEmail();
+    if (ok) {
+      setCopiedEmail(true);
+      window.setTimeout(() => setCopiedEmail(false), 2500);
+    }
+  };
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const [activeTab, setActiveTab] = useState<"analytics">("analytics");
   const [showTransformation, setShowTransformation] = useState(false);
@@ -386,13 +414,37 @@ export const ProfileView: React.FC = () => {
           <LogOut className="w-4 h-4" />
           Log out
         </button>
-        <a
-          href="mailto:sabarivj777@gmail.com?subject=SVJ%20Support%20%2F%20Account%20Verification"
-          className="w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        <button
+          type="button"
+          onClick={handleEmailSupport}
+          disabled={supportState === "opening"}
+          aria-busy={supportState === "opening"}
+          className="w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
         >
-          <Mail className="w-4 h-4" />
-          Email Us
-        </a>
+          {supportState === "opening" ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Mail className="w-4 h-4" />
+          )}
+          {supportState === "opening"
+            ? "Opening email..."
+            : supportState === "fallback"
+              ? "Copy support email"
+              : "Email Us"}
+        </button>
+        {supportState === "fallback" && (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+            <p className="text-xs text-[#8C8C90]">Couldn't open an email app. Reach us at:</p>
+            <p className="my-1 font-mono text-sm text-white">sabarivj777@gmail.com</p>
+            <button
+              type="button"
+              onClick={handleCopySupportEmail}
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 cursor-pointer"
+            >
+              {copiedEmail ? "Email copied" : "Copy email"}
+            </button>
+          </div>
+        )}
         <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
           Opens a draft addressed to SVJ Support. You choose what to paste and send.
         </p>

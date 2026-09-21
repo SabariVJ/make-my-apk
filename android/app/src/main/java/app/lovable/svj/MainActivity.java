@@ -36,6 +36,10 @@ public class MainActivity extends BridgeActivity {
         // inbox of watch messages, and commands sent back to the watch.
         registerPlugin(VjWearPlugin.class);
 
+        // Profile support email: opens the device email chooser with a
+        // prefilled draft (recipient + subject). Never sends automatically.
+        registerPlugin(VjSupportPlugin.class);
+
         super.onCreate(savedInstanceState);
     }
 }

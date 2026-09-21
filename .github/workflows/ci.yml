@@ -15,21 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
       - name: Tests
-        run: npm test
+        run: bun run test
       - name: ESLint
-        run: npx eslint src/
+        run: bunx eslint src/
       - name: TypeScript
-        run: npx tsc --noEmit
+        run: bunx tsc --noEmit
       - name: Prettier check
-        run: npx prettier --check "src/**/*.{ts,tsx,css}"
+        run: bunx prettier --check "src/**/*.{ts,tsx,css}"
       - name: Build
-        run: npm run build
+        run: bun run build
       - name: Git clean
         run: git diff --check
 
@@ -53,13 +56,16 @@ jobs:
       SVJ_REWARD_TEST_DATABASE_URL: postgresql://postgres:test-only@127.0.0.1:5432/svj_rewards_test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
       - name: Native reward transaction and RLS tests
-        run: npm run test:rewards:postgres
+        run: bun run test:rewards:postgres
 
   # The SVJ phone app (Capacitor + native plugins).
   android-phone:
@@ -67,13 +73,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
       - name: Build web assets
-        run: npm run build
+        run: bun run build
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -81,7 +90,7 @@ jobs:
       - name: Prepare Capacitor assets directory
         run: mkdir -p android/app/src/main/assets
       - name: Capacitor sync
-        run: npm run cap:sync
+        run: bun run cap:sync
       - name: Android theme regression tests
         run: python3 scripts/test_android_themes.py
       - name: Android unit tests (phone plugins)
@@ -113,14 +122,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
       # The watch app is a plain Kotlin module, but the Gradle build still
       # configures the Capacitor phone module, which needs both the Node
       # dependencies and the generated Cordova/Capacitor files from `cap sync`.
-      - run: npm ci
+      - run: bun install --frozen-lockfile
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -128,7 +140,7 @@ jobs:
       - name: Prepare Capacitor assets directory
         run: mkdir -p android/app/src/main/assets
       - name: Capacitor sync
-        run: npm run cap:sync
+        run: bun run cap:sync
       - name: Wear OS unit tests
         run: cd android && ./gradlew :wear:testDebugUnitTest
       - name: Android lint (wear)
@@ -153,11 +165,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -165,7 +180,7 @@ jobs:
       - name: Prepare Capacitor assets directory
         run: mkdir -p android/app/src/main/assets
       - name: Capacitor sync
-        run: npm run cap:sync
+        run: bun run cap:sync
       - name: Provision signing identity
         env:
           SVJ_KEYSTORE_PATH_B64: ${{ secrets.SVJ_KEYSTORE_PATH_B64 }}

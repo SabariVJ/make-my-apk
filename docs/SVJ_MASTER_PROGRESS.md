@@ -1115,3 +1115,14 @@ Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 
 ### Migrations
 Added: none. Applied: none.
+
+## Bun migration (2026-09-21)
+
+The repository now uses [Bun](https://bun.sh) exclusively for package management and scripting:
+
+- `package.json` scripts run via Bun (`bunx --bun vite …`, `tsx --test`, `bun scripts/…`); `packageManager` field pins `bun@1.3.2`.
+- `package-lock.json` removed; dependencies locked in `bun.lock` (`bun install --frozen-lockfile`).
+- CI (`.github/workflows/ci.yml`) uses `oven-sh/setup-bun@v2` + Bun cache; all steps run `bun install`/`bun run`/`bunx`.
+- README development instructions updated to Bun.
+
+Verification at this change: `bun install` clean · `bun run test` 755 pass / 0 fail / 2 skips · `bun run test:rewards` 19/19 · `bun run build` PASS · `bunx tsc -b --noEmit` PASS · eslint 0 errors · `bun run cap:sync` + `:app`/`:wear` debug unit tests and APKs BUILD SUCCESSFUL.

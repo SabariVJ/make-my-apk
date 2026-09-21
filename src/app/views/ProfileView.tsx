@@ -42,6 +42,7 @@ import {
   copySupportEmail,
   openSupportEmail,
 } from "../lib/supportEmail";
+import { getCurrentWeekXp, getWeekAverageXp } from "../lib/weeklyXp";
 
 export const ProfileView: React.FC = () => {
   const [supportState, setSupportState] = useState<"idle" | "opening" | "fallback">("idle");
@@ -67,6 +68,7 @@ export const ProfileView: React.FC = () => {
     }
   };
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
+  const weekXp = getCurrentWeekXp(user.xpHistory);
   const [activeTab, setActiveTab] = useState<"analytics">("analytics");
   const [showTransformation, setShowTransformation] = useState(false);
   const queryClient = useQueryClient();
@@ -304,25 +306,33 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          {/* XP History Sparkline Bar Visualizer */}
+          {/* XP Weekly Bar Chart — real per-day XP for the current Mon–Sun week */}
           <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
                 <h3 className="font-anton text-sm text-white uppercase tracking-wide">
-                  30-Day XP Growth Trend
+                  This Week's XP
                 </h3>
               </div>
-              <span className="text-xs font-mono text-[#8C8C90]">Avg 380 XP/day</span>
+              <span className="text-xs font-mono text-[#8C8C90]">
+                Avg {getWeekAverageXp(weekXp)} XP/day
+              </span>
             </div>
 
-            <div className="h-32 flex items-end justify-between gap-1 pt-4 px-1">
-              {user.xpHistory.map((item, idx) => {
-                const maxVal = Math.max(...user.xpHistory.map((h) => h.xp), 600);
-                const barHeight = Math.round((item.xp / maxVal) * 100);
+            <div className="h-32 flex items-end justify-between gap-2 pt-4 px-1">
+              {weekXp.map((item) => {
+                // Real data only: scale by the week's actual max (never an
+                // artificial floor), so any non-zero day renders visibly.
+                const maxVal = Math.max(...weekXp.map((d) => d.xp));
+                const barHeight =
+                  maxVal > 0 ? Math.max(4, Math.round((item.xp / maxVal) * 100)) : 0;
 
                 return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
+                  <div
+                    key={item.dayKey}
+                    className="flex-1 flex flex-col items-center gap-1 group relative"
+                  >
                     {/* Tooltip on hover */}
                     <div className="absolute -top-8 bg-black text-[#C81E3A] text-[9px] font-mono px-1.5 py-0.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10">
                       {item.xp} XP
@@ -331,11 +341,17 @@ export const ProfileView: React.FC = () => {
                     <div className="w-full h-full flex items-end">
                       <div
                         style={{ height: `${barHeight}%` }}
-                        className="w-full rounded-t bg-gradient-to-t from-[#C81E3A]/40 to-[#C81E3A] group-hover:to-rose-400 transition-all"
+                        className={
+                          barHeight > 0
+                            ? `w-full rounded-t bg-gradient-to-t from-[#C81E3A]/40 to-[#C81E3A] transition-all ${item.isToday ? "ring-1 ring-[#C81E3A]/50" : ""}`
+                            : "w-full rounded-t bg-white/5"
+                        }
                       />
                     </div>
-                    <span className="text-[8px] font-mono text-[#8C8C90] truncate max-w-[20px]">
-                      {item.date.split(" ")[0]}
+                    <span
+                      className={`text-[8px] font-mono truncate max-w-[24px] ${item.isToday ? "text-white font-bold" : "text-[#8C8C90]"}`}
+                    >
+                      {item.day}
                     </span>
                   </div>
                 );

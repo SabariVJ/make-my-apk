@@ -1,16 +1,33 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
-import { Dumbbell, Plus, Trash2, Save, History, TrendingUp, Zap, X, Layers } from "lucide-react";
+import {
+  Dumbbell,
+  Plus,
+  Trash2,
+  Save,
+  History,
+  TrendingUp,
+  Zap,
+  X,
+  Layers,
+  CalendarCheck,
+} from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { WorkoutExercise } from "../types";
 import { summarizeWorkout } from "../lib/activity";
 import { StructuredStrengthCard } from "../components/StructuredStrengthCard";
-import { TrainStrength } from "./TrainStrength";
+import { TrainStrength, type StrengthPrescription } from "./TrainStrength";
+import { TrainingToday } from "../components/TrainingToday";
+import { TemplateBrowser } from "../components/TemplateBrowser";
+import { useTrainingPlan } from "../hooks/useTrainingPlan";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { listServerActivities, formatActivityDate } from "../lib/serverActivities";
+import { prescribedTargetsForTemplate, type TrainingContextInput } from "../lib/trainingClient";
+import { explainSession, type PlanSession } from "../lib/trainingPlan";
+import { templateForSlot, type WorkoutTemplate } from "../lib/trainingTemplates";
 
-type Tab = "log" | "templates" | "history";
+type Tab = "today" | "log" | "templates" | "history";
 
 const blankExercise = (): WorkoutExercise => ({
   id: `ex-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -28,13 +45,60 @@ export const WorkoutView: React.FC = () => {
     deleteWorkoutTemplate,
   } = useSVJ();
 
-  const [tab, setTab] = useState<Tab>("log");
+  const training = useTrainingPlan();
+  const [tab, setTab] = useState<Tab>("today");
   const [name, setName] = useState("");
   const [exercises, setExercises] = useState<WorkoutExercise[]>([blankExercise()]);
   const [trendExercise, setTrendExercise] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   // Structured Strength is a focused flow inside Train, not another nav tab.
   const [strengthOpen, setStrengthOpen] = useState(false);
+  const [prescription, setPrescription] = useState<StrengthPrescription | null>(null);
+
+  /** Open the canonical logger from a planned session (target vs actual). */
+  const startPlanSession = (session: PlanSession) => {
+    const serverSession = training.serverPlan?.sessions.find(
+      (s) => s.slotIndex === session.slotIndex,
+    );
+    const template = templateForSlot(session.family, session.variant);
+    const targets =
+      serverSession && serverSession.targets.length > 0
+        ? serverSession.targets
+        : template
+          ? prescribedTargetsForTemplate(template)
+          : [];
+    const context: TrainingContextInput = {
+      planId: training.serverPlan?.id ?? null,
+      planSessionId: serverSession?.id ?? null,
+      templateId: session.templateId,
+      templateVersion: serverSession?.templateVersion ?? 1,
+    };
+    setPrescription({
+      targets,
+      context,
+      title: session.label,
+      note: training.weekly ? explainSession(training.weekly, session) : null,
+    });
+    setStrengthOpen(true);
+  };
+
+  /** Open the logger from a browsed template (no plan slot). */
+  const startTemplate = (template: WorkoutTemplate) => {
+    setPrescription({
+      targets: prescribedTargetsForTemplate(template),
+      context: { templateId: template.id, templateVersion: 1 },
+      title: template.name,
+      note: `Browse session · ~${template.estimatedMinutes} min. ${template.warmup}`,
+    });
+    setStrengthOpen(true);
+  };
+
+  const closeStrength = () => {
+    setStrengthOpen(false);
+    setPrescription(null);
+    void training.reloadMuscleHistory();
+    void training.refresh();
+  };
 
   // Real last structured session — read from the canonical activity pipeline
   // (`strength_log` provenance). No fabricated program/split state is shown.
@@ -123,15 +187,16 @@ export const WorkoutView: React.FC = () => {
   };
 
   const tabs: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
-    { id: "log", label: "Log", icon: Dumbbell },
+    { id: "today", label: "Today", icon: CalendarCheck },
     { id: "templates", label: "Templates", icon: Layers },
     { id: "history", label: "History", icon: History },
+    { id: "log", label: "Log", icon: Dumbbell },
   ];
 
   if (strengthOpen) {
     return (
       <div className="pb-24 pt-4 max-w-2xl mx-auto">
-        <TrainStrength onExit={() => setStrengthOpen(false)} />
+        <TrainStrength prescription={prescription} onExit={closeStrength} />
       </div>
     );
   }
@@ -152,7 +217,14 @@ export const WorkoutView: React.FC = () => {
 
       {/* Structured Strength — the primary Train destination, always on top. */}
       <StructuredStrengthCard
-        onStart={() => setStrengthOpen(true)}
+        onStart={() => {
+          // Prefer the planned session so the logger opens with real targets.
+          if (training.todaySession) startPlanSession(training.todaySession);
+          else {
+            setPrescription(null);
+            setStrengthOpen(true);
+          }
+        }}
         lastSessionLabel={recentStrengthQuery.data ?? null}
       />
 
@@ -165,6 +237,7 @@ export const WorkoutView: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              data-testid={`train-tab-${t.id}`}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-inter font-semibold transition-all cursor-pointer border ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
@@ -179,6 +252,33 @@ export const WorkoutView: React.FC = () => {
       </div>
 
       <AnimatePresence mode="wait">
+        {tab === "today" && (
+          <motion.div
+            key="today"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <TrainingToday
+              profile={training.profile}
+              profileReady={training.profileReady}
+              loading={training.loading}
+              savingProfile={training.savingProfile}
+              creatingPlan={training.creatingPlan}
+              splitName={training.decision?.splitName ?? null}
+              explanation={training.weekly?.explanation ?? null}
+              reasons={training.weekly?.reasons ?? []}
+              sessions={training.weekly?.sessions ?? []}
+              todaySession={training.todaySession}
+              muscleRows={training.muscleRows}
+              error={training.error}
+              onSaveProfile={training.saveProfile}
+              onGeneratePlan={training.generatePlan}
+              onStartSession={startPlanSession}
+            />
+          </motion.div>
+        )}
+
         {tab === "log" && (
           <motion.div
             key="log"
@@ -338,6 +438,17 @@ export const WorkoutView: React.FC = () => {
             exit={{ opacity: 0, y: -8 }}
             className="space-y-3"
           >
+            <TemplateBrowser
+              profile={training.profile}
+              library={training.library}
+              savedTemplateIds={training.savedTemplateIds}
+              onToggleSave={training.toggleSaveTemplate}
+              onStartTemplate={startTemplate}
+            />
+
+            <p className="pt-2 font-anton text-sm uppercase tracking-wide text-white">
+              Your device templates
+            </p>
             {workoutTemplates.length === 0 && (
               <p className="text-center text-[#8C8C90] font-inter text-sm py-10">
                 No templates yet. Build a session in the Log tab and hit “Save template”.

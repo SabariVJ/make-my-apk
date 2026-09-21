@@ -43,6 +43,23 @@ import {
 import { MuscleTrainedList } from "../components/StrengthDetails";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { processActivityRewards, rewardsRpcClient, type ActivityRewards } from "../lib/rewards";
+import {
+  recordTrainingContext,
+  resolveTargetsToProps,
+  trainingRpcClient,
+  type TrainingContextInput,
+} from "../lib/trainingClient";
+import type { PrescribedTarget } from "../lib/trainingProgression";
+
+export interface StrengthPrescription {
+  /** Reviewed targets from the planned session (target vs actual). */
+  targets: PrescribedTarget[];
+  /** Plan/template linkage recorded against the canonical activity. */
+  context: TrainingContextInput;
+  /** Human explanation shown above the logger ("Why this session?"). */
+  note?: string | null;
+  title?: string | null;
+}
 
 type Phase = "idle" | "logging" | "summary" | "saved";
 
@@ -58,6 +75,17 @@ const REWARD_STAT_LABELS: Record<string, string> = {
   discipline: "DISCIPLINE",
   focus: "MENTAL",
 };
+
+/** Human target label, e.g. "3 × 8–12 @ 60 kg" or "3 × 45 sec". */
+function formatTarget(target: PrescribedTarget): string {
+  if (target.durationSeconds !== null) {
+    return `${target.workSets} × ${target.durationSeconds} sec`;
+  }
+  const range =
+    target.repMin === target.repMax ? `${target.repMax}` : `${target.repMin}–${target.repMax}`;
+  const load = target.loadKg !== null && target.loadKg > 0 ? ` @ ${target.loadKg} kg` : "";
+  return `${target.workSets} × ${range}${load}`;
+}
 
 const numeric = (raw: string): number | null => {
   if (raw.trim() === "") return null;
@@ -94,7 +122,11 @@ const Field: React.FC<{
  * saves atomically: ONE canonical activity with its exercises and sets, so a
  * retried save can never create a duplicate workout.
  */
-export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+export const TrainStrength: React.FC<{
+  onExit: () => void;
+  /** When present, the logger starts from a planned session's targets. */
+  prescription?: StrengthPrescription | null;
+}> = ({ onExit, prescription = null }) => {
   const queryClient = useQueryClient();
   const [catalog, setCatalog] = useState<StrengthExerciseOption[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -109,6 +141,10 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<StrengthSaveOutcome | null>(null);
   const [rewards, setRewards] = useState<ActivityRewards | null>(null);
+  const [targetByExerciseId, setTargetByExerciseId] = useState<Map<string, PrescribedTarget>>(
+    new Map(),
+  );
+  const [prescriptionNote, setPrescriptionNote] = useState<string | null>(null);
   const sessionIdRef = useRef<string>("");
 
   const loadCatalog = useCallback(async () => {
@@ -134,13 +170,42 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   const start = () => {
     sessionIdRef.current = buildClientSessionId();
-    setDrafts([]);
     setOutcome(null);
     setRewards(null);
     setSaveError(null);
     setDraftError(null);
     setEndedAtMs(null);
     setStartedAtMs(Date.now());
+
+    // A planned session prefills TARGET values only — no set is marked done.
+    if (prescription && prescription.targets.length > 0 && catalog.length > 0) {
+      const bySlug = new Map(catalog.map((option) => [option.slug, option]));
+      const { resolved, unresolved } = resolveTargetsToProps(prescription.targets, bySlug);
+      const targetMap = new Map<string, PrescribedTarget>();
+      const prefilled: StrengthExerciseDraft[] = [];
+      for (const item of resolved) {
+        const option = bySlug.get(item.target.exerciseSlug);
+        if (!option) continue;
+        const draft = createExerciseDraft(option);
+        const sets = Array.from({ length: Math.max(1, item.target.workSets) }, () => ({
+          ...createSetDraft(),
+          weightKg: item.target.loadKg ?? null,
+        }));
+        targetMap.set(option.id, item.target);
+        prefilled.push({ ...draft, sets });
+      }
+      setTargetByExerciseId(targetMap);
+      setDrafts(prefilled);
+      setPrescriptionNote(
+        unresolved.length > 0
+          ? `${unresolved.length} planned movement${unresolved.length === 1 ? "" : "s"} need a catalog match — add ${unresolved.length === 1 ? "it" : "them"} from the picker.`
+          : (prescription.note ?? null),
+      );
+    } else {
+      setTargetByExerciseId(new Map());
+      setPrescriptionNote(prescription?.note ?? null);
+      setDrafts([]);
+    }
     setPhase("logging");
   };
 
@@ -150,6 +215,8 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     setOutcome(null);
     setSaveError(null);
     setDraftError(null);
+    setTargetByExerciseId(new Map());
+    setPrescriptionNote(null);
     setStartedAtMs(null);
     setEndedAtMs(null);
     setPhase("idle");
@@ -249,6 +316,18 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (result.ok) {
       setOutcome(result);
       setPhase("saved");
+      // Link the canonical activity to its plan slot (idempotent; a retry can
+      // never finalize the same slot twice). A failure here never loses the
+      // workout — it is already saved.
+      if (!result.duplicate && prescription) {
+        const trpc = trainingRpcClient();
+        if (trpc) {
+          void recordTrainingContext(trpc, sessionIdRef.current, {
+            ...prescription.context,
+            targets: prescription.targets,
+          });
+        }
+      }
       // Update 04: server-confirmed rewards. Only a NEW workout processes
       // rewards; a retried save returns the original workout and must never
       // re-announce them. The server enforces zero duplicates regardless.
@@ -304,10 +383,19 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         </button>
       </div>
 
+      {prescriptionNote && phase !== "saved" && (
+        <p
+          data-testid="strength-prescription-note"
+          className="mb-2 whitespace-pre-line rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/5 px-3 py-2 text-[11px] font-inter text-[#E8D9A0]"
+        >
+          {prescriptionNote}
+        </p>
+      )}
+
       {phase === "idle" && (
         <div className="py-6 text-center">
           <p className="font-anton text-lg uppercase tracking-wider text-white">
-            STRUCTURED STRENGTH
+            {prescription?.title ?? "STRUCTURED STRENGTH"}
           </p>
           <p className="mx-auto mt-1 max-w-xs text-[11px] font-mono text-[#8C8C90]">
             Log exercises, sets, reps and weight. One workout is saved as a single canonical
@@ -353,6 +441,14 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       {MUSCLE_LABELS[draft.primaryMuscle]} ·{" "}
                       {EXERCISE_TYPE_LABELS[draft.exerciseType]}
                     </p>
+                    {targetByExerciseId.get(draft.exerciseId) && (
+                      <p
+                        data-testid="strength-target"
+                        className="mt-0.5 text-[10px] font-mono text-[#D4AF37]"
+                      >
+                        Target {formatTarget(targetByExerciseId.get(draft.exerciseId)!)}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <button

@@ -1,5 +1,48 @@
 # SVJ Master Implementation — Phase Progress
 
+## Automated Training System (2026-09-21)
+
+**Status:** IN PROGRESS — deterministic foundation (profile, catalog, planner,
+progression, muscle history), additive schema + RPCs, client adapters and the
+Train → Today / Templates / History surface are implemented and wired.
+
+**Starting SHA:** `6dca0bf` · **Branch:** `release/play-v1-compliance`
+
+**Files added**
+- `src/app/lib/trainingPolicy.ts`, `trainingProfile.ts`, `trainingTemplates.ts`,
+  `trainingPlan.ts`, `trainingProgression.ts`, `trainingMuscleHistory.ts`, `trainingClient.ts`
+- `src/app/hooks/useTrainingPlan.ts`
+- `src/app/components/TrainingToday.tsx`, `TemplateBrowser.tsx`
+- `supabase/migrations/20260926000000_automated_training.sql`
+- `tests/training-engine.test.ts` (35), `tests/training-client.test.ts` (17)
+- `docs/SVJ_AUTOMATED_TRAINING.md`
+
+**Files changed**
+- `src/app/views/WorkoutView.tsx` — Today is the default Train surface; Templates
+  browses the reviewed catalog; the existing manual logger and history are preserved.
+- `src/app/views/TrainStrength.tsx` — optional `prescription` prop renders
+  TARGET vs ACTUAL, prefills loads from real history only, and records the plan
+  context after the canonical save. No second workout ledger.
+- `package.json` — new test files added to the suite.
+- `tests/{activity-ui.test.mjs,navigation.test.ts,strength-logging.test.ts}` —
+  adapted to the new Train structure without weakening behaviour coverage.
+- Notification modules — formatting only (pre-existing Prettier/ESLint errors).
+
+**Schema:** additive only. New tables + RPCs, RLS on every user table, no
+INSERT/UPDATE/DELETE grant to `authenticated`, no destructive statements.
+
+**Verification:** `bun tsc -b --noEmit` ✅ · `bun run test` 882 pass / 0 fail ✅ ·
+`bun run build` ✅ · `bunx eslint src/` 0 errors ✅ · `prettier --check` ✅ ·
+`git diff --check` ✅ · `cap sync android` ✅ · `:app`/`:wear` unit tests ✅ ·
+`:app`/`:wear` debug APKs BUILD SUCCESSFUL ✅.
+
+**Known limitations:** warm-up sets are guidance only in the current logger
+(`svj_strength_sets.is_warmup` exists for a future logger and is excluded by
+muscle history); estimated 1RM intentionally not implemented; the reviewed
+catalog is authored in TypeScript and snapshotted immutably on plan creation.
+
+---
+
 **Repository:** `SabariVJ/make-my-apk`
 **Target branch:** `release/play-v1-compliance`
 **Audit date:** 2026-09-04

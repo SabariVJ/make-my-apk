@@ -24,13 +24,23 @@ import {
   CHALLENGE_XP,
   CHALLENGE_CATEGORIES,
   editCustomChallenge,
-  getChallengeStat,
   getTierForXP,
   normalizeUserProfile,
   summarizeWorkout,
   type SaveResult,
 } from "../lib/activity";
 import { appStorage, readStoredArray, readStoredJson, writeStoredJson } from "../lib/storage";
+import {
+  type CompletionLedger,
+  type TaskCompletion,
+  createLedger,
+  deriveHabitCompletionRate,
+  deriveTotalCompleted,
+  findActiveRow,
+  localDayKey,
+  normalizeLedger,
+  toggleTaskCompletion,
+} from "../lib/taskCompletions";
 import { reconcileEngagementProfile } from "../lib/engagementProfile";
 
 interface SVJContextType {
@@ -62,6 +72,13 @@ interface SVJContextType {
 
   // Actions
   toggleChallenge: (id: string) => SaveResult;
+  /**
+   * The stored completion row for a task TODAY, if it has one. Its
+   * xpAwarded/statPoints are the amounts an uncheck would reverse.
+   */
+  getTodayCompletion: (challengeId: string) => TaskCompletion | undefined;
+  /** Every completion row (active and undone) — the reversible task ledger. */
+  taskCompletions: TaskCompletion[];
   /** Apply a server-confirmed XP grant to the user's profile (60-day challenge). */
   awardXp: (xp: number, stats?: Partial<UserStats>) => void;
   /** Push an entry into the community feed (used by automatic XP events). */
@@ -171,6 +188,38 @@ export const SVJProvider: React.FC<{
       INITIAL_CHALLENGES,
     ).filter((challenge) => !removed.includes(challenge.id));
   });
+
+  // Completion ledger: one row per completed task capturing the exact XP and
+  // stat points granted, so completion is a reversible toggle for today's
+  // tasks and derived figures are live sums over the rows still completed.
+  const [ledger, setLedger] = useState<CompletionLedger>(() =>
+    normalizeLedger(readStoredJson(`${LOCAL_STORAGE_KEY}_task_completions`, null), {
+      stats: INITIAL_USER.stats,
+      totalCompleted: 0,
+    }),
+  );
+  // One-time capture of the pre-ledger baseline so legacy history is preserved
+  // (legacy completions live in the baseline instead of as rows).
+  const baselineRef = useRef({ captured: false, stats: INITIAL_USER.stats, total: 0 });
+  useEffect(() => {
+    if (baselineRef.current.captured) return;
+    baselineRef.current = {
+      captured: true,
+      stats: user.stats,
+      total: user.totalChallengesCompleted,
+    };
+    setLedger((previous) =>
+      previous.rows.length > 0
+        ? previous
+        : createLedger({ stats: user.stats, totalCompleted: user.totalChallengesCompleted }),
+    );
+    // Baseline is captured once per session, before any ledger row can exist.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    safeSetItem(`${LOCAL_STORAGE_KEY}_task_completions`, JSON.stringify(ledger));
+  }, [ledger]);
 
   const [feed, setFeed] = useState<FeedActivity[]>(() => {
     // No seed feed is shipped anymore: a missing cache is simply an empty feed.
@@ -550,39 +599,82 @@ export const SVJProvider: React.FC<{
     setFeed((previous) => [item, ...previous]);
   };
 
+  /**
+   * True completion toggle for TODAY's tasks.
+   *
+   * The ledger row records the exact XP/stat payout; unchecking reverses that
+   * exact amount and re-checking reuses it (never re-rolls). Figures that must
+   * be able to go down — Character Matrix stats, Total Completed, Habit
+   * Consistency — are recomputed as live sums over the rows still completed.
+   */
+  /** Active completion row for a task today (undefined when not tracked). */
+  const getTodayCompletion = (challengeId: string) =>
+    findActiveRow(ledger, challengeId, localDayKey());
+
   const toggleChallenge = (id: string): SaveResult => {
     const current = challenges.find((challenge) => challenge.id === id);
     if (!current) return { ok: false, error: "This task is no longer available." };
+    if (current.isPersonalized) {
+      // Personalized assignments are server-authoritative, and the server has
+      // no un-complete path — never fake a reversal on the client.
+      return {
+        ok: false,
+        error: "Server-assigned tasks can only be completed, not undone.",
+      };
+    }
     const now = new Date();
-    const completed = !current.completed;
-    const earnedXP = current.earnedXP ?? current.xp;
+    const outcome = toggleTaskCompletion(ledger, {
+      id: current.id,
+      title: current.title,
+      category: current.category,
+      completed: current.completed,
+      xp: current.xp,
+      earnedXP: current.earnedXP,
+      completedAt: current.completedAt,
+    });
+    if (!outcome.ok) return { ok: false, error: outcome.error };
+
+    const completing = outcome.action === "complete";
     const updated = challenges.map((challenge) =>
       challenge.id !== id
         ? challenge
         : {
             ...challenge,
-            completed,
-            earnedXP: completed ? challenge.xp : undefined,
-            completedAt: completed
-              ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : undefined,
+            completed: completing,
+            earnedXP: completing ? outcome.row.xpAwarded : undefined,
+            completedAt: completing ? outcome.row.completedAt : undefined,
           },
     );
     const saved = persist(`${LOCAL_STORAGE_KEY}_challenges`, updated);
     if (!saved.ok) return saved;
     setChallenges(updated);
+    setLedger(outcome.ledger);
     setStorageError(null);
-    setUser((previous) =>
-      applyActivityXp(previous, completed ? current.xp : -earnedXP, now, {
-        stats: { [getChallengeStat(current.category)]: completed ? 3 : -3 },
-        challengeDelta: completed ? 1 : -1,
-      }),
-    );
-    if (completed) {
+
+    // XP uses the row's stored payout in BOTH directions, so toggling is exact
+    // and cannot be used to farm XP. Stats are recomputed from the ledger below
+    // (a live sum), so they can go back down as well.
+    setUser((previous) => {
+      const next = applyActivityXp(previous, outcome.xpDelta, now, {
+        stats: outcome.statDelta,
+        challengeDelta: completing ? 1 : -1,
+      });
+      return {
+        ...next,
+        totalChallengesCompleted: deriveTotalCompleted(outcome.ledger),
+        habitCompletionRate: deriveHabitCompletionRate(outcome.ledger, previous.daysActive, now),
+        // Streak only moves when today crosses the completion threshold.
+        currentStreak: Math.max(0, previous.currentStreak + outcome.streakDelta),
+      };
+    });
+
+    if (completing) {
       addActivity(
         `Completed Challenge: ${current.title}`,
-        `Earned +${current.xp} XP in ${current.category}.`,
-        current.xp,
+        outcome.reused
+          ? `Re-completed today — +${outcome.row.xpAwarded} XP reused from the original completion.`
+          : `Earned +${outcome.row.xpAwarded} XP in ${current.category}.`,
+        outcome.row.xpAwarded,
       );
       triggerConfetti();
     }
@@ -1060,6 +1152,8 @@ export const SVJProvider: React.FC<{
         isFirstTimeOnboardingOpen,
         isGoogleAuthModalOpen,
         toggleChallenge,
+        getTodayCompletion,
+        taskCompletions: ledger.rows,
         awardXp,
         addActivity,
         addCustomChallenge,

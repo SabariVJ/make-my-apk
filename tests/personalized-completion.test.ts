@@ -102,7 +102,12 @@ test("personalized tasks do not show the local remove button", () => {
 
 test("pending completion disables only the tapped task and shows a spinner", () => {
   assert.match(viewSource, /completingId === challenge\.id \? \(\s*\n?\s*<Loader2/);
-  assert.match(viewSource, /disabled=\{completingId === challenge\.id \|\| challenge\.completed\}/);
+  // Completed rows stay interactive unless the completion is locked (personalized
+  // server rows or past days), because completion is now a real toggle.
+  assert.match(
+    viewSource,
+    /disabled=\{\s*completingId === challenge\.id \|\|\s*\(challenge\.completed && completionLocked\(challenge\)\)\s*\}/,
+  );
   // Duplicate tap guard.
   assert.match(viewSource, /if \(completingId\) return/);
 });

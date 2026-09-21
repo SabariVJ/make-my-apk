@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Flame,
   Check,
+  Lock,
   Plus,
   X,
   Clock,
@@ -42,6 +43,7 @@ import {
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
 import { formatCompletedAt } from "../lib/dateFormat";
+import { localDayKey } from "../lib/taskCompletions";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
@@ -56,6 +58,7 @@ export const ChallengesView: React.FC<{
     removeChallenge,
     user,
     leaderboard,
+    getTodayCompletion,
   } = useSVJ();
 
   // Fetch server-authoritative challenge state to hide 60-Day CTA when completed
@@ -258,6 +261,21 @@ export const ChallengesView: React.FC<{
   const callCompletePersonalized = useServerFn(completePersonalizedTask);
   const queryClient = useQueryClient();
 
+  /**
+   * A completion is reversible only when it happened TODAY and has a stored
+   * ledger row whose exact payout can be reversed. Personalized rows are
+   * server-owned (no un-complete path) and older days stay read-only history.
+   */
+  const completionLocked = (challenge: DailyChallenge): boolean => {
+    if (!challenge.isPersonalized && getTodayCompletion(challenge.id)) return false;
+    const completedAt = challenge.completedAt;
+    if (!challenge.isPersonalized && completedAt) {
+      const parsed = new Date(completedAt);
+      if (!Number.isNaN(parsed.getTime()) && localDayKey(parsed) === localDayKey()) return false;
+    }
+    return true;
+  };
+
   const handleToggle = async (id: string) => {
     // Personalized assignments complete through the server-validated RPC —
     // never through the local toggleChallenge()/applyActivityXp path. This
@@ -315,7 +333,11 @@ export const ChallengesView: React.FC<{
   const completedCount = displayChallenges.filter((c) => c.completed).length;
   const totalCount = displayChallenges.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const todayXP = displayChallenges.filter((c) => c.completed).reduce((acc, c) => acc + c.xp, 0);
+  // Task XP today is the sum of the STORED payouts on rows still completed —
+  // never the nominal challenge XP, so a re-check reuses the original amount.
+  const todayXP = displayChallenges
+    .filter((c) => c.completed)
+    .reduce((acc, c) => acc + (c.earnedXP ?? c.xp), 0);
   // Automatic step-milestone XP + server-verified activity XP count toward
   // the daily totals too. Server activity XP is the authoritative, capped,
   // evidence-backed figure from the database — never device-local math.
@@ -586,7 +608,12 @@ export const ChallengesView: React.FC<{
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onClick={() => handleToggle(challenge.id)}
+              onClick={() => {
+                // Undoing is deliberate: the checkbox owns it, so a stray tap on
+                // a completed row never reverses XP.
+                if (challenge.completed) return;
+                handleToggle(challenge.id);
+              }}
               className={`group p-4 rounded-2xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
                 completingId === challenge.id
                   ? "border-[#C81E3A]/40"
@@ -602,8 +629,20 @@ export const ChallengesView: React.FC<{
                   role="checkbox"
                   aria-checked={challenge.completed}
                   aria-busy={completingId === challenge.id}
-                  aria-label={`Complete ${challenge.title}`}
-                  disabled={completingId === challenge.id || challenge.completed}
+                  aria-label={`${challenge.completed ? "Uncomplete" : "Complete"} ${challenge.title}${
+                    completionLocked(challenge) ? " (locked)" : ""
+                  }`}
+                  title={
+                    completionLocked(challenge)
+                      ? "This completion can't be undone — only today's tasks are reversible."
+                      : challenge.completed
+                        ? "Uncheck to undo today's completion"
+                        : undefined
+                  }
+                  disabled={
+                    completingId === challenge.id ||
+                    (challenge.completed && completionLocked(challenge))
+                  }
                   onClick={(event) => {
                     event.stopPropagation();
                     handleToggle(challenge.id);
@@ -616,9 +655,13 @@ export const ChallengesView: React.FC<{
                 >
                   {completingId === challenge.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-white/70" />
-                  ) : (
-                    challenge.completed && <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                  )}
+                  ) : challenge.completed ? (
+                    completionLocked(challenge) ? (
+                      <Lock className="w-3 h-3 text-white/80" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    )
+                  ) : null}
                 </button>
 
                 <div>

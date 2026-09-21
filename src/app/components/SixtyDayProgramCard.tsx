@@ -26,7 +26,7 @@ export function SixtyDayProgramCard({
     <section
       aria-label="60 Day Transformation"
       data-testid="sixty-day-program-card"
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B1B1F] via-[#141417] to-[#17171A] border border-white/[0.06] p-5"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B1B1F] via-[#141417] to-[#17171A] border border-white/[0.06] p-4"
     >
       <div className="relative">
         <p className="mb-2 flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#8C8C90]">
@@ -40,7 +40,7 @@ export function SixtyDayProgramCard({
             <span className="block text-[#C81E3A]">Transformation</span>
           </h2>
           {completed && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 font-mono text-[10px] font-bold uppercase text-amber-400">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-gold/40 bg-gold/10 px-2 py-1 font-mono text-[10px] font-bold uppercase text-gold">
               <Trophy className="h-3 w-3" /> Complete
             </span>
           )}
@@ -56,7 +56,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
             >
               Start 60 Day <ArrowRight className="h-4 w-4" />
             </button>
@@ -71,7 +71,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/[0.06] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/[0.10] svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white/[0.06] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-white/[0.10] svj-press"
             >
               View transformation <ArrowRight className="h-4 w-4" />
             </button>
@@ -83,7 +83,7 @@ export function SixtyDayProgramCard({
                 Day {summary.currentDay} / {summary.totalDays}
               </span>
               {summary.status === "paused" && (
-                <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-bold text-amber-400">
+                <span className="rounded-2xl border border-gold/40 bg-gold/10 px-1.5 py-0.5 font-bold text-gold">
                   Paused
                 </span>
               )}
@@ -113,7 +113,7 @@ export function SixtyDayProgramCard({
               </div>
               <div>
                 <p className="font-inter text-[11px] text-[#8C8C90]">Current streak</p>
-                <p className="mt-1 flex items-center gap-1 font-mono text-base font-bold text-orange-300">
+                <p className="mt-1 flex items-center gap-1 font-mono text-base font-bold text-gold">
                   <Flame className="h-4 w-4" /> {summary.currentStreak}d
                 </p>
               </div>
@@ -130,7 +130,7 @@ export function SixtyDayProgramCard({
               type="button"
               onClick={onOpen}
               data-testid="sixty-day-open"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A]/15 text-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider transition-colors hover:bg-[#C81E3A]/25 svj-press"
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A]/15 text-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider transition-colors hover:bg-[#C81E3A]/25 svj-press"
             >
               Continue program <ArrowRight className="h-4 w-4" />
             </button>

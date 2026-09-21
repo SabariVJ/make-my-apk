@@ -73,7 +73,7 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24">
       {/* Profile Header */}
-      <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden shadow-2xl">
+      <div className="relative rounded-2xl bg-[#17171A] border border-white/10 p-4 overflow-hidden shadow-2xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div
@@ -89,7 +89,7 @@ export const ProfileView: React.FC = () => {
                 showBadge
                 isFounder={user.isFounder}
               />
-              <div className="absolute inset-0 bg-black/50 rounded-3xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-20">
+              <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-20">
                 <Edit3 className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -101,7 +101,7 @@ export const ProfileView: React.FC = () => {
                 {user.verifiedIcon && (
                   <Shield className="w-5 h-5 text-[#C81E3A] fill-[#C81E3A]/20" />
                 )}
-                {user.isPremium && <Crown className="w-5 h-5 text-amber-400 fill-amber-400/20" />}
+                {user.isPremium && <Crown className="w-5 h-5 text-gold fill-gold/20" />}
               </div>
               <p className="text-xs font-mono text-[#8C8C90]">
                 @{user.username} •{" "}
@@ -116,7 +116,7 @@ export const ProfileView: React.FC = () => {
                   onClick={() => setIsGoogleAuthModalOpen(true)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold border transition-all cursor-pointer ${
                     user.isFounder
-                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                      ? "bg-gold/15 border-gold/40 text-gold"
                       : user.email
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                         : "bg-white/5 border-white/10 hover:border-white/20 text-[#8C8C90] hover:text-white"
@@ -133,7 +133,7 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setIsEditProfileOpen(true)}
-            className="px-4 py-2 rounded-xl bg-[#0B0B0C] hover:bg-white/10 border border-white/10 text-white text-xs font-mono font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+            className="px-4 py-2 rounded-2xl bg-[#0B0B0C] hover:bg-white/10 border border-white/10 text-white text-xs font-mono font-semibold flex items-center gap-2 cursor-pointer transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5 text-[#C81E3A]" />
             <span>Edit Profile</span>
@@ -143,7 +143,7 @@ export const ProfileView: React.FC = () => {
       {/* Digital Membership Card Section */}
       <MembershipCard user={user} /> {/* Friends List — hidden on Android Play release */}
       {!isAndroid && friends.length > 0 && (
-        <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-3">
+        <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
               <Users className="w-4 h-4 text-[#C81E3A]" /> Friends
@@ -167,7 +167,7 @@ export const ProfileView: React.FC = () => {
                   <AvatarImage
                     src={f.avatar_url}
                     name={f.username ?? f.display_name}
-                    className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                    className="w-10 h-10 rounded-2xl object-cover border border-white/10"
                   />
                   <div className="min-w-0">
                     <p className="font-anton text-sm text-white uppercase truncate">
@@ -177,7 +177,7 @@ export const ProfileView: React.FC = () => {
                       <span className="text-[#C81E3A] flex items-center gap-1">
                         <Zap className="w-3 h-3" /> {f.total_xp.toLocaleString()} XP
                       </span>
-                      <span className="text-orange-400 flex items-center gap-1">
+                      <span className="text-gold flex items-center gap-1">
                         <Flame className="w-3 h-3" /> {f.current_streak}d
                       </span>
                     </div>
@@ -193,14 +193,14 @@ export const ProfileView: React.FC = () => {
             that lived beside it were removed with their tabs. */
         <div className="space-y-4">
           {/* 6 Dynamic Character Stat Attributes Hexagon Radar */}
-          <div className="p-6 rounded-3xl bg-[#17171A] border border-white/10 space-y-4 shadow-2xl overflow-hidden relative">
+          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4 shadow-2xl overflow-hidden relative">
             <div className="flex items-center justify-between text-xs font-mono">
               <div className="flex items-center gap-2">
                 <span className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <Sparkles className="w-4 h-4 text-gold" />
                   Character Attribute Hexagon
                 </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                <span className="px-2 py-0.5 rounded-2xl bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
                   DYNAMIC OVR
                 </span>
               </div>
@@ -237,7 +237,7 @@ export const ProfileView: React.FC = () => {
               <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
                 Current Streak
               </div>
-              <div className="text-xl font-mono font-bold text-orange-400">
+              <div className="text-xl font-mono font-bold text-gold">
                 🔥 {user.currentStreak} Days
               </div>
               <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
@@ -277,7 +277,7 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {/* XP History Sparkline Bar Visualizer */}
-          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
+          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
@@ -296,7 +296,7 @@ export const ProfileView: React.FC = () => {
                 return (
                   <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
                     {/* Tooltip on hover */}
-                    <div className="absolute -top-8 bg-black text-[#C81E3A] text-[9px] font-mono px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10">
+                    <div className="absolute -top-8 bg-black text-[#C81E3A] text-[9px] font-mono px-1.5 py-0.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10">
                       {item.xp} XP
                     </div>
 
@@ -319,10 +319,10 @@ export const ProfileView: React.FC = () => {
           {!user.isPremium && (
             <div
               onClick={() => setIsPaywallOpen(true)}
-              className="p-5 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-amber-500/10 border border-[#C81E3A]/40 flex items-center justify-between cursor-pointer group"
+              className="p-4 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-gold/10 border border-[#C81E3A]/40 flex items-center justify-between cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <Crown className="w-6 h-6 text-amber-400 shrink-0" />
+                <Crown className="w-6 h-6 text-gold shrink-0" />
                 <div>
                   <h3 className="font-anton text-sm text-white uppercase">Upgrade to SVJ Plus</h3>
                   <p className="text-xs text-[#8C8C90]">
@@ -330,7 +330,7 @@ export const ProfileView: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <span className="px-3 py-1.5 rounded-xl bg-[#C81E3A] text-white text-xs font-anton tracking-wider uppercase group-hover:bg-[#A0182E] transition-colors">
+              <span className="px-3 py-1.5 rounded-2xl bg-[#C81E3A] text-white text-xs font-anton tracking-wider uppercase group-hover:bg-[#A0182E] transition-colors">
                 7-Day Trial
               </span>
             </div>
@@ -338,12 +338,12 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
       {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
-      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+      <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
         <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Progress</h3>
         <button
           type="button"
           onClick={() => setShowTransformation(true)}
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          className="w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <BarChart3 className="w-4 h-4" />
           Transformation Report
@@ -363,12 +363,12 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
       {/* Account actions */}
-      <div className="rounded-3xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+      <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
         {isAndroid && (
           <button
             type="button"
             onClick={() => void showPrivacyChoices()}
-            className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Shield className="w-4 h-4" />
             Privacy Choices
@@ -381,14 +381,14 @@ export const ProfileView: React.FC = () => {
             setShowLogoutDialog(true);
           }}
           disabled={signingOut}
-          className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="w-full py-3 rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
         >
           <LogOut className="w-4 h-4" />
           Log out
         </button>
         <a
           href="mailto:sabarivj777@gmail.com?subject=SVJ%20Support%20%2F%20Account%20Verification"
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          className="w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <Mail className="w-4 h-4" />
           Email Us
@@ -420,11 +420,11 @@ export const ProfileView: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="logout-dialog-title"
-            className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#17171A] p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-2">
+              <div className="flex items-center gap-2">
+                <div className="rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 p-2">
                   <LogOut className="h-4 w-4 text-[#E62846]" />
                 </div>
                 <h2
@@ -452,7 +452,7 @@ export const ProfileView: React.FC = () => {
             {signOutError && (
               <div
                 role="alert"
-                className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-mono text-rose-300"
+                className="mt-3 flex items-start gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-mono text-rose-300"
               >
                 <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{signOutError}</span>
@@ -463,7 +463,7 @@ export const ProfileView: React.FC = () => {
                 type="button"
                 onClick={() => setShowLogoutDialog(false)}
                 disabled={signingOut}
-                className="flex-1 rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+                className="flex-1 rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/5 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -471,7 +471,7 @@ export const ProfileView: React.FC = () => {
                 type="button"
                 onClick={() => void handleSignOut()}
                 disabled={signingOut}
-                className="flex-1 rounded-xl bg-[#C81E3A] py-2.5 font-anton text-xs uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60 flex items-center justify-center gap-2"
+                className="flex-1 rounded-2xl bg-[#C81E3A] py-2.5 font-anton text-xs uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {signingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {signingOut ? "Signing out…" : "Log out"}

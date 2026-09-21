@@ -9,7 +9,7 @@ export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
   return (
     <section
       aria-label="Earn Plus"
-      className="rounded-2xl bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] border border-[#C81E3A]/15 p-5"
+      className="rounded-2xl bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] border border-[#C81E3A]/15 p-4"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -29,7 +29,7 @@ export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-inter font-medium text-white hover:bg-white/[0.10] svj-press"
+          className="inline-flex shrink-0 items-center gap-1 rounded-2xl bg-white/[0.06] px-3 py-2 text-xs font-inter font-medium text-white hover:bg-white/[0.10] svj-press"
         >
           Open Earn Plus <ArrowUpRight className="h-4 w-4" />
         </button>
@@ -53,12 +53,12 @@ export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
           </div>
           <div>
             <p className="font-inter text-[11px] text-[#8C8C90]">Login Streak</p>
-            <p className="mt-1 flex items-center gap-1 font-mono text-base font-bold text-orange-300">
+            <p className="mt-1 flex items-center gap-1 font-mono text-base font-bold text-gold">
               <Flame className="h-4 w-4" /> {active.wallet.currentLoginStreak}d
             </p>
           </div>
           {active.status === "disabled" && (
-            <p className="col-span-3 mt-2 text-xs text-amber-200">
+            <p className="col-span-3 mt-2 text-xs text-gold">
               Activation pending. No rewards are being issued yet.
             </p>
           )}

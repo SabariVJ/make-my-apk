@@ -129,7 +129,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
         })}
       </svg>
       {SVJ_STREET_TILES.attribution && (
-        <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
+        <span className="absolute bottom-2 right-2 rounded-2xl bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {SVJ_STREET_TILES.attribution}
         </span>
       )}
@@ -234,7 +234,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
             key={entry.id}
             type="button"
             onClick={() => setSection(entry.id)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
               section === entry.id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
@@ -247,14 +247,14 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="flex-1 text-[11px] font-mono text-red-300">{error}</p>
+        <div className="flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-crimson" />
+          <p className="flex-1 text-[11px] font-mono text-crimson">{error}</p>
         </div>
       )}
 
       {loading && records.length === 0 && segments.length === 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-black/40 p-4 text-[11px] font-mono text-[#8C8C90]">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/5 bg-black/40 p-4 text-[11px] font-mono text-[#8C8C90]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
@@ -283,7 +283,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               {records.map((record) => (
                 <div
                   key={record.recordType}
-                  className="rounded-xl border border-white/5 bg-black/40 p-3"
+                  className="rounded-2xl border border-white/5 bg-black/40 p-3"
                   data-testid="record-card"
                 >
                   <div className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
@@ -363,12 +363,12 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
           )}
           {!heatmapLoading && heatmapError && (
             <div
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/5"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-crimson/30 bg-crimson/5"
               style={{ height: 260 }}
               data-testid="heatmap-error"
             >
-              <Flame className="h-5 w-5 text-red-400" />
-              <p className="px-6 text-center text-[11px] font-mono text-red-300">{heatmapError}</p>
+              <Flame className="h-5 w-5 text-crimson" />
+              <p className="px-6 text-center text-[11px] font-mono text-crimson">{heatmapError}</p>
               <button
                 type="button"
                 onClick={() => void loadHeatmap()}
@@ -390,7 +390,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
       {section === "segments" && (
         <div className="space-y-3">
           {segments.length === 0 && (
-            <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-5 text-center">
+            <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 text-center">
               <Flag className="mx-auto mb-2 h-5 w-5 text-[#8C8C90]" />
               <p className="text-[11px] font-mono text-[#8C8C90]">
                 No personal segments yet. Open a saved GPS workout and create one from its route.
@@ -425,19 +425,19 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Best</div>
                   <div className="font-mono text-sm font-bold text-[#E62846]">
                     {formatClock(segment.bestDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Latest</div>
                   <div className="font-mono text-sm font-bold text-white">
                     {formatClock(segment.lastDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/5 bg-black/40 p-2.5">
+                <div className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
                   <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Change</div>
                   <div
                     className={`font-mono text-sm font-bold ${

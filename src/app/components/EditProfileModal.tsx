@@ -173,7 +173,7 @@ export const EditProfileModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative my-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#17171A] p-6 text-[#F4F2ED] shadow-2xl"
+          className="relative my-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#17171A] p-4 text-[#F4F2ED] shadow-2xl"
         >
           <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
             <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export const EditProfileModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleRemoveAvatar}
-                    className="cursor-pointer rounded-lg bg-red-500/10 p-1.5 text-red-400 transition-colors hover:bg-red-500/20"
+                    className="cursor-pointer rounded-lg bg-crimson/10 p-1.5 text-crimson transition-colors hover:bg-crimson/20"
                     title="Remove profile photo"
                     aria-label="Remove profile photo"
                   >
@@ -254,7 +254,7 @@ export const EditProfileModal: React.FC = () => {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={80}
-                className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                 required
               />
             </div>
@@ -276,7 +276,7 @@ export const EditProfileModal: React.FC = () => {
                   minLength={3}
                   maxLength={30}
                   pattern="[a-z0-9_]{3,30}"
-                  className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-8 pr-3.5 font-mono text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-8 pr-3.5 font-mono text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                   required
                 />
               </div>
@@ -291,14 +291,14 @@ export const EditProfileModal: React.FC = () => {
                 onChange={(event) => setBio(event.target.value)}
                 maxLength={280}
                 rows={2}
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                className="w-full resize-none rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
               />
             </div>
 
-            <div className="space-y-2 rounded-xl border border-white/10 bg-[#0B0B0C] p-3.5">
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3">
               <label className="flex items-center justify-between text-[10px] font-mono uppercase text-[#8C8C90]">
                 <span>Profile Aura Frame</span>
-                <span className="font-bold text-amber-400">
+                <span className="font-bold text-gold">
                   {user.equippedFrame
                     ? user.equippedFrame.replace("frame-", "").toUpperCase()
                     : "DEFAULT"}
@@ -308,7 +308,7 @@ export const EditProfileModal: React.FC = () => {
                 {[
                   { id: "", label: "None", color: "border-white/20" },
                   { id: "frame-crimson", label: "Crimson", color: "border-[#C81E3A]" },
-                  { id: "frame-gold", label: "Gold", color: "border-amber-400" },
+                  { id: "frame-gold", label: "Gold", color: "border-gold" },
                   { id: "frame-cyber", label: "Cyber", color: "border-cyan-400" },
                 ].map((frame) => {
                   const selected = (user.equippedFrame || "") === frame.id;
@@ -343,18 +343,18 @@ export const EditProfileModal: React.FC = () => {
                   onChange={(event) => setLocation(event.target.value)}
                   maxLength={100}
                   placeholder="e.g. Mumbai, India"
-                  className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-10 pr-3.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 pl-10 pr-3.5 font-inter text-sm text-white transition-colors focus:border-[#C81E3A] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-white/10 bg-[#0B0B0C] p-3.5">
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1 text-[10px] font-mono uppercase text-[#8C8C90]">
                   <Mail className="h-3 w-3 text-[#C81E3A]" /> Google / Gmail Cloud Account
                 </span>
                 {user.isFounder && (
-                  <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-[9px] font-mono font-bold text-amber-400">
+                  <span className="flex items-center gap-1 rounded-full border border-gold/30 bg-gold/20 px-2 py-0.5 text-[9px] font-mono font-bold text-gold">
                     <Crown className="h-2.5 w-2.5" /> Founder
                   </span>
                 )}
@@ -395,7 +395,7 @@ export const EditProfileModal: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

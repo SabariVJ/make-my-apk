@@ -30,7 +30,7 @@ const Avatar: React.FC<{ src: string | null; name: string }> = ({ src, name }) =
   <AvatarImage
     src={src}
     name={name}
-    className="w-11 h-11 rounded-xl object-cover border border-white/10"
+    className="w-11 h-11 rounded-2xl object-cover border border-white/10"
   />
 );
 
@@ -39,7 +39,7 @@ const StatLine: React.FC<{ xp: number; streak: number }> = ({ xp, streak }) => (
     <span className="flex items-center gap-1 text-[#C81E3A]">
       <Zap className="w-3 h-3" /> {xp.toLocaleString()} XP
     </span>
-    <span className="flex items-center gap-1 text-orange-400">
+    <span className="flex items-center gap-1 text-gold">
       <Flame className="w-3 h-3" /> {streak}d
     </span>
   </div>
@@ -166,7 +166,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             placeholder="Search members by username to add as friend..."
             value={query}
             onChange={(e) => void runSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
+            className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -199,7 +199,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     onClick={() => void sendRequest(r.id)}
                     disabled={busyId === r.id}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-50 text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+                    className="shrink-0 px-3 py-1.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-50 text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer"
                   >
                     {busyId === r.id ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -216,14 +216,14 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
       </div>
 
       {(error || rivalryError) && (
-        <p className="text-xs font-mono text-red-400 px-1">{error ?? rivalryError}</p>
+        <p className="text-xs font-mono text-crimson px-1">{error ?? rivalryError}</p>
       )}
 
       {/* Section Tabs */}
       <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
         <button
           onClick={() => setActiveSection("friends")}
-          className={`flex-1 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
+          className={`flex-1 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer ${
             activeSection === "friends"
               ? "bg-[#C81E3A] text-white"
               : "text-[#8C8C90] hover:text-white"
@@ -233,7 +233,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
         </button>
         <button
           onClick={() => setActiveSection("rivalries")}
-          className={`flex-1 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+          className={`flex-1 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
             activeSection === "rivalries"
               ? "bg-[#C81E3A] text-white"
               : "text-[#8C8C90] hover:text-white"
@@ -246,7 +246,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
         </button>
         <button
           onClick={() => setActiveSection("notifications")}
-          className={`flex-1 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+          className={`flex-1 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
             activeSection === "notifications"
               ? "bg-[#C81E3A] text-white"
               : "text-[#8C8C90] hover:text-white"
@@ -281,7 +281,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-white uppercase truncate">
@@ -296,7 +296,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void handleAcceptRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
+                      className="px-3 py-1.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
                     >
                       {rivalryBusy === r.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -307,7 +307,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void handleDeclineRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] text-xs font-mono hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="px-3 py-1.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] text-xs font-mono hover:text-white disabled:opacity-50 cursor-pointer"
                     >
                       Decline
                     </button>
@@ -331,7 +331,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-white uppercase truncate">
@@ -371,7 +371,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-xl object-cover border border-white/10 shrink-0"
+                      className="w-11 h-11 rounded-2xl object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="font-anton text-sm text-emerald-400 uppercase">
@@ -389,7 +389,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     type="button"
                     onClick={() => setSelectedRivalry(r)}
-                    className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                    className="shrink-0 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
                   >
                     View Rivalry
                   </button>
@@ -425,14 +425,15 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                 onClick={() => {
                   if (!n.read) void handleMarkRead(n.id);
                 }}
+                whileTap={{ scale: 0.97 }}
                 className={`p-4 rounded-2xl border flex items-start gap-3 cursor-pointer transition-colors ${
                   n.read ? "bg-[#17171A]/60 border-white/5" : "bg-[#17171A] border-[#C81E3A]/30"
                 }`}
               >
-                <div className="p-2 rounded-xl bg-[#0B0B0C] shrink-0">
+                <div className="p-2 rounded-2xl bg-[#0B0B0C] shrink-0">
                   {n.type === "rivalry_request" && <Swords className="w-4 h-4 text-[#C81E3A]" />}
                   {n.type === "rivalry_accepted" && <Check className="w-4 h-4 text-emerald-400" />}
-                  {n.type === "rivalry_declined" && <X className="w-4 h-4 text-red-400" />}
+                  {n.type === "rivalry_declined" && <X className="w-4 h-4 text-crimson" />}
                   {!n.type.startsWith("rivalry") && <Bell className="w-4 h-4 text-[#8C8C90]" />}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -488,7 +489,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void respond(r.friendship_id, "accepted")}
                       disabled={busyId === r.friendship_id}
-                      className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
+                      className="p-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
                       aria-label="Accept request"
                     >
                       <Check className="w-4 h-4" />
@@ -496,7 +497,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void respond(r.friendship_id, "declined")}
                       disabled={busyId === r.friendship_id}
-                      className="p-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="p-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white disabled:opacity-50 cursor-pointer"
                       aria-label="Decline request"
                     >
                       <X className="w-4 h-4" />
@@ -562,7 +563,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     onClick={() => void removeFriend(f.friendship_id)}
                     disabled={busyId === f.friendship_id}
-                    className="text-[10px] font-mono text-[#8C8C90] hover:text-red-400 shrink-0 cursor-pointer"
+                    className="text-[10px] font-mono text-[#8C8C90] hover:text-crimson shrink-0 cursor-pointer"
                   >
                     Remove
                   </button>
@@ -575,7 +576,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
       {selectedRivalry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#17171A] p-5 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">
@@ -598,7 +599,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
               </button>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 text-center">
-              <div className="rounded-xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-4">
+              <div className="rounded-2xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-4">
                 <p className="text-[10px] font-mono uppercase text-[#8C8C90]">Your verified XP</p>
                 <p className="mt-1 font-mono text-2xl font-bold text-[#C81E3A]">
                   +{selectedRivalry.myScore ?? 0}
@@ -607,11 +608,11 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   {selectedRivalry.myEvents ?? 0} activities
                 </p>
               </div>
-              <div className="rounded-xl border border-amber-500/30 bg-[#0B0B0C] p-4">
+              <div className="rounded-2xl border border-gold/30 bg-[#0B0B0C] p-4">
                 <p className="text-[10px] font-mono uppercase text-[#8C8C90]">
                   Opponent verified XP
                 </p>
-                <p className="mt-1 font-mono text-2xl font-bold text-amber-400">
+                <p className="mt-1 font-mono text-2xl font-bold text-gold">
                   +{selectedRivalry.opponentScore ?? 0}
                 </p>
                 <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
@@ -619,7 +620,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                 </p>
               </div>
             </div>
-            <div className="mt-4 rounded-xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-[#B8B8C0]">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-[#B8B8C0]">
               {(selectedRivalry.myScore ?? 0) === (selectedRivalry.opponentScore ?? 0)
                 ? "The rivalry is tied. Complete a verified SVJ activity to take the lead."
                 : (selectedRivalry.myScore ?? 0) > (selectedRivalry.opponentScore ?? 0)

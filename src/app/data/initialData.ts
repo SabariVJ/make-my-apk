@@ -14,7 +14,7 @@ export const TIERS: TierInfo[] = [
     name: "Bronze",
     minXP: 2500,
     color: "#CD7F32",
-    badgeBg: "bg-amber-950/80 text-amber-400 border-amber-800",
+    badgeBg: "bg-gold/80 text-gold border-gold",
     icon: "🥉",
     description: "Discipline is taking root. Your foundation is solid.",
     benefits: ["Unlock Tier 2 Rewards", "Custom Daily Challenge slot", "Bronze Profile Border"],

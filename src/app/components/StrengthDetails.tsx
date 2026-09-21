@@ -16,7 +16,7 @@ import {
 
 const LEVEL_STYLES: Record<MuscleTrained["level"], string> = {
   high: "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]",
-  medium: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+  medium: "border-gold/30 bg-gold/10 text-gold",
   low: "border-white/10 bg-black/40 text-[#8C8C90]",
 };
 
@@ -58,7 +58,7 @@ export const StrengthSetsList: React.FC<{
       return (
         <div
           key={`${exercise.exerciseId}-${exercise.position}`}
-          className="rounded-xl border border-white/5 bg-black/40 p-3"
+          className="rounded-2xl border border-white/5 bg-black/40 p-3"
         >
           <div className="flex items-start justify-between gap-2">
             <button
@@ -133,7 +133,7 @@ export const ExerciseHistoryPanel: React.FC<{
 
   return (
     <div
-      className="rounded-xl border border-white/10 bg-black/40 p-3"
+      className="rounded-2xl border border-white/10 bg-black/40 p-3"
       data-testid="exercise-history"
     >
       <div className="flex items-center justify-between">
@@ -168,12 +168,12 @@ export const ExerciseHistoryPanel: React.FC<{
       )}
 
       {!loading && error && (
-        <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/5 p-2.5 text-center">
-          <p className="text-[10px] font-mono text-red-400">{error}</p>
+        <div className="mt-3 rounded-lg border border-crimson/30 bg-crimson/5 p-2.5 text-center">
+          <p className="text-[10px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-red-300"
+            className="mt-2 rounded-lg border border-crimson/40 bg-crimson/10 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -192,8 +192,8 @@ export const ExerciseHistoryPanel: React.FC<{
       {!loading && !error && history && history.sessions.length > 0 && (
         <>
           {history.records.length > 0 && (
-            <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 p-2">
-              <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest text-amber-300">
+            <div className="mt-2 rounded-lg border border-gold/25 bg-gold/5 p-2">
+              <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest text-gold">
                 <Trophy className="h-3 w-3" /> Personal Bests
               </div>
               <ul className="mt-1 space-y-0.5">

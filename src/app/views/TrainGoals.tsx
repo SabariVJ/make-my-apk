@@ -51,7 +51,7 @@ function rpcClient(): RpcClient | null {
   return supabase as unknown as RpcClient;
 }
 
-/** Small rounded progress bar with the SVJ crimson fill. */
+/** Small rounded-2xl progress bar with the SVJ crimson fill. */
 const ProgressBar: React.FC<{ percent: number }> = ({ percent }) => (
   <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-black/60 p-0.5">
     <div
@@ -158,12 +158,12 @@ export const TrainGoals: React.FC = () => {
       )}
 
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-center">
-          <p className="mb-2 text-[11px] font-mono text-red-400">{error}</p>
+        <div className="rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
+          <p className="mb-2 text-[11px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -219,7 +219,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
   };
 
   return (
-    <li className="rounded-xl border border-white/5 bg-black/40 p-3">
+    <li className="rounded-2xl border border-white/5 bg-black/40 p-3">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
           {GOAL_METRIC_LABELS[goal.metric]}
@@ -264,7 +264,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
             type="button"
             onClick={() => void cancel()}
             disabled={busy}
-            className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-red-400"
+            className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-crimson"
           >
             Cancel goal
           </button>
@@ -297,7 +297,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
         </div>
       )}
       {error && (
-        <p role="alert" className="mt-1.5 text-[10px] font-mono text-red-400">
+        <p role="alert" className="mt-1.5 text-[10px] font-mono text-crimson">
           {error}
         </p>
       )}
@@ -349,7 +349,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
   return (
     <form
       onSubmit={(e) => void submit(e)}
-      className="mb-3 space-y-2 rounded-xl border border-white/10 bg-black/40 p-3"
+      className="mb-3 space-y-2 rounded-2xl border border-white/10 bg-black/40 p-3"
       data-testid="create-goal-form"
     >
       <div className="flex items-center justify-between">
@@ -415,7 +415,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
         </label>
       </div>
       {error && (
-        <p role="alert" className="text-[10px] font-mono text-red-400">
+        <p role="alert" className="text-[10px] font-mono text-crimson">
           {error}
         </p>
       )}
@@ -470,7 +470,7 @@ export const TrainProgress: React.FC = () => {
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Trophy className="h-4 w-4 text-amber-400" />
+          <Trophy className="h-4 w-4 text-gold" />
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
             Personal Records
           </span>
@@ -492,12 +492,12 @@ export const TrainProgress: React.FC = () => {
       )}
 
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-center">
-          <p className="mb-2 text-[11px] font-mono text-red-400">{error}</p>
+        <div className="rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
+          <p className="mb-2 text-[11px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -512,7 +512,7 @@ export const TrainProgress: React.FC = () => {
               return (
                 <li
                   key={type}
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 p-3"
+                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 p-3"
                 >
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
                     {RECORD_LABELS[type]}
@@ -548,7 +548,7 @@ export const TrainProgress: React.FC = () => {
           Strength Records
         </p>
         {strengthRecords !== null && strengthRecords.length === 0 && (
-          <p className="rounded-xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
+          <p className="rounded-2xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
             Complete a structured strength workout to set this record
           </p>
         )}
@@ -561,7 +561,7 @@ export const TrainProgress: React.FC = () => {
                   onClick={() =>
                     setHistoryExercise({ id: record.exerciseId, name: record.exerciseName })
                   }
-                  className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/40 p-3 text-left hover:border-[#C81E3A]/40"
+                  className="flex w-full items-center justify-between rounded-2xl border border-white/5 bg-black/40 p-3 text-left hover:border-[#C81E3A]/40"
                 >
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
                     {record.exerciseName}

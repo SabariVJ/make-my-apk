@@ -113,7 +113,7 @@ function DeleteAccountPage() {
         </p>
         <a
           href="/"
-          className="mt-4 px-6 py-3 rounded-xl bg-[#C81E3A] text-white font-mono text-xs font-bold uppercase tracking-wider"
+          className="mt-4 px-6 py-3 rounded-2xl bg-[#C81E3A] text-white font-mono text-xs font-bold uppercase tracking-wider"
         >
           Return to Home
         </a>
@@ -159,7 +159,7 @@ function DeleteAccountPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
                   placeholder="your@email.com"
                 />
               </div>
@@ -173,7 +173,7 @@ function DeleteAccountPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
                   placeholder="••••••••"
                 />
               </div>
@@ -185,7 +185,7 @@ function DeleteAccountPage() {
               <button
                 type="submit"
                 disabled={loading || !email || !password}
-                className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Continue
@@ -205,7 +205,7 @@ function DeleteAccountPage() {
               type="button"
               onClick={() => void handleReauthGoogle()}
               disabled={loading}
-              className="w-full py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
+              className="w-full py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Continue with Google
@@ -220,7 +220,7 @@ function DeleteAccountPage() {
           </>
         ) : (
           <form onSubmit={handleDelete} className="space-y-4">
-            <div className="p-4 rounded-xl bg-[#C81E3A]/10 border border-[#C81E3A]/30">
+            <div className="p-4 rounded-2xl bg-[#C81E3A]/10 border border-[#C81E3A]/30">
               <p className="text-xs text-[#C81E3A] font-mono font-bold uppercase">
                 Type DELETE to confirm
               </p>
@@ -234,7 +234,7 @@ function DeleteAccountPage() {
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl bg-[#17171A] border border-[#C81E3A]/30 text-white text-sm font-mono text-center tracking-widest uppercase focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/30 text-white text-sm font-mono text-center tracking-widest uppercase focus:outline-none focus:border-[#C81E3A]"
               placeholder="DELETE"
             />
 
@@ -245,7 +245,7 @@ function DeleteAccountPage() {
             <button
               type="submit"
               disabled={loading || confirmation.toUpperCase() !== "DELETE"}
-              className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Permanently Delete Account

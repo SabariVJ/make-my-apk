@@ -204,7 +204,7 @@ function Shell({ children }: { children: ReactNode }) {
 
 function Stat({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-[#0B0B0C] p-3">
+    <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-3">
       <div className="flex items-center gap-1.5 text-[#8C8C90]">
         {icon}
         <span className="font-mono text-[9px] uppercase tracking-[0.2em]">{label}</span>

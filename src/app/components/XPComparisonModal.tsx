@@ -113,7 +113,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           role="dialog"
           aria-modal="true"
           aria-label="XP rivalry and analysis"
-          className="relative w-full max-w-lg bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-lg bg-[#17171A] border border-white/10 rounded-2xl p-4 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -144,7 +144,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 rounded-xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
+                className="mt-5 rounded-2xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
               >
                 Got it
               </button>
@@ -159,7 +159,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 </div>
 
                 {/* YOU Box */}
-                <div className="p-4 rounded-xl bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
+                <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#C81E3A] mb-2">
                     <AvatarImage
                       src={user.avatar}
@@ -175,7 +175,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 </div>
 
                 {/* TARGET MEMBER Box */}
-                <div className="p-4 rounded-xl bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
+                <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 mb-2">
                     <AvatarImage
                       src={member.avatar}
@@ -185,14 +185,14 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                   </div>
                   <span className="font-anton text-sm text-white uppercase">{member.username}</span>
                   <span className="text-[10px] font-mono text-[#8C8C90]">Rank #{member.rank}</span>
-                  <div className="mt-2 text-lg font-mono font-bold text-amber-400">
+                  <div className="mt-2 text-lg font-mono font-bold text-gold">
                     {member.totalXP.toLocaleString()} XP
                   </div>
                 </div>
               </div>
 
               {/* XP Difference & Estimated Catch-up */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-amber-500/10 border border-white/10 mb-6">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-gold/10 border border-white/10 mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
                     <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
@@ -205,7 +205,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <Clock className="w-3.5 h-3.5 text-gold" />
                     Current Comparison
                   </span>
                   <span className="font-mono font-bold text-xs text-emerald-400">
@@ -238,7 +238,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 <div>
                   <div className="flex justify-between text-xs font-mono mb-1">
                     <span className="text-[#8C8C90]">{member.username}'s Progress</span>
-                    <span className="text-amber-400">
+                    <span className="text-gold">
                       {member.totalXP.toLocaleString()} XP ({memberPercent}%)
                     </span>
                   </div>
@@ -247,7 +247,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                       initial={{ width: 0 }}
                       animate={{ width: `${memberPercent}%` }}
                       transition={{ duration: 1 }}
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
+                      className="h-full rounded-full bg-gradient-to-r from-gold to-gold"
                     />
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                     </span>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-                    <div className="rounded-xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-3">
+                    <div className="rounded-2xl border border-[#C81E3A]/30 bg-[#0B0B0C] p-3">
                       <p className="text-[10px] font-mono uppercase text-[#8C8C90]">You</p>
                       <p className="mt-1 font-mono text-xl font-bold text-[#C81E3A]">
                         +{rivalry.myScore ?? 0}
@@ -306,11 +306,11 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                         {rivalry.myEvents ?? 0} activities
                       </p>
                     </div>
-                    <div className="rounded-xl border border-amber-500/30 bg-[#0B0B0C] p-3">
+                    <div className="rounded-2xl border border-gold/30 bg-[#0B0B0C] p-3">
                       <p className="text-[10px] font-mono uppercase text-[#8C8C90]">
                         {member.username}
                       </p>
-                      <p className="mt-1 font-mono text-xl font-bold text-amber-400">
+                      <p className="mt-1 font-mono text-xl font-bold text-gold">
                         +{rivalry.opponentScore ?? 0}
                       </p>
                       <p className="text-[10px] font-mono text-[#8C8C90]">
@@ -335,7 +335,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                   else void handleLockIn();
                 }}
                 disabled={sending || rivalry?.status === "pending"}
-                className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
+                className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
               >
                 <span>{sending ? "Sending…" : actionLabel}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -348,7 +348,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               {actionError && (
                 <div
                   role="alert"
-                  className="mt-2 flex flex-col items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2"
+                  className="mt-2 flex flex-col items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2"
                 >
                   <p className="text-center text-xs font-mono text-rose-300">{actionError}</p>
                   <button

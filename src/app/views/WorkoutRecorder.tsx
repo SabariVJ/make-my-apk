@@ -39,7 +39,7 @@ import {
 
 const QUALITY_STYLES: Record<string, string> = {
   searching: "border-white/10 bg-black/40 text-[#8C8C90]",
-  weak: "border-amber-500/40 bg-amber-500/10 text-amber-400",
+  weak: "border-gold/40 bg-gold/10 text-gold",
   good: "border-sky-500/40 bg-sky-500/10 text-sky-300",
   excellent: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
 };
@@ -101,7 +101,7 @@ const Metric: React.FC<{
   icon?: React.ReactNode;
 }> = ({ label, value, hint, accent, icon }) => (
   <div
-    className={`rounded-xl border p-3 ${
+    className={`rounded-2xl border p-3 ${
       accent ? "border-[#C81E3A]/30 bg-[#C81E3A]/8" : "border-white/5 bg-black/40"
     }`}
   >
@@ -180,9 +180,9 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
   return (
     <div className="space-y-4 pb-6">
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="flex-1 text-[11px] font-mono text-red-300">{error}</p>
+        <div className="flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-crimson" />
+          <p className="flex-1 text-[11px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={dismissError}
@@ -193,7 +193,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         </div>
       )}
       {notice && (
-        <div className="flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3">
+        <div className="flex items-start gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-3">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
           <p className="flex-1 text-[11px] font-mono text-emerald-200">{notice}</p>
           <button
@@ -209,10 +209,10 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
       {/* Recording status */}
       <div className="flex flex-wrap items-center gap-2">
         <div
-          className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[10px] font-mono uppercase ${
+          className={`flex items-center gap-1.5 rounded-2xl border px-2.5 py-1.5 text-[10px] font-mono uppercase ${
             active
               ? state === "paused"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                ? "border-gold/40 bg-gold/10 text-gold"
                 : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
               : "border-white/10 bg-black/40 text-[#8C8C90]"
           }`}
@@ -228,7 +228,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                 : "Idle"}
         </div>
         <div
-          className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[10px] font-mono uppercase ${
+          className={`flex items-center gap-1.5 rounded-2xl border px-2.5 py-1.5 text-[10px] font-mono uppercase ${
             QUALITY_STYLES[session?.gpsQuality ?? "searching"]
           }`}
           data-testid="gps-quality"
@@ -237,13 +237,13 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           GPS {GPS_QUALITY_LABELS[session?.gpsQuality ?? "searching"]}
         </div>
         {nativeRecording && (
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#C81E3A]/30 bg-[#C81E3A]/10 px-2.5 py-1.5 text-[10px] font-mono uppercase text-[#E62846]">
+          <div className="flex items-center gap-1.5 rounded-2xl border border-[#C81E3A]/30 bg-[#C81E3A]/10 px-2.5 py-1.5 text-[10px] font-mono uppercase text-[#E62846]">
             SVJ foreground service
           </div>
         )}
         {pendingSync > 0 && (
           <div
-            className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[10px] font-mono uppercase text-amber-400"
+            className="flex items-center gap-1.5 rounded-2xl border border-gold/30 bg-gold/10 px-2.5 py-1.5 text-[10px] font-mono uppercase text-gold"
             data-testid="pending-sync"
           >
             <CloudOff className="h-3.5 w-3.5" />
@@ -265,7 +265,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                 type="button"
                 onClick={() => setActivityType(type)}
                 data-testid={`pick-${type}`}
-                className={`rounded-xl border px-2 py-3 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+                className={`rounded-2xl border px-2 py-3 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
                   activityType === type
                     ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-white"
                     : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
@@ -345,7 +345,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
       </div>
 
       {plannedRoute && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#C81E3A]/25 bg-[#C81E3A]/8 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/8 px-3 py-2">
           <span className="flex-1 text-[10px] font-mono text-white">
             Following route: <span className="text-[#E62846]">{plannedRoute.name}</span> ·{" "}
             {plannedRouteSummary(plannedRoute)}
@@ -385,7 +385,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
             disabled={busy}
             onClick={() => void start(activityType, splitUnit)}
             data-testid="recorder-start"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/20 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#C81E3A]/35 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/20 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#C81E3A]/35 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Start {GPS_ACTIVITY_LABELS[activityType]}
@@ -397,7 +397,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
             type="button"
             onClick={pause}
             data-testid="recorder-pause"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/15 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-amber-200"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gold/50 bg-gold/15 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-gold"
           >
             <Pause className="h-4 w-4" />
             Pause
@@ -409,7 +409,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
             type="button"
             onClick={resume}
             data-testid="recorder-resume"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-emerald-200"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-emerald-500/50 bg-emerald-500/15 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-emerald-200"
           >
             <Play className="h-4 w-4" />
             Resume
@@ -422,7 +422,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
             disabled={busy}
             onClick={() => void finish()}
             data-testid="recorder-finish"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/50 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
           >
             <Square className="h-4 w-4" />
             Finish
@@ -436,7 +436,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
               disabled={busy || !canSave}
               onClick={() => void save()}
               data-testid="recorder-save"
-              className="flex flex-[2] items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/20 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
+              className="flex flex-[2] items-center justify-center gap-2 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/20 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save workout
@@ -446,7 +446,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
               disabled={busy}
               onClick={() => void discard()}
               data-testid="recorder-discard"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-[#8C8C90] disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-xs font-mono font-bold uppercase tracking-widest text-[#8C8C90] disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
               Discard
@@ -512,7 +512,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           </p>
           {liveShare?.token ? (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/8 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/8 px-3 py-2">
                 <motion.span
                   animate={{ opacity: [1, 0.35, 1] }}
                   transition={{ duration: 1.8, repeat: Infinity }}
@@ -520,7 +520,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                 />
                 <span className="text-[11px] font-mono text-emerald-300">Sharing live</span>
               </div>
-              <div className="break-all rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-[10px] font-mono text-[#8C8C90]">
+              <div className="break-all rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[10px] font-mono text-[#8C8C90]">
                 {liveShareUrl(liveShare.token)}
               </div>
               <div className="flex gap-2">
@@ -534,7 +534,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                       })
                   }
                   data-testid="copy-live-link"
-                  className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                 >
                   Copy link
                 </button>
@@ -543,7 +543,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
                   disabled={liveShareBusy}
                   onClick={() => void stopSharing()}
                   data-testid="stop-live-share"
-                  className="flex-1 rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                  className="flex-1 rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
                 >
                   Stop sharing
                 </button>
@@ -555,7 +555,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
               disabled={liveShareBusy || points.length < 2}
               onClick={() => void shareLive()}
               data-testid="start-live-share"
-              className="w-full rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
+              className="w-full rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
             >
               {liveShareBusy ? "Preparing…" : "Start live sharing"}
             </button>

@@ -241,7 +241,7 @@ function bmiCategoryColor(cat?: string): string {
     case "Normal":
       return "text-emerald-400";
     case "Overweight":
-      return "text-amber-400";
+      return "text-gold";
     case "Obese":
       return "text-rose-400";
     default:
@@ -358,7 +358,7 @@ export const BodyProfileView: React.FC = () => {
       </div>
 
       {/* Input form */}
-      <div className="p-5 rounded-3xl bg-[#17171A] border border-white/10 space-y-4">
+      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
         <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Details</h3>
 
         <div className="grid grid-cols-2 gap-3">
@@ -368,7 +368,7 @@ export const BodyProfileView: React.FC = () => {
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="space-y-1">
@@ -379,7 +379,7 @@ export const BodyProfileView: React.FC = () => {
                   key={s}
                   type="button"
                   onClick={() => setSex(s)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`flex-1 py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
                     sex === s
                       ? "bg-[#C81E3A] text-white"
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -400,7 +400,7 @@ export const BodyProfileView: React.FC = () => {
               value={height}
               onChange={(e) => setHeight(e.target.value)}
               placeholder="170"
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="space-y-1">
@@ -410,7 +410,7 @@ export const BodyProfileView: React.FC = () => {
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="70"
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
         </div>
@@ -429,7 +429,7 @@ export const BodyProfileView: React.FC = () => {
                 key={level.id}
                 type="button"
                 onClick={() => setActivityLevel(level.id)}
-                className={`py-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                className={`py-2 rounded-2xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
                   activityLevel === level.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -454,7 +454,7 @@ export const BodyProfileView: React.FC = () => {
                 key={goal.id}
                 type="button"
                 onClick={() => setBodyGoal(goal.id)}
-                className={`py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                className={`py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
                   bodyGoal === goal.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -475,7 +475,7 @@ export const BodyProfileView: React.FC = () => {
             value={targetWeight}
             onChange={(e) => setTargetWeight(e.target.value)}
             placeholder="65"
-            className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+            className="w-full px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -483,7 +483,7 @@ export const BodyProfileView: React.FC = () => {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+          className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -497,7 +497,7 @@ export const BodyProfileView: React.FC = () => {
       {error && (
         <p
           role="alert"
-          className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-3 text-xs font-mono text-rose-300"
+          className="rounded-2xl border border-rose-400/30 bg-rose-950/20 p-3 text-xs font-mono text-rose-300"
         >
           {error}
         </p>
@@ -508,7 +508,7 @@ export const BodyProfileView: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-3xl bg-[#17171A] border border-white/10 space-y-4"
+          className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4"
         >
           <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Results</h3>
 
@@ -533,7 +533,7 @@ export const BodyProfileView: React.FC = () => {
             </div>
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
               <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">TDEE</div>
-              <div className="text-2xl font-mono font-bold text-amber-400">
+              <div className="text-2xl font-mono font-bold text-gold">
                 {Math.round(profile.tdee || 0)}
               </div>
               <div className="text-[10px] font-mono text-[#8C8C90]">kcal/day</div>
@@ -549,9 +549,9 @@ export const BodyProfileView: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
-            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-[10px] font-mono text-amber-300/80 leading-relaxed">
+          <div className="p-3 rounded-2xl bg-gold/10 border border-gold/30 flex items-start gap-2">
+            <Info className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+            <p className="text-[10px] font-mono text-gold/80 leading-relaxed">
               These are estimates based on the Mifflin-St Jeor equation. They are not medical
               prescriptions. Consult a healthcare professional for personalized dietary advice.
             </p>
@@ -560,7 +560,7 @@ export const BodyProfileView: React.FC = () => {
       )}
 
       {/* Dietary preference + allergies — persisted server-side */}
-      <div className="p-5 rounded-3xl bg-[#17171A] border border-white/10 space-y-3">
+      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
         <h3 className="font-anton text-sm text-white uppercase tracking-wide">Diet & Allergies</h3>
         <div className="space-y-1">
           <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
@@ -580,7 +580,7 @@ export const BodyProfileView: React.FC = () => {
                   setDietaryPref(d.id);
                   setNutritionDirty(true);
                 }}
-                className={`py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                className={`py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
                   dietaryPref === d.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -608,9 +608,9 @@ export const BodyProfileView: React.FC = () => {
                     );
                     setNutritionDirty(true);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-2xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
                     active
-                      ? "bg-amber-500/20 border border-amber-500/50 text-amber-300"
+                      ? "bg-gold/20 border border-gold/50 text-gold"
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
                   }`}
                 >
@@ -648,7 +648,7 @@ export const BodyProfileView: React.FC = () => {
               setSavingNutrition(false);
             }
           }}
-          className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
+          className="w-full py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
         >
           {savingNutrition
             ? "Saving..."
@@ -663,7 +663,7 @@ export const BodyProfileView: React.FC = () => {
 
       {/* Food suggestions */}
       {foodSuggestions && (
-        <div className="p-5 rounded-3xl bg-[#17171A] border border-white/10 space-y-3">
+        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
           <div className="flex items-center gap-2">
             <Apple className="w-4 h-4 text-[#C81E3A]" />
             <h3 className="font-anton text-sm text-white uppercase tracking-wide">
@@ -676,7 +676,7 @@ export const BodyProfileView: React.FC = () => {
               (food, i) => (
                 <div
                   key={i}
-                  className="px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/5 text-xs font-mono text-white"
+                  className="px-3 py-2 rounded-2xl bg-[#0B0B0C] border border-white/5 text-xs font-mono text-white"
                 >
                   {food}
                 </div>

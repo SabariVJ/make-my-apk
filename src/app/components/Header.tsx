@@ -26,11 +26,11 @@ export const Header: React.FC<{
           onClick={() => setIsEditProfileOpen(true)}
         >
           <div className="relative group">
-            <div className="w-9 h-9 rounded-xl bg-[#17171A] border border-white/[0.08] flex items-center justify-center font-anton text-lg text-[#C81E3A] group-hover:border-[#C81E3A]/40 transition-colors">
+            <div className="w-9 h-9 rounded-2xl bg-[#17171A] border border-white/[0.08] flex items-center justify-center font-anton text-lg text-[#C81E3A] group-hover:border-[#C81E3A]/40 transition-colors">
               SVJ
             </div>
             {user.isPremium && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[10px] text-black font-bold">
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gold flex items-center justify-center text-[10px] text-black font-bold">
                 <Crown className="w-2.5 h-2.5" />
               </div>
             )}
@@ -40,7 +40,7 @@ export const Header: React.FC<{
               <span className="font-anton tracking-wider text-base text-[#F4F2ED]">SVJ</span>
               {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
               {user.isFounder && (
-                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-mono font-bold flex items-center gap-0.5">
+                <span className="px-1.5 py-0.2 rounded-2xl bg-gold/20 text-gold border border-gold/30 text-[9px] font-mono font-bold flex items-center gap-0.5">
                   <Crown className="w-2.5 h-2.5" /> FOUNDER
                 </span>
               )}
@@ -106,9 +106,9 @@ export const Header: React.FC<{
           <motion.div
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-white/[0.06] text-[11px] font-inter font-medium"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-gold/20 text-[11px] font-mono font-medium"
           >
-            <Flame className="w-4 h-4 text-orange-500 fill-orange-500/30" />
+            <Flame className="w-4 h-4 text-gold fill-gold/30" />
             <span className="text-[#F4F2ED]">{user.currentStreak}d</span>
           </motion.div>
 
@@ -116,7 +116,7 @@ export const Header: React.FC<{
           <motion.div
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-[#C81E3A]/20 text-[11px] font-inter font-medium text-[#F4F2ED]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-[#C81E3A]/20 text-[11px] font-mono font-medium text-[#F4F2ED]"
           >
             <Zap className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />
             <span>{user.totalXP.toLocaleString()} XP</span>

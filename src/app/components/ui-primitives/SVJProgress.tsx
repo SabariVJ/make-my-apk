@@ -15,7 +15,7 @@ export const SVJProgress: React.FC<{
 
   const gradients: Record<string, string> = {
     crimson: "from-[#8C1327] to-[#C81E3A]",
-    amber: "from-amber-600 to-amber-400",
+    amber: "from-gold to-gold",
     emerald: "from-emerald-600 to-emerald-400",
     gold: "from-[#997a15] to-[#d4af37]",
   };

@@ -15,7 +15,7 @@ const UTILITY_ICONS: Record<string, typeof Users> = {
 const isActiveUtility = (itemId: ActiveTab, activeTab: ActiveTab) => activeTab === itemId;
 
 const railButtonClass = (active: boolean) =>
-  `relative flex w-full flex-col items-center gap-1 rounded-xl px-2 py-3 transition-colors svj-press ${
+  `relative flex w-full flex-col items-center gap-1 rounded-2xl px-2 py-3 transition-colors svj-press ${
     active
       ? "bg-[#C81E3A]/15 text-[#F4F2ED]"
       : "text-[#8C8C90] hover:bg-white/[0.04] hover:text-[#F4F2ED]"
@@ -132,7 +132,7 @@ export const UtilityDrawer: React.FC<{
                       setActiveTab(item.id);
                       onClose();
                     }}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
                       active
                         ? "bg-[#C81E3A]/15 text-[#F4F2ED]"
                         : "text-[#8C8C90] hover:bg-white/[0.04] hover:text-white"

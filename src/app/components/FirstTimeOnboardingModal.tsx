@@ -76,11 +76,11 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-3xl p-6 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
+          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
         >
           {/* Ambient Lighting */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/20 blur-3xl rounded-full pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
 
           {/* Top Banner */}
           <div className="relative z-10 text-center mb-6 space-y-2">
@@ -109,7 +109,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     key={av.id}
                     type="button"
                     onClick={() => setSelectedAvatar(av.url)}
-                    className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                       selectedAvatar === av.url
                         ? "border-[#C81E3A] scale-105 shadow-lg shadow-[#C81E3A]/40"
                         : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
@@ -139,7 +139,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Victor Archer"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
                   />
                 </div>
@@ -158,7 +158,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
                     placeholder="e.g. victor_svj"
-                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
+                    className="w-full pl-8 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C81E3A] transition-colors"
                     required
                   />
                 </div>
@@ -176,7 +176,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     key={goal}
                     type="button"
                     onClick={() => setSelectedGoal(goal)}
-                    className={`px-3 py-2 rounded-xl text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
+                    className={`px-3 py-2 rounded-2xl text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
                       selectedGoal === goal
                         ? "bg-[#C81E3A] text-white border-[#C81E3A] shadow-md"
                         : "bg-[#0B0B0C] text-[#8C8C90] border-white/10 hover:text-white"
@@ -198,7 +198,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="e.g. Obsessed with 1% compound progress daily."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
               />
             </div>
 
@@ -214,7 +214,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. London, UK or Mumbai, India"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-white font-inter text-sm focus:outline-none focus:border-[#C81E3A]"
                 />
               </div>
             </div>

@@ -195,7 +195,7 @@ const HistoryPanel: React.FC<{
       </div>
       <div className="svj-stat p-2.5 text-center">
         <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg KCAL</div>
-        <div className="font-mono text-sm font-bold text-amber-400">
+        <div className="font-mono text-sm font-bold text-gold">
           {summary.averageActiveKcal.toLocaleString()}
         </div>
       </div>
@@ -224,7 +224,7 @@ export const ActivityView: React.FC = () => {
   const activity = useActivityOptional();
   if (!activity) {
     return (
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-6 text-center space-y-2">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 text-center space-y-2">
         <p className="font-anton text-lg uppercase tracking-wider text-white">
           Activity Unavailable
         </p>
@@ -304,8 +304,8 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
     <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
             <ActivityIcon className="w-5 h-5 text-[#E62846]" />
           </div>
           <h1 className="font-anton text-2xl uppercase tracking-wider text-white">Activity</h1>
@@ -315,7 +315,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             trackingStatus === "tracking"
               ? "bg-emerald-500/10 text-emerald-400"
               : trackingStatus === "starting"
-                ? "bg-amber-500/10 text-amber-400"
+                ? "bg-gold/10 text-gold"
                 : "bg-white/[0.04] text-[#8C8C90]"
           }`}
         >
@@ -343,7 +343,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             void stopTracking();
           else void startTracking();
         }}
-        className="mb-5 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
+        className="mb-5 w-full rounded-2xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
       >
         {trackingStatus === "update-required"
           ? "APP UPDATE REQUIRED"
@@ -413,7 +413,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
         <>
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 mb-5">
+          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
             <div className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
               Today&apos;s Activity
             </div>
@@ -434,7 +434,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
                 </div>
               </ProgressRing>
               {stepSource === "accelerometer" && (
-                <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-amber-300">
+                <div className="mt-2 rounded-lg border border-gold/25 bg-gold/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-gold">
                   Estimated steps — accelerometer motion detection
                 </div>
               )}
@@ -457,10 +457,10 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
           </div>
 
           {/* Calories */}
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 mb-5">
+          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-400" />
+                <Flame className="w-4 h-4 text-gold" />
                 <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
                   Calories Burned
                 </span>
@@ -470,10 +470,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             <div className="grid grid-cols-2 gap-2">
               <div className="svj-stat p-3">
                 <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Active Calories</div>
-                <LiveNumber
-                  value={activeKcal}
-                  className="font-mono text-2xl font-bold text-amber-400"
-                />
+                <LiveNumber value={activeKcal} className="font-mono text-2xl font-bold text-gold" />
                 <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
                   KCAL · from movement
                 </div>
@@ -498,7 +495,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
                   initial={{ width: 0 }}
                   animate={{ width: `${kcalPercent}%` }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400"
+                  className="h-full rounded-full bg-gradient-to-r from-gold to-gold"
                 />
               </div>
             </div>
@@ -526,7 +523,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
       {/* How XP works */}
       <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-amber-400" />
+          <Trophy className="w-4 h-4 text-gold" />
           <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
             Step XP
           </span>
@@ -542,7 +539,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             return (
               <div
                 key={m.steps}
-                className={`rounded-xl p-2 text-center ${
+                className={`rounded-2xl p-2 text-center ${
                   reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
                 }`}
               >
@@ -568,10 +565,10 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
 
       {/* Developer diagnostics — only render when the explicit opt-in or a dev/test bundle enables them. */}
       {showDiagnostics && debugInfo && (
-        <div className="rounded-2xl border border-amber-500/30 bg-black/60 p-4 mb-4">
+        <div className="rounded-2xl border border-gold/30 bg-black/60 p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <Cpu className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400">
+            <Cpu className="w-3.5 h-3.5 text-gold" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-gold">
               ANDROID PEDOMETER DEBUG
             </span>
             <span className="text-[9px] font-mono text-[#8C8C90]">
@@ -655,7 +652,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             onClick={() => {
               void getSensorInfo();
             }}
-            className="mt-3 text-[10px] font-mono text-amber-400 underline"
+            className="mt-3 text-[10px] font-mono text-gold underline"
           >
             Refresh diagnostics
           </button>
@@ -664,7 +661,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
               {debugInfo.notes.slice(0, 40).map((n, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[9px] font-mono text-amber-300 break-all"
+                  className="inline-block rounded-2xl bg-gold/10 border border-gold/20 px-1.5 py-0.5 text-[9px] font-mono text-gold break-all"
                 >
                   {n}
                 </span>
@@ -672,7 +669,7 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             </div>
           )}
           {debugInfo.lastError && (
-            <div className="mt-2 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/5 p-2 text-[10px] font-mono text-red-400">
+            <div className="mt-2 flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-2 text-[10px] font-mono text-crimson">
               <AlertCircle className="mt-0.5 shrink-0" />
               <span>{debugInfo.lastError}</span>
             </div>

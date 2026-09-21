@@ -318,7 +318,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             onClick={onBack}
             aria-label="Back to history"
             data-testid="detail-back"
-            className="rounded-xl border border-white/10 bg-black/40 p-2 text-[#8C8C90] hover:text-white"
+            className="rounded-2xl border border-white/10 bg-black/40 p-2 text-[#8C8C90] hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -335,13 +335,13 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="flex-1 text-[11px] font-mono text-red-300">{error}</p>
+        <div className="flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-crimson" />
+          <p className="flex-1 text-[11px] font-mono text-crimson">{error}</p>
         </div>
       )}
       {notice && (
-        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 text-[11px] font-mono text-emerald-200">
+        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-3 text-[11px] font-mono text-emerald-200">
           {notice}
         </div>
       )}
@@ -353,7 +353,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             key={entry.id}
             type="button"
             onClick={() => setSection(entry.id)}
-            className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`shrink-0 rounded-2xl border px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
               section === entry.id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
@@ -384,7 +384,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
         <>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {metrics.map((metric) => (
-              <div key={metric.label} className="rounded-xl border border-white/5 bg-black/40 p-3">
+              <div key={metric.label} className="rounded-2xl border border-white/5 bg-black/40 p-3">
                 <div className="mb-1 flex items-center gap-1.5">
                   {metric.icon}
                   <span className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
@@ -625,14 +625,14 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                     onChange={(event) => setRouteName(event.target.value)}
                     placeholder="Route name"
                     aria-label="Route name"
-                    className="flex-1 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
+                    className="flex-1 rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
                   />
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void saveRoute()}
                     data-testid="save-route"
-                    className="rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                    className="rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
                   >
                     {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
                   </button>
@@ -656,7 +656,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                     onChange={(event) => setSegmentName(event.target.value)}
                     placeholder="Segment name"
                     aria-label="Segment name"
-                    className="w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
                   />
                   <div className="flex items-center gap-2">
                     <label className="flex-1 text-[10px] font-mono text-[#8C8C90]">
@@ -666,7 +666,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                         onChange={(event) => setSegmentStart(event.target.value)}
                         inputMode="numeric"
                         aria-label="Segment start point index"
-                        className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white focus:border-[#C81E3A]/60 focus:outline-none"
+                        className="mt-1 w-full rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white focus:border-[#C81E3A]/60 focus:outline-none"
                       />
                     </label>
                     <label className="flex-1 text-[10px] font-mono text-[#8C8C90]">
@@ -677,7 +677,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                         inputMode="numeric"
                         placeholder={String(track?.points.length ? track.points.length - 1 : "")}
                         aria-label="Segment end point index"
-                        className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
+                        className="mt-1 w-full rounded-2xl border border-white/10 bg-black/50 px-3 py-2 text-[11px] font-mono text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A]/60 focus:outline-none"
                       />
                     </label>
                   </div>
@@ -686,7 +686,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                     disabled={busy || !track}
                     onClick={() => void makeSegment()}
                     data-testid="create-segment"
-                    className="w-full rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                    className="w-full rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white disabled:opacity-50"
                   >
                     Create segment
                   </button>

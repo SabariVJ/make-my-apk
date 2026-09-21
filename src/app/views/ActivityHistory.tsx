@@ -71,7 +71,7 @@ export const CompletedSessionCard: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-b from-[#C81E3A]/10 to-[#0B0B0C] p-5 mb-5"
+      className="rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-b from-[#C81E3A]/10 to-[#0B0B0C] p-4 mb-5"
       data-testid="workout-complete"
     >
       <p className="font-anton text-lg uppercase tracking-wider text-white">WORKOUT COMPLETE</p>
@@ -79,13 +79,13 @@ export const CompletedSessionCard: React.FC = () => {
         {ACTIVITY_TYPE_LABELS[type]}
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-black/40 border border-white/5 p-3">
+        <div className="rounded-2xl bg-black/40 border border-white/5 p-3">
           <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Duration</div>
           <div className="font-mono text-xl font-bold text-white">
             {formatDurationLabel(session.durationSeconds)}
           </div>
         </div>
-        <div className="rounded-xl bg-black/40 border border-white/5 p-3">
+        <div className="rounded-2xl bg-black/40 border border-white/5 p-3">
           <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Steps</div>
           <div className="font-mono text-xl font-bold text-white">
             {session.stepCount.toLocaleString()}
@@ -139,7 +139,7 @@ export const CompletedSessionCard: React.FC = () => {
         (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0) && (
           <div
             data-testid="activity-rewards"
-            className="mt-2 rounded-xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
+            className="mt-2 rounded-2xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
           >
             {rewards.xpAwarded > 0 && (
               <p className="text-[11px] font-mono font-bold text-[#C81E3A]">
@@ -156,21 +156,21 @@ export const CompletedSessionCard: React.FC = () => {
               );
             })}
             {rewards.prBonusAwarded > 0 && (
-              <p className="mt-0.5 text-[10px] font-mono text-amber-300">NEW PR 🔥</p>
+              <p className="mt-0.5 text-[10px] font-mono text-gold">NEW PR 🔥</p>
             )}
           </div>
         )}
 
       {activity.saveState === "error" && activity.lastSaveError && (
-        <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-          <p role="alert" className="flex items-start gap-1.5 text-[11px] font-mono text-red-400">
+        <div className="mt-3 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+          <p role="alert" className="flex items-start gap-1.5 text-[11px] font-mono text-crimson">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             COULDN'T SAVE ACTIVITY — {activity.lastSaveError}
           </p>
           <button
             type="button"
             onClick={() => void activity.retrySaveCompletedSession()}
-            className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+            className="mt-2 rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -320,12 +320,12 @@ export const ActivityHistory: React.FC = () => {
       )}
 
       {state === "error" && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-center">
-          <p className="text-[11px] font-mono text-red-400 mb-2">{error}</p>
+        <div className="rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
+          <p className="text-[11px] font-mono text-crimson mb-2">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -350,7 +350,7 @@ export const ActivityHistory: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelected(item)}
-                className="w-full rounded-xl border border-white/5 bg-black/40 p-3 text-left transition-colors hover:border-[#C81E3A]/40"
+                className="w-full rounded-2xl border border-white/5 bg-black/40 p-3 text-left transition-colors hover:border-[#C81E3A]/40"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
@@ -521,10 +521,10 @@ const ActivityDetail: React.FC<{
 
           {detail && detail.records.length > 0 && (
             <div
-              className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3"
+              className="rounded-2xl border border-gold/40 bg-gold/5 p-3"
               data-testid="strength-detail-pr"
             >
-              <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-300">
+              <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-gold">
                 <Trophy className="h-3.5 w-3.5" /> Personal Record
               </p>
               <ul className="mt-1.5 space-y-1">
@@ -546,7 +546,7 @@ const ActivityDetail: React.FC<{
           )}
 
           {detail && detail.exercises.length === 0 && (
-            <p className="rounded-xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono text-[#8C8C90]">
+            <p className="rounded-2xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono text-[#8C8C90]">
               Logged without structured sets — no exercise history or protected records.
             </p>
           )}
@@ -571,7 +571,7 @@ const ActivityDetail: React.FC<{
 
           {detail && detail.goalContributions.length > 0 && (
             <div
-              className="rounded-xl border border-[#C81E3A]/25 bg-black/40 p-3"
+              className="rounded-2xl border border-[#C81E3A]/25 bg-black/40 p-3"
               data-testid="strength-detail-goals"
             >
               <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-white">
@@ -596,7 +596,7 @@ const ActivityDetail: React.FC<{
               <Loader2 className="h-3 w-3 animate-spin" /> Loading workout…
             </p>
           )}
-          {detailError && <p className="text-[10px] font-mono text-red-400">{detailError}</p>}
+          {detailError && <p className="text-[10px] font-mono text-crimson">{detailError}</p>}
         </div>
       )}
     </div>
@@ -604,7 +604,7 @@ const ActivityDetail: React.FC<{
 };
 
 const DetailStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-xl border border-white/5 bg-black/40 p-2 text-center">
+  <div className="rounded-2xl border border-white/5 bg-black/40 p-2 text-center">
     <div className="text-[9px] font-mono uppercase text-[#8C8C90]">{label}</div>
     <div className="font-mono text-sm font-bold text-white">{value}</div>
   </div>
@@ -668,7 +668,7 @@ const ManualActivityForm: React.FC<{
   return (
     <form
       onSubmit={(e) => void submit(e)}
-      className="mb-3 space-y-2 rounded-xl border border-white/10 bg-black/40 p-3"
+      className="mb-3 space-y-2 rounded-2xl border border-white/10 bg-black/40 p-3"
       data-testid="manual-activity-form"
     >
       <div className="flex items-center justify-between">
@@ -738,7 +738,7 @@ const ManualActivityForm: React.FC<{
         className="w-full rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white placeholder:text-[#8C8C90]/60"
       />
       {error && (
-        <p role="alert" className="text-[10px] font-mono text-red-400">
+        <p role="alert" className="text-[10px] font-mono text-crimson">
           {error}
         </p>
       )}

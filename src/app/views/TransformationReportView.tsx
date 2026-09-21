@@ -48,10 +48,10 @@ interface StatChange {
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 const STAT_CONFIG = [
-  { key: "fitness", label: "Fitness", icon: Dumbbell, color: "text-orange-400" },
+  { key: "fitness", label: "Fitness", icon: Dumbbell, color: "text-gold" },
   { key: "discipline", label: "Discipline", icon: Shield, color: "text-blue-400" },
   { key: "focus", label: "Focus", icon: Brain, color: "text-purple-400" },
-  { key: "confidence", label: "Confidence", icon: Zap, color: "text-amber-400" },
+  { key: "confidence", label: "Confidence", icon: Zap, color: "text-gold" },
   { key: "social", label: "Social", icon: Users, color: "text-teal-400" },
   { key: "nutrition", label: "Nutrition", icon: Apple, color: "text-green-400" },
   { key: "recovery", label: "Recovery", icon: Clock, color: "text-sky-400" },
@@ -288,7 +288,7 @@ export const TransformationReportView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="relative rounded-3xl bg-[#17171A] border border-white/10 p-6 overflow-hidden">
+      <div className="relative rounded-2xl bg-[#17171A] border border-white/10 p-4 overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-[10px] font-mono text-[#C81E3A] uppercase tracking-widest mb-1">
@@ -333,7 +333,7 @@ export const TransformationReportView: React.FC = () => {
         </div>
         <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-3.5 h-3.5 text-gold" />
             Stats Improved
           </div>
           <div className="font-mono text-xl font-bold text-white">
@@ -343,7 +343,7 @@ export const TransformationReportView: React.FC = () => {
       </div>
 
       {/* Stat Changes Bar */}
-      <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
+      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
           <h3 className="font-anton text-sm uppercase tracking-wider text-white">
@@ -415,11 +415,11 @@ export const TransformationReportView: React.FC = () => {
       )}
 
       {/* Insights */}
-      <div className="p-5 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
+      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
         <h3 className="font-anton text-sm uppercase tracking-wider text-white">Insights</h3>
 
         {mostImproved && mostImproved.delta > 0 && (
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-950/30 border border-emerald-800/30">
+          <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-950/30 border border-emerald-800/30">
             <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div>
               <span className="text-xs font-mono text-emerald-400 font-bold">
@@ -433,10 +433,10 @@ export const TransformationReportView: React.FC = () => {
         )}
 
         {needsAttention && needsAttention.delta <= 0 && (
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-950/30 border border-amber-800/30">
-            <Target className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3 rounded-2xl bg-gold/30 border border-gold/30">
+            <Target className="w-4 h-4 text-gold shrink-0 mt-0.5" />
             <div>
-              <span className="text-xs font-mono text-amber-400 font-bold">
+              <span className="text-xs font-mono text-gold font-bold">
                 Needs Attention: {needsAttention.label}
               </span>
               <p className="text-[11px] text-[#B8B8C0] mt-0.5">
@@ -447,7 +447,7 @@ export const TransformationReportView: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-start gap-3 p-3 rounded-xl bg-[#0B0B0C] border border-white/5">
+        <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#0B0B0C] border border-white/5">
           <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0 mt-0.5" />
           <div>
             <span className="text-xs font-mono text-[#C81E3A] font-bold">

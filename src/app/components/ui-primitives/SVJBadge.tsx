@@ -12,7 +12,7 @@ export const SVJBadge: React.FC<{
 }> = ({ variant = "subtle", children, className = "" }) => {
   const styles: Record<BadgeVariant, string> = {
     crimson: "bg-[#C81E3A]/10 text-[#C81E3A] border border-[#C81E3A]/25",
-    amber: "bg-amber-500/10 text-amber-400 border border-amber-500/25",
+    amber: "bg-gold/10 text-gold border border-gold/25",
     emerald: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25",
     purple: "bg-purple-500/10 text-purple-400 border border-purple-500/25",
     gold: "bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/25",
@@ -21,7 +21,7 @@ export const SVJBadge: React.FC<{
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-inter font-semibold tracking-wide uppercase ${styles[variant]} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-2xl text-[10px] font-inter font-semibold tracking-wide uppercase ${styles[variant]} ${className}`}
     >
       {children}
     </span>

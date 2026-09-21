@@ -46,8 +46,8 @@ const STAT_DISPLAY: StatDisplay[] = [
     key: "fitness",
     label: "Fitness",
     icon: Dumbbell,
-    color: "text-orange-400",
-    gradient: "from-orange-500 to-red-500",
+    color: "text-gold",
+    gradient: "from-gold to-crimson",
   },
   {
     key: "discipline",
@@ -67,8 +67,8 @@ const STAT_DISPLAY: StatDisplay[] = [
     key: "confidence",
     label: "Confidence",
     icon: Zap,
-    color: "text-amber-400",
-    gradient: "from-amber-500 to-yellow-500",
+    color: "text-gold",
+    gradient: "from-gold to-yellow-500",
   },
   {
     key: "social",
@@ -113,7 +113,7 @@ function getStatLevel(score: number): string {
 function getStatColor(score: number): string {
   if (score >= 80) return "text-emerald-400";
   if (score >= 60) return "text-blue-400";
-  if (score >= 40) return "text-amber-400";
+  if (score >= 40) return "text-gold";
   return "text-rose-400";
 }
 
@@ -220,7 +220,7 @@ function PriorityCard({ areas, reason }: { areas: string[]; reason: string }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="p-5 rounded-2xl bg-gradient-to-br from-[#2A1218] via-[#17171A] to-[#17171A] border border-[#C81E3A]/30"
+      className="p-4 rounded-2xl bg-gradient-to-br from-[#2A1218] via-[#17171A] to-[#17171A] border border-[#C81E3A]/30"
     >
       <div className="flex items-center gap-2 mb-3">
         <Target className="w-5 h-5 text-[#C81E3A]" />
@@ -233,7 +233,7 @@ function PriorityCard({ areas, reason }: { areas: string[]; reason: string }) {
         {areas.map((area) => (
           <span
             key={area}
-            className="px-3 py-1 rounded-xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-xs font-mono font-bold"
+            className="px-3 py-1 rounded-2xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-xs font-mono font-bold"
           >
             {area}
           </span>
@@ -268,13 +268,14 @@ function MissionCard({
     difficulty === "Easy"
       ? "bg-emerald-950/80 text-emerald-400 border-emerald-800"
       : difficulty === "Medium"
-        ? "bg-amber-950/80 text-amber-400 border-amber-800"
+        ? "bg-gold/80 text-gold border-gold"
         : difficulty === "Hard"
           ? "bg-rose-950/80 text-rose-400 border-rose-800"
           : "bg-purple-950/80 text-purple-300 border-purple-800";
 
   return (
     <motion.button
+      whileTap={{ scale: 0.97 }}
       type="button"
       onClick={onOpen}
       initial={{ opacity: 0, x: -20 }}
@@ -282,13 +283,13 @@ function MissionCard({
       transition={{ delay: index * 0.08 }}
       className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-white/20 transition-colors text-left cursor-pointer"
     >
-      <div className="w-10 h-10 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center shrink-0">
+      <div className="w-10 h-10 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center shrink-0">
         <span className="text-lg">🎯</span>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h4 className="font-inter font-semibold text-sm text-white truncate">{title}</h4>
-          <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono border ${diffColor}`}>
+          <span className={`px-1.5 py-0.5 rounded-2xl text-[9px] font-mono border ${diffColor}`}>
             {difficulty}
           </span>
         </div>
@@ -421,13 +422,13 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 overflow-hidden">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-[11px] font-inter text-[#C81E3A] uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5" />
             <span>MY SVJ PLAN</span>
             {!isPlus && (
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold">
+              <span className="px-2 py-0.5 rounded-2xl bg-gold/15 border border-gold/40 text-gold font-bold">
                 PLUS FEATURE
               </span>
             )}
@@ -441,7 +442,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
       {!isPlus ? (
         /* Upgrade prompt for free users */
-        <div className="p-6 rounded-2xl bg-[#17171A] border border-white/[0.06] text-center space-y-4">
+        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06] text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center mx-auto">
             <Sparkles className="w-8 h-8 text-[#C81E3A]" />
           </div>
@@ -480,7 +481,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                 Strongest: <span className="text-emerald-400">{strongest[0]}</span>
               </div>
               <div className="text-[11px] font-inter text-[#8C8C90]">
-                Focus Area: <span className="text-amber-400">{weakest[0]}</span>
+                Focus Area: <span className="text-gold">{weakest[0]}</span>
               </div>
             </div>
           </div>
@@ -490,7 +491,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
           {/* Weekly Analysis — real stored data only (stat deltas vs
               assessment baseline, recorded activity trend, recovery trend). */}
-          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/[0.06]">
+          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="font-anton text-sm uppercase tracking-wider text-white">
@@ -510,21 +511,21 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                   return (
                     <li
                       key={label}
-                      className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2"
+                      className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-3 py-2"
                     >
                       <span>{label}</span>
-                      <span className={delta >= 0 ? "text-emerald-400" : "text-amber-400"}>
+                      <span className={delta >= 0 ? "text-emerald-400" : "text-gold"}>
                         {delta >= 0 ? "▲ +" : "▼ "}
                         {delta} since assessment
                       </span>
                     </li>
                   );
                 })}
-              <li className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2">
+              <li className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-3 py-2">
                 <span>Activity (30d)</span>
                 <span className="text-white">{history30.length} days recorded</span>
               </li>
-              <li className="flex items-center justify-between rounded-xl border border-white/5 bg-black/40 px-3 py-2">
+              <li className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-3 py-2">
                 <span>Readiness (today)</span>
                 <span className="text-white">{readinessScore ?? "No check-in"}</span>
               </li>
@@ -620,7 +621,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           </div>
 
           {/* Week Summary */}
-          <div className="p-5 rounded-2xl bg-[#17171A] border border-white/[0.06]">
+          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="font-anton text-sm uppercase tracking-wider text-white">
@@ -654,7 +655,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
       )}
       {selectedMission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-5 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-mono uppercase text-[#C81E3A]">
@@ -673,7 +674,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
               </button>
             </div>
             <p className="mt-4 text-sm text-[#B8B8C0]">{selectedMission.description}</p>
-            <div className="mt-4 rounded-xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-white">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-white">
               +{selectedMission.xp} XP • Start or continue this mission from Challenges. Opening
               this detail does not complete it.
             </div>
@@ -683,7 +684,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                 setSelectedMission(null);
                 onNavigateToChallenges?.();
               }}
-              className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
+              className="mt-4 w-full rounded-2xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
             >
               Go to Challenges
             </button>

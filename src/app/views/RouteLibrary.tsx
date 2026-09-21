@@ -139,20 +139,20 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <p className="flex-1 text-[11px] font-mono text-red-300">{error}</p>
+        <div className="flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-crimson" />
+          <p className="flex-1 text-[11px] font-mono text-crimson">{error}</p>
         </div>
       )}
 
       {loading && routes.length === 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-black/40 p-4 text-[11px] font-mono text-[#8C8C90]">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/5 bg-black/40 p-4 text-[11px] font-mono text-[#8C8C90]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading routes…
         </div>
       )}
 
       {!loading && routes.length === 0 && (
-        <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-5 text-center">
+        <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 text-center">
           <Bookmark className="mx-auto mb-2 h-5 w-5 text-[#8C8C90]" />
           <p className="text-[11px] font-mono text-[#8C8C90]">
             No saved routes yet. Record a workout, open it, and use “Save as route”.
@@ -174,11 +174,11 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
               aria-label={route.favorite ? "Remove from favourites" : "Add to favourites"}
               className={`rounded-lg border p-1.5 ${
                 route.favorite
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                  ? "border-gold/40 bg-gold/10 text-gold"
                   : "border-white/10 text-[#8C8C90] hover:text-white"
               }`}
             >
-              <Star className={`h-3.5 w-3.5 ${route.favorite ? "fill-amber-400" : ""}`} />
+              <Star className={`h-3.5 w-3.5 ${route.favorite ? "fill-gold" : ""}`} />
             </button>
 
             <div className="min-w-0 flex-1">
@@ -232,7 +232,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     type="button"
                     onClick={() => onStartRoute(route)}
                     data-testid="start-from-route"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                   >
                     <Play className="h-3.5 w-3.5" />
                     Start workout
@@ -244,7 +244,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     setEditing(route.id);
                     setDraftName(route.name);
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Rename
@@ -254,7 +254,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                   disabled={busy}
                   onClick={() => void remove(route)}
                   data-testid="delete-route"
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C8C90] disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C8C90] disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete

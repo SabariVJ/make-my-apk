@@ -229,7 +229,7 @@ function ScaleSlider({
             key={v}
             type="button"
             onClick={() => onChange(v)}
-            className={`flex-1 h-10 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
               value === v
                 ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
                 : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -398,7 +398,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                     key={goal.id}
                     type="button"
                     onClick={() => toggleGoal(goal.id)}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                       answers.goals.includes(goal.id)
                         ? "bg-[#C81E3A]/20 border-[#C81E3A] text-white"
                         : "bg-[#17171A] border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -466,7 +466,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={desc}
                         type="button"
                         onClick={() => updateAnswer("socialSelfDescription", desc)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-2xl text-xs font-mono transition-all cursor-pointer ${
                           answers.socialSelfDescription === desc
                             ? "bg-[#C81E3A] text-white"
                             : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -658,7 +658,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={level.id}
                         type="button"
                         onClick={() => updateAnswer("fitnessActivityLevel", level.id)}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           answers.fitnessActivityLevel === level.id
                             ? "bg-[#C81E3A]/20 border-[#C81E3A] text-white"
                             : "bg-[#17171A] border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -678,7 +678,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={d}
                         type="button"
                         onClick={() => updateAnswer("fitnessDaysPerWeek", d)}
-                        className={`flex-1 h-10 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer ${
+                        className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
                           answers.fitnessDaysPerWeek === d
                             ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
                             : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -718,7 +718,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={h}
                         type="button"
                         onClick={() => updateAnswer("recoverySleepHours", h)}
-                        className={`flex-1 h-10 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer ${
+                        className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
                           answers.recoverySleepHours === h
                             ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
                             : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -768,7 +768,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         key={pref.id}
                         type="button"
                         onClick={() => updateAnswer("nutritionDietaryPreference", pref.id)}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           answers.nutritionDietaryPreference === pref.id
                             ? "bg-[#C81E3A]/20 border-[#C81E3A] text-white"
                             : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -809,7 +809,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
 
         {/* Error */}
         {error && (
-          <div className="mt-4 p-3 rounded-xl border border-rose-400/30 bg-rose-950/30 text-sm text-rose-200">
+          <div className="mt-4 p-3 rounded-2xl border border-rose-400/30 bg-rose-950/30 text-sm text-rose-200">
             {error}
           </div>
         )}
@@ -820,7 +820,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             <button
               type="button"
               onClick={() => setCurrentStep((s) => s - 1)}
-              className="px-4 py-3 rounded-xl border border-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+              className="px-4 py-3 rounded-2xl border border-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -829,7 +829,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             type="button"
             onClick={handleNext}
             disabled={!canProceed() || saving}
-            className="flex-1 py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />

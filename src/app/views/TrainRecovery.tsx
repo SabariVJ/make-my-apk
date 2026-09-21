@@ -69,7 +69,7 @@ const ScaleInput: React.FC<{
   high: string;
   testId: string;
 }> = ({ label, value, onChange, low, high, testId }) => (
-  <div className="rounded-xl border border-white/5 bg-black/40 p-3" data-testid={testId}>
+  <div className="rounded-2xl border border-white/5 bg-black/40 p-3" data-testid={testId}>
     <div className="mb-1 flex items-center justify-between">
       <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white">
         {label}
@@ -200,12 +200,12 @@ export const TrainRecovery: React.FC = () => {
       )}
 
       {error && (
-        <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-center">
-          <p className="mb-2 text-[11px] font-mono text-red-400">{error}</p>
+        <div className="mb-3 rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
+          <p className="mb-2 text-[11px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
           >
             Retry
           </button>
@@ -215,7 +215,7 @@ export const TrainRecovery: React.FC = () => {
       {!loading && readiness && (
         <>
           {/* Score summary */}
-          <div className="mb-4 flex items-center gap-4 rounded-xl border border-white/5 bg-black/40 p-4">
+          <div className="mb-4 flex items-center gap-4 rounded-2xl border border-white/5 bg-black/40 p-4">
             <ScoreRing score={readiness.score} />
             <div className="min-w-0 flex-1 space-y-1.5">
               <div>
@@ -257,18 +257,18 @@ export const TrainRecovery: React.FC = () => {
           </div>
 
           {/* Today advice */}
-          <p className="mb-4 rounded-xl border border-[#C81E3A]/25 bg-[#C81E3A]/10 px-3 py-2 text-xs font-mono text-white">
+          <p className="mb-4 rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/10 px-3 py-2 text-xs font-mono text-white">
             <span className="mr-1.5 font-bold uppercase text-[#C81E3A]">Today</span>
             {readiness.todayAdvice}
           </p>
 
           {/* Daily check-in */}
-          <div className="mb-3 rounded-xl border border-white/5 bg-black/30 p-3">
+          <div className="mb-3 rounded-2xl border border-white/5 bg-black/30 p-3">
             <p className="mb-2.5 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
               Daily check-in <span className="normal-case text-[#8C8C90]/70">— 30 seconds</span>
             </p>
             <label
-              className="mb-2.5 block rounded-xl border border-white/5 bg-black/40 p-3"
+              className="mb-2.5 block rounded-2xl border border-white/5 bg-black/40 p-3"
               data-testid="recovery-sleep"
             >
               <span className="mb-1.5 block text-[10px] font-mono font-bold uppercase tracking-widest text-white">
@@ -316,7 +316,7 @@ export const TrainRecovery: React.FC = () => {
               type="button"
               onClick={() => void submit()}
               disabled={saving}
-              className="mt-1 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
+              className="mt-1 w-full rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-xs font-mono font-bold tracking-widest text-white transition-colors hover:bg-[#C81E3A]/30 disabled:opacity-50"
             >
               {saving ? "SAVING…" : "SAVE CHECK-IN"}
             </button>
@@ -332,7 +332,7 @@ export const TrainRecovery: React.FC = () => {
 
           {/* 14-day trend */}
           {history.length > 0 && (
-            <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+            <div className="rounded-2xl border border-white/5 bg-black/30 p-3">
               <p className="mb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
                 Last 14 days
               </p>

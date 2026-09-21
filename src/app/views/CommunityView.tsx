@@ -190,7 +190,7 @@ export const CommunityView: React.FC = () => {
         <div className="p-1 rounded-2xl bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
           <button
             onClick={() => setActiveSubTab("feed")}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer ${
               activeSubTab === "feed"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -200,7 +200,7 @@ export const CommunityView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveSubTab("directory")}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer ${
               activeSubTab === "directory"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -210,7 +210,7 @@ export const CommunityView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveSubTab("friends")}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-colors cursor-pointer relative ${
+            className={`px-3 py-1.5 rounded-2xl font-semibold transition-colors cursor-pointer relative ${
               activeSubTab === "friends"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -248,7 +248,7 @@ export const CommunityView: React.FC = () => {
                 key={`${item.id}-${index}`}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-5 rounded-2xl bg-[#17171A] border border-white/10 space-y-4 shadow-xl"
+                className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4 shadow-xl"
               >
                 {/* Author Info Header */}
                 <div className="flex items-center justify-between">
@@ -261,7 +261,7 @@ export const CommunityView: React.FC = () => {
                       if (found) setSelectedMemberModal(found);
                     }}
                   >
-                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
+                    <div className="relative w-10 h-10 rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
                       <AvatarImage
                         src={item.userAvatar}
                         name={item.username}
@@ -276,9 +276,7 @@ export const CommunityView: React.FC = () => {
                         {item.isVerified && (
                           <Shield className="w-3.5 h-3.5 text-[#C81E3A] fill-[#C81E3A]/20" />
                         )}
-                        {item.isVIP && (
-                          <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
-                        )}
+                        {item.isVIP && <Crown className="w-3.5 h-3.5 text-gold fill-gold/20" />}
                       </div>
                       <div className="text-[10px] font-mono text-[#8C8C90]">
                         {item.userTier} Tier • {item.timestamp}
@@ -294,7 +292,7 @@ export const CommunityView: React.FC = () => {
                 </div>
 
                 {/* Activity Detail */}
-                <div className="p-3.5 rounded-xl bg-[#0B0B0C] border border-white/5 space-y-1">
+                <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 space-y-1">
                   <h3 className="font-inter font-bold text-sm text-white">{item.title}</h3>
                   <p className="text-xs text-[#8C8C90] font-inter leading-relaxed">
                     {item.details}
@@ -311,7 +309,7 @@ export const CommunityView: React.FC = () => {
                       <button
                         key={r.type}
                         onClick={() => toggleReaction(item.id, r.type)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-2xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
                           isSelected
                             ? "bg-[#C81E3A]/30 border border-[#C81E3A] text-white scale-105"
                             : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -331,7 +329,7 @@ export const CommunityView: React.FC = () => {
                       {item.comments.map((c, cIdx) => (
                         <div
                           key={`${c.id}-${cIdx}`}
-                          className="p-2.5 rounded-xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2.5"
+                          className="p-2.5 rounded-2xl bg-[#0B0B0C]/60 text-xs flex items-start gap-2"
                         >
                           <AvatarImage
                             src={c.avatar}
@@ -364,11 +362,11 @@ export const CommunityView: React.FC = () => {
                         setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
                       }
                       onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(item.id)}
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-xs text-white placeholder:text-[#8C8C90] focus:outline-none focus:border-[#C81E3A]"
+                      className="flex-1 px-3.5 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-xs text-white placeholder:text-[#8C8C90] focus:outline-none focus:border-[#C81E3A]"
                     />
                     <button
                       onClick={() => handleCommentSubmit(item.id)}
-                      className="p-2 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white cursor-pointer"
+                      className="p-2 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </button>
@@ -389,7 +387,7 @@ export const CommunityView: React.FC = () => {
               placeholder="Search members by username or tier..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
 
@@ -397,7 +395,7 @@ export const CommunityView: React.FC = () => {
           {activeSubTab === "directory" && rivalryFeedback && (
             <div
               role={rivalryFeedback.kind === "error" ? "alert" : "status"}
-              className={`flex items-start justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-xs font-mono ${
+              className={`flex items-start justify-between gap-3 rounded-2xl border px-3.5 py-2.5 text-xs font-mono ${
                 rivalryFeedback.kind === "error"
                   ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
                   : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
@@ -459,10 +457,11 @@ export const CommunityView: React.FC = () => {
                   key={m.id}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => setSelectedMemberModal(m)}
+                  whileTap={{ scale: 0.97 }}
                   className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
+                    <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-white/10">
                       <AvatarImage
                         src={m.avatar}
                         name={m.username}
@@ -479,7 +478,7 @@ export const CommunityView: React.FC = () => {
                       <div className="text-[10px] font-mono text-[#8C8C90]">
                         {m.tier} • {m.totalXP.toLocaleString()} XP
                       </div>
-                      <div className="text-[10px] font-mono text-orange-400 mt-0.5">
+                      <div className="text-[10px] font-mono text-gold mt-0.5">
                         🔥 {m.streak} day streak
                       </div>
                     </div>
@@ -498,19 +497,19 @@ export const CommunityView: React.FC = () => {
                           void handleSendRivalry(m.id);
                         }}
                         disabled={sendingId === m.id || !!sendingId}
-                        className="px-3 py-1.5 rounded-xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-2xl bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
                       >
                         {sendingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         OUTPERFORM
                       </button>
                     )}
                     {rivalryState === "outgoing_pending" && (
-                      <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-mono font-bold">
+                      <span className="px-3 py-1.5 rounded-2xl bg-gold/20 border border-gold/40 text-gold text-[10px] font-mono font-bold">
                         REQUEST SENT
                       </span>
                     )}
                     {rivalryState === "incoming_pending" && (
-                      <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] font-mono font-bold">
+                      <span className="px-3 py-1.5 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] font-mono font-bold">
                         PENDING
                       </span>
                     )}
@@ -521,7 +520,7 @@ export const CommunityView: React.FC = () => {
                           e.stopPropagation();
                           setComparingMember(m);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/30 transition-colors cursor-pointer"
                       >
                         VIEW RIVALRY
                       </button>

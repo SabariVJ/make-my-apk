@@ -524,7 +524,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           data-testid="activity-map-empty"
         >
           <MapPin className="h-5 w-5 text-white/80" />
-          <p className="rounded bg-black/65 px-3 py-1.5 text-[11px] font-mono text-white/80">
+          <p className="rounded-2xl bg-black/65 px-3 py-1.5 text-[11px] font-mono text-white/80">
             {emptyMessage}
           </p>
         </div>
@@ -559,7 +559,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
         </button>
       )}
       {tileProvider.attribution && (
-        <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
+        <span className="absolute bottom-2 right-2 rounded-2xl bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {tileProvider.attribution}
         </span>
       )}

@@ -55,16 +55,16 @@ export function TaskEditorDialog({
   };
 
   const triggerClass =
-    "w-full min-w-0 h-11 rounded-xl border-white/10 bg-[#0B0B0C] text-[#F4F2ED] font-mono text-xs focus:ring-[#C81E3A]";
+    "w-full min-w-0 h-11 rounded-2xl border-white/10 bg-[#0B0B0C] text-[#F4F2ED] font-mono text-xs focus:ring-[#C81E3A]";
   const menuClass =
-    "z-[80] rounded-xl border-white/15 bg-[#17171A] text-[#F4F2ED] shadow-2xl font-mono";
+    "z-[80] rounded-2xl border-white/15 bg-[#17171A] text-[#F4F2ED] shadow-2xl font-mono";
   const itemClass =
     "min-h-10 rounded-lg text-xs focus:bg-[#C81E3A]/20 focus:text-white data-[state=checked]:text-[#F4F2ED]";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[calc(100%_-_2rem)] max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border-white/10 bg-[#17171A] p-6 text-[#F4F2ED] shadow-2xl"
+        className="w-[calc(100%_-_2rem)] max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border-white/10 bg-[#17171A] p-4 text-[#F4F2ED] shadow-2xl"
         onCloseAutoFocus={(event) => {
           if (returnFocus?.isConnected) {
             event.preventDefault();
@@ -96,7 +96,7 @@ export function TaskEditorDialog({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="e.g. Read for 20 minutes"
-              className="w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#C81E3A]"
+              className="w-full rounded-2xl border border-white/10 bg-[#0B0B0C] px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#C81E3A]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -164,13 +164,13 @@ export function TaskEditorDialog({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5"
+              className="rounded-2xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="min-w-0 flex-1 rounded-xl bg-[#C81E3A] px-4 py-3 font-anton uppercase tracking-wider text-white hover:bg-[#A0182E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="min-w-0 flex-1 rounded-2xl bg-[#C81E3A] px-4 py-3 font-anton uppercase tracking-wider text-white hover:bg-[#A0182E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               {task ? "Save Changes" : "Add Task to Mission"}
             </button>

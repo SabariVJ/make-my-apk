@@ -56,11 +56,12 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
         transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
         className="relative w-full aspect-[1.586/1] rounded-2xl overflow-hidden cursor-pointer shadow-2xl shadow-black/80 border border-white/15 group"
         onClick={() => setIsFlipped(!isFlipped)}
+        whileTap={{ scale: 0.97 }}
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* CARD FRONT */}
         <div
-          className="absolute inset-0 p-5 flex flex-col justify-between bg-gradient-to-br from-[#1B1B20] via-[#111114] to-[#0A0A0C] text-[#F4F2ED]"
+          className="absolute inset-0 p-4 flex flex-col justify-between bg-gradient-to-br from-[#1B1B20] via-[#111114] to-[#0A0A0C] text-[#F4F2ED]"
           style={{ backfaceVisibility: "hidden" }}
         >
           {/* Ambient Lighting & Hologram Foil overlay */}
@@ -85,9 +86,9 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
 
             {/* Chip & Tier Badge */}
             <div className="flex items-center gap-2">
-              <div className="w-9 h-7 rounded bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-[1px] shadow-sm opacity-90">
+              <div className="w-9 h-7 rounded-2xl bg-gradient-to-br from-gold via-gold to-gold p-[1px] shadow-sm opacity-90">
                 <div className="w-full h-full bg-[#121215] rounded-[3px] flex items-center justify-center">
-                  <div className="w-5 h-4 border border-amber-400/40 rounded-[2px]" />
+                  <div className="w-5 h-4 border border-gold/40 rounded-[2px]" />
                 </div>
               </div>
               <div className="px-2.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-[10px] font-anton tracking-wider uppercase flex items-center gap-1">
@@ -132,7 +133,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
 
         {/* CARD BACK */}
         <div
-          className="absolute inset-0 p-5 flex flex-col justify-between bg-gradient-to-br from-[#0F0F12] via-[#17171C] to-[#0A0A0C] text-[#F4F2ED]"
+          className="absolute inset-0 p-4 flex flex-col justify-between bg-gradient-to-br from-[#0F0F12] via-[#17171C] to-[#0A0A0C] text-[#F4F2ED]"
           style={{
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
@@ -148,7 +149,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
               <div className="text-[9px] font-mono text-[#8C8C90] uppercase mb-1">
                 Authorized Signature
               </div>
-              <div className="h-8 bg-zinc-900 border border-white/10 rounded px-3 flex items-center font-serif italic text-sm text-zinc-300">
+              <div className="h-8 bg-zinc-900 border border-white/10 rounded-2xl px-3 flex items-center font-serif italic text-sm text-zinc-300">
                 {user.name}
               </div>
               <p className="text-[9px] font-mono text-zinc-500 mt-2 leading-relaxed">

@@ -317,7 +317,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             type="button"
             onClick={start}
             data-testid="strength-start"
-            className="mt-4 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-5 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white hover:bg-[#C81E3A]/30"
+            className="mt-4 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-5 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white hover:bg-[#C81E3A]/30"
           >
             START WORKOUT
           </button>
@@ -327,7 +327,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       {phase === "logging" && (
         <>
           {drafts.length === 0 && (
-            <div className="rounded-xl border border-white/5 bg-black/40 p-4 text-center">
+            <div className="rounded-2xl border border-white/5 bg-black/40 p-4 text-center">
               <p className="font-anton text-sm uppercase tracking-wider text-white">
                 NO EXERCISES YET
               </p>
@@ -342,7 +342,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               <div
                 key={draft.id}
                 data-testid="strength-exercise"
-                className="rounded-xl border border-white/10 bg-black/40 p-3"
+                className="rounded-2xl border border-white/10 bg-black/40 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -360,7 +360,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       aria-label={`Move ${draft.name} up`}
                       disabled={index === 0}
                       onClick={() => moveExercise(draft.id, -1)}
-                      className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
+                      className="rounded-2xl border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
                     >
                       ↑
                     </button>
@@ -369,7 +369,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       aria-label={`Move ${draft.name} down`}
                       disabled={index === drafts.length - 1}
                       onClick={() => moveExercise(draft.id, 1)}
-                      className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
+                      className="rounded-2xl border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-[#8C8C90] disabled:opacity-30"
                     >
                       ↓
                     </button>
@@ -377,7 +377,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       type="button"
                       aria-label={`Remove ${draft.name}`}
                       onClick={() => removeExercise(draft.id)}
-                      className="rounded border border-white/10 p-1 text-[#8C8C90] hover:text-red-400"
+                      className="rounded-2xl border border-white/10 p-1 text-[#8C8C90] hover:text-crimson"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -424,7 +424,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                         aria-label={`Remove set ${setIndex + 1}`}
                         onClick={() => removeSet(draft.id, set.id)}
                         disabled={draft.sets.length <= 1}
-                        className="pb-2 text-[#8C8C90] disabled:opacity-30 hover:text-red-400"
+                        className="pb-2 text-[#8C8C90] disabled:opacity-30 hover:text-crimson"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -476,7 +476,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           {draftError && (
             <p
               role="alert"
-              className="mt-2 flex items-start gap-1.5 text-[10px] font-mono text-red-400"
+              className="mt-2 flex items-start gap-1.5 text-[10px] font-mono text-crimson"
             >
               <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
               {draftError}
@@ -516,7 +516,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
             <Stat label="Total Reps" value={String(summary.totalReps)} />
           </div>
           {summary.volumeKg > 0 && (
-            <div className="mt-2 rounded-xl border border-white/5 bg-black/40 p-3">
+            <div className="mt-2 rounded-2xl border border-white/5 bg-black/40 p-3">
               <div className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
                 Training Volume
               </div>
@@ -534,7 +534,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
           <div className="mt-3 space-y-2">
             {drafts.map((draft) => (
-              <div key={draft.id} className="rounded-xl border border-white/5 bg-black/40 p-2.5">
+              <div key={draft.id} className="rounded-2xl border border-white/5 bg-black/40 p-2.5">
                 <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-white">
                   {draft.name}
                 </p>
@@ -557,15 +557,15 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 onClick={() => void save()}
                 disabled={saving}
                 data-testid="strength-save"
-                className="mt-4 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                className="mt-4 w-full rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
               >
                 {saving ? "SAVING…" : "SAVE ACTIVITY"}
               </button>
               {saveError && (
-                <div className="mt-2 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                <div className="mt-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
                   <p
                     role="alert"
-                    className="flex items-start gap-1.5 text-[11px] font-mono text-red-400"
+                    className="flex items-start gap-1.5 text-[11px] font-mono text-crimson"
                   >
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     COULDN'T SAVE WORKOUT — {saveError}
@@ -574,7 +574,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     type="button"
                     onClick={() => void save()}
                     data-testid="strength-retry"
-                    className="mt-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-red-300"
+                    className="mt-2 rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
                   >
                     Retry
                   </button>
@@ -608,7 +608,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 (rewards.xpAwarded > 0 || Object.keys(rewards.statChanges).length > 0) && (
                   <div
                     data-testid="strength-rewards"
-                    className="mt-3 rounded-xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
+                    className="mt-3 rounded-2xl border border-[#C81E3A]/30 bg-black/40 px-3 py-2"
                   >
                     {rewards.xpAwarded > 0 && (
                       <p className="text-[11px] font-mono font-bold text-[#C81E3A]">
@@ -625,7 +625,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       );
                     })}
                     {rewards.prBonusAwarded > 0 && (
-                      <p className="mt-0.5 text-[10px] font-mono text-amber-300">NEW PR 🔥</p>
+                      <p className="mt-0.5 text-[10px] font-mono text-gold">NEW PR 🔥</p>
                     )}
                   </div>
                 )}
@@ -635,9 +635,9 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               {!outcome.duplicate && outcome.strengthRecords.length > 0 && (
                 <div
                   data-testid="strength-new-pr"
-                  className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3"
+                  className="mt-3 rounded-2xl border border-gold/40 bg-gold/5 p-3"
                 >
-                  <p className="flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-amber-300">
+                  <p className="flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-gold">
                     <Trophy className="h-3.5 w-3.5" /> NEW PERSONAL RECORD
                   </p>
                   <ul className="mt-2 space-y-2">
@@ -650,7 +650,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                           {record.exerciseName ?? "Exercise"} —{" "}
                           {STRENGTH_RECORD_LABELS[record.recordType]}
                         </div>
-                        <div className="text-amber-200">
+                        <div className="text-gold">
                           {formatRecordValue(record.recordType, record.value)}
                           {record.previousValue !== null && (
                             <span className="ml-2 text-[#8C8C90]">
@@ -667,7 +667,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               {outcome.goalProgress.length > 0 && (
                 <div
                   data-testid="strength-goal-progress"
-                  className="mt-3 rounded-xl border border-[#C81E3A]/30 bg-black/40 p-3"
+                  className="mt-3 rounded-2xl border border-[#C81E3A]/30 bg-black/40 p-3"
                 >
                   <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-white">
                     <Target className="h-3.5 w-3.5 text-[#E62846]" /> GOAL PROGRESS
@@ -696,7 +696,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+                  className="flex-1 rounded-2xl border border-white/10 bg-black/40 px-3 py-2.5 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
                 >
                   Log another
                 </button>
@@ -706,7 +706,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                     reset();
                     onExit();
                   }}
-                  className="flex-1 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex-1 rounded-2xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
                 >
                   Done
                 </button>
@@ -720,7 +720,7 @@ export const TrainStrength: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 };
 
 const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+  <div className="rounded-2xl border border-white/5 bg-black/40 p-3">
     <div className="text-[9px] font-mono uppercase text-[#8C8C90]">{label}</div>
     <div className="font-mono text-xl font-bold text-white">{value}</div>
   </div>
@@ -775,7 +775,7 @@ const ExercisePicker: React.FC<{
 
   return (
     <div
-      className="mt-3 rounded-xl border border-white/10 bg-black/60 p-3"
+      className="mt-3 rounded-2xl border border-white/10 bg-black/60 p-3"
       data-testid="strength-exercise-picker"
     >
       <div className="flex items-center justify-between">
@@ -821,12 +821,12 @@ const ExercisePicker: React.FC<{
       )}
 
       {!loading && error && (
-        <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2.5 text-center">
-          <p className="text-[10px] font-mono text-red-400">{error}</p>
+        <div className="mt-2 rounded-lg border border-crimson/30 bg-crimson/5 p-2.5 text-center">
+          <p className="text-[10px] font-mono text-crimson">{error}</p>
           <button
             type="button"
             onClick={onRetry}
-            className="mt-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[9px] font-mono uppercase text-red-300"
+            className="mt-1.5 rounded-lg border border-crimson/40 bg-crimson/10 px-2.5 py-1 text-[9px] font-mono uppercase text-crimson"
           >
             Retry
           </button>
@@ -904,7 +904,7 @@ const ExercisePicker: React.FC<{
             </select>
           </div>
           {customError && (
-            <p role="alert" className="text-[10px] font-mono text-red-400">
+            <p role="alert" className="text-[10px] font-mono text-crimson">
               {customError}
             </p>
           )}

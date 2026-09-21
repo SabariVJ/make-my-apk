@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { AnimatePresence, motion } from "motion/react";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { ActivityProvider } from "./context/ActivityContext";
@@ -142,7 +143,7 @@ const AppContent: React.FC<{
             aria-labelledby="trial-expired-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
           >
-            <div className="w-full max-w-sm rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
+            <div className="w-full max-w-sm rounded-2xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
               <h2
                 id="trial-expired-title"
                 className="font-anton text-xl uppercase tracking-wider text-white"
@@ -160,7 +161,7 @@ const AppContent: React.FC<{
                     setShowTrialNotice(false);
                     setActiveTab("earn");
                   }}
-                  className="w-full rounded-xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
+                  className="w-full rounded-2xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
                 >
                   Open Earn Plus
                 </button>
@@ -170,14 +171,14 @@ const AppContent: React.FC<{
                     setShowTrialNotice(false);
                     setIsPaywallOpen(true);
                   }}
-                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                  className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
                 >
                   Explore SVJ Plus
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowTrialNotice(false)}
-                  className="w-full py-3 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
+                  className="w-full py-3 rounded-2xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
                 >
                   Continue in Limited Mode
                 </button>
@@ -190,13 +191,13 @@ const AppContent: React.FC<{
           {storageError && (
             <p
               role="alert"
-              className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+              className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
             >
               {storageError}
             </p>
           )}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">
-            <p className="font-anton text-sm uppercase tracking-wider text-amber-300">
+          <div className="rounded-2xl border border-gold/30 bg-gold/10 p-4 mb-4">
+            <p className="font-anton text-sm uppercase tracking-wider text-gold">
               Your 7-Day Trial Has Ended
             </p>
             <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
@@ -257,35 +258,53 @@ const AppContent: React.FC<{
         setActiveTab={handleTabChange}
       />
 
-      {/* Main View Area — right padding reserves the rail so it never covers content. */}
+      {/* Main View Area — right padding reserves the rail so it never covers content.
+          Tab switches crossfade with a quick fade+slide. The animation wrapper
+          is visual only: state lives in providers above it, so Activity
+          tracking, workout recorders and native listeners are never reset. */}
       <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6 lg:max-w-5xl lg:pr-28">
         {storageError && (
           <p
             role="alert"
-            className="mb-4 rounded-xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+            className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
           >
             {storageError}
           </p>
         )}
-        {activeTab === "challenges" && (
-          <ChallengesView
-            onOpenSixtyDay={() => handleTabChange("sixty")}
-            onOpenEarnPlus={() => handleTabChange("earn")}
-            onOpenActivity={() => handleTabChange("activity")}
-          />
-        )}
-        {activeTab === "activity" && <ActivityView />}
-        {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
-        {activeTab === "workouts" && <WorkoutView />}
-        {activeTab === "nutrition" && <NutritionView />}
-        {activeTab === "community" && <CommunityView />}
-        {activeTab === "leaderboard" && <LeaderboardView />}
-        {activeTab === "sixty" && <SixtyDayChallengeView />}
-        {activeTab === "plan" && (
-          <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
-        )}
-        {activeTab === "transform" && <TransformationReportView />}
-        {activeTab === "profile" && <ProfileView />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{
+              type: "spring",
+              stiffness: 420,
+              damping: 34,
+              opacity: { duration: 0.16 },
+            }}
+          >
+            {activeTab === "challenges" && (
+              <ChallengesView
+                onOpenSixtyDay={() => handleTabChange("sixty")}
+                onOpenEarnPlus={() => handleTabChange("earn")}
+                onOpenActivity={() => handleTabChange("activity")}
+              />
+            )}
+            {activeTab === "activity" && <ActivityView />}
+            {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
+            {activeTab === "workouts" && <WorkoutView />}
+            {activeTab === "nutrition" && <NutritionView />}
+            {activeTab === "community" && <CommunityView />}
+            {activeTab === "leaderboard" && <LeaderboardView />}
+            {activeTab === "sixty" && <SixtyDayChallengeView />}
+            {activeTab === "plan" && (
+              <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+            )}
+            {activeTab === "transform" && <TransformationReportView />}
+            {activeTab === "profile" && <ProfileView />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Global Modals & Overlays */}

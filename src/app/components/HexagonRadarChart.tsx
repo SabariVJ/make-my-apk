@@ -78,7 +78,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       key: "intellect",
       label: "Intellect",
       angle: 30, // Bottom Right
-      color: "text-amber-400",
+      color: "text-gold",
       hexColor: "#F59E0B",
       bgGlow: "rgba(245,158,11,0.15)",
       icon: "📖",
@@ -279,7 +279,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative px-3 py-1.5 rounded-xl bg-[#0B0B0D]/90 border border-white/20 shadow-[0_0_18px_rgba(0,0,0,0.72)] backdrop-blur-md flex flex-col items-center justify-center text-center border-t-white/40"
+            className="relative px-3 py-1.5 rounded-2xl bg-[#0B0B0D]/90 border border-white/20 shadow-[0_0_18px_rgba(0,0,0,0.72)] backdrop-blur-md flex flex-col items-center justify-center text-center border-t-white/40"
           >
             <div className="font-anton text-xl text-white tracking-tight leading-none drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]">
               {ovrRating}
@@ -292,7 +292,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       </div>
 
       {/* 6 Individual Stat Attribute Cards Grid matching uploaded image style */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2 font-mono">
+      <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 font-mono">
         {dimensions.map((d) => {
           const val = safeStats[d.key];
           return (
@@ -303,10 +303,10 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
                 onStatClick ? "cursor-pointer hover:bg-white/5" : ""
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {/* Hexagon shape icon container */}
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-sm border shadow-sm shrink-0"
+                  className="w-8 h-8 rounded-2xl flex items-center justify-center text-sm border shadow-sm shrink-0"
                   style={{
                     backgroundColor: d.bgGlow,
                     borderColor: `${d.hexColor}50`,

@@ -195,7 +195,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#17171A] p-5 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="font-anton text-lg uppercase tracking-wide text-white">
@@ -216,7 +216,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
           </button>
         </div>
 
-        <div className="mx-auto h-[280px] w-[280px] overflow-hidden rounded-3xl bg-[#0B0B0C] shadow-inner">
+        <div className="mx-auto h-[280px] w-[280px] overflow-hidden rounded-2xl bg-[#0B0B0C] shadow-inner">
           <div
             className="relative h-full w-full touch-none select-none"
             onPointerDown={handlePointerDown}
@@ -251,7 +251,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
               type="button"
               onClick={() => setSafeZoom(zoom - 0.1)}
               disabled={!naturalSize || processing || zoom <= MIN_ZOOM}
-              className="rounded-xl border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
+              className="rounded-2xl border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
               aria-label="Zoom out"
             >
               <Minus className="h-4 w-4" />
@@ -271,7 +271,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
               type="button"
               onClick={() => setSafeZoom(zoom + 0.1)}
               disabled={!naturalSize || processing || zoom >= MAX_ZOOM}
-              className="rounded-xl border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
+              className="rounded-2xl border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
               aria-label="Zoom in"
             >
               <Plus className="h-4 w-4" />
@@ -283,7 +283,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
                 setOffset({ x: 0, y: 0 });
               }}
               disabled={processing}
-              className="rounded-xl border border-white/10 bg-[#0B0B0C] p-2 text-[#8C8C90] hover:text-white disabled:opacity-40"
+              className="rounded-2xl border border-white/10 bg-[#0B0B0C] p-2 text-[#8C8C90] hover:text-white disabled:opacity-40"
               aria-label="Reset crop"
             >
               <RotateCcw className="h-4 w-4" />
@@ -302,7 +302,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
             type="button"
             onClick={() => void handleUsePhoto()}
             disabled={!naturalSize || processing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {processing ? (
               <Loader2 className="h-4 w-4 animate-spin" />

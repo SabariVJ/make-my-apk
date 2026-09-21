@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
+import { svjStaggerContainer, svjStaggerItem, svjSpringSoft, svjWhileTap } from "../lib/motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -347,7 +348,7 @@ export const ChallengesView: React.FC<{
       case "Easy":
         return "bg-emerald-500/10 text-emerald-400";
       case "Medium":
-        return "bg-amber-500/10 text-amber-400";
+        return "bg-gold/10 text-gold";
       case "Hard":
         return "bg-rose-500/10 text-rose-400";
       case "Elite":
@@ -405,7 +406,7 @@ export const ChallengesView: React.FC<{
       )}
 
       {/* Today's Mission Banner */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 overflow-hidden">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div>
             <div className="flex items-center gap-2 text-[11px] font-inter text-[#8C8C90] uppercase tracking-wider mb-1">
@@ -417,8 +418,8 @@ export const ChallengesView: React.FC<{
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-xl bg-[#0b0b0c] border border-white/[0.04] text-xs font-inter flex items-center gap-1.5 text-orange-400">
-              <Flame className="w-4 h-4 fill-orange-500/20" />
+            <div className="px-3 py-1.5 rounded-2xl bg-[#0b0b0c] border border-white/[0.04] text-xs font-inter flex items-center gap-1.5 text-gold">
+              <Flame className="w-4 h-4 fill-gold/20" />
               <span>{user.currentStreak}d streak</span>
             </div>
           </div>
@@ -448,10 +449,10 @@ export const ChallengesView: React.FC<{
           {!isAndroid && (
             <div className="svj-stat p-3">
               <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-gold" />
                 Global Rank
               </div>
-              <div className="font-mono text-xl font-bold text-amber-400">#{userRank}</div>
+              <div className="font-mono text-xl font-bold text-gold">#{userRank}</div>
             </div>
           )}
         </div>
@@ -480,10 +481,10 @@ export const ChallengesView: React.FC<{
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-gold" />
                 Character Matrix — Level {user.level || 1}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
+              <span className="px-2 py-0.5 rounded-2xl bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
                 {user.leagueRank || "APPRENTICE I"}
               </span>
             </div>
@@ -551,7 +552,7 @@ export const ChallengesView: React.FC<{
       {/* Personalized challenge insight */}
       {personalizationQuery.data?.personalization?.assessmentCompleted &&
         personalizedQuery.data && (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#17171A] border border-[#C81E3A]/10">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/10">
             <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
             <div className="flex-1">
               <p className="text-[11px] font-inter text-[#8C8C90]">
@@ -567,18 +568,25 @@ export const ChallengesView: React.FC<{
           </div>
         )}
 
-      {/* Challenges List */}
-      <div className="space-y-3">
+      {/* Challenges List — staggered entrance, tactile press feedback */}
+      <motion.div
+        variants={svjStaggerContainer}
+        initial="hidden"
+        animate="show"
+        className="space-y-3"
+      >
         <AnimatePresence mode="popLayout">
           {filteredChallenges.map((challenge) => (
             <motion.div
               key={challenge.id}
               layout
+              variants={svjStaggerItem}
+              whileTap={svjWhileTap}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={() => handleToggle(challenge.id)}
-              className={`group p-4 rounded-xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
+              className={`group p-4 rounded-2xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
                 completingId === challenge.id
                   ? "border-[#C81E3A]/40"
                   : challenge.completed
@@ -586,7 +594,7 @@ export const ChallengesView: React.FC<{
                     : "border-white/[0.06] hover:border-white/[0.12]"
               }`}
             >
-              <div className="flex items-start gap-3.5">
+              <div className="flex items-start gap-3">
                 {/* Custom Checkbox */}
                 <button
                   type="button"
@@ -599,7 +607,7 @@ export const ChallengesView: React.FC<{
                     event.stopPropagation();
                     handleToggle(challenge.id);
                   }}
-                  className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
+                  className={`mt-0.5 w-5 h-5 rounded-2xl border flex items-center justify-center transition-colors shrink-0 ${
                     challenge.completed
                       ? "bg-[#C81E3A] border-[#C81E3A] text-white"
                       : "border-white/20 group-hover:border-[#C81E3A]/60"
@@ -622,7 +630,7 @@ export const ChallengesView: React.FC<{
                       {challenge.title}
                     </h3>
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-inter font-medium ${getDifficultyBadge(
+                      className={`px-1.5 py-0.5 rounded-2xl text-[9px] font-inter font-medium ${getDifficultyBadge(
                         challenge.difficulty,
                       )}`}
                     >
@@ -704,7 +712,7 @@ export const ChallengesView: React.FC<{
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       <TaskEditorDialog
         open={isAddModalOpen}
@@ -753,7 +761,7 @@ function RefreshButton({
           : refreshState.status === "success"
             ? "bg-emerald-500/10 text-emerald-400"
             : isCooldown
-              ? "bg-amber-500/10 text-amber-400 cursor-not-allowed"
+              ? "bg-gold/10 text-gold cursor-not-allowed"
               : "bg-[#C81E3A]/10 text-[#C81E3A] hover:bg-[#C81E3A]/20"
       }`}
       aria-label={cooldownLabel ?? "Renew personalized tasks"}

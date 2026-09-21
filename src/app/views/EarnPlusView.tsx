@@ -28,9 +28,9 @@ import {
 import { useEngagement } from "../context/EngagementContext";
 
 const primaryButton =
-  "rounded-xl bg-[#C81E3A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400";
+  "rounded-2xl bg-[#C81E3A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400";
 const secondaryButton =
-  "rounded-xl border border-white/15 px-4 py-2 text-xs text-white hover:bg-white/5 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-rose-400";
+  "rounded-2xl border border-white/15 px-4 py-2 text-xs text-white hover:bg-white/5 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-rose-400";
 
 function ProgressMeter({ label, value, target }: { label: string; value: number; target: number }) {
   const percent = target > 0 ? Math.min(100, Math.max(0, (value / target) * 100)) : 0;
@@ -94,7 +94,7 @@ function MissionCard({
   return (
     <article
       className={
-        "rounded-2xl border p-5 " +
+        "rounded-2xl border p-4 " +
         (completed ? "border-emerald-400/25 bg-emerald-950/10" : "border-white/10 bg-[#17171A]")
       }
     >
@@ -115,7 +115,7 @@ function MissionCard({
           <Check className="h-4 w-4" /> Saved and credited
         </p>
       ) : expired ? (
-        <p className="mt-4 text-sm text-amber-200">
+        <p className="mt-4 text-sm text-gold">
           This session has expired. New missions unlock after the daily reset.
         </p>
       ) : !started ? (
@@ -158,7 +158,7 @@ function MissionCard({
             onChange={(event) => setConfirmation(event.target.value)}
             rows={3}
             aria-describedby={"reflection-help-" + mission.key}
-            className="w-full resize-y rounded-xl border border-white/15 bg-[#0B0B0C] px-3 py-2 text-sm text-white outline-none placeholder:text-[#777780] focus:border-rose-400"
+            className="w-full resize-y rounded-2xl border border-white/15 bg-[#0B0B0C] px-3 py-2 text-sm text-white outline-none placeholder:text-[#777780] focus:border-rose-400"
             placeholder="Describe the activity and your next useful step."
           />
           <p id={"reflection-help-" + mission.key} className="text-[11px] text-[#A1A1AA]">
@@ -217,7 +217,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           Refresh rewards
         </button>
       </div>
-      <header className="relative overflow-hidden rounded-3xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-6 sm:p-8">
+      <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-8">
         <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
           <ShieldCheck className="h-4 w-4" /> Earned, not purchased
         </p>
@@ -236,7 +236,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-4 text-sm text-rose-200"
+          className="rounded-2xl border border-rose-400/30 bg-rose-950/20 p-4 text-sm text-rose-200"
         >
           {error}
         </div>
@@ -244,7 +244,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       {actionError && (
         <div
           role="alert"
-          className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-4 text-sm text-rose-200"
+          className="rounded-2xl border border-rose-400/30 bg-rose-950/20 p-4 text-sm text-rose-200"
         >
           {actionError}
         </div>
@@ -252,7 +252,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       {notice && (
         <p
           role="status"
-          className="rounded-xl border border-emerald-400/20 bg-emerald-950/15 p-3 text-sm text-emerald-200"
+          className="rounded-2xl border border-emerald-400/20 bg-emerald-950/15 p-3 text-sm text-emerald-200"
         >
           {notice}
         </p>
@@ -263,7 +263,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
         </p>
       )}
       {state?.status === "setup_required" && (
-        <section className="rounded-2xl border border-amber-300/20 bg-[#17171A] p-6">
+        <section className="rounded-2xl border border-gold/20 bg-[#17171A] p-4">
           <h2 className="font-anton text-xl uppercase text-white">Database activation pending</h2>
           <p className="mt-2 text-sm leading-relaxed text-[#B8B8C0]">{state.message}</p>
           <p className="mt-3 text-xs text-[#A1A1AA]">
@@ -275,24 +275,24 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       {active && (
         <>
           {active.status === "disabled" && (
-            <p className="rounded-xl border border-amber-300/20 p-4 text-sm text-amber-200">
+            <p className="rounded-2xl border border-gold/20 p-4 text-sm text-gold">
               Earn Plus is not active yet. These are your last confirmed balances; no new rewards
               are being issued.
             </p>
           )}
           {!active.account.verified && (
-            <p className="rounded-xl border border-amber-300/20 p-4 text-sm text-amber-200">
+            <p className="rounded-2xl border border-gold/20 p-4 text-sm text-gold">
               Verify your email or phone number before starting reward missions.
             </p>
           )}
           {dayEnded && (
-            <p className="rounded-xl border border-amber-300/20 p-4 text-sm text-amber-200">
+            <p className="rounded-2xl border border-gold/20 p-4 text-sm text-gold">
               A new reward day has begun. Refresh to load today's missions.
             </p>
           )}
 
           <section className="grid gap-4 sm:grid-cols-[1.3fr_1fr]">
-            <div className="space-y-5 rounded-2xl border border-white/10 bg-[#17171A] p-5">
+            <div className="space-y-5 rounded-2xl border border-white/10 bg-[#17171A] p-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Gift className="h-4 w-4 text-rose-300" /> Your reward progress
               </h2>
@@ -311,9 +311,9 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
                 count.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-[#17171A] p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#17171A] p-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Flame className="h-4 w-4 text-orange-300" /> Daily login streak
+                <Flame className="h-4 w-4 text-gold" /> Daily login streak
               </h2>
               <p className="mt-4 font-mono text-3xl font-bold text-white">
                 {active.wallet.currentLoginStreak}
@@ -378,7 +378,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-rose-400/20 bg-[#17171A] p-5">
+          <section className="rounded-2xl border border-rose-400/20 bg-[#17171A] p-4">
             <h2 className="font-anton text-2xl uppercase text-white">
               Claim your {active.policy.plusDays} days
             </h2>
@@ -388,7 +388,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
               {active.account.ageDays} / {active.policy.requiredAccountAgeDays} days
             </p>
             {active.account.lifetimeAccess ? (
-              <p className="mt-4 text-sm text-amber-200">
+              <p className="mt-4 text-sm text-gold">
                 Lifetime access already active. Your membership will not be shortened and no XP will
                 be spent.
               </p>
@@ -419,7 +419,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-[#17171A] p-5">
+          <section className="rounded-2xl border border-white/10 bg-[#17171A] p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
               <Zap className="h-4 w-4 text-rose-300" /> Recent confirmed receipts
             </h2>

@@ -74,7 +74,7 @@ export const GoogleAuthModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-md rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl overflow-hidden"
+          className="relative w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -108,13 +108,13 @@ export const GoogleAuthModal: React.FC = () => {
                     <AvatarImage
                       src={user.avatar}
                       name={user.name}
-                      className="w-12 h-12 rounded-xl object-cover border-2 border-[#C81E3A]"
+                      className="w-12 h-12 rounded-2xl object-cover border-2 border-[#C81E3A]"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-sm truncate">{user.name}</span>
                         {user.isFounder && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/30 text-[10px] font-mono font-bold flex items-center gap-1">
                             <Crown className="w-3 h-3" /> Founder
                           </span>
                         )}
@@ -127,15 +127,15 @@ export const GoogleAuthModal: React.FC = () => {
                   </div>
 
                   {user.isFounder ? (
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-mono flex items-center gap-2">
-                      <Crown className="w-4 h-4 shrink-0 text-amber-400 animate-bounce" />
+                    <div className="p-3 rounded-2xl bg-gold/10 border border-gold/20 text-gold text-xs font-mono flex items-center gap-2">
+                      <Crown className="w-4 h-4 shrink-0 text-gold animate-bounce" />
                       <span>
                         FOUNDER PRIVILEGES ACTIVE: SVJ Plus, VIP Status, & Unlimited Perks unlocked
                         automatically.
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono flex items-center gap-2">
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
                       <span>
                         Cloud Sync Active. All your XP, challenges, and progress are tied to{" "}
@@ -148,14 +148,14 @@ export const GoogleAuthModal: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={logoutGmail}
-                    className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex-1 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
-                    <LogOut className="w-4 h-4 text-red-400" />
+                    <LogOut className="w-4 h-4 text-crimson" />
                     Sign Out / Switch Account
                   </button>
                   <button
                     onClick={() => setIsGoogleAuthModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex-1 py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     Done
                   </button>
@@ -177,7 +177,7 @@ export const GoogleAuthModal: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsGoogleAuthModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold transition-colors cursor-pointer"
                 >
                   Return to Application
                 </button>
@@ -191,13 +191,13 @@ export const GoogleAuthModal: React.FC = () => {
                 </p>
 
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2 space-y-2">
-                    <p className="text-[11px] text-red-300 font-mono">{error}</p>
+                  <div className="bg-crimson/10 border border-crimson/20 rounded-2xl px-3 py-2 space-y-2">
+                    <p className="text-[11px] text-crimson font-mono">{error}</p>
                     <button
                       type="button"
                       onClick={handleConnect}
                       disabled={busy}
-                      className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-red-200 cursor-pointer disabled:opacity-60"
+                      className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-crimson cursor-pointer disabled:opacity-60"
                     >
                       Try again
                     </button>
@@ -207,7 +207,7 @@ export const GoogleAuthModal: React.FC = () => {
                 <button
                   onClick={handleConnect}
                   disabled={busy}
-                  className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+                  className="w-full py-3 rounded-2xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
                 >
                   {busy ? (
                     <>

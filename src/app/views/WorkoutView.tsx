@@ -139,7 +139,7 @@ export const WorkoutView: React.FC = () => {
   return (
     <div className="pb-28 space-y-5">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl svj-border bg-[#17171A] p-5">
+      <div className="relative overflow-hidden rounded-2xl svj-border bg-[#17171A] p-4">
         <div className="absolute -top-16 -right-10 w-40 h-40 rounded-full bg-[#C81E3A]/20 blur-3xl animate-crimson-pulse" />
         <div className="relative">
           <h1 className="font-anton text-2xl sm:text-3xl uppercase text-[#F4F2ED]">Iron Log</h1>
@@ -165,7 +165,7 @@ export const WorkoutView: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-inter font-semibold transition-all cursor-pointer border ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-inter font-semibold transition-all cursor-pointer border ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
                   : "bg-[#17171A] border-white/8 text-[#8C8C90] hover:text-[#F4F2ED]"
@@ -192,7 +192,7 @@ export const WorkoutView: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Session name (e.g. Push Day)"
-              className="w-full bg-[#17171A] svj-border rounded-xl px-4 py-3 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+              className="w-full bg-[#17171A] svj-border rounded-2xl px-4 py-3 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
             />
 
             {exercises.map((ex, exIdx) => (
@@ -288,7 +288,7 @@ export const WorkoutView: React.FC = () => {
 
             <button
               onClick={() => setExercises((prev) => [...prev, blankExercise()])}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/15 text-[#8C8C90] hover:text-[#F4F2ED] hover:border-[#C81E3A]/50 font-inter text-sm cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-white/15 text-[#8C8C90] hover:text-[#F4F2ED] hover:border-[#C81E3A]/50 font-inter text-sm cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Add exercise
             </button>
@@ -315,14 +315,14 @@ export const WorkoutView: React.FC = () => {
               <button
                 onClick={() => saveWorkoutTemplate(name || "Untitled Template", exercises)}
                 disabled={!exercises.some((e) => e.name.trim())}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#17171A] svj-border text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#212126] disabled:opacity-40 cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#17171A] svj-border text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#212126] disabled:opacity-40 cursor-pointer"
               >
                 <Save className="w-4 h-4" /> Save template
               </button>
               <button
                 onClick={handleLog}
                 disabled={!totals.valid}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl svj-crimson-gradient text-white font-inter font-bold text-sm disabled:opacity-40 svj-card-glow cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl svj-crimson-gradient text-white font-inter font-bold text-sm disabled:opacity-40 svj-card-glow cursor-pointer"
               >
                 <Dumbbell className="w-4 h-4" /> Log workout
               </button>
@@ -362,7 +362,7 @@ export const WorkoutView: React.FC = () => {
                 </div>
                 <button
                   onClick={() => loadTemplate(tpl.id)}
-                  className="mt-3 w-full py-2.5 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#C81E3A]/25 cursor-pointer"
+                  className="mt-3 w-full py-2.5 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#C81E3A]/25 cursor-pointer"
                 >
                   Start this workout
                 </button>

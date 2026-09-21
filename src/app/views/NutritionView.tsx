@@ -82,7 +82,7 @@ export const NutritionView: React.FC = () => {
     <div className="pb-32 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3 pt-1">
-        <div className="w-10 h-10 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
           <Apple className="w-5 h-5 text-[#C81E3A]" />
         </div>
         <div>
@@ -119,13 +119,13 @@ export const NutritionView: React.FC = () => {
       )}
 
       {/* Daily total ring / bar */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
         <div className="flex items-end justify-between mb-4">
           <div>
             <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-1">
               Today
             </p>
-            <p className="text-4xl font-bold text-[#F4F2ED] leading-none">
+            <p className="text-4xl font-anton text-[#F4F2ED] leading-none">
               {todayTotal.toLocaleString()}
               <span className="text-sm font-medium text-[#8C8C90] ml-1.5">kcal</span>
             </p>
@@ -189,7 +189,7 @@ export const NutritionView: React.FC = () => {
       {/* Add entry */}
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5 space-y-3"
+        className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 space-y-3"
       >
         <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90]">Add food</p>
 
@@ -199,7 +199,7 @@ export const NutritionView: React.FC = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Grilled chicken & rice"
-            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="min-w-0 flex-1 bg-[#0B0B0C] border border-white/15 rounded-2xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
           <input
             aria-label="Calories"
@@ -208,7 +208,7 @@ export const NutritionView: React.FC = () => {
             value={calories}
             onChange={(e) => setCalories(e.target.value)}
             placeholder="kcal"
-            className="w-24 bg-[#0B0B0C] border border-white/15 rounded-xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
+            className="w-24 bg-[#0B0B0C] border border-white/15 rounded-2xl px-3 py-2.5 text-sm text-[#F4F2ED] placeholder:text-[#5C5C60] focus:outline-none focus:border-[#C81E3A]"
           />
         </div>
 
@@ -231,7 +231,7 @@ export const NutritionView: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40 svj-press"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] transition-colors py-3 text-sm font-semibold text-white disabled:opacity-40 svj-press"
           disabled={!name.trim() || !parseInt(calories, 10)}
         >
           <Plus className="w-4 h-4" />
@@ -250,7 +250,7 @@ export const NutritionView: React.FC = () => {
       </form>
 
       {/* Today's entries */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
         <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
           Today&apos;s log
         </p>
@@ -267,7 +267,7 @@ export const NutritionView: React.FC = () => {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-3 rounded-xl bg-[#0b0b0c] border border-white/[0.04] px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-2xl bg-[#0b0b0c] border border-white/[0.04] px-3 py-2.5"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#F4F2ED] truncate">{m.name}</p>
@@ -298,7 +298,7 @@ export const NutritionView: React.FC = () => {
       </div>
 
       {/* 7-day history */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
         <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-4 flex items-center gap-1.5">
           <CalendarDays className="w-3.5 h-3.5" /> Last 7 days
         </p>

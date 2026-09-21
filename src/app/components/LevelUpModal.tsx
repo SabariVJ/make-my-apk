@@ -18,7 +18,7 @@ export const LevelUpModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.8, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 30 }}
-          className="relative w-full max-w-sm bg-[#17171A] border-2 border-[#C81E3A] rounded-3xl p-6 text-center text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/30 overflow-hidden"
+          className="relative w-full max-w-sm bg-[#17171A] border-2 border-[#C81E3A] rounded-2xl p-4 text-center text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/30 overflow-hidden"
         >
           {/* Ambient Glow */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#C81E3A]/30 via-transparent to-transparent pointer-events-none" />
@@ -44,7 +44,7 @@ export const LevelUpModal: React.FC = () => {
           <p className="text-xs font-mono text-[#8C8C90] mb-6">{newTierInfo.description}</p>
 
           {/* Benefits Unlocked */}
-          <div className="p-4 rounded-xl bg-[#0B0B0C] border border-white/10 text-left mb-6 space-y-2">
+          <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 text-left mb-6 space-y-2">
             <div className="text-[10px] font-mono text-[#C81E3A] uppercase font-bold tracking-wider mb-1">
               New Perks Unlocked:
             </div>
@@ -61,7 +61,7 @@ export const LevelUpModal: React.FC = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setLevelUpModalData(null)}
-            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer"
+            className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer"
           >
             <span>Claim Tier Honor</span>
             <ArrowRight className="w-4 h-4" />

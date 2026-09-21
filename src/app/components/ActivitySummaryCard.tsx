@@ -45,8 +45,8 @@ export const ActivitySummaryCard: React.FC<{ onOpen: () => void }> = ({ onOpen }
         </div>
         <div className="h-8 w-px bg-white/10" />
         <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-amber-400" />
-          <span className="font-mono text-lg font-bold text-amber-400 tabular-nums">
+          <Flame className="w-4 h-4 text-gold" />
+          <span className="font-mono text-lg font-bold text-gold tabular-nums">
             {activeKcal.toLocaleString()}
           </span>
           <span className="text-[10px] font-mono uppercase text-[#8C8C90]">KCAL</span>

@@ -171,7 +171,7 @@ export const TrialGate: React.FC<{
 
   if (statusQuery.isError) {
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3 p-4 text-center">
         <p className="font-anton uppercase tracking-wider">Could not verify your membership</p>
         <p className="text-[11px] font-mono text-[#8C8C90] max-w-xs">
           {statusQuery.error instanceof Error ? statusQuery.error.message : "Something went wrong."}
@@ -179,7 +179,7 @@ export const TrialGate: React.FC<{
         <div className="flex items-center gap-2">
           <button
             onClick={() => statusQuery.refetch()}
-            className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
+            className="px-4 py-2 rounded-2xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
           >
             Retry
           </button>
@@ -188,7 +188,7 @@ export const TrialGate: React.FC<{
               queryClient.clear();
               await supabase.auth.signOut();
             }}
-            className="px-4 py-2 rounded-xl border border-white/15 text-white font-mono text-xs cursor-pointer"
+            className="px-4 py-2 rounded-2xl border border-white/15 text-white font-mono text-xs cursor-pointer"
           >
             Sign out
           </button>

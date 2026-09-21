@@ -135,7 +135,7 @@ export const AuthScreen: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5"
+        className="w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl space-y-5"
       >
         <div className="space-y-1 text-center">
           <h1 className="font-anton text-2xl uppercase tracking-wider text-white">SVJ</h1>
@@ -150,7 +150,7 @@ export const AuthScreen: React.FC = () => {
           type="button"
           onClick={handleGoogle}
           disabled={busy}
-          className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="w-full py-3 rounded-2xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -189,7 +189,7 @@ export const AuthScreen: React.FC = () => {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full pl-9 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="relative">
@@ -202,7 +202,7 @@ export const AuthScreen: React.FC = () => {
               required
               minLength={6}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              className="w-full pl-9 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="w-full pl-9 pr-10 py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
             <button
               type="button"
@@ -214,13 +214,13 @@ export const AuthScreen: React.FC = () => {
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 space-y-2">
-              <p className="text-[11px] text-red-300 font-mono">{error}</p>
+            <div className="rounded-2xl border border-crimson/30 bg-crimson/10 p-3 space-y-2">
+              <p className="text-[11px] text-crimson font-mono">{error}</p>
               <button
                 type="button"
                 onClick={handleGoogle}
                 disabled={busy}
-                className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-red-200 cursor-pointer disabled:opacity-60"
+                className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-crimson cursor-pointer disabled:opacity-60"
               >
                 Try Google sign-in again
               </button>
@@ -228,7 +228,7 @@ export const AuthScreen: React.FC = () => {
           )}
 
           {notice && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-3">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-3">
               <p className="text-[11px] text-emerald-300 font-mono leading-relaxed">{notice}</p>
               {mode === "signup" && (
                 <div className="flex flex-col gap-2">
@@ -269,7 +269,7 @@ export const AuthScreen: React.FC = () => {
           <button
             type="submit"
             disabled={busy}
-            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {busy ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -21,7 +21,7 @@ export function StructuredStrengthCard({
     <section
       aria-label="Structured Strength"
       data-testid="structured-strength-card"
-      className="rounded-2xl bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] border border-[#C81E3A]/15 p-5"
+      className="rounded-2xl bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] border border-[#C81E3A]/15 p-4"
     >
       <div className="relative">
         <p className="mb-2 flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
@@ -53,7 +53,7 @@ export function StructuredStrengthCard({
             type="button"
             onClick={onStart}
             data-testid="structured-strength-start"
-            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
+            className="ml-auto inline-flex items-center gap-2 rounded-2xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
           >
             {lastSessionLabel ? "Continue" : "Start workout"}
             <ArrowRight className="h-4 w-4" />

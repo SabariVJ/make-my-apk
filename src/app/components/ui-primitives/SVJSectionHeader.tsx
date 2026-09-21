@@ -15,7 +15,7 @@ export const SVJSectionHeader: React.FC<{
   className?: string;
 }> = ({ title, icon: Icon, trailing, className = "" }) => (
   <div className={`flex items-center justify-between gap-3 ${className}`}>
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2">
       {Icon && <Icon className="w-4 h-4 text-[#C81E3A] shrink-0" />}
       <h3 className="font-anton text-sm uppercase tracking-wider text-[#F4F2ED]">{title}</h3>
     </div>

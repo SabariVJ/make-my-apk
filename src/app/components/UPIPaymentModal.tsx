@@ -89,7 +89,7 @@ export const UPIPaymentModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-4 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
@@ -112,7 +112,7 @@ export const UPIPaymentModal: React.FC = () => {
                 setPaymentTab("upi");
                 setShowQR(false);
               }}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 paymentTab === "upi"
                   ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
                   : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -123,9 +123,9 @@ export const UPIPaymentModal: React.FC = () => {
             </button>
             <button
               onClick={() => setPaymentTab("code")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 paymentTab === "code"
-                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                  ? "bg-gold text-black shadow-lg shadow-gold/20"
                   : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
               }`}
             >
@@ -169,13 +169,13 @@ export const UPIPaymentModal: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => setIsUPIModalOpen(false)}
-                  className="py-3 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-[#8C8C90] font-mono text-xs cursor-pointer"
+                  className="py-3 rounded-2xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-[#8C8C90] font-mono text-xs cursor-pointer"
                 >
                   No, thanks
                 </button>
                 <button
                   onClick={() => setShowQR(true)}
-                  className="py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase text-xs cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                  className="py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase text-xs cursor-pointer shadow-lg shadow-[#C81E3A]/20"
                 >
                   Yes, show QR
                 </button>
@@ -185,7 +185,7 @@ export const UPIPaymentModal: React.FC = () => {
             /* QR Code Scanner Display */
             <div className="space-y-5 text-center py-2">
               <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded flex items-center justify-center overflow-hidden">
+                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-2xl flex items-center justify-center overflow-hidden">
                   <img
                     src={upiQr.url}
                     alt="SVJ Official Payment QR Code"
@@ -206,7 +206,7 @@ export const UPIPaymentModal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
                 <div className="flex items-center gap-2 text-emerald-400 font-mono font-semibold">
                   <ShieldCheck className="w-4 h-4" />
                   <span>Manual Verification Required</span>
@@ -223,7 +223,7 @@ export const UPIPaymentModal: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                   disabled={isProcessing}
                   onClick={handleSimulatePayment}
-                  className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <span>Preparing contact options...</span>
@@ -237,13 +237,13 @@ export const UPIPaymentModal: React.FC = () => {
               </div>
 
               {showContactFallback && (
-                <div className="mt-3 p-3 rounded-xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
+                <div className="mt-3 p-3 rounded-2xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
                   <p className="text-[11px] text-[#8C8C90] leading-relaxed">
                     Send us your payment details to activate SVJ Plus:
                   </p>
                   <a
                     href={isNative ? supportUrl : appUrl}
-                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                    className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
                     Open WhatsApp app
@@ -252,25 +252,25 @@ export const UPIPaymentModal: React.FC = () => {
                     href={webUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
                   >
                     Open in browser instead
                   </a>
                   <button
                     onClick={handleCopyMessage}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
+                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
                   >
                     {copied ? "Message copied" : "Copy verification message"}
                   </button>
                   <button
                     onClick={handleCopyNumber}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                    className="w-full py-2.5 rounded-2xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
                   >
                     {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
                   </button>
                   <a
                     href={mailtoUrl}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="w-full py-2.5 rounded-2xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
                   >
                     Email us instead
                   </a>

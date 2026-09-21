@@ -46,7 +46,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl overflow-hidden text-[#F4F2ED] shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           {/* Cover Header */}
-          <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-amber-500/20 relative p-4 flex justify-between items-start">
+          <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-gold/20 relative p-4 flex justify-between items-start">
             <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/10 text-[10px] font-mono text-zinc-300">
               SVJ MEMBER PROFILE
             </div>
@@ -77,7 +77,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                       onClose();
                       onCompare(member);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                    className="px-3 py-1.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
                   >
                     <Swords className="w-3.5 h-3.5" />
                     <span>Compare XP</span>
@@ -95,7 +95,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 {member.isVerified && (
                   <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />
                 )}
-                {member.isVIP && <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />}
+                {member.isVIP && <Crown className="w-4 h-4 text-gold fill-gold/20" />}
               </div>
               <div className="text-xs font-mono text-[#8C8C90] flex items-center gap-2 mt-0.5">
                 <span>@{member.username}</span>
@@ -111,8 +111,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
             </div>
 
             {/* Stats Overview Grid */}
-            <div className="grid grid-cols-3 gap-2.5 my-4">
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
+            <div className="grid grid-cols-3 gap-2 my-4">
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
                 <Zap className="w-4 h-4 text-[#C81E3A] mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">
                   {member.totalXP.toLocaleString()}
@@ -120,14 +120,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Total XP</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
-                <Flame className="w-4 h-4 text-orange-500 mx-auto mb-1" />
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
+                <Flame className="w-4 h-4 text-gold mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">{member.streak} Days</div>
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Streak</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
-                <Award className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
+                <Award className="w-4 h-4 text-gold mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">#{member.rank}</div>
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">
                   Global Rank
@@ -142,7 +142,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                   onClick={() => {
                     triggerConfetti();
                   }}
-                  className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-2xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
                   <span>Send Respect &amp; Celebration 🔥</span>

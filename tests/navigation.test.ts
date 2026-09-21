@@ -102,8 +102,8 @@ describe("60-Day program lives inside Challenges", () => {
 
 describe("Structured Strength is promoted into Train", () => {
   it("mounts the existing logger from Train", () => {
-    assert.match(train, /import \{ TrainStrength \} from "\.\/TrainStrength"/);
-    assert.match(train, /<TrainStrength onExit=/);
+    assert.match(train, /import \{ TrainStrength[^}]*\} from "\.\/TrainStrength"/);
+    assert.match(train, /<TrainStrength\s+prescription=\{prescription\}\s+onExit=/);
     assert.match(train, /<StructuredStrengthCard/);
   });
 
@@ -116,7 +116,10 @@ describe("Structured Strength is promoted into Train", () => {
 
   it("opens the existing strength workflow from the CTA", () => {
     assert.match(strengthCard, /onClick=\{onStart\}/);
-    assert.match(train, /onStart=\{\(\) => setStrengthOpen\(true\)\}/);
+    // The CTA still opens the same structured logger; it now prefers the
+    // planned session's targets when one exists.
+    assert.match(train, /onStart=\{\(\) => \{/);
+    assert.match(train, /setStrengthOpen\(true\)/);
   });
 
   it("reports only real last-session data", () => {

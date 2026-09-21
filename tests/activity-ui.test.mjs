@@ -253,14 +253,17 @@ describe("real activity components", { concurrency: false }, () => {
 
   it("keeps a failed workout form intact and moves to history only after saving", async () => {
     await mount(app.WorkoutView);
-    fireEvent.change(screen.getByLabelText("Session name"), { target: { value: "Leg day" } });
+    // Today is the default Train surface now; the manual logger lives on Log.
+    fireEvent.click(screen.getByTestId("train-tab-log"));
+    const nameField = await waitFor(() => screen.getByLabelText("Session name"));
+    fireEvent.change(nameField, { target: { value: "Leg day" } });
     fireEvent.change(screen.getByLabelText("Exercise 1 name"), { target: { value: "Squats" } });
     dom.window.Storage.prototype.setItem = () => {
       throw new dom.window.DOMException("Full", "QuotaExceededError");
     };
     fireEvent.click(screen.getByRole("button", { name: "Log workout" }));
     assert.match(screen.getByRole("alert").textContent, /Could not save/);
-    assert.equal(screen.getByLabelText("Session name").value, "Leg day");
+    assert.equal(nameField.value, "Leg day");
     assert.equal(api.workouts.length, 0);
     assert.equal(api.user.totalXP, 0);
     dom.window.Storage.prototype.setItem = realSet;

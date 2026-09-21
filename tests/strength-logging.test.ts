@@ -762,8 +762,8 @@ describe("strength UI wiring", () => {
 
   it("surfaces Structured Strength on Train without adding a bottom-nav tab", () => {
     const train = read("src/app/views/WorkoutView.tsx");
-    assert.match(train, /import \{ TrainStrength \} from "\.\/TrainStrength"/);
-    assert.match(train, /<TrainStrength onExit=/);
+    assert.match(train, /import \{ TrainStrength[^}]*\} from "\.\/TrainStrength"/);
+    assert.match(train, /<TrainStrength\s+prescription=\{prescription\}\s+onExit=/);
     assert.match(train, /<StructuredStrengthCard/);
     const card = read("src/app/components/StructuredStrengthCard.tsx");
     assert.match(card, /data-testid="structured-strength-start"/);

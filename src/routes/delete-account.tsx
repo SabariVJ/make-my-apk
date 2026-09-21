@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteAccount } from "@/lib/account.functions";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { markIntentionalSignOut } from "@/app/lib/sessionExpired";
 
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
@@ -91,6 +92,7 @@ function DeleteAccountPage() {
       setResult(res);
 
       if (res.ok) {
+        markIntentionalSignOut();
         await supabase.auth.signOut();
       }
     } catch {

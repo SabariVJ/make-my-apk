@@ -29,9 +29,16 @@ import { GoogleAuthModal } from "./components/GoogleAuthModal";
 import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
+import { StatusScreen } from "./components/StatusScreen";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
+import { useOnlineStatus } from "./lib/useOnlineStatus";
+import {
+  installSessionExpiryWatcher,
+  markIntentionalSignOut,
+  subscribeToSessionExpiry,
+} from "./lib/sessionExpired";
 
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
@@ -107,6 +114,7 @@ const AppContent: React.FC<{
   const handleTabChange = (tab: ActiveTab) => {
     if (tab === "signout") {
       void (async () => {
+        markIntentionalSignOut();
         await queryClient.cancelQueries();
         queryClient.clear();
         await supabase.auth.signOut();
@@ -347,6 +355,60 @@ const AppContent: React.FC<{
 };
 
 export default function App() {
+  // No-network gate: covers every blocking state the app can be in (auth,
+  // trial check, app shell). Auto-dismisses when the browser reports online.
+  const online = useOnlineStatus();
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => subscribeToSessionExpiry(() => setSessionExpired(true)), []);
+
+  // Catches background auth/401 failures that no component handles directly.
+  useEffect(() => installSessionExpiryWatcher(), []);
+
+  if (!online) {
+    return (
+      <StatusScreen
+        testId="no-internet-screen"
+        icon={WifiOff}
+        eyebrow="Offline"
+        title="No Internet"
+        message="No connection — check your internet and try again."
+        primaryAction={{
+          label: "Retry",
+          icon: RotateCw,
+          onClick: () => {
+            // Re-evaluate immediately; the listener still dismisses us
+            // automatically the moment the connection returns.
+            if (typeof navigator !== "undefined" && navigator.onLine) window.location.reload();
+          },
+        }}
+      />
+    );
+  }
+
+  if (sessionExpired && hasSupabaseConfig()) {
+    return (
+      <StatusScreen
+        testId="session-expired-screen"
+        icon={LogIn}
+        eyebrow="Session"
+        title="Session Expired"
+        message="Your signed-in session is no longer valid. Log in again to continue where you left off."
+        primaryAction={{
+          label: "Log in again",
+          icon: LogIn,
+          onClick: () => {
+            void (async () => {
+              markIntentionalSignOut();
+              await supabase.auth.signOut().catch(() => undefined);
+              setSessionExpired(false);
+            })();
+          },
+        }}
+      />
+    );
+  }
+
   if (!hasSupabaseConfig()) return <ConfigMissingScreen />;
   return (
     <TrialGate>

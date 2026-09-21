@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,6 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTrialStatus, type TrialStatus } from "@/lib/trial.functions";
 import { emitOAuthError } from "@/lib/googleAuth";
 import { AuthScreen } from "./AuthScreen";
+import { StatusScreen } from "./StatusScreen";
+import {
+  consumeIntentionalSignOut,
+  isSessionExpiredError,
+  markIntentionalSignOut,
+  notifySessionExpired,
+} from "@/app/lib/sessionExpired";
+import { LogIn, RotateCw, ShieldAlert } from "lucide-react";
 
 const Splash: React.FC<{ label: string }> = ({ label }) => (
   <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
@@ -43,6 +51,9 @@ export const TrialGate: React.FC<{
   children: React.ReactNode | ((status: TrialStatus) => React.ReactNode);
 }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
+  // True once a real session has been seen, so an involuntary drop (expired
+  // refresh token) can be told apart from a cold start with no session.
+  const hadSession = useRef(false);
   const [sessionReady, setSessionReady] = useState(false);
   const queryClient = useQueryClient();
 
@@ -123,7 +134,14 @@ export const TrialGate: React.FC<{
 
   // ── Supabase auth state ───────────────────────────────────────────────────
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // A session disappearing without the user asking is an expired/invalid
+      // session, not a normal sign-out — raise the branded Session Expired
+      // screen instead of silently dropping the user onto the login form.
+      if (event === "SIGNED_OUT" && !nextSession && !consumeIntentionalSignOut()) {
+        if (hadSession.current) notifySessionExpired();
+      }
+      if (nextSession) hadSession.current = true;
       setSession(nextSession);
       setSessionReady(true);
       queryClient.invalidateQueries({ queryKey: ["trial-status"] });
@@ -132,6 +150,7 @@ export const TrialGate: React.FC<{
     supabase.auth
       .getSession()
       .then(({ data }) => {
+        if (data.session) hadSession.current = true;
         setSession(data.session);
         setSessionReady(true);
       })
@@ -168,32 +187,55 @@ export const TrialGate: React.FC<{
   if (!sessionReady) return <Splash label="Loading SVJ" />;
   if (!session) return <AuthScreen />;
   if (statusQuery.isPending) return <Splash label="Checking your trial" />;
-
   if (statusQuery.isError) {
+    // An expired/invalid session is not a server fault: route it to the
+    // dedicated Session Expired screen with a single "Log in again" action.
+    if (isSessionExpiredError(statusQuery.error)) {
+      return (
+        <StatusScreen
+          testId="session-expired-screen"
+          icon={LogIn}
+          eyebrow="Session"
+          title="Session Expired"
+          message="Your signed-in session is no longer valid. Log in again to continue where you left off."
+          primaryAction={{
+            label: "Log in again",
+            icon: LogIn,
+            onClick: () => {
+              void (async () => {
+                markIntentionalSignOut();
+                queryClient.clear();
+                await supabase.auth.signOut().catch(() => undefined);
+              })();
+            },
+          }}
+        />
+      );
+    }
+
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3 p-4 text-center">
-        <p className="font-anton uppercase tracking-wider">Could not verify your membership</p>
-        <p className="text-[11px] font-mono text-[#8C8C90] max-w-xs">
-          {statusQuery.error instanceof Error ? statusQuery.error.message : "Something went wrong."}
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => statusQuery.refetch()}
-            className="px-4 py-2 rounded-lg bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
-          >
-            Retry
-          </button>
-          <button
-            onClick={async () => {
+      <StatusScreen
+        testId="membership-check-screen"
+        icon={ShieldAlert}
+        eyebrow="Membership"
+        title="Could not verify your membership"
+        message={
+          statusQuery.error instanceof Error
+            ? statusQuery.error.message
+            : "Something went wrong while checking your account. Please retry."
+        }
+        primaryAction={{ label: "Retry", icon: RotateCw, onClick: () => statusQuery.refetch() }}
+        secondaryAction={{
+          label: "Sign out",
+          onClick: () => {
+            void (async () => {
+              markIntentionalSignOut();
               queryClient.clear();
               await supabase.auth.signOut();
-            }}
-            className="px-4 py-2 rounded-lg border border-white/15 text-white font-mono text-xs cursor-pointer"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
+            })();
+          },
+        }}
+      />
     );
   }
 

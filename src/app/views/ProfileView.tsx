@@ -43,6 +43,7 @@ import {
   openSupportEmail,
 } from "../lib/supportEmail";
 import { getCurrentWeekXp, getWeekAverageXp } from "../lib/weeklyXp";
+import { markIntentionalSignOut } from "../lib/sessionExpired";
 
 export const ProfileView: React.FC = () => {
   const [supportState, setSupportState] = useState<"idle" | "opening" | "fallback">("idle");
@@ -83,6 +84,7 @@ export const ProfileView: React.FC = () => {
     setSigningOut(true);
     setSignOutError(null);
     try {
+      markIntentionalSignOut();
       await queryClient.cancelQueries();
       queryClient.clear();
       await supabase.auth.signOut();

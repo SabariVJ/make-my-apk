@@ -7,6 +7,7 @@ import {
   Trash2,
   X,
   Check,
+  Clock,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -16,6 +17,14 @@ import {
   Target,
 } from "lucide-react";
 import { buildClientSessionId, formatDurationLabel } from "../lib/serverActivities";
+import { useAuthUserId, useWorkoutQueue } from "../hooks/useWorkoutQueue";
+import {
+  clearWorkoutDraft,
+  isRetryableFailure,
+  readWorkoutDraft,
+  writeWorkoutDraft,
+  type WorkoutDraft,
+} from "../lib/workoutQueue";
 import {
   CATEGORY_LABELS,
   EXERCISE_CATEGORIES,
@@ -145,7 +154,38 @@ export const TrainStrength: React.FC<{
     new Map(),
   );
   const [prescriptionNote, setPrescriptionNote] = useState<string | null>(null);
+  const [pendingSync, setPendingSync] = useState(false);
+  const [resumable, setResumable] = useState<WorkoutDraft | null>(null);
   const sessionIdRef = useRef<string>("");
+  const userId = useAuthUserId();
+  const queue = useWorkoutQueue();
+
+  // A draft survives a process restart: the workout is never lost to a reload.
+  useEffect(() => {
+    if (phase === "idle" && sessionIdRef.current === "") {
+      setResumable(readWorkoutDraft(userId));
+    }
+  }, [phase, userId]);
+
+  // Keep the on-device draft current while sets are being logged (never on a
+  // timer that could mark work done — only real entered values are stored).
+  useEffect(() => {
+    if (phase !== "logging" || startedAtMs === null || sessionIdRef.current === "") return;
+    writeWorkoutDraft(userId, {
+      clientSessionId: sessionIdRef.current,
+      startedAtMs,
+      drafts,
+      context: prescription?.context ?? null,
+      targets: prescription?.targets ?? [],
+      note: prescriptionNote,
+    });
+  }, [phase, startedAtMs, drafts, prescription, prescriptionNote, userId]);
+
+  // Retry anything left pending as soon as the logger opens.
+  useEffect(() => {
+    if (queue.pendingCount > 0) void queue.sync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue.pendingCount]);
 
   const loadCatalog = useCallback(async () => {
     setCatalogLoading(true);
@@ -174,6 +214,7 @@ export const TrainStrength: React.FC<{
     setRewards(null);
     setSaveError(null);
     setDraftError(null);
+    setPendingSync(false);
     setEndedAtMs(null);
     setStartedAtMs(Date.now());
 
@@ -210,16 +251,32 @@ export const TrainStrength: React.FC<{
   };
 
   const reset = () => {
+    clearWorkoutDraft(userId);
     sessionIdRef.current = "";
     setDrafts([]);
     setOutcome(null);
     setSaveError(null);
     setDraftError(null);
+    setPendingSync(false);
     setTargetByExerciseId(new Map());
     setPrescriptionNote(null);
     setStartedAtMs(null);
     setEndedAtMs(null);
     setPhase("idle");
+  };
+
+  /** Restore an in-progress draft after a reload or process restart. */
+  const resumeDraft = (draft: WorkoutDraft) => {
+    sessionIdRef.current = draft.clientSessionId;
+    setDrafts(draft.drafts);
+    setStartedAtMs(draft.startedAtMs);
+    setEndedAtMs(null);
+    setPrescriptionNote(draft.note);
+    setOutcome(null);
+    setSaveError(null);
+    setPendingSync(false);
+    setResumable(null);
+    setPhase("logging");
   };
 
   const addExercise = (option: StrengthExerciseOption) => {
@@ -314,6 +371,7 @@ export const TrainStrength: React.FC<{
     });
     setSaving(false);
     if (result.ok) {
+      clearWorkoutDraft(userId);
       setOutcome(result);
       setPhase("saved");
       // Link the canonical activity to its plan slot (idempotent; a retry can
@@ -349,7 +407,23 @@ export const TrainStrength: React.FC<{
           }
         }
       }
+    } else if (isRetryableFailure(result.error)) {
+      // The connection failed, not the workout: keep the real data on this
+      // device and replay the SAME client_session_id when the server is
+      // reachable again. Nothing is claimed as saved.
+      queue.enqueueNow({
+        clientSessionId: sessionIdRef.current,
+        startedAtMs,
+        endedAtMs,
+        durationSeconds: Math.max(1, Math.round((endedAtMs - startedAtMs) / 1000)),
+        drafts,
+        context: prescription?.context ?? null,
+        targets: prescription?.targets ?? [],
+      });
+      setPendingSync(true);
+      setSaveError(result.error ?? "Couldn't save the workout.");
     } else {
+      setPendingSync(false);
       setSaveError(result.error ?? "Couldn't save the workout.");
     }
   };
@@ -401,14 +475,55 @@ export const TrainStrength: React.FC<{
             Log exercises, sets, reps and weight. One workout is saved as a single canonical
             activity with its full exercise history.
           </p>
+          {resumable && (
+            <div
+              data-testid="strength-resume-draft"
+              className="mx-auto mt-4 max-w-sm rounded-2xl border border-white/10 bg-black/40 p-3 text-left"
+            >
+              <p className="text-[11px] font-mono uppercase tracking-wider text-white">
+                Unfinished workout on this device
+              </p>
+              <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                {resumable.drafts.length} exercise{resumable.drafts.length === 1 ? "" : "s"} logged
+                — pick up where you left off, or discard it.
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => resumeDraft(resumable)}
+                  className="flex-1 rounded-lg border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                >
+                  Resume workout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearWorkoutDraft(userId);
+                    setResumable(null);
+                  }}
+                  className="rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
           <button
             type="button"
             onClick={start}
             data-testid="strength-start"
             className="mt-4 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-5 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white hover:bg-[#C81E3A]/30"
           >
-            START WORKOUT
+            {resumable ? "START A NEW WORKOUT" : "START WORKOUT"}
           </button>
+          {queue.pendingCount > 0 && (
+            <p
+              data-testid="strength-queue-count"
+              className="mt-3 text-[10px] font-mono uppercase tracking-wider text-[#D4AF37]"
+            >
+              {queue.pendingCount} workout{queue.pendingCount === 1 ? "" : "s"} waiting to sync
+            </p>
+          )}
         </div>
       )}
 
@@ -673,16 +788,41 @@ export const TrainStrength: React.FC<{
 
           {phase === "summary" && (
             <>
-              <button
-                type="button"
-                onClick={() => void save()}
-                disabled={saving}
-                data-testid="strength-save"
-                className="mt-4 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
-              >
-                {saving ? "SAVING…" : "SAVE ACTIVITY"}
-              </button>
-              {saveError && (
+              {pendingSync ? (
+                <div
+                  data-testid="strength-pending-sync"
+                  className="mt-4 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 p-3"
+                >
+                  <p className="flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-widest text-[#D4AF37]">
+                    <Clock className="h-3.5 w-3.5" /> Pending sync
+                  </p>
+                  <p role="alert" className="mt-1 text-[11px] font-inter text-[#B8B8C0]">
+                    COULDN'T SAVE WORKOUT — {saveError ?? "the server could not be reached"}. It is
+                    kept on this device and will sync automatically when you're back online; nothing
+                    is counted until the server confirms it.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void save()}
+                    disabled={saving}
+                    data-testid="strength-retry"
+                    className="mt-2 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] disabled:opacity-40"
+                  >
+                    {saving ? "Syncing…" : "Retry"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void save()}
+                  disabled={saving}
+                  data-testid="strength-save"
+                  className="mt-4 w-full rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-3 text-xs font-mono font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                >
+                  {saving ? "SAVING…" : "SAVE ACTIVITY"}
+                </button>
+              )}
+              {saveError && !pendingSync && (
                 <div className="mt-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
                   <p
                     role="alert"

@@ -470,7 +470,14 @@ export async function recordTrainingContext(
   callRpc: TrainingRpcCaller,
   clientSessionId: string,
   context: TrainingContextInput,
-): Promise<{ ok: boolean; duplicate?: boolean; error?: string }> {
+): Promise<{
+  ok: boolean;
+  duplicate?: boolean;
+  /** True when this activity lost the race for an already-finalized slot. */
+  slotAlreadyFinalized?: boolean;
+  slotStatus?: string;
+  error?: string;
+}> {
   try {
     const { data, error } = await callRpc("svj_record_training_context", {
       p_client_session_id: clientSessionId,
@@ -484,9 +491,19 @@ export async function recordTrainingContext(
       },
     });
     if (error) return { ok: false, error: error.message };
-    const env = data as { ok?: boolean; duplicate?: unknown } | null;
+    const env = data as {
+      ok?: boolean;
+      duplicate?: unknown;
+      slot_already_finalized?: unknown;
+      slot_status?: unknown;
+    } | null;
     if (!env || env.ok !== true) return { ok: false, error: "Couldn't record training context." };
-    return { ok: true, duplicate: env.duplicate === true };
+    return {
+      ok: true,
+      duplicate: env.duplicate === true,
+      slotAlreadyFinalized: env.slot_already_finalized === true,
+      slotStatus: str(env.slot_status) ?? undefined,
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Network error." };
   }

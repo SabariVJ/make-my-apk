@@ -68,10 +68,22 @@ describe("training load from completed tasks", () => {
   });
 
   it("computes one day's load and reflects unchecking", () => {
-    const rows = [row({ id: "a", category: "Discipline" }), row({ id: "b", category: "Nutrition" })];
-    assert.equal(taskLoadForDay(rows, today()), TASK_LOAD_WEIGHTS.Discipline + TASK_LOAD_WEIGHTS.Nutrition);
+    const rows = [
+      row({ id: "a", category: "Discipline" }),
+      row({ id: "b", category: "Nutrition" }),
+    ];
+    assert.equal(
+      taskLoadForDay(rows, today()),
+      TASK_LOAD_WEIGHTS.Discipline + TASK_LOAD_WEIGHTS.Nutrition,
+    );
     rows[1].undoneAt = NOW.toISOString();
-    assert.equal(taskLoadForDay(rows.filter((r) => !r.undoneAt), today()), TASK_LOAD_WEIGHTS.Discipline);
+    assert.equal(
+      taskLoadForDay(
+        rows.filter((r) => !r.undoneAt),
+        today(),
+      ),
+      TASK_LOAD_WEIGHTS.Discipline,
+    );
   });
 
   it("bands total load with the documented thresholds", () => {
@@ -168,7 +180,8 @@ describe("history store", () => {
       score: 80,
       checkin: { sleepHours: 7.5, soreness: 2, energy: 4, perceivedRecovery: 4 },
     });
-    const trend = readinessTrend(history, 7);
+    // A fixed clock keeps this deterministic (the day series is relative to today).
+    const trend = readinessTrend(history, 7, NOW);
     assert.equal(trend.length, 7);
     assert.equal(trend[6].date, today());
     const filled = trend.find((p) => p.date === today(-2));
@@ -188,7 +201,6 @@ describe("personal best sleep", () => {
     checkin: { sleepHours: sleep, soreness: 2, energy, perceivedRecovery: 3 },
     score: energy !== null ? energy * 15 : 0,
   });
-
 
   it("refuses to invent a number without personal history", () => {
     const result = bestSleepRange([dayWith(-2, 7, 4)], 3);

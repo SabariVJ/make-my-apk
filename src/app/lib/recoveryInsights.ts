@@ -295,9 +295,13 @@ export function upsertDayRecord(
 }
 
 /** The trailing `days` records ending today, oldest first (gaps included). */
-export function trailingRecords(history: RecoveryDayRecord[], days = 7): RecoveryDayRecord[] {
+export function trailingRecords(
+  history: RecoveryDayRecord[],
+  days = 7,
+  now: Date = new Date(),
+): RecoveryDayRecord[] {
   const byDate = new Map(history.map((row) => [row.date, row]));
-  return lastNDayKeys(days)
+  return lastNDayKeys(days, now)
     .reverse()
     .map((date) => byDate.get(date) ?? emptyDayRecord(date));
 }
@@ -481,8 +485,12 @@ export interface TrendPoint {
 }
 
 /** Seven-day readiness + sleep series (oldest first) for the trend graph. */
-export function readinessTrend(history: RecoveryDayRecord[], days = 7): TrendPoint[] {
-  return trailingRecords(history, days).map((row) => {
+export function readinessTrend(
+  history: RecoveryDayRecord[],
+  days = 7,
+  now: Date = new Date(),
+): TrendPoint[] {
+  return trailingRecords(history, days, now).map((row) => {
     const parsed = new Date(`${row.date}T12:00:00`);
     return {
       date: row.date,

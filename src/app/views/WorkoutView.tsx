@@ -12,6 +12,7 @@ import {
   X,
   Layers,
   CalendarCheck,
+  BarChart3,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { WorkoutExercise } from "../types";
@@ -20,6 +21,7 @@ import { StructuredStrengthCard } from "../components/StructuredStrengthCard";
 import { TrainStrength, type StrengthPrescription } from "./TrainStrength";
 import { TrainingToday } from "../components/TrainingToday";
 import { TemplateBrowser } from "../components/TemplateBrowser";
+import { TrainingProgress } from "../components/TrainingProgress";
 import { useTrainingPlan } from "../hooks/useTrainingPlan";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { listServerActivities, formatActivityDate } from "../lib/serverActivities";
@@ -27,7 +29,7 @@ import { prescribedTargetsForTemplate, type TrainingContextInput } from "../lib/
 import { explainSession, type PlanSession } from "../lib/trainingPlan";
 import { templateForSlot, type WorkoutTemplate } from "../lib/trainingTemplates";
 
-type Tab = "today" | "log" | "templates" | "history";
+type Tab = "today" | "log" | "templates" | "history" | "progress";
 
 const blankExercise = (): WorkoutExercise => ({
   id: `ex-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -189,6 +191,7 @@ export const WorkoutView: React.FC = () => {
   const tabs: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
     { id: "today", label: "Today", icon: CalendarCheck },
     { id: "templates", label: "Templates", icon: Layers },
+    { id: "progress", label: "Progress", icon: BarChart3 },
     { id: "history", label: "History", icon: History },
     { id: "log", label: "Log", icon: Dumbbell },
   ];
@@ -229,7 +232,13 @@ export const WorkoutView: React.FC = () => {
       />
 
       {/* Training modes */}
-      <div className="flex gap-2">
+      {/* Horizontally scrollable so five destinations fit a narrow phone
+          without shrinking the touch targets. */}
+      <div
+        role="tablist"
+        aria-label="Training sections"
+        className="flex gap-2 overflow-x-auto pb-1"
+      >
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -237,14 +246,16 @@ export const WorkoutView: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              role="tab"
+              aria-selected={active}
               data-testid={`train-tab-${t.id}`}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-inter font-semibold transition-all cursor-pointer border ${
+              className={`flex flex-1 shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-inter font-semibold transition-all cursor-pointer ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
                   : "bg-[#17171A] border-white/8 text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="h-4 w-4" aria-hidden />
               {t.label}
             </button>
           );
@@ -479,6 +490,25 @@ export const WorkoutView: React.FC = () => {
                 </button>
               </div>
             ))}
+          </motion.div>
+        )}
+
+        {tab === "progress" && (
+          <motion.div
+            key="progress"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <TrainingProgress
+              loading={training.loading}
+              serverPlan={training.serverPlan}
+              weekly={training.weekly}
+              muscleRows={training.muscleRows}
+              decisions={training.decisions}
+              strengthRecords={training.strengthRecords}
+              loadExerciseHistory={training.loadExerciseHistory}
+            />
           </motion.div>
         )}
 

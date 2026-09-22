@@ -5,6 +5,7 @@ import {
   getMyTrainingPlan,
   getTrainingProfile,
   listMyTemplateLibrary,
+  listTrainingDecisions,
   listWorkoutTemplates,
   recentMuscleHistory,
   removeMyTemplate,
@@ -16,6 +17,14 @@ import {
   type ServerTemplateIdentity,
   type TemplateLibraryEntry,
 } from "../lib/trainingClient";
+import type { TrainingDecisionRecord } from "../lib/trainingProgress";
+import { strengthRpcClient } from "../lib/strengthClient";
+import {
+  getExerciseHistory,
+  listStrengthRecords,
+  type ExerciseHistory,
+  type StrengthRecordDto,
+} from "../lib/strength";
 import {
   currentSession,
   reconcileMissedSessions,
@@ -41,6 +50,10 @@ export interface TrainingPlanState {
   catalog: ServerTemplateIdentity[];
   library: TemplateLibraryEntry[];
   muscleRows: MuscleHistoryRow[];
+  /** Real progression-decision audit trail (server-owned). */
+  decisions: TrainingDecisionRecord[];
+  /** Personal records derived from stored sets (server-owned). */
+  strengthRecords: StrengthRecordDto[];
   /** Deterministic split decision derived from the current profile. */
   decision: SplitDecision | null;
   /** Weekly plan with missed sessions reconciled (client-side view). */
@@ -59,6 +72,8 @@ export interface TrainingPlanActions {
   generatePlan: () => Promise<{ ok: boolean; error?: string }>;
   toggleSaveTemplate: (templateId: string) => Promise<{ ok: boolean; error?: string }>;
   reloadMuscleHistory: () => Promise<void>;
+  /** Completed set history for one exercise (Progress view). */
+  loadExerciseHistory: (exerciseId: string) => Promise<ExerciseHistory | null>;
 }
 
 /**
@@ -75,6 +90,8 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
   const [catalog, setCatalog] = useState<ServerTemplateIdentity[]>([]);
   const [library, setLibrary] = useState<TemplateLibraryEntry[]>([]);
   const [muscleRows, setMuscleRows] = useState<MuscleHistoryRow[]>([]);
+  const [decisions, setDecisions] = useState<TrainingDecisionRecord[]>([]);
+  const [strengthRecords, setStrengthRecords] = useState<StrengthRecordDto[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
   const [creatingPlan, setCreatingPlan] = useState(false);
   const mounted = useRef(true);
@@ -95,13 +112,14 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     }
     setLoading(true);
     setError(null);
-    const [profileResult, planResult, libraryResult, catalogResult, muscleResult] =
+    const [profileResult, planResult, libraryResult, catalogResult, muscleResult, decisionResult] =
       await Promise.all([
         getTrainingProfile(rpc),
         getMyTrainingPlan(rpc),
         listMyTemplateLibrary(rpc),
         listWorkoutTemplates(rpc),
         recentMuscleHistory(rpc, 7),
+        listTrainingDecisions(rpc, 50),
       ]);
     if (!mounted.current) return;
     if (profileResult.ok && profileResult.profile) {
@@ -111,6 +129,12 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     if (libraryResult.ok) setLibrary(libraryResult.library);
     if (catalogResult.ok) setCatalog(catalogResult.templates);
     if (muscleResult.ok) setMuscleRows(muscleResult.rows);
+    if (decisionResult.ok) setDecisions(decisionResult.decisions);
+    const strengthClient = strengthRpcClient();
+    if (strengthClient) {
+      const records = await listStrengthRecords((fn, args) => strengthClient.rpc(fn, args));
+      if (mounted.current && records.ok) setStrengthRecords(records.records);
+    }
     const firstError = profileResult.error ?? planResult.error ?? libraryResult.error;
     setError(firstError ?? null);
     setLoading(false);
@@ -223,6 +247,15 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     if (!rpc) return;
     const result = await recentMuscleHistory(rpc, 7);
     if (result.ok && mounted.current) setMuscleRows(result.rows);
+    const decisionResult = await listTrainingDecisions(rpc, 50);
+    if (decisionResult.ok && mounted.current) setDecisions(decisionResult.decisions);
+  }, []);
+
+  const loadExerciseHistory = useCallback(async (exerciseId: string) => {
+    const client = strengthRpcClient();
+    if (!client || !exerciseId) return null;
+    const result = await getExerciseHistory((fn, args) => client.rpc(fn, args), exerciseId, 30);
+    return result.ok ? (result.history ?? null) : null;
   }, []);
 
   return {
@@ -233,6 +266,8 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     catalog,
     library,
     muscleRows,
+    decisions,
+    strengthRecords,
     decision,
     weekly,
     todaySession,
@@ -245,5 +280,6 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     generatePlan,
     toggleSaveTemplate,
     reloadMuscleHistory,
+    loadExerciseHistory,
   };
 }

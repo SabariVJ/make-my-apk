@@ -9,8 +9,14 @@
 
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 import { MUSCLE_GROUPS, type MuscleGroup } from "./strength";
-import { templateForSlot, type SessionFamily, type WorkoutTemplate } from "./trainingTemplates";
+import {
+  loadConventionForSlug,
+  templateForSlot,
+  type SessionFamily,
+  type WorkoutTemplate,
+} from "./trainingTemplates";
 import type { PrescribedTarget } from "./trainingProgression";
+import type { TrainingDecisionRecord } from "./trainingProgress";
 import type { TrainingProfile } from "./trainingProfile";
 import type { PlanSession, SplitDecision, WeeklyPlan } from "./trainingPlan";
 
@@ -362,7 +368,9 @@ export function prescribedTargetsForTemplate(
     exerciseSlug: e.slug,
     exerciseName: e.name,
     loadType: e.loadType,
-    loadConvention: e.loadType === "assisted" ? "assisted" : "barbell_total",
+    // The declared convention, not a blanket default: dumbbell per-hand work is
+    // never compared against a barbell total or a machine stack.
+    loadConvention: loadConventionForSlug(e.slug, e.loadType),
     equipmentKey: e.equipment[0] ?? "unknown",
     workSets: e.workSets,
     repMin: e.repMin,
@@ -520,6 +528,38 @@ export async function recentMuscleHistory(
 }
 
 // ── Decision audit ─────────────────────────────────────────────────────────
+
+export async function listTrainingDecisions(
+  callRpc: TrainingRpcCaller,
+  limit = 50,
+): Promise<{ ok: boolean; decisions: TrainingDecisionRecord[]; error?: string }> {
+  try {
+    const { data, error } = await callRpc("svj_list_training_decisions", { p_limit: limit });
+    if (error) return { ok: false, decisions: [], error: error.message };
+    const env = data as { ok?: boolean; decisions?: unknown } | null;
+    if (!env || env.ok !== true || !Array.isArray(env.decisions))
+      return { ok: false, decisions: [], error: "Unexpected decision history response." };
+    const decisions = env.decisions
+      .map((raw): TrainingDecisionRecord | null => {
+        if (!raw || typeof raw !== "object") return null;
+        const d = raw as Record<string, unknown>;
+        const slug = str(d.exerciseSlug) ?? str(d.exercise_slug);
+        const action = str(d.action);
+        if (!slug || !action) return null;
+        return {
+          exerciseSlug: slug,
+          action: action as TrainingDecisionRecord["action"],
+          rationale: str(d.rationale) ?? "",
+          createdAt: str(d.createdAt) ?? str(d.created_at) ?? "",
+          policyVersion: str(d.policyVersion) ?? str(d.policy_version) ?? undefined,
+        };
+      })
+      .filter((d): d is TrainingDecisionRecord => d !== null);
+    return { ok: true, decisions };
+  } catch (e) {
+    return { ok: false, decisions: [], error: e instanceof Error ? e.message : "Network error." };
+  }
+}
 
 export async function recordTrainingDecision(
   callRpc: TrainingRpcCaller,

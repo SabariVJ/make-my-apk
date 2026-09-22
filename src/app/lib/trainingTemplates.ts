@@ -12,7 +12,7 @@
 // ============================================================================
 
 import type { MuscleGroup } from "./strength";
-import type { EquipmentId, ExperienceLevel, TrainingGoal } from "./trainingProfile";
+import type { EquipmentId, ExperienceLevel, LoadConvention, TrainingGoal } from "./trainingProfile";
 
 export const SESSION_FAMILIES = [
   "full_body",
@@ -53,6 +53,64 @@ export type MovementPattern = (typeof MOVEMENT_PATTERNS)[number];
 /** How progress is expressed for an exercise — drives trainingProgression.ts. */
 export const LOAD_TYPES = ["weighted", "bodyweight", "assisted", "duration", "power"] as const;
 export type LoadType = (typeof LOAD_TYPES)[number];
+
+/**
+ * Declared load convention for every reviewed catalog exercise, keyed by the
+ * stable svj_exercises slug. Progression may only compare sessions that share a
+ * convention: 20 kg per-hand dumbbells and a 40 kg machine stack are different
+ * performances and must never be treated as the same weight.
+ *
+ * Mirrored server-side on public.svj_exercises.load_convention (see
+ * 20260928000000_training_progress.sql); a test asserts the two stay identical.
+ */
+export const CATALOG_LOAD_CONVENTIONS: Record<string, LoadConvention> = {
+  bench_press: "barbell_total",
+  incline_bench_press: "barbell_total",
+  dumbbell_bench_press: "dumbbell_per_hand",
+  chest_press: "machine_stack",
+  chest_fly: "dumbbell_per_hand",
+  push_up: "bodyweight_added",
+  pull_up: "bodyweight_added",
+  lat_pulldown: "machine_stack",
+  barbell_row: "barbell_total",
+  dumbbell_row: "dumbbell_per_hand",
+  seated_cable_row: "cable",
+  overhead_press: "barbell_total",
+  dumbbell_shoulder_press: "dumbbell_per_hand",
+  lateral_raise: "dumbbell_per_hand",
+  rear_delt_fly: "dumbbell_per_hand",
+  bicep_curl: "dumbbell_per_hand",
+  hammer_curl: "dumbbell_per_hand",
+  tricep_pushdown: "cable",
+  overhead_tricep_extension: "cable",
+  dips: "bodyweight_added",
+  squat: "barbell_total",
+  leg_press: "machine_stack",
+  lunges: "dumbbell_per_hand",
+  bulgarian_split_squat: "dumbbell_per_hand",
+  leg_extension: "machine_stack",
+  leg_curl: "machine_stack",
+  romanian_deadlift: "barbell_total",
+  deadlift: "barbell_total",
+  calf_raise: "machine_stack",
+  plank: "bodyweight_added",
+  crunch: "bodyweight_added",
+  leg_raise: "bodyweight_added",
+  russian_twist: "bodyweight_added",
+  burpee: "bodyweight_added",
+  kettlebell_swing: "barbell_total",
+};
+
+/**
+ * A template exercise's convention: its declared catalog entry when known, else
+ * a deterministic fallback from its load type. Assisted always wins because
+ * more assistance is less work; bodyweight/duration carry no external load.
+ */
+export function loadConventionForSlug(slug: string, loadType: LoadType): LoadConvention {
+  if (loadType === "assisted") return "assisted";
+  if (loadType === "bodyweight" || loadType === "duration") return "bodyweight_added";
+  return CATALOG_LOAD_CONVENTIONS[slug] ?? "barbell_total";
+}
 
 export interface TemplateExercise {
   /** Stable identity — matches svj_exercises.slug (global catalog). */

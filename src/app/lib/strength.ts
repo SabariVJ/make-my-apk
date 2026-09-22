@@ -12,6 +12,7 @@
 
 import { normalizeServerActivity, type ServerActivity } from "./serverActivities";
 import { extractSaveExtras, type GoalDto, type NewRecordDto } from "./goalsRecords";
+import { LOAD_CONVENTIONS, type LoadConvention } from "./trainingProfile";
 
 export const MUSCLE_GROUPS = [
   "chest",
@@ -97,6 +98,11 @@ export interface StrengthExerciseOption {
   secondaryMuscles: MuscleGroup[];
   exerciseType: ExerciseType;
   isCustom: boolean;
+  /**
+   * Declared load convention from the catalog (server-owned). null means the
+   * catalog does not classify this movement, so its loads must not be compared.
+   */
+  loadConvention: LoadConvention | null;
 }
 
 /** A single set while the workout is still a local draft. */
@@ -470,6 +476,9 @@ export function normalizeExerciseOption(value: unknown): StrengthExerciseOption 
     secondaryMuscles: secondary,
     exerciseType: e.exercise_type as ExerciseType,
     isCustom: e.is_custom === true,
+    loadConvention: (LOAD_CONVENTIONS as readonly string[]).includes(e.load_convention as string)
+      ? (e.load_convention as LoadConvention)
+      : null,
   };
 }
 

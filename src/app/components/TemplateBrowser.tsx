@@ -14,6 +14,7 @@ import { MUSCLE_LABELS, type MuscleGroup } from "../lib/strength";
 import { effectiveWeeklySessions, type TrainingProfile } from "../lib/trainingProfile";
 import { svjWhileTap } from "../lib/motion";
 import type { TemplateLibraryEntry } from "../lib/trainingClient";
+import { LegacyTemplateImportCard } from "./LegacyTemplateImportCard";
 
 export interface TemplateBrowserProps {
   profile: TrainingProfile;
@@ -21,6 +22,12 @@ export interface TemplateBrowserProps {
   savedTemplateIds: Set<string>;
   onToggleSave: (templateId: string) => Promise<{ ok: boolean; error?: string }>;
   onStartTemplate: (template: WorkoutTemplate) => void;
+  /** On-device (pre-account) templates offered for an explicit import. */
+  deviceTemplates?: {
+    id: string;
+    name: string;
+    exercises: { id: string; name: string; sets: { reps: number; weight: number }[] }[];
+  }[];
 }
 
 const BROWSE_MUSCLES = ["chest", "back", "shoulders", "biceps", "triceps", "legs", "core"] as const;
@@ -31,6 +38,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
   savedTemplateIds,
   onToggleSave,
   onStartTemplate,
+  deviceTemplates = [],
 }) => {
   const [family, setFamily] = useState<string>("all");
   const [muscle, setMuscle] = useState<string>("all");
@@ -71,6 +79,8 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
 
   return (
     <div className="space-y-4" data-testid="template-browser">
+      <LegacyTemplateImportCard deviceTemplates={deviceTemplates} />
+
       {recentlyUsed.length > 0 && (
         <section>
           <p className="font-anton text-sm uppercase tracking-wide text-white">Recently used</p>

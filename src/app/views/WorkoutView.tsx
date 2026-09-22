@@ -499,6 +499,15 @@ export const WorkoutView: React.FC = () => {
               savedTemplateIds={training.savedTemplateIds}
               onToggleSave={training.toggleSaveTemplate}
               onStartTemplate={startTemplate}
+              deviceTemplates={workoutTemplates.map((tpl) => ({
+                id: tpl.id,
+                name: tpl.name,
+                exercises: tpl.exercises.map((e) => ({
+                  id: e.id,
+                  name: e.name,
+                  sets: e.sets.map((s) => ({ reps: s.reps, weight: s.weight })),
+                })),
+              }))}
             />
 
             <p className="pt-2 font-anton text-sm uppercase tracking-wide text-white">

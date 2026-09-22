@@ -584,6 +584,72 @@ export async function recentMuscleHistory(
   }
 }
 
+// ── Legacy template import ─────────────────────────────────────────────────
+
+export interface OwnedTemplate {
+  id: string;
+  name: string;
+  sourceKey: string | null;
+}
+
+/** Import one on-device template. Idempotent by (owner, source key). */
+export async function importLegacyTemplate(
+  callRpc: TrainingRpcCaller,
+  payload: {
+    sourceKey: string;
+    name: string;
+    exercises: {
+      exercise_id: string;
+      name: string;
+      primary_muscle: string;
+      sets: { reps: number; weight_kg: number }[];
+    }[];
+  },
+): Promise<{ ok: boolean; templateId?: string; duplicate?: boolean; error?: string }> {
+  try {
+    const { data, error } = await callRpc("svj_import_legacy_template", {
+      p_source_key: payload.sourceKey,
+      p_name: payload.name,
+      p_exercises: payload.exercises,
+    });
+    if (error) return { ok: false, error: error.message };
+    const env = data as { ok?: boolean; template_id?: unknown; duplicate?: unknown } | null;
+    if (!env || env.ok !== true) return { ok: false, error: "The server rejected this import." };
+    return {
+      ok: true,
+      templateId: str(env.template_id) ?? undefined,
+      duplicate: env.duplicate === true,
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error." };
+  }
+}
+
+/** Templates already imported for this account, so nothing is offered twice. */
+export async function listMyOwnedTemplates(
+  callRpc: TrainingRpcCaller,
+): Promise<{ ok: boolean; templates: OwnedTemplate[]; error?: string }> {
+  try {
+    const { data, error } = await callRpc("svj_list_my_owned_templates");
+    if (error) return { ok: false, templates: [], error: error.message };
+    const env = data as { ok?: boolean; templates?: unknown } | null;
+    if (!env || env.ok !== true || !Array.isArray(env.templates))
+      return { ok: false, templates: [], error: "Unexpected response." };
+    const templates = env.templates
+      .map((raw): OwnedTemplate | null => {
+        if (!raw || typeof raw !== "object") return null;
+        const t = raw as Record<string, unknown>;
+        const id = str(t.id);
+        if (!id) return null;
+        return { id, name: str(t.name) ?? id, sourceKey: str(t.sourceKey) };
+      })
+      .filter((t): t is OwnedTemplate => t !== null);
+    return { ok: true, templates };
+  } catch (e) {
+    return { ok: false, templates: [], error: e instanceof Error ? e.message : "Network error." };
+  }
+}
+
 // ── Decision audit ─────────────────────────────────────────────────────────
 
 export async function listTrainingDecisions(

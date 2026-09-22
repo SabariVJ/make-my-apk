@@ -29,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSVJ } from "../context/SVJContext";
 import { MembershipCard } from "../components/MembershipCard";
+import { NotificationPreferencesCard } from "../components/NotificationPreferencesCard";
 import { AvatarFrame } from "../components/AvatarFrame";
 import { AvatarImage } from "../components/AvatarImage";
 import { HexagonRadarChart } from "../components/HexagonRadarChart";
@@ -173,7 +174,13 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
       {/* Digital Membership Card Section */}
-      <MembershipCard user={user} /> {/* Friends List — hidden on Android Play release */}
+      <MembershipCard user={user} />
+
+      {/* Notification preferences — the same category toggles the
+          NotificationCoordinator reads. */}
+      <NotificationPreferencesCard />
+
+      {/* Friends List — hidden on Android Play release */}
       {!isAndroid && friends.length > 0 && (
         <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
           <div className="flex items-center justify-between">

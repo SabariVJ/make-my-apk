@@ -45,6 +45,8 @@ export interface QueuedWorkout {
   /** Prescription linkage replayed with the retry (idempotent server-side). */
   context: TrainingContextInput | null;
   targets: PrescribedTarget[];
+  /** Catalog exercise id → slug, so a replayed workout can still be judged. */
+  slugByExerciseId?: Record<string, string>;
   status: QueuedWorkoutStatus;
   attempts: number;
   lastAttemptAt: string | null;
@@ -112,6 +114,15 @@ function normalizeTargets(value: unknown): PrescribedTarget[] {
     : [];
 }
 
+function normalizeSlugMap(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const map: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof entry === "string" && entry) map[key] = entry;
+  }
+  return Object.keys(map).length > 0 ? map : undefined;
+}
+
 /**
  * Normalize one stored entry. Returns null when it is malformed or belongs to a
  * different account than the storage key — the entry is then dropped, never
@@ -141,6 +152,7 @@ export function normalizeQueuedWorkout(raw: unknown, userId: string): QueuedWork
     notes: typeof entry.notes === "string" ? entry.notes : undefined,
     context: normalizeContext(entry.context),
     targets: normalizeTargets(entry.targets),
+    slugByExerciseId: normalizeSlugMap(entry.slugByExerciseId),
     status: status === "syncing" || status === "failed" ? status : "pending",
     attempts: isFiniteNumber(entry.attempts) ? Math.max(0, Math.floor(entry.attempts)) : 0,
     lastAttemptAt: typeof entry.lastAttemptAt === "string" ? entry.lastAttemptAt : null,

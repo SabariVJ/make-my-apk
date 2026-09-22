@@ -16,7 +16,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const root = path.dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
-const read = (rel: string) => readFile(path.join(root, rel), "utf8");
+// Normalized line endings: Windows checkouts (core.autocrlf) must not change
+// what these slicing contracts see.
+const read = async (rel: string) =>
+  (await readFile(path.join(root, rel), "utf8")).replace(/\r\n/g, "\n");
 
 const serverSource = await read("src/lib/challenge-engine.server.ts");
 const viewSource = await read("src/app/views/ChallengesView.tsx");

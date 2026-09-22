@@ -30,7 +30,12 @@ import {
 } from "../lib/featureFlags";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { listServerActivities, formatActivityDate } from "../lib/serverActivities";
-import { prescribedTargetsForTemplate, type TrainingContextInput } from "../lib/trainingClient";
+import {
+  prescribedTargetsForOwnedTemplate,
+  prescribedTargetsForTemplate,
+  type OwnedTemplate,
+  type TrainingContextInput,
+} from "../lib/trainingClient";
 import { explainSession, type PlanSession } from "../lib/trainingPlan";
 import { templateForSlot, type WorkoutTemplate } from "../lib/trainingTemplates";
 
@@ -104,6 +109,21 @@ export const WorkoutView: React.FC = () => {
     setStrengthOpen(true);
   };
 
+  /** Open the logger from a template imported from this device. */
+  const startOwnedTemplate = (template: OwnedTemplate) => {
+    const targets = prescribedTargetsForOwnedTemplate(template);
+    setPrescription({
+      targets,
+      context: { templateId: template.id, templateVersion: 1 },
+      title: template.name,
+      note:
+        targets.length === template.exercises.length && targets.length > 0
+          ? "Imported from this device — targets are prefilled from your original sets."
+          : "Imported from this device — some exercises have no catalog match; add them from the picker.",
+    });
+    setStrengthOpen(true);
+  };
+
   const closeStrength = () => {
     setStrengthOpen(false);
     setPrescription(null);
@@ -171,6 +191,17 @@ export const WorkoutView: React.FC = () => {
     setName("");
     setExercises([blankExercise()]);
   };
+
+  // Completed plan sessions come from the already-loaded server plan — this
+  // section never triggers its own network request.
+  const completedPlanSessions = useMemo(
+    () =>
+      (training.serverPlan?.sessions ?? [])
+        .filter((session) => session.status === "completed")
+        .slice()
+        .sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate)),
+    [training.serverPlan],
+  );
 
   const handleLog = () => {
     const result = logWorkout(name, exercises);
@@ -289,6 +320,7 @@ export const WorkoutView: React.FC = () => {
               onClick={() => setTab(t.id)}
               role="tab"
               aria-selected={active}
+              aria-controls={`train-panel-${t.id}`}
               data-testid={`train-tab-${t.id}`}
               className={`flex flex-1 shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-inter font-semibold transition-all cursor-pointer ${
                 active
@@ -307,6 +339,9 @@ export const WorkoutView: React.FC = () => {
         {guided && tab === "today" && (
           <motion.div
             key="today"
+            id="train-panel-today"
+            role="tabpanel"
+            aria-labelledby="train-tab-today"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -337,6 +372,9 @@ export const WorkoutView: React.FC = () => {
         {tab === "log" && (
           <motion.div
             key="log"
+            id="train-panel-log"
+            role="tabpanel"
+            aria-labelledby="train-tab-log"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -488,6 +526,9 @@ export const WorkoutView: React.FC = () => {
         {tab === "templates" && (
           <motion.div
             key="templates"
+            id="train-panel-templates"
+            role="tabpanel"
+            aria-labelledby="train-tab-templates"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -499,6 +540,9 @@ export const WorkoutView: React.FC = () => {
               savedTemplateIds={training.savedTemplateIds}
               onToggleSave={training.toggleSaveTemplate}
               onStartTemplate={startTemplate}
+              ownedTemplates={training.ownedTemplates}
+              onStartOwned={startOwnedTemplate}
+              onImported={() => void training.reloadOwnedTemplates()}
               deviceTemplates={workoutTemplates.map((tpl) => ({
                 id: tpl.id,
                 name: tpl.name,
@@ -549,6 +593,9 @@ export const WorkoutView: React.FC = () => {
         {guided && tab === "progress" && (
           <motion.div
             key="progress"
+            id="train-panel-progress"
+            role="tabpanel"
+            aria-labelledby="train-tab-progress"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -568,11 +615,45 @@ export const WorkoutView: React.FC = () => {
         {tab === "history" && (
           <motion.div
             key="history"
+            id="train-panel-history"
+            role="tabpanel"
+            aria-labelledby="train-tab-history"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             className="space-y-4"
           >
+            {completedPlanSessions.length > 0 && (
+              <section
+                data-testid="completed-plan-sessions"
+                className="rounded-2xl bg-[#17171A] svj-border p-4"
+              >
+                <div className="flex items-center gap-2 text-[#F4F2ED] font-inter font-semibold text-sm">
+                  <CalendarCheck className="w-4 h-4 text-[#C81E3A]" aria-hidden /> Completed plan
+                  sessions
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {completedPlanSessions.map((session) => (
+                    <li
+                      key={session.id}
+                      className="flex items-center justify-between gap-3 text-xs font-inter"
+                    >
+                      <span className="text-[#F4F2ED]">
+                        Session {session.slotIndex + 1} ·{" "}
+                        {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString(
+                          "en-US",
+                          { day: "2-digit", month: "short", year: "numeric" },
+                        )}
+                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#D4AF37]">
+                        Completed
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {exerciseNames.length > 0 && (
               <div className="rounded-2xl bg-[#17171A] svj-border p-4">
                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -582,6 +663,7 @@ export const WorkoutView: React.FC = () => {
                   <select
                     value={trendExercise ?? exerciseNames[0]}
                     onChange={(e) => setTrendExercise(e.target.value)}
+                    aria-label="Exercise for weight trend"
                     className="bg-[#0B0B0C] svj-border rounded-lg px-2 py-1.5 text-xs font-inter text-[#F4F2ED] focus:outline-none"
                   >
                     {exerciseNames.map((n) => (

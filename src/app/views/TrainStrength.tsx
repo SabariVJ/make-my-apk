@@ -58,6 +58,8 @@ import {
   trainingRpcClient,
   type TrainingContextInput,
 } from "../lib/trainingClient";
+import { syncTrainingDecisions } from "../lib/trainingDecisionSync";
+import { TRAINING_POLICY_VERSION } from "../lib/trainingPolicy";
 import type { PrescribedTarget } from "../lib/trainingProgression";
 
 export interface StrengthPrescription {
@@ -156,6 +158,8 @@ export const TrainStrength: React.FC<{
   const [prescriptionNote, setPrescriptionNote] = useState<string | null>(null);
   const [pendingSync, setPendingSync] = useState(false);
   const [resumable, setResumable] = useState<WorkoutDraft | null>(null);
+  /** Optional session RPE (1–10) — real effort evidence for future decisions. */
+  const [perceivedEffort, setPerceivedEffort] = useState<number | null>(null);
   const sessionIdRef = useRef<string>("");
   const userId = useAuthUserId();
   const queue = useWorkoutQueue();
@@ -215,6 +219,7 @@ export const TrainStrength: React.FC<{
     setSaveError(null);
     setDraftError(null);
     setPendingSync(false);
+    setPerceivedEffort(null);
     setEndedAtMs(null);
     setStartedAtMs(Date.now());
 
@@ -258,6 +263,7 @@ export const TrainStrength: React.FC<{
     setSaveError(null);
     setDraftError(null);
     setPendingSync(false);
+    setPerceivedEffort(null);
     setTargetByExerciseId(new Map());
     setPrescriptionNote(null);
     setStartedAtMs(null);
@@ -368,6 +374,7 @@ export const TrainStrength: React.FC<{
       endedAtMs,
       durationSeconds: Math.max(1, Math.round((endedAtMs - startedAtMs) / 1000)),
       drafts,
+      perceivedEffort: perceivedEffort ?? undefined,
     });
     setSaving(false);
     if (result.ok) {
@@ -383,6 +390,25 @@ export const TrainStrength: React.FC<{
           void recordTrainingContext(trpc, sessionIdRef.current, {
             ...prescription.context,
             targets: prescription.targets,
+          });
+        }
+      }
+      // Progression decisions: judged from the server's real history for each
+      // prescribed exercise and written to the audit trail (idempotent). A
+      // failure here never touches the already-canonical workout.
+      if (!result.duplicate && result.activity && targetByExerciseId.size > 0) {
+        const trpc = trainingRpcClient();
+        if (trpc) {
+          const exercises = [...targetByExerciseId.entries()].map(([exerciseId, target]) => ({
+            exerciseId,
+            target,
+          }));
+          void syncTrainingDecisions({
+            trainingClient: trpc,
+            strengthCall: (fn, args) => client.rpc(fn, args),
+            exercises,
+            activityId: result.activity.id,
+            policyVersion: TRAINING_POLICY_VERSION,
           });
         }
       }
@@ -417,8 +443,12 @@ export const TrainStrength: React.FC<{
         endedAtMs,
         durationSeconds: Math.max(1, Math.round((endedAtMs - startedAtMs) / 1000)),
         drafts,
+        perceivedEffort: perceivedEffort ?? undefined,
         context: prescription?.context ?? null,
         targets: prescription?.targets ?? [],
+        slugByExerciseId: Object.fromEntries(
+          [...targetByExerciseId.entries()].map(([id, target]) => [id, target.exerciseSlug]),
+        ),
       });
       setPendingSync(true);
       setSaveError(result.error ?? "Couldn't save the workout.");
@@ -676,6 +706,7 @@ export const TrainStrength: React.FC<{
                   <input
                     value={draft.notes ?? ""}
                     onChange={(e) => setNotes(draft.id, e.target.value)}
+                    aria-label={`Note for ${draft.name}`}
                     maxLength={300}
                     placeholder="Note (optional)"
                     className="flex-1 rounded-lg border border-white/10 bg-[#17171A] px-2 py-1.5 text-[11px] font-mono text-white placeholder:text-[#8C8C90]/50"
@@ -788,6 +819,42 @@ export const TrainStrength: React.FC<{
 
           {phase === "summary" && (
             <>
+              <div className="mt-4" data-testid="strength-effort">
+                <p
+                  id="strength-effort-label"
+                  className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]"
+                >
+                  How hard was it? (1–10)
+                </p>
+                <div
+                  role="group"
+                  aria-labelledby="strength-effort-label"
+                  className="mt-1.5 flex flex-wrap gap-1"
+                >
+                  {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={perceivedEffort === value}
+                      aria-label={`Effort ${value} of 10`}
+                      onClick={() =>
+                        setPerceivedEffort((prev) => (prev === value ? null : value))
+                      }
+                      className={`h-8 w-8 rounded-lg border font-mono text-[11px] ${
+                        perceivedEffort === value
+                          ? "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#D4AF37]"
+                          : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"
+                      }`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-[9px] font-mono text-[#8C8C90]">
+                  Optional — effort is real evidence for future load decisions, never a score.
+                </p>
+              </div>
+
               {pendingSync ? (
                 <div
                   data-testid="strength-pending-sync"
@@ -1053,6 +1120,7 @@ const ExercisePicker: React.FC<{
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search exercises"
           placeholder="Search exercises"
           className="w-full bg-transparent py-2 text-xs font-mono text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
         />

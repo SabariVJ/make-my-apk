@@ -14,6 +14,8 @@ import { importLegacyTemplate, listMyOwnedTemplates, trainingRpcClient } from ".
 export interface LegacyTemplateImportCardProps {
   /** The on-device templates the user already has. */
   deviceTemplates: { id: string; name: string; exercises: { id: string; name: string; sets: { reps: number; weight: number }[] }[] }[];
+  /** Called after the server acknowledges at least one import, to refresh. */
+  onImported?: () => void;
 }
 
 /**
@@ -23,6 +25,7 @@ export interface LegacyTemplateImportCardProps {
  */
 export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> = ({
   deviceTemplates,
+  onImported,
 }) => {
   const [catalog, setCatalog] = useState<StrengthExerciseOption[]>([]);
   const [importedKeys, setImportedKeys] = useState<string[]>([]);
@@ -116,6 +119,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
         : "Nothing new to import — everything here is already in your account.",
     );
     setImportedKeys([...importedKeys, ...plans.map((p) => p.sourceKey)]);
+    if (imported > 0) onImported?.();
   };
 
   return (
@@ -139,6 +143,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           type="button"
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
+          aria-controls="legacy-template-import-review"
           className="shrink-0 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white"
         >
           {open ? "Hide" : "Review"}
@@ -146,7 +151,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
       </div>
 
       {open && (
-        <div className="mt-3 space-y-3">
+        <div id="legacy-template-import-review" className="mt-3 space-y-3">
           {plans.map((plan) => (
             <div key={plan.legacyId} className="rounded-xl border border-white/10 bg-black/30 p-3">
               <p className="font-anton text-sm uppercase text-[#F4F2ED]">{plan.name}</p>

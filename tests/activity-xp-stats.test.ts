@@ -30,7 +30,9 @@ import { extractSaveExtras } from "../src/app/lib/goalsRecords";
 import { normalizeServerActivity } from "../src/app/lib/serverActivities";
 
 const repoRoot = resolve(import.meta.dirname ?? ".", "..");
-const read = (rel: string) => readFileSync(resolve(repoRoot, rel), "utf8");
+// Normalized line endings: Windows checkouts (core.autocrlf) must not change
+// what these regex contracts see.
+const read = (rel: string) => readFileSync(resolve(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 const migration = read("supabase/migrations/20260919000000_activity_xp_stats.sql");
 const strengthMigration = read("supabase/migrations/20260918000000_strength_logging.sql");
 const challengeServer = read("src/lib/challenge.functions.ts");

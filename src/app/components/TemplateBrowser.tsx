@@ -13,7 +13,7 @@ import {
 import { MUSCLE_LABELS, type MuscleGroup } from "../lib/strength";
 import { effectiveWeeklySessions, type TrainingProfile } from "../lib/trainingProfile";
 import { svjWhileTap } from "../lib/motion";
-import type { TemplateLibraryEntry } from "../lib/trainingClient";
+import type { OwnedTemplate, TemplateLibraryEntry } from "../lib/trainingClient";
 import { LegacyTemplateImportCard } from "./LegacyTemplateImportCard";
 
 export interface TemplateBrowserProps {
@@ -28,6 +28,12 @@ export interface TemplateBrowserProps {
     name: string;
     exercises: { id: string; name: string; sets: { reps: number; weight: number }[] }[];
   }[];
+  /** Templates already imported into the account (owned, private). */
+  ownedTemplates?: OwnedTemplate[];
+  /** Start an imported template through the canonical logger. */
+  onStartOwned?: (template: OwnedTemplate) => void;
+  /** Called after an import completes, so the owned list refreshes. */
+  onImported?: () => void;
 }
 
 const BROWSE_MUSCLES = ["chest", "back", "shoulders", "biceps", "triceps", "legs", "core"] as const;
@@ -39,6 +45,9 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
   onToggleSave,
   onStartTemplate,
   deviceTemplates = [],
+  ownedTemplates = [],
+  onStartOwned,
+  onImported,
 }) => {
   const [family, setFamily] = useState<string>("all");
   const [muscle, setMuscle] = useState<string>("all");
@@ -79,7 +88,65 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
 
   return (
     <div className="space-y-4" data-testid="template-browser">
-      <LegacyTemplateImportCard deviceTemplates={deviceTemplates} />
+      <LegacyTemplateImportCard deviceTemplates={deviceTemplates} onImported={onImported} />
+
+      {/* Imported (owned) templates — start them through the same canonical
+          logger as everything else. No save/bookmark: they already belong to
+          this account and must never enter the published catalog. */}
+      {ownedTemplates.length > 0 && (
+        <section data-testid="imported-templates">
+          <p className="font-anton text-sm uppercase tracking-wide text-white">
+            Imported from this device
+          </p>
+          <div className="mt-2 space-y-2">
+            {ownedTemplates.map((template) => (
+              <article
+                key={template.id}
+                data-testid="imported-template-card"
+                className="rounded-2xl border border-[#D4AF37]/25 bg-[#17171A] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-anton text-lg uppercase leading-none text-[#F4F2ED]">
+                      {template.name}
+                    </h3>
+                    <p className="mt-1 text-[11px] font-inter text-[#8C8C90]">
+                      {template.exercises.length} exercise
+                      {template.exercises.length === 1 ? "" : "s"} · your original sets
+                    </p>
+                  </div>
+                </div>
+                {template.exercises.length > 0 && (
+                  <ul className="mt-3 space-y-1">
+                    {template.exercises.slice(0, 6).map((exercise) => (
+                      <li
+                        key={`${template.id}-${exercise.exerciseId}`}
+                        className="flex items-center justify-between text-[11px] font-inter"
+                      >
+                        <span className="text-[#F4F2ED]">{exercise.name}</span>
+                        <span className="font-mono text-[#8C8C90]">
+                          {exercise.sets.length > 0
+                            ? exercise.sets
+                                .map((set) => `${set.reps} × ${set.weightKg} kg`)
+                                .join(" · ")
+                            : "no stored sets"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onStartOwned?.(template)}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2.5 text-[11px] font-inter font-semibold uppercase tracking-wider text-[#F4F2ED] hover:bg-[#C81E3A]/20"
+                >
+                  <Play className="h-3.5 w-3.5" /> Start this workout
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {recentlyUsed.length > 0 && (
         <section>
@@ -111,6 +178,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search sessions or exercises"
             placeholder="Search sessions or exercises"
             className="w-full bg-transparent py-2 text-xs font-inter text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
           />

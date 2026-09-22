@@ -586,10 +586,25 @@ export async function recentMuscleHistory(
 
 // ── Legacy template import ─────────────────────────────────────────────────
 
+export interface OwnedTemplateSet {
+  reps: number;
+  weightKg: number;
+}
+
+export interface OwnedTemplateExercise {
+  exerciseId: string;
+  /** Catalog slug; null for payloads imported before slugs were stored. */
+  slug: string | null;
+  name: string;
+  primaryMuscle: string;
+  sets: OwnedTemplateSet[];
+}
+
 export interface OwnedTemplate {
   id: string;
   name: string;
   sourceKey: string | null;
+  exercises: OwnedTemplateExercise[];
 }
 
 /** Import one on-device template. Idempotent by (owner, source key). */
@@ -641,7 +656,42 @@ export async function listMyOwnedTemplates(
         const t = raw as Record<string, unknown>;
         const id = str(t.id);
         if (!id) return null;
-        return { id, name: str(t.name) ?? id, sourceKey: str(t.sourceKey) };
+        const exercises: OwnedTemplateExercise[] = Array.isArray(t.exercises)
+          ? t.exercises
+              .map((rawExercise): OwnedTemplateExercise | null => {
+                if (!rawExercise || typeof rawExercise !== "object") return null;
+                const e = rawExercise as Record<string, unknown>;
+                const exerciseId = str(e.exercise_id);
+                const name = str(e.name);
+                if (!exerciseId || !name) return null;
+                const sets: OwnedTemplateSet[] = Array.isArray(e.sets)
+                  ? e.sets
+                      .map((rawSet): OwnedTemplateSet | null => {
+                        if (!rawSet || typeof rawSet !== "object") return null;
+                        const s = rawSet as Record<string, unknown>;
+                        const reps = num(s.reps);
+                        if (reps === null || reps <= 0) return null;
+                        const weight = num(s.weight_kg);
+                        return { reps: Math.round(reps), weightKg: weight !== null && weight > 0 ? weight : 0 };
+                      })
+                      .filter((s): s is OwnedTemplateSet => s !== null)
+                  : [];
+                return {
+                  exerciseId,
+                  slug: str(e.slug),
+                  name,
+                  primaryMuscle: str(e.primary_muscle) ?? "chest",
+                  sets,
+                };
+              })
+              .filter((e): e is OwnedTemplateExercise => e !== null)
+          : [];
+        return {
+          id,
+          name: str(t.name) ?? id,
+          sourceKey: str(t.sourceKey),
+          exercises,
+        };
       })
       .filter((t): t is OwnedTemplate => t !== null);
     return { ok: true, templates };
@@ -713,6 +763,40 @@ export async function recordTrainingDecision(
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Network error." };
   }
+}
+
+/**
+ * Convert an imported (owned) template into logger targets. Every value comes
+ * from the stored payload — the recorded sets, never an invented prescription.
+ * Exercises without a catalog slug are omitted (they cannot be resolved, so
+ * the UI asks the user to add them explicitly).
+ */
+export function prescribedTargetsForOwnedTemplate(
+  template: OwnedTemplate,
+  previousLoadKg?: (slug: string) => number | null,
+): PrescribedTarget[] {
+  return template.exercises
+    .filter((e): e is OwnedTemplateExercise & { slug: string } => Boolean(e.slug))
+    .map((e) => {
+      const reps = e.sets.map((s) => s.reps).filter((n) => n > 0);
+      const loads = e.sets.map((s) => s.weightKg).filter((n) => n > 0);
+      const repMin = reps.length > 0 ? Math.min(...reps) : 8;
+      const repMax = reps.length > 0 ? Math.max(...reps) : 12;
+      return {
+        exerciseSlug: e.slug,
+        exerciseName: e.name,
+        loadType: "weighted" as const,
+        loadConvention: loadConventionForSlug(e.slug, "weighted"),
+        equipmentKey: "unknown",
+        workSets: Math.max(1, e.sets.length),
+        repMin,
+        repMax: Math.max(repMin, repMax),
+        durationSeconds: null,
+        // Prefill from the load the user actually recorded, else real history.
+        loadKg: loads.length > 0 ? Math.max(...loads) : (previousLoadKg?.(e.slug) ?? null),
+        targetRpe: 8,
+      };
+    });
 }
 
 // ── Targeted exercise resolution for launching a template ──────────────────

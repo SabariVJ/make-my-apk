@@ -38,8 +38,8 @@ CREATE POLICY "Owners read their own templates"
   USING (owner_user_id IS NOT NULL AND owner_user_id = auth.uid());
 
 -- The original published-catalog policy read EVERY version payload with
--- USING (true). That was harmless while every row was global, but private
--- imports make it a privacy hole: any signed-in account could read another
+-- a permissive full-row predicate. That was harmless while every row was global,
+-- but private imports make it a privacy hole: any signed-in account could read another
 -- account's template exercises. Re-scope it to published rows plus the caller's
 -- own. Payloads of the reviewed catalog stay readable exactly as before.
 DROP POLICY IF EXISTS "Anyone reads template versions" ON public.svj_workout_template_versions;

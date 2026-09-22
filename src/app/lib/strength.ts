@@ -223,6 +223,8 @@ export interface ExerciseHistorySession {
   bestWeight: number | null;
   bestReps: number | null;
   totalSeconds: number;
+  /** Session RPE (1–10) as stored with the activity; null when not logged. */
+  perceivedEffort: number | null;
   sets: StrengthSetDto[];
 }
 
@@ -683,6 +685,7 @@ export function normalizeExerciseHistory(value: unknown): ExerciseHistory | null
         bestWeight: num(s.best_weight),
         bestReps: num(s.best_reps),
         totalSeconds: num(s.totals_seconds) ?? 0,
+        perceivedEffort: num(s.perceived_effort),
         sets: Array.isArray(s.sets)
           ? s.sets.map(normalizeSet).filter((x): x is StrengthSetDto => x !== null)
           : [],

@@ -13,6 +13,10 @@ export interface NotificationPreferences {
   recovery: boolean;
   nutrition: boolean;
   training: boolean;
+  /** Server-driven plan session reminders (one per scheduled day). */
+  trainingSession: boolean;
+  /** "HH:mm" local time for the plan session reminder. */
+  trainingTime: string;
   inactivity: boolean;
   membership: boolean;
   weeklyRecap: boolean;
@@ -31,6 +35,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   recovery: true,
   nutrition: false,
   training: false,
+  trainingSession: true,
+  trainingTime: "17:30",
   inactivity: true,
   membership: true,
   weeklyRecap: true,
@@ -40,6 +46,31 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   nutritionTime: "13:30",
 };
 
+/** Quiet hours: no notification may be delivered in this window. */
+export const QUIET_HOURS_START_HOUR = 22;
+export const QUIET_HOURS_END_HOUR = 7;
+
+/** True when the given local time falls inside the quiet-hours window. */
+export function isWithinQuietHours(date: Date): boolean {
+  const hour = date.getHours();
+  return hour >= QUIET_HOURS_START_HOUR || hour < QUIET_HOURS_END_HOUR;
+}
+
+/**
+ * Clamp a preferred "HH:mm" to the first allowed minute outside quiet hours.
+ * A 23:00 preference therefore delivers at 07:00, never during the night.
+ */
+export function clampOutOfQuietHours(hhmm: string): { hour: number; minute: number } {
+  const [hour, minute] = hhmm.split(":").map(Number);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    return { hour: 17, minute: 30 };
+  }
+  if (hour >= QUIET_HOURS_START_HOUR || hour < QUIET_HOURS_END_HOUR) {
+    return { hour: QUIET_HOURS_END_HOUR, minute: 0 };
+  }
+  return { hour, minute };
+}
+
 export interface NativeNotificationSchedule {
   id: number;
   title: string;
@@ -48,6 +79,13 @@ export interface NativeNotificationSchedule {
   repeatDays?: number;
   channel: NotificationChannel;
   target: NotificationTarget;
+}
+
+export interface TrainingPlanDay {
+  /** ISO local date (YYYY-MM-DD) the session is scheduled for. */
+  date: string;
+  /** Session title when the caller has one; never invented here. */
+  title?: string | null;
 }
 
 export interface NotificationPlannerInput {
@@ -61,6 +99,8 @@ export interface NotificationPlannerInput {
   lastWorkoutAt?: string | null;
   lastProgressAt?: string | null;
   plusExpiresAt?: string | null;
+  /** Upcoming server-driven plan days (null when no plan is loaded). */
+  trainingPlanDays?: TrainingPlanDay[] | null;
   earnPlus?: {
     qualifyingDays: number;
     requiredQualifyingDays: number;
@@ -113,6 +153,14 @@ export function loadNotificationPreferences(userId: string): NotificationPrefere
         parsed.nutritionTime,
         DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime,
       ),
+      trainingTime: validTime(
+        parsed.trainingTime,
+        DEFAULT_NOTIFICATION_PREFERENCES.trainingTime,
+      ),
+      trainingSession:
+        typeof parsed.trainingSession === "boolean"
+          ? parsed.trainingSession
+          : DEFAULT_NOTIFICATION_PREFERENCES.trainingSession,
     };
   } catch {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES };
@@ -298,6 +346,38 @@ export function buildNotificationPlan(
           target: "activity",
         });
       }
+    }
+  }
+
+  // 108: automated training session day reminder — one per scheduled plan
+  // day, at the preferred time, never inside quiet hours, only while a plan
+  // is actually loaded. A notification is only a reminder: it never marks a
+  // workout performed or finalizes a plan slot.
+  if (prefs.trainingSession && Array.isArray(input.trainingPlanDays)) {
+    const preferred = clampOutOfQuietHours(prefs.trainingTime);
+    const seenDays = new Set<string>();
+    for (const day of input.trainingPlanDays) {
+      if (!day || typeof day.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day.date)) continue;
+      if (seenDays.has(day.date)) continue; // deduplicated: one per session day
+      seenDays.add(day.date);
+      const triggerAt = new Date(
+        Date.parse(
+          `${day.date}T${String(preferred.hour).padStart(2, "0")}:${String(preferred.minute).padStart(2, "0")}:00`,
+        ),
+      );
+      if (Number.isNaN(triggerAt.getTime())) continue;
+      if (triggerAt.getTime() <= now.getTime()) continue; // already past today
+      if (isWithinQuietHours(triggerAt)) continue; // never deliver at night
+      schedules.push({
+        id: 108,
+        title: "Training session today",
+        body: day.title
+          ? `${day.title} is scheduled for today.`
+          : "Your scheduled training session is today.",
+        triggerAt: triggerAt.getTime(),
+        channel: "coach",
+        target: "activity",
+      });
     }
   }
 

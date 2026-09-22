@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { saveStrengthActivity, type StrengthSaveOutcome } from "../lib/strength";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { recordTrainingContext, trainingRpcClient } from "../lib/trainingClient";
+import { syncTrainingDecisions } from "../lib/trainingDecisionSync";
+import { TRAINING_POLICY_VERSION } from "../lib/trainingPolicy";
 import { processActivityRewards, rewardsRpcClient } from "../lib/rewards";
 import {
   dequeueWorkout,
@@ -173,6 +175,34 @@ export function useWorkoutQueue(): WorkoutQueueApi {
             targets: entry.targets,
           });
         }
+        // Progression judgement for the replayed workout — idempotent on the
+        // server (unique per user + exercise + activity) and never blocking.
+        if (trainingClient && entry.targets.length > 0 && result.activity) {
+          const idBySlug = new Map(
+            Object.entries(entry.slugByExerciseId ?? {}).map(([id, slug]) => [slug, id]),
+          );
+          const exercises = entry.targets
+            .map((target) => {
+              const exerciseId =
+                idBySlug.get(target.exerciseSlug) ??
+                entry.drafts.find((draft) => draft.name === target.exerciseName)?.exerciseId ??
+                null;
+              return exerciseId ? { target, exerciseId } : null;
+            })
+            .filter(
+              (item): item is { target: (typeof entry.targets)[number]; exerciseId: string } =>
+                item !== null,
+            );
+          if (exercises.length > 0) {
+            void syncTrainingDecisions({
+              trainingClient,
+              strengthCall: (fn, args) => client.rpc(fn, args),
+              exercises,
+              activityId: result.activity.id,
+              policyVersion: TRAINING_POLICY_VERSION,
+            });
+          }
+        }
         if (!result.duplicate && result.activity) {
           const rewards = rewardsRpcClient();
           if (rewards) {
@@ -215,6 +245,18 @@ export function useWorkoutQueue(): WorkoutQueueApi {
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
   }, [sync]);
+
+  // Drain on mount and keep retrying while anything is pending, so a queue
+  // left behind by a crash or an offline period never waits for the next
+  // manual open of the logger to reach the server.
+  useEffect(() => {
+    if (!userId || pending.length === 0) return;
+    void sync();
+    const timer = setInterval(() => {
+      if (!syncingRef.current) void sync();
+    }, 45_000);
+    return () => clearInterval(timer);
+  }, [userId, pending.length, sync]);
 
   return {
     pending,

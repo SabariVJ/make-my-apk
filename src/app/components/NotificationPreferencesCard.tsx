@@ -177,6 +177,12 @@ export const NotificationPreferencesCard: React.FC = () => {
           onChange={(value) => patch("training", value)}
         />
         <ToggleRow
+          label="Training sessions"
+          description="Remind me on the days my plan schedules a session."
+          checked={prefs.trainingSession}
+          onChange={(value) => patch("trainingSession", value)}
+        />
+        <ToggleRow
           label="Momentum"
           description="Nudge me after two quiet days without progress."
           checked={prefs.inactivity}
@@ -196,12 +202,13 @@ export const NotificationPreferencesCard: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
         {[
           ["Morning", "morningTime"],
           ["Evening", "eveningTime"],
           ["Recovery", "recoveryTime"],
           ["Nutrition", "nutritionTime"],
+          ["Session", "trainingTime"],
         ].map(([label, key]) => (
           <label key={key} className="rounded-xl border border-white/5 bg-black/30 p-2.5">
             <span className="mb-1 block text-[9px] font-mono uppercase text-[#8C8C90]">

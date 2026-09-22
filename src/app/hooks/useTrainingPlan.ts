@@ -4,6 +4,7 @@ import {
   buildPlanPayload,
   getMyTrainingPlan,
   getTrainingProfile,
+  listMyOwnedTemplates,
   listMyTemplateLibrary,
   listTrainingDecisions,
   listWorkoutTemplates,
@@ -15,6 +16,7 @@ import {
   skipPlanSession,
   trainingRpcClient,
   type MuscleHistoryRow,
+  type OwnedTemplate,
   type ServerPlan,
   type ServerTemplateIdentity,
   type TemplateLibraryEntry,
@@ -52,6 +54,8 @@ export interface TrainingPlanState {
   serverPlan: ServerPlan | null;
   catalog: ServerTemplateIdentity[];
   library: TemplateLibraryEntry[];
+  /** Templates imported from this device (owned by the caller, private). */
+  ownedTemplates: OwnedTemplate[];
   muscleRows: MuscleHistoryRow[];
   /** Real progression-decision audit trail (server-owned). */
   decisions: TrainingDecisionRecord[];
@@ -71,6 +75,8 @@ export interface TrainingPlanState {
 
 export interface TrainingPlanActions {
   refresh: () => Promise<void>;
+  /** Reload only the imported (owned) templates — after an import succeeds. */
+  reloadOwnedTemplates: () => Promise<void>;
   saveProfile: (profile: TrainingProfile) => Promise<{ ok: boolean; error?: string }>;
   generatePlan: () => Promise<{ ok: boolean; error?: string }>;
   toggleSaveTemplate: (templateId: string) => Promise<{ ok: boolean; error?: string }>;
@@ -98,12 +104,16 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
   const [serverPlan, setServerPlan] = useState<ServerPlan | null>(null);
   const [catalog, setCatalog] = useState<ServerTemplateIdentity[]>([]);
   const [library, setLibrary] = useState<TemplateLibraryEntry[]>([]);
+  const [ownedTemplates, setOwnedTemplates] = useState<OwnedTemplate[]>([]);
   const [muscleRows, setMuscleRows] = useState<MuscleHistoryRow[]>([]);
   const [decisions, setDecisions] = useState<TrainingDecisionRecord[]>([]);
   const [strengthRecords, setStrengthRecords] = useState<StrengthRecordDto[]>([]);
   const [savingProfile, setSavingProfile] = useState(false);
   const [creatingPlan, setCreatingPlan] = useState(false);
   const mounted = useRef(true);
+  // The spinner is for the FIRST load only: a refresh keeps the last known
+  // plan on screen instead of blanking it behind a loading state.
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
@@ -119,23 +129,34 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
       setError("Backend is not configured.");
       return;
     }
-    setLoading(true);
+    // Only the first load shows the spinner; later refreshes keep the last
+    // plan visible while they run.
+    if (!loadedOnce.current) setLoading(true);
     setError(null);
-    const [profileResult, planResult, libraryResult, catalogResult, muscleResult, decisionResult] =
-      await Promise.all([
-        getTrainingProfile(rpc),
-        getMyTrainingPlan(rpc),
-        listMyTemplateLibrary(rpc),
-        listWorkoutTemplates(rpc),
-        recentMuscleHistory(rpc, 7),
-        listTrainingDecisions(rpc, 50),
-      ]);
+    const [
+      profileResult,
+      planResult,
+      libraryResult,
+      ownedResult,
+      catalogResult,
+      muscleResult,
+      decisionResult,
+    ] = await Promise.all([
+      getTrainingProfile(rpc),
+      getMyTrainingPlan(rpc),
+      listMyTemplateLibrary(rpc),
+      listMyOwnedTemplates(rpc),
+      listWorkoutTemplates(rpc),
+      recentMuscleHistory(rpc, 7),
+      listTrainingDecisions(rpc, 50),
+    ]);
     if (!mounted.current) return;
     if (profileResult.ok && profileResult.profile) {
       setProfile(normalizeTrainingProfile(profileResult.profile));
     }
     if (planResult.ok) setServerPlan(planResult.plan);
     if (libraryResult.ok) setLibrary(libraryResult.library);
+    if (ownedResult.ok) setOwnedTemplates(ownedResult.templates);
     if (catalogResult.ok) setCatalog(catalogResult.templates);
     if (muscleResult.ok) setMuscleRows(muscleResult.rows);
     if (decisionResult.ok) setDecisions(decisionResult.decisions);
@@ -144,7 +165,9 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
       const records = await listStrengthRecords((fn, args) => strengthClient.rpc(fn, args));
       if (mounted.current && records.ok) setStrengthRecords(records.records);
     }
-    const firstError = profileResult.error ?? planResult.error ?? libraryResult.error;
+    const firstError =
+      profileResult.error ?? planResult.error ?? libraryResult.error ?? ownedResult.error;
+    loadedOnce.current = true;
     setError(firstError ?? null);
     setLoading(false);
   }, []);
@@ -152,6 +175,22 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Refresh when connectivity returns — the queue drains in parallel, but the
+  // plan/history shown must not stay stale after an offline period.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onOnline = () => void refresh();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [refresh]);
+
+  const reloadOwnedTemplates = useCallback(async () => {
+    const rpc = trainingRpcClient();
+    if (!rpc) return;
+    const result = await listMyOwnedTemplates(rpc);
+    if (result.ok && mounted.current) setOwnedTemplates(result.templates);
+  }, []);
 
   const profileReady = isProfileReady(profile);
 
@@ -300,6 +339,7 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     serverPlan,
     catalog,
     library,
+    ownedTemplates,
     muscleRows,
     decisions,
     strengthRecords,
@@ -311,6 +351,7 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     savingProfile,
     creatingPlan,
     refresh,
+    reloadOwnedTemplates,
     saveProfile: (p) => saveProfile(p, { generate: true }),
     generatePlan,
     toggleSaveTemplate,

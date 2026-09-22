@@ -64,6 +64,8 @@ export interface TemplateImportPlan {
 
 export interface ImportedTemplateExercise {
   exercise_id: string;
+  /** Catalog slug, so an imported template can launch the logger directly. */
+  slug: string;
   name: string;
   primary_muscle: string;
   sets: { reps: number; weight_kg: number }[];
@@ -172,6 +174,7 @@ export function buildImportPayload(
 
     exercises.push({
       exercise_id: catalogExercise.id,
+      slug: catalogExercise.slug,
       name: catalogExercise.name,
       primary_muscle: catalogExercise.primaryMuscle,
       sets: (legacy.sets ?? [])

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { ActivityProvider } from "./context/ActivityContext";
@@ -30,6 +30,7 @@ import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
+import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
@@ -142,6 +143,9 @@ const AppContent: React.FC<{
     return (
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
         <Header />
+
+        {/* Renders nothing visually — schedules the notification plan. */}
+        <NotificationCoordinator />
 
         {/* Trial-expired notice modal — shown once on first render */}
         {showTrialNotice && (
@@ -257,6 +261,10 @@ const AppContent: React.FC<{
       {/* Top Bar Header */}
       <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
 
+      {/* Renders nothing visually — schedules the notification plan
+          (daily/evening/training) via the existing native infrastructure. */}
+      <NotificationCoordinator />
+
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />
       <UtilityDrawer
@@ -355,6 +363,17 @@ const AppContent: React.FC<{
 };
 
 export default function App() {
+  // Honor the OS "reduce motion" setting globally so every framer-motion
+  // animation (tab transitions, cards, modals) collapses to fades/none
+  // without touching each component individually.
+  return (
+    <MotionConfig reducedMotion="user">
+      <AppRoot />
+    </MotionConfig>
+  );
+}
+
+function AppRoot() {
   // No-network gate: covers every blocking state the app can be in (auth,
   // trial check, app shell). Auto-dismisses when the browser reports online.
   const online = useOnlineStatus();

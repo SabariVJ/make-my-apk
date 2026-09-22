@@ -150,9 +150,15 @@ describe("import planning", () => {
       ],
       catalog,
     );
-    const payload = buildImportPayload(plan, catalog);
-    assert.equal(payload.exercises[0].sets.length, 1);
-    assert.equal(payload.exercises[0].sets[0].weight_kg, 0, "a negative load is never recorded");
+    const payload = buildImportPayload(plan[0], catalog);
+    // The zero-rep set is dropped; the negative load is kept but clamped, so a
+    // negative weight is never recorded.
+    assert.equal(payload.exercises[0].sets.length, 2, "a zero-rep set is never recorded");
+    assert.deepEqual(
+      payload.exercises[0].sets.map((s) => s.weight_kg),
+      [60, 0],
+      "a negative load is never recorded",
+    );
   });
 
   it("validates the payload before it reaches the server", () => {
@@ -195,13 +201,13 @@ describe("import surface wiring", () => {
     const card = read("src/app/components/LegacyTemplateImportCard.tsx");
     assert.doesNotMatch(card, /deleteWorkoutTemplate|awardXp|completeChallenge/);
     assert.match(card, /device copies stay until the server confirms/);
-    const sql = read("supabase/migrations/20260931000000_legacy_template_import.sql");
+    const sql = read("supabase/migrations/20260930100000_legacy_template_import.sql");
     assert.match(sql, /svj_import_legacy_template/);
     assert.doesNotMatch(sql, /svj_award|xp_award/);
   });
 
   it("scopes the import to the caller and keeps it idempotent", () => {
-    const sql = read("supabase/migrations/20260931000000_legacy_template_import.sql");
+    const sql = read("supabase/migrations/20260930100000_legacy_template_import.sql");
     assert.match(sql, /owner_user_id = auth\.uid\(\)/);
     assert.match(sql, /ON CONFLICT \(owner_user_id, source_key\)/);
     assert.match(sql, /'duplicate', NOT v_inserted/);
@@ -209,7 +215,7 @@ describe("import surface wiring", () => {
   });
 
   it("keeps private template payloads private", () => {
-    const sql = read("supabase/migrations/20260931000000_legacy_template_import.sql");
+    const sql = read("supabase/migrations/20260930100000_legacy_template_import.sql");
     assert.doesNotMatch(
       sql,
       /USING \(true\)/,
@@ -219,7 +225,7 @@ describe("import surface wiring", () => {
   });
 
   it("does not let the anon role reach the import RPCs", () => {
-    const sql = read("supabase/migrations/20260931000000_legacy_template_import.sql");
+    const sql = read("supabase/migrations/20260930100000_legacy_template_import.sql");
     assert.match(sql, /REVOKE ALL ON FUNCTION public\.svj_import_legacy_template/);
     assert.match(sql, /REVOKE ALL ON FUNCTION public\.svj_list_my_owned_templates/);
   });

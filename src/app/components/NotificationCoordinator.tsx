@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { useQuery } from "@tanstack/react-query";
 import { useSVJ } from "../context/SVJContext";
 import { useEngagement } from "../context/EngagementContext";
+import { isAutomatedTrainingEnabled } from "../lib/featureFlags";
+import { getMyTrainingPlan, trainingRpcClient } from "../lib/trainingClient";
 import {
   buildNotificationPlan,
   cancelNativeNotifications,
@@ -17,6 +20,13 @@ function sameLocalDay(iso: string, now: Date): boolean {
   return Number.isFinite(d.getTime()) && d.toDateString() === now.toDateString();
 }
 
+/** Local YYYY-MM-DD for a date (schedule keys are local, never UTC). */
+function localDayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+}
+
 export const NotificationCoordinator: React.FC = () => {
   const { user, challenges, meals, workouts, plusExpiresAt } = useSVJ();
   const engagement = useEngagement();
@@ -28,6 +38,43 @@ export const NotificationCoordinator: React.FC = () => {
     setPrefs(loadNotificationPreferences(user.id));
     return subscribeNotificationPreferences(user.id, setPrefs);
   }, [user.id]);
+
+  // Server-driven plan, only while the automated-training flag is on. The
+  // query feeds session DAYS to the planner; it never marks anything done.
+  const trainingEnabled = isAutomatedTrainingEnabled();
+  const planQuery = useQuery({
+    queryKey: ["training-plan", "notification-days"],
+    queryFn: async () => {
+      const client = trainingRpcClient();
+      if (!client) return null;
+      const result = await getMyTrainingPlan(client);
+      return result.ok ? result.plan : null;
+    },
+    enabled: trainingEnabled && prefs.enabled,
+    staleTime: 15 * 60_000,
+    retry: false,
+  });
+
+  /** Upcoming scheduled plan days in the next 7 local days. */
+  const trainingPlanDays = useMemo(() => {
+    const plan = planQuery.data;
+    if (!plan) return null;
+    const today = new Date();
+    const todayKey = localDayKey(today);
+    const horizon = new Date(today.getTime() + 7 * 86_400_000);
+    const horizonKey = localDayKey(horizon);
+    const seen = new Set<string>();
+    const days: { date: string; title: null }[] = [];
+    for (const session of plan.sessions) {
+      if (session.status !== "scheduled") continue;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(session.scheduledDate)) continue;
+      if (session.scheduledDate < todayKey || session.scheduledDate > horizonKey) continue;
+      if (seen.has(session.scheduledDate)) continue;
+      seen.add(session.scheduledDate);
+      days.push({ date: session.scheduledDate, title: null });
+    }
+    return days;
+  }, [planQuery.data]);
 
   const signature = useMemo(() => {
     const now = new Date();
@@ -80,6 +127,7 @@ export const NotificationCoordinator: React.FC = () => {
           lastWorkoutAt: signature.lastWorkoutAt,
           lastProgressAt: signature.lastProgressAt,
           plusExpiresAt,
+          trainingPlanDays: trainingEnabled ? trainingPlanDays : null,
           earnPlus: signature.earnPlus,
         },
         prefs,
@@ -89,7 +137,16 @@ export const NotificationCoordinator: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [prefs, signature, plusExpiresAt, user.name, user.currentStreak, user.weeklyXP]);
+  }, [
+    prefs,
+    signature,
+    plusExpiresAt,
+    user.name,
+    user.currentStreak,
+    user.weeklyXP,
+    trainingPlanDays,
+    trainingEnabled,
+  ]);
 
   return null;
 };

@@ -108,6 +108,11 @@ export interface StrengthSetDraft {
   weightKg: number | null;
   /** Seconds for duration sets; null for rep-based sets. */
   durationSeconds: number | null;
+  /**
+   * Ramp-up set. Warm-ups are visible in history but never count toward working
+   * muscle volume, personal records, progression evidence or work-set targets.
+   */
+  isWarmup: boolean;
 }
 
 export interface StrengthExerciseDraft {
@@ -162,6 +167,8 @@ export interface StrengthSetDto {
   reps: number | null;
   weightKg: number | null;
   durationSeconds: number | null;
+  /** Ramp-up set — excluded from working volume and progression evidence. */
+  isWarmup: boolean;
 }
 
 export interface StrengthExerciseDetail {
@@ -259,6 +266,7 @@ export function createSetDraft(previous?: StrengthSetDraft): StrengthSetDraft {
     reps: null,
     weightKg: previous?.weightKg ?? null,
     durationSeconds: null,
+    isWarmup: false,
   };
 }
 
@@ -333,6 +341,7 @@ export function buildStrengthPayload(drafts: StrengthExerciseDraft[]): {
       reps: draft.exerciseType === "duration" ? null : (set.reps ?? null),
       weight_kg: draft.exerciseType === "duration" ? null : (set.weightKg ?? null),
       duration_seconds: draft.exerciseType === "duration" ? (set.durationSeconds ?? null) : null,
+      is_warmup: set.isWarmup === true,
     })),
   }));
 }
@@ -352,14 +361,15 @@ export function exerciseVolume(draft: StrengthExerciseDraft): number {
 }
 
 /**
- * Deterministic muscle contributions: every set counts 1.0 for the exercise's
- * primary muscle and 0.5 for each secondary muscle, then levels are relative to
- * the strongest muscle in this session. Not physiological data.
+ * Deterministic muscle contributions: every WORKING set counts 1.0 for the
+ * exercise's primary muscle and 0.5 for each secondary muscle, then levels are
+ * relative to the strongest muscle in this session. Warm-up sets are excluded
+ * (ramp-up work is not working volume). Not physiological data.
  */
 export function computeMuscleSummary(drafts: StrengthExerciseDraft[]): MuscleTrained[] {
   const scores = new Map<MuscleGroup, number>();
   for (const draft of drafts) {
-    const sets = draft.sets.length;
+    const sets = draft.sets.filter((set) => set.isWarmup !== true).length;
     if (sets === 0) continue;
     scores.set(draft.primaryMuscle, (scores.get(draft.primaryMuscle) ?? 0) + sets * 1);
     for (const secondary of draft.secondaryMuscles) {
@@ -474,6 +484,7 @@ function normalizeSet(value: unknown): StrengthSetDto | null {
     reps: num(s.reps),
     weightKg: num(s.weight_kg),
     durationSeconds: num(s.duration_seconds),
+    isWarmup: s.is_warmup === true,
   };
 }
 

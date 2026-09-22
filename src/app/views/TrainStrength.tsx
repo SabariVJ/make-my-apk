@@ -517,6 +517,27 @@ export const TrainStrength: React.FC<{
                       )}
                       <button
                         type="button"
+                        aria-pressed={set.isWarmup === true}
+                        aria-label={
+                          set.isWarmup
+                            ? `Set ${setIndex + 1} is a warm-up set. Mark as working set`
+                            : `Mark set ${setIndex + 1} as a warm-up set`
+                        }
+                        title="Warm-up set — shown in history but never counts as working volume"
+                        onClick={() =>
+                          updateSet(draft.id, set.id, { isWarmup: set.isWarmup !== true })
+                        }
+                        data-testid="strength-set-warmup"
+                        className={`mb-1.5 rounded-md border px-1.5 py-1 text-[9px] font-mono uppercase tracking-wider ${
+                          set.isWarmup
+                            ? "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#D4AF37]"
+                            : "border-white/10 text-[#8C8C90] hover:text-white"
+                        }`}
+                      >
+                        WU
+                      </button>
+                      <button
+                        type="button"
                         aria-label={`Remove set ${setIndex + 1}`}
                         onClick={() => removeSet(draft.id, set.id)}
                         disabled={draft.sets.length <= 1}
@@ -637,8 +658,12 @@ export const TrainStrength: React.FC<{
                 <ul className="mt-1 space-y-0.5">
                   {draft.sets.map((set, index) => (
                     <li key={set.id} className="flex justify-between text-[11px] font-mono">
-                      <span className="text-[#8C8C90]">SET {index + 1}</span>
-                      <span className="text-white">{formatSetLabel(set)}</span>
+                      <span className="text-[#8C8C90]">
+                        {set.isWarmup ? `WARM-UP ${index + 1}` : `SET ${index + 1}`}
+                      </span>
+                      <span className={set.isWarmup ? "text-[#8C8C90]" : "text-white"}>
+                        {formatSetLabel(set)}
+                      </span>
                     </li>
                   ))}
                 </ul>

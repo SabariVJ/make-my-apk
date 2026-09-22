@@ -455,6 +455,46 @@ export async function getMyTrainingPlan(
   }
 }
 
+// ── Plan day management ────────────────────────────────────────────────────
+
+/** Move a planned session. The server refuses completed slots and same-day clashes. */
+export async function reschedulePlanSession(
+  callRpc: TrainingRpcCaller,
+  sessionId: string,
+  newDate: string,
+): Promise<{ ok: boolean; scheduledDate?: string; error?: string }> {
+  try {
+    const { data, error } = await callRpc("svj_reschedule_plan_session", {
+      p_session_id: sessionId,
+      p_new_date: newDate,
+    });
+    if (error) return { ok: false, error: error.message };
+    const env = data as { ok?: boolean; scheduled_date?: unknown } | null;
+    if (!env || env.ok !== true) return { ok: false, error: "Couldn't move that session." };
+    return { ok: true, scheduledDate: str(env.scheduled_date) ?? newDate };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error." };
+  }
+}
+
+/** Skip a planned session. A rest day is a valid state, not a failure. */
+export async function skipPlanSession(
+  callRpc: TrainingRpcCaller,
+  sessionId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { data, error } = await callRpc("svj_skip_plan_session", {
+      p_session_id: sessionId,
+    });
+    if (error) return { ok: false, error: error.message };
+    return (data as { ok?: boolean } | null)?.ok === true
+      ? { ok: true }
+      : { ok: false, error: "Couldn't skip that session." };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error." };
+  }
+}
+
 // ── Training context (idempotent slot finalization) ────────────────────────
 
 export interface TrainingContextInput {

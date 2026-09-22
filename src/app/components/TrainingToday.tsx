@@ -43,6 +43,10 @@ export interface TrainingTodayProps {
   onSaveProfile: (profile: TrainingProfile) => Promise<{ ok: boolean; error?: string }>;
   onGeneratePlan: () => Promise<{ ok: boolean; error?: string }>;
   onStartSession: (session: PlanSession) => void;
+  /** Server id for a slot, needed to move or skip a persisted session. */
+  serverSessionIdForSlot: (slotIndex: number) => string | null;
+  onMoveSession: (sessionId: string, newDate: string) => Promise<{ ok: boolean; error?: string }>;
+  onSkipSession: (sessionId: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const ALL_DAYS: Weekday[] = [1, 2, 3, 4, 5, 6, 0];
@@ -369,8 +373,14 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
   onSaveProfile,
   onGeneratePlan,
   onStartSession,
+  serverSessionIdForSlot,
+  onMoveSession,
+  onSkipSession,
 }) => {
   const [showWhy, setShowWhy] = useState(false);
+  const [movingSlot, setMovingSlot] = useState<number | null>(null);
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -380,14 +390,22 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
     );
   }
 
+  /** A failed refresh keeps the last valid plan on screen and says so. */
+  const refreshPending = error ? (
+    <p
+      role="alert"
+      data-testid="plan-refresh-pending"
+      className="rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/5 px-3 py-2 text-[11px] font-inter text-[#E8D9A0]"
+    >
+      Couldn't refresh your plan — showing the last plan we loaded. Your completed sessions and
+      saved data are unchanged; it will refresh when the connection returns.
+    </p>
+  ) : null;
+
   if (!profileReady) {
     return (
       <div className="space-y-4">
-        {error && (
-          <p role="alert" className="text-xs font-inter text-rose-300">
-            {error}
-          </p>
-        )}
+        {refreshPending}
         <SetupFlow profile={profile} saving={savingProfile} onSave={onSaveProfile} />
       </div>
     );
@@ -403,11 +421,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
 
   return (
     <div className="space-y-4">
-      {error && (
-        <p role="alert" className="text-xs font-inter text-rose-300">
-          {error}
-        </p>
-      )}
+      {refreshPending}
 
       {/* Today's or next session */}
       {todaySession ? (
@@ -492,45 +506,130 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
           </button>
         </div>
 
+        {sessionError && (
+          <p role="alert" className="mt-3 text-[11px] font-inter text-[#E8D9A0]">
+            {sessionError}
+          </p>
+        )}
         <motion.ul
           variants={svjStaggerContainer}
           initial="hidden"
           animate="show"
           className="mt-3 space-y-2"
         >
-          {sessions.map((session) => (
-            <motion.li
-              key={`${session.slotIndex}-${session.scheduledDate}`}
-              variants={svjStaggerItem}
-              className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/25 px-3 py-2"
-            >
-              <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
-                <Clock className="h-3.5 w-3.5 text-[#8C8C90]" />
-                {session.label}
-              </span>
-              <span className="flex items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
-                <span>
-                  {new Date(`${session.scheduledDate}T12:00:00`).toLocaleDateString(undefined, {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
-                {session.status === "completed" && (
-                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-300">
-                    Done
+          {sessions.map((session) => {
+            const serverId = serverSessionIdForSlot(session.slotIndex);
+            const editable = Boolean(serverId) && session.status !== "completed";
+            return (
+              <motion.li
+                key={`${session.slotIndex}-${session.scheduledDate}`}
+                variants={svjStaggerItem}
+                className="rounded-xl border border-white/5 bg-black/25 px-3 py-2"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
+                    <Clock className="h-3.5 w-3.5 text-[#8C8C90]" aria-hidden />
+                    {session.label}
                   </span>
-                )}
-                {session.status === "scheduled" &&
-                  session.slotIndex === todaySession?.slotIndex && (
-                    <span className="rounded-full bg-[#C81E3A]/20 px-2 py-0.5 text-[#F4F2ED]">
-                      Next
+                  <span className="flex items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
+                    <span>
+                      {new Date(`${session.scheduledDate}T12:00:00`).toLocaleDateString(undefined, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </span>
-                  )}
-              </span>
-            </motion.li>
-          ))}
+                    {session.status === "completed" && (
+                      <span className="rounded-full bg-[#C81E3A]/15 px-2 py-0.5 text-[#F4F2ED]">
+                        Done
+                      </span>
+                    )}
+                    {session.status === "moved" && (
+                      <span className="rounded-full bg-[#D4AF37]/15 px-2 py-0.5 text-[#D4AF37]">
+                        Moved
+                      </span>
+                    )}
+                    {session.status === "skipped" && (
+                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[#8C8C90]">
+                        Rest
+                      </span>
+                    )}
+                    {session.status === "scheduled" &&
+                      session.slotIndex === todaySession?.slotIndex && (
+                        <span className="rounded-full bg-[#C81E3A]/20 px-2 py-0.5 text-[#F4F2ED]">
+                          Next
+                        </span>
+                      )}
+                  </span>
+                </div>
+
+                {editable && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setMovingSlot(movingSlot === session.slotIndex ? null : session.slotIndex)
+                      }
+                      aria-expanded={movingSlot === session.slotIndex}
+                      aria-label={`Move ${session.label}`}
+                      className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white"
+                    >
+                      Move
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sessionBusy}
+                      onClick={async () => {
+                        if (!serverId) return;
+                        setSessionBusy(true);
+                        setSessionError(null);
+                        const result = await onSkipSession(serverId);
+                        setSessionBusy(false);
+                        if (!result.ok)
+                          setSessionError(result.error ?? "Couldn't skip that session.");
+                      }}
+                      aria-label={`Mark ${session.label} as a rest day`}
+                      className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white disabled:opacity-40"
+                    >
+                      {session.status === "skipped" ? "Rest day" : "Skip"}
+                    </button>
+                  </div>
+                )}
+
+                {editable && movingSlot === session.slotIndex && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <label className="text-[10px] font-inter text-[#8C8C90]">
+                      New day
+                      <input
+                        type="date"
+                        aria-label={`New date for ${session.label}`}
+                        disabled={sessionBusy}
+                        onChange={async (e) => {
+                          const value = e.target.value;
+                          if (!value || !serverId) return;
+                          setSessionBusy(true);
+                          setSessionError(null);
+                          const result = await onMoveSession(serverId, value);
+                          setSessionBusy(false);
+                          if (!result.ok) {
+                            setSessionError(result.error ?? "Couldn't move that session.");
+                          } else {
+                            setMovingSlot(null);
+                          }
+                        }}
+                        className="ml-2 rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] font-mono text-white"
+                      />
+                    </label>
+                  </div>
+                )}
+              </motion.li>
+            );
+          })}
         </motion.ul>
+        <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
+          Missing a session never stacks two hard days together — move it to a free day, or mark it
+          as a rest day.
+        </p>
         {splitName && (
           <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
             {SESSION_FAMILY_LABELS[todaySession?.family ?? "full_body"]} style block. Your plan

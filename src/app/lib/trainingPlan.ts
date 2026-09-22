@@ -376,6 +376,53 @@ export function buildWeeklyPlan(
   };
 }
 
+/** The persisted slot state the server owns, as the weekly view needs it. */
+export interface ServerSlotSummary {
+  slotIndex: number;
+  scheduledDate: string;
+  status: "scheduled" | "completed" | "skipped" | "moved";
+  completedActivityId: string | null;
+}
+
+/**
+ * Reconcile the locally derived week with the persisted server slots.
+ *
+ * The server wins where it has an explicit decision: a completed slot stays
+ * completed, a slot the user moved adopts the stored date, and a skipped slot
+ * becomes a rest day. A still-'scheduled' slot keeps the locally reconciled
+ * date, so a missed session rolls forward instead of displaying in the past.
+ * A null/failed load keeps the last valid plan untouched.
+ */
+export function mergeServerPlan(
+  plan: WeeklyPlan,
+  serverSessions: ServerSlotSummary[] | null,
+): WeeklyPlan {
+  if (!serverSessions || serverSessions.length === 0) return plan;
+  const bySlot = new Map(serverSessions.map((session) => [session.slotIndex, session]));
+  const sessions = plan.sessions.map((session) => {
+    const server = bySlot.get(session.slotIndex);
+    if (!server) return session;
+    if (server.status === "completed") {
+      return {
+        ...session,
+        status: "completed" as const,
+        completedActivityId: server.completedActivityId,
+      };
+    }
+    if (server.status === "skipped") return { ...session, status: "skipped" as const };
+    if (server.status === "moved" && server.scheduledDate) {
+      return {
+        ...session,
+        status: "moved" as const,
+        scheduledDate: server.scheduledDate,
+        dayOfWeek: new Date(`${server.scheduledDate}T12:00:00`).getDay() as Weekday,
+      };
+    }
+    return session;
+  });
+  return { ...plan, sessions };
+}
+
 /** Today's (or the next scheduled) session for the Today surface. */
 export function currentSession(plan: WeeklyPlan, today: Date = new Date()): PlanSession | null {
   const todayIso = toLocalIsoDate(today);

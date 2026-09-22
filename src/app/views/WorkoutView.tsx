@@ -23,6 +23,11 @@ import { TrainingToday } from "../components/TrainingToday";
 import { TemplateBrowser } from "../components/TemplateBrowser";
 import { TrainingProgress } from "../components/TrainingProgress";
 import { useTrainingPlan } from "../hooks/useTrainingPlan";
+import {
+  FEATURE_FLAGS,
+  isAutomatedTrainingEnabled,
+  writeFeatureFlagOverride,
+} from "../lib/featureFlags";
 import { strengthRpcClient } from "../lib/strengthClient";
 import { listServerActivities, formatActivityDate } from "../lib/serverActivities";
 import { prescribedTargetsForTemplate, type TrainingContextInput } from "../lib/trainingClient";
@@ -48,7 +53,11 @@ export const WorkoutView: React.FC = () => {
   } = useSVJ();
 
   const training = useTrainingPlan();
-  const [tab, setTab] = useState<Tab>("today");
+  // Runtime rollback: turning the guided experience off restores the previous
+  // Train flow (Log / History / device templates) and never deletes any saved
+  // profile, plan, decision or completed workout.
+  const [guided, setGuided] = useState(() => isAutomatedTrainingEnabled());
+  const [tab, setTab] = useState<Tab>(guided ? "today" : "log");
   const [name, setName] = useState("");
   const [exercises, setExercises] = useState<WorkoutExercise[]>([blankExercise()]);
   const [trendExercise, setTrendExercise] = useState<string | null>(null);
@@ -188,13 +197,23 @@ export const WorkoutView: React.FC = () => {
     setTab("log");
   };
 
-  const tabs: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
+  const allTabs: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
     { id: "today", label: "Today", icon: CalendarCheck },
     { id: "templates", label: "Templates", icon: Layers },
     { id: "progress", label: "Progress", icon: BarChart3 },
     { id: "history", label: "History", icon: History },
     { id: "log", label: "Log", icon: Dumbbell },
   ];
+  const tabs = guided
+    ? allTabs
+    : allTabs.filter((t) => t.id === "log" || t.id === "history" || t.id === "templates");
+
+  const toggleGuided = () => {
+    const next = !guided;
+    writeFeatureFlagOverride(FEATURE_FLAGS.automatedTrainingV1, next);
+    setGuided(next);
+    setTab(next ? "today" : "log");
+  };
 
   if (strengthOpen) {
     return (
@@ -210,11 +229,33 @@ export const WorkoutView: React.FC = () => {
       <div className="relative overflow-hidden rounded-full svj-border bg-[#17171A] p-4">
         <div className="absolute -top-16 -right-10 w-40 h-40 rounded-full bg-[#C81E3A]/20 blur-3xl animate-crimson-pulse" />
         <div className="relative">
-          <h1 className="font-anton text-2xl sm:text-3xl uppercase text-[#F4F2ED]">Iron Log</h1>
-          <p className="font-inter text-sm text-[#8C8C90] mt-1">
-            Track every lift. Every set feeds your{" "}
-            <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="font-anton text-2xl sm:text-3xl uppercase text-[#F4F2ED]">Iron Log</h1>
+              <p className="font-inter text-sm text-[#8C8C90] mt-1">
+                Track every lift. Every set feeds your{" "}
+                <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleGuided}
+              aria-pressed={guided}
+              data-testid="train-guided-toggle"
+              title={
+                guided
+                  ? "Turn off the guided training experience (your data is kept)"
+                  : "Turn on the guided training experience"
+              }
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+                guided
+                  ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
+                  : "border-white/10 bg-black/30 text-[#8C8C90]"
+              }`}
+            >
+              Guided {guided ? "on" : "off"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -263,7 +304,7 @@ export const WorkoutView: React.FC = () => {
       </div>
 
       <AnimatePresence mode="wait">
-        {tab === "today" && (
+        {guided && tab === "today" && (
           <motion.div
             key="today"
             initial={{ opacity: 0, y: 8 }}
@@ -286,6 +327,9 @@ export const WorkoutView: React.FC = () => {
               onSaveProfile={training.saveProfile}
               onGeneratePlan={training.generatePlan}
               onStartSession={startPlanSession}
+              serverSessionIdForSlot={training.serverSessionIdForSlot}
+              onMoveSession={training.moveSession}
+              onSkipSession={training.skipSession}
             />
           </motion.div>
         )}
@@ -493,7 +537,7 @@ export const WorkoutView: React.FC = () => {
           </motion.div>
         )}
 
-        {tab === "progress" && (
+        {guided && tab === "progress" && (
           <motion.div
             key="progress"
             initial={{ opacity: 0, y: 8 }}

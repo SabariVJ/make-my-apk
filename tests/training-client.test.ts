@@ -224,7 +224,10 @@ describe("Train wiring", () => {
   const logger = read("src/app/views/TrainStrength.tsx");
 
   it("adds Today as the default Train surface without adding a bottom-nav tab", () => {
-    assert.match(train, /useState<Tab>\("today"\)/);
+    // The default follows the runtime flag, which ships ON, so guided training
+    // is the default surface; rolling it back lands on the previous Log tab.
+    assert.match(train, /useState<Tab>\(guided \? "today" : "log"\)/);
+    assert.match(train, /const \[guided, setGuided\] = useState\(\(\) => isAutomatedTrainingEnabled\(\)\)/);
     assert.match(train, /import \{ TrainingToday \}/);
     assert.match(train, /import \{ TemplateBrowser \}/);
     assert.match(train, /<TrainingToday/);

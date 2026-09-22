@@ -9,8 +9,10 @@ import {
   listWorkoutTemplates,
   recentMuscleHistory,
   removeMyTemplate,
+  reschedulePlanSession,
   saveMyTemplate,
   saveTrainingProfile,
+  skipPlanSession,
   trainingRpcClient,
   type MuscleHistoryRow,
   type ServerPlan,
@@ -27,6 +29,7 @@ import {
 } from "../lib/strength";
 import {
   currentSession,
+  mergeServerPlan,
   reconcileMissedSessions,
   selectSplit,
   buildWeeklyPlan,
@@ -74,6 +77,12 @@ export interface TrainingPlanActions {
   reloadMuscleHistory: () => Promise<void>;
   /** Completed set history for one exercise (Progress view). */
   loadExerciseHistory: (exerciseId: string) => Promise<ExerciseHistory | null>;
+  /** Move a planned session to another day (server-validated). */
+  moveSession: (sessionId: string, newDate: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Skip a planned session — a rest day is a valid state. */
+  skipSession: (sessionId: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Server id of the planned session for a slot, when it exists. */
+  serverSessionIdForSlot: (slotIndex: number) => string | null;
 }
 
 /**
@@ -155,22 +164,18 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     if (!decision) return null;
     const built = buildWeeklyPlan(profile, decision, new Date());
     const { plan } = reconcileMissedSessions(profile, built, new Date());
-    // A server-completed slot stays completed regardless of local reconciliation.
-    if (serverPlan) {
-      const bySlot = new Map(serverPlan.sessions.map((s) => [s.slotIndex, s]));
-      plan.sessions = plan.sessions.map((session) => {
-        const server = bySlot.get(session.slotIndex);
-        if (server && server.status === "completed") {
-          return {
-            ...session,
-            status: "completed" as const,
-            completedActivityId: server.completedActivityId,
-          };
-        }
-        return session;
-      });
-    }
-    return plan;
+    // The server is authoritative for persisted scheduling; see mergeServerPlan.
+    return mergeServerPlan(
+      plan,
+      serverPlan
+        ? serverPlan.sessions.map((session) => ({
+            slotIndex: session.slotIndex,
+            scheduledDate: session.scheduledDate,
+            status: session.status,
+            completedActivityId: session.completedActivityId,
+          }))
+        : null,
+    );
   }, [decision, profile, serverPlan]);
 
   const todaySession = useMemo(
@@ -251,6 +256,36 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     if (decisionResult.ok && mounted.current) setDecisions(decisionResult.decisions);
   }, []);
 
+  const serverSessionIdForSlot = useCallback(
+    (slotIndex: number) =>
+      serverPlan?.sessions.find((session) => session.slotIndex === slotIndex)?.id ?? null,
+    [serverPlan],
+  );
+
+  const moveSession = useCallback(
+    async (sessionId: string, newDate: string) => {
+      const rpc = trainingRpcClient();
+      if (!rpc) return { ok: false, error: "Backend is not configured." };
+      const result = await reschedulePlanSession(rpc, sessionId, newDate);
+      if (!result.ok) return result;
+      await refresh();
+      return { ok: true };
+    },
+    [refresh],
+  );
+
+  const skipSession = useCallback(
+    async (sessionId: string) => {
+      const rpc = trainingRpcClient();
+      if (!rpc) return { ok: false, error: "Backend is not configured." };
+      const result = await skipPlanSession(rpc, sessionId);
+      if (!result.ok) return result;
+      await refresh();
+      return { ok: true };
+    },
+    [refresh],
+  );
+
   const loadExerciseHistory = useCallback(async (exerciseId: string) => {
     const client = strengthRpcClient();
     if (!client || !exerciseId) return null;
@@ -281,5 +316,8 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     toggleSaveTemplate,
     reloadMuscleHistory,
     loadExerciseHistory,
+    moveSession,
+    skipSession,
+    serverSessionIdForSlot,
   };
 }

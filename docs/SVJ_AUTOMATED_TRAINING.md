@@ -96,11 +96,26 @@ All user tables are RLS-protected and read-only from the client. Every write goe
 through SECURITY DEFINER RPCs that derive identity from `auth.uid()`. No client
 payload carries a user id, XP, or personal-record value.
 
+## Effort and warm-ups
+
+- The logger collects a **session RPE (1–10)**. It is stored on the activity,
+  read back through `svj_get_exercise_history` and forwarded verbatim into the
+  progression evidence; it is never invented when the user skips it.
+- Warm-up sets are **persisted per set** (`svj_strength_sets.is_warmup`, toggled
+  per set in the logger) and excluded from working volume, personal records,
+  muscle history and progression evidence.
+- After a canonical save, `syncTrainingDecisions`
+  (`src/app/lib/trainingDecisionSync.ts`) judges that real history and writes one
+  audit row per exercised prescription to `svj_training_decisions`. A failed
+  history read skips, a failed write is counted — neither can touch the saved
+  workout.
+
 ## Known limitations
 
-- The structured logger records working sets; warm-up sets are guidance text and
-  are not persisted as separate rows. `svj_strength_sets.is_warmup` exists and is
-  excluded by the muscle-history RPC so a future logger can classify them.
+- The logger collects session RPE only. Per-set RIR and the technique/pain flag
+  are modelled by the engine but not collected yet, so those evidence fields
+  stay `null` instead of being guessed; the pain branch and the RIR-failure
+  branch can therefore only fire on a logged RPE ≥ 9.
 - The reviewed catalog is authored in TypeScript (single source of truth) and
   snapshotted immutably into `svj_workout_template_versions` on plan creation.
 - Estimated 1RM is intentionally not implemented.

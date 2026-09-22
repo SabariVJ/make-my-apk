@@ -837,9 +837,7 @@ export const TrainStrength: React.FC<{
                       type="button"
                       aria-pressed={perceivedEffort === value}
                       aria-label={`Effort ${value} of 10`}
-                      onClick={() =>
-                        setPerceivedEffort((prev) => (prev === value ? null : value))
-                      }
+                      onClick={() => setPerceivedEffort((prev) => (prev === value ? null : value))}
                       className={`h-8 w-8 rounded-lg border font-mono text-[11px] ${
                         perceivedEffort === value
                           ? "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#D4AF37]"

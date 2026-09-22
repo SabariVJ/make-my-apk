@@ -640,10 +640,11 @@ export const WorkoutView: React.FC = () => {
                     >
                       <span className="text-[#F4F2ED]">
                         Session {session.slotIndex + 1} ·{" "}
-                        {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString(
-                          "en-US",
-                          { day: "2-digit", month: "short", year: "numeric" },
-                        )}
+                        {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString("en-US", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </span>
                       <span className="font-mono text-[10px] uppercase tracking-wider text-[#D4AF37]">
                         Completed

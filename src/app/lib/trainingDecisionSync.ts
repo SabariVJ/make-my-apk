@@ -14,7 +14,11 @@
 
 import { getExerciseHistory, type ExerciseHistory } from "./strength";
 import { recordTrainingDecision, type TrainingRpcCaller } from "./trainingClient";
-import { decideProgression, type PrescribedTarget, type SessionEvidence } from "./trainingProgression";
+import {
+  decideProgression,
+  type PrescribedTarget,
+  type SessionEvidence,
+} from "./trainingProgression";
 
 type StrengthCall = (
   fn: string,
@@ -78,9 +82,7 @@ export function evidenceFromHistory(
  * Record one progression decision per exercised prescription. Never throws —
  * a missing history or a failed write leaves the workout untouched.
  */
-export async function syncTrainingDecisions(
-  input: DecisionSyncInput,
-): Promise<DecisionSyncResult> {
+export async function syncTrainingDecisions(input: DecisionSyncInput): Promise<DecisionSyncResult> {
   const result: DecisionSyncResult = { recorded: 0, skipped: 0, failed: 0 };
   if (input.exercises.length === 0 || !input.activityId) return result;
   const now = input.now ?? new Date();

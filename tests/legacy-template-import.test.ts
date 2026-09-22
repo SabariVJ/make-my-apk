@@ -166,9 +166,7 @@ describe("import planning", () => {
     assert.ok(
       validateImportPayload({
         name: "ok",
-        exercises: [
-          { exercise_id: "a", name: "A", primary_muscle: "chest", sets: [] },
-        ],
+        exercises: [{ exercise_id: "a", name: "A", primary_muscle: "chest", sets: [] }],
       }) === null,
     );
   });

@@ -153,10 +153,7 @@ export function loadNotificationPreferences(userId: string): NotificationPrefere
         parsed.nutritionTime,
         DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime,
       ),
-      trainingTime: validTime(
-        parsed.trainingTime,
-        DEFAULT_NOTIFICATION_PREFERENCES.trainingTime,
-      ),
+      trainingTime: validTime(parsed.trainingTime, DEFAULT_NOTIFICATION_PREFERENCES.trainingTime),
       trainingSession:
         typeof parsed.trainingSession === "boolean"
           ? parsed.trainingSession

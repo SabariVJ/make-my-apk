@@ -78,14 +78,12 @@ const ownedTemplates = (userId) =>
   );
 
 const countRows = async (table, userId) =>
-  (await execute(`SELECT count(*)::int AS n FROM public.${table} WHERE user_id=$1`, [userId])).rows[0]
-    .n;
+  (await execute(`SELECT count(*)::int AS n FROM public.${table} WHERE user_id=$1`, [userId]))
+    .rows[0].n;
 
 before(async () => {
   await execScript(await readFile("tests/fixtures/rewards-auth.sql", "utf8"));
-  const names = (await readdir("supabase/migrations"))
-    .filter((x) => x.endsWith(".sql"))
-    .sort();
+  const names = (await readdir("supabase/migrations")).filter((x) => x.endsWith(".sql")).sort();
   for (const name of names.filter((x) => x < "20260920000000")) {
     await execScript(await readFile("supabase/migrations/" + name, "utf8"));
   }
@@ -291,9 +289,12 @@ describe("legacy template import", { concurrency: false }, () => {
     const before = global.rows[0].name;
 
     await assert.rejects(
-      asRole("authenticated", userId, "UPDATE public.svj_workout_templates SET name='hacked' WHERE id=$1", [
-        global.rows[0].id,
-      ]),
+      asRole(
+        "authenticated",
+        userId,
+        "UPDATE public.svj_workout_templates SET name='hacked' WHERE id=$1",
+        [global.rows[0].id],
+      ),
       /permission denied/i,
     );
     const after = await execute("SELECT name FROM public.svj_workout_templates WHERE id=$1", [

@@ -2,9 +2,12 @@
 
 ## Automated Training System (2026-09-21)
 
-**Status:** IN PROGRESS — deterministic foundation (profile, catalog, planner,
-progression, muscle history), additive schema + RPCs, client adapters and the
-Train → Today / Templates / History surface are implemented and wired.
+**Status:** COMPLETE (continued 2026-09-22 from checkpoint `2e9c8a1`) —
+deterministic foundation (profile, catalog, planner, progression, muscle
+history), additive schema + RPCs, client adapters, the Train → Today /
+Templates / History surface, warm-up persistence, offline workout queue,
+post-save decision sync, legacy template import, plan controls and effort-aware
+history are implemented, wired and tested.
 
 **Starting SHA:** `6dca0bf` · **Branch:** `release/play-v1-compliance`
 
@@ -31,15 +34,27 @@ Train → Today / Templates / History surface are implemented and wired.
 **Schema:** additive only. New tables + RPCs, RLS on every user table, no
 INSERT/UPDATE/DELETE grant to `authenticated`, no destructive statements.
 
-**Verification:** `bun tsc -b --noEmit` ✅ · `bun run test` 882 pass / 0 fail ✅ ·
-`bun run build` ✅ · `bunx eslint src/` 0 errors ✅ · `prettier --check` ✅ ·
-`git diff --check` ✅ · `cap sync android` ✅ · `:app`/`:wear` unit tests ✅ ·
-`:app`/`:wear` debug APKs BUILD SUCCESSFUL ✅.
+**Verification (earlier phase):** `bun tsc -b --noEmit` ✅ · `bun run test` 882
+pass / 0 fail ✅ · `bun run build` ✅ · `bunx eslint src/` 0 errors ✅ ·
+`prettier --check` ✅ · `git diff --check` ✅ · `cap sync android` ✅ ·
+`:app`/`:wear` unit tests ✅ · `:app`/`:wear` debug APKs BUILD SUCCESSFUL ✅.
 
-**Known limitations:** warm-up sets are guidance only in the current logger
-(`svj_strength_sets.is_warmup` exists for a future logger and is excluded by
-muscle history); estimated 1RM intentionally not implemented; the reviewed
-catalog is authored in TypeScript and snapshotted immutably on plan creation.
+**Verification (2026-09-22 continuation):** `bunx tsc --noEmit` ✅ ·
+`bun run test` 997 tests / 995 pass / 0 fail / 2 skipped (native-PostgreSQL-only) ✅ ·
+`bun run build` ✅ · `bunx eslint src/` 0 errors (38 pre-existing warnings) ✅ ·
+`prettier --check` ✅ (content-level) · `git diff --check` ✅ · no dependency,
+`capacitor.config.ts` or `android/` change, so no native regeneration was needed.
+
+**Migrations:** none created in the continuation; the 7 Automated Training
+migrations are already in the chain and are **not applied to production yet** —
+see `docs/SVJ_MIGRATION_RECONCILIATION.md` (blocked on Supabase credentials).
+
+**Known limitations:** the logger collects session RPE only — per-set RIR and
+the technique/pain flag are modelled by the engine but not collected, so those
+evidence fields stay `null`; estimated 1RM intentionally not implemented; the
+reviewed catalog is authored in TypeScript and snapshotted immutably on plan
+creation. Warm-up sets are now persisted per set (`is_warmup`) and excluded from
+volume, records, muscle history and progression evidence.
 
 ---
 

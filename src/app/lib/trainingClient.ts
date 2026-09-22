@@ -672,7 +672,10 @@ export async function listMyOwnedTemplates(
                         const reps = num(s.reps);
                         if (reps === null || reps <= 0) return null;
                         const weight = num(s.weight_kg);
-                        return { reps: Math.round(reps), weightKg: weight !== null && weight > 0 ? weight : 0 };
+                        return {
+                          reps: Math.round(reps),
+                          weightKg: weight !== null && weight > 0 ? weight : 0,
+                        };
                       })
                       .filter((s): s is OwnedTemplateSet => s !== null)
                   : [];

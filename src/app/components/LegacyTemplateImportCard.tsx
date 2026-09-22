@@ -9,11 +9,19 @@ import {
   validateImportPayload,
   type CatalogExerciseRef,
 } from "../lib/legacyTemplateImport";
-import { importLegacyTemplate, listMyOwnedTemplates, trainingRpcClient } from "../lib/trainingClient";
+import {
+  importLegacyTemplate,
+  listMyOwnedTemplates,
+  trainingRpcClient,
+} from "../lib/trainingClient";
 
 export interface LegacyTemplateImportCardProps {
   /** The on-device templates the user already has. */
-  deviceTemplates: { id: string; name: string; exercises: { id: string; name: string; sets: { reps: number; weight: number }[] }[] }[];
+  deviceTemplates: {
+    id: string;
+    name: string;
+    exercises: { id: string; name: string; sets: { reps: number; weight: number }[] }[];
+  }[];
   /** Called after the server acknowledges at least one import, to refresh. */
   onImported?: () => void;
 }
@@ -170,12 +178,17 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
                         aria-label={`Map ${resolution.legacy.name} to a catalog exercise`}
                         value={choices[resolution.legacy.id] ?? ""}
                         onChange={(e) =>
-                          setChoices((prev) => ({ ...prev, [resolution.legacy.id]: e.target.value }))
+                          setChoices((prev) => ({
+                            ...prev,
+                            [resolution.legacy.id]: e.target.value,
+                          }))
                         }
                         className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[10px] font-inter text-white"
                       >
                         <option value="">
-                          {resolution.kind === "ambiguous" ? "Choose a match…" : "Not in the catalog"}
+                          {resolution.kind === "ambiguous"
+                            ? "Choose a match…"
+                            : "Not in the catalog"}
                         </option>
                         {(resolution.kind === "ambiguous"
                           ? resolution.candidates
@@ -195,12 +208,18 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           ))}
 
           {error && (
-            <p role="alert" className="flex items-start gap-1.5 text-[11px] font-inter text-[#E62846]">
+            <p
+              role="alert"
+              className="flex items-start gap-1.5 text-[11px] font-inter text-[#E62846]"
+            >
               <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" /> {error}
             </p>
           )}
           {done && (
-            <p role="status" className="flex items-start gap-1.5 text-[11px] font-inter text-[#D4AF37]">
+            <p
+              role="status"
+              className="flex items-start gap-1.5 text-[11px] font-inter text-[#D4AF37]"
+            >
               <Check className="mt-0.5 h-3 w-3 shrink-0" /> {done}
             </p>
           )}
@@ -212,12 +231,16 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
             data-testid="legacy-template-import-confirm"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-[11px] font-inter font-semibold uppercase tracking-wider text-white disabled:opacity-40"
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
             Import these templates
           </button>
           <p className="text-[10px] font-inter text-[#8C8C90]">
-            Imports only your own templates into your account. No XP is awarded and nothing is marked
-            as performed. Your device copies stay until the server confirms.
+            Imports only your own templates into your account. No XP is awarded and nothing is
+            marked as performed. Your device copies stay until the server confirms.
           </p>
         </div>
       )}

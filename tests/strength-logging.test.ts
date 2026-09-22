@@ -543,6 +543,7 @@ describe("strength reads", () => {
               volume_kg: 1140,
               best_weight: 60,
               best_reps: 10,
+              perceived_effort: 7,
               sets: [{ set_number: 1, reps: 10, weight_kg: 60, duration_seconds: null }],
             },
           ],
@@ -553,6 +554,11 @@ describe("strength reads", () => {
     );
     assert.equal(history.ok, true);
     assert.equal(history.history?.sessions[0].volumeKg, 1140);
+    assert.equal(
+      history.history?.sessions[0].perceivedEffort,
+      7,
+      "stored session effort reaches the progression evidence",
+    );
     assert.equal(history.history?.records[0].value, 60);
   });
 

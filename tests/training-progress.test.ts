@@ -141,7 +141,9 @@ describe("exercise progress", () => {
     const progress = buildExerciseProgress({
       exerciseId: "ex-bench",
       exerciseName: "Bench Press",
-      sessions: [session("2026-09-10", [{ reps: 15, weightKg: 20, durationSeconds: null, isWarmup: true }])],
+      sessions: [
+        session("2026-09-10", [{ reps: 15, weightKg: 20, durationSeconds: null, isWarmup: true }]),
+      ],
     });
     assert.equal(progress.sessionCount, 0);
     assert.equal(progress.workingSetCount, 0);
@@ -152,7 +154,9 @@ describe("load conventions", () => {
   it("matches the server-side seed exactly", () => {
     const sql = readFileSync("supabase/migrations/20260928000000_training_progress.sql", "utf8");
     const seeded = new Map<string, string>();
-    for (const match of sql.matchAll(/\('([a-z_]+)', '(barbell_total|dumbbell_per_hand|machine_stack|assisted|cable|bodyweight_added)'\)/g)) {
+    for (const match of sql.matchAll(
+      /\('([a-z_]+)', '(barbell_total|dumbbell_per_hand|machine_stack|assisted|cable|bodyweight_added)'\)/g,
+    )) {
       seeded.set(match[1], match[2]);
     }
     assert.ok(seeded.size >= 30, "the migration must declare the reviewed catalog");
@@ -181,8 +185,22 @@ describe("weekly muscle coverage", () => {
       lastTrainedAt: "2026-09-20T10:00:00.000Z",
       lastTrainedDate: "2026-09-20",
     },
-    { muscle: "back", directSets: 0, supportingSets: 4, directVolume: 0, lastTrainedAt: null, lastTrainedDate: null },
-    { muscle: "quads", directSets: 0, supportingSets: 0, directVolume: 0, lastTrainedAt: null, lastTrainedDate: null },
+    {
+      muscle: "back",
+      directSets: 0,
+      supportingSets: 4,
+      directVolume: 0,
+      lastTrainedAt: null,
+      lastTrainedDate: null,
+    },
+    {
+      muscle: "quads",
+      directSets: 0,
+      supportingSets: 0,
+      directVolume: 0,
+      lastTrainedAt: null,
+      lastTrainedDate: null,
+    },
   ];
 
   it("reports direct/supporting sets and a human recency label — never a recovery percentage", () => {

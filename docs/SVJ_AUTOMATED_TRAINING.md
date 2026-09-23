@@ -119,3 +119,32 @@ payload carries a user id, XP, or personal-record value.
 - The reviewed catalog is authored in TypeScript (single source of truth) and
   snapshotted immutably into `svj_workout_template_versions` on plan creation.
 - Estimated 1RM is intentionally not implemented.
+
+## RPC contract and failure surface (2026-09-23)
+
+`svj_get_my_training_profile()` takes **no parameters** and returns the
+`{ ok, profile }` envelope; `getTrainingProfile` calls it with no arguments.
+`tests/training-profile-rpc.test.ts` locks this contract so the client and the
+SQL signature cannot silently drift again.
+
+Raw PostgREST/Supabase failures are **never** shown to the user.
+`sanitizeTrainingRpcError` (`src/app/lib/trainingErrors.ts`) maps deployment
+problems (PGRST202 / 42883 / schema-cache, e.g. the Automated Training chain
+not yet applied to production), auth expiry, network failures and unknown
+server messages to user-safe copy with stable telemetry codes; deployment
+problems are logged for diagnosis. `useTrainingPlan` sanitizes every load
+error before it reaches the UI, and `TrainingToday` renders a friendly retry
+card on first-load failure.
+
+## Form selects (2026-09-23)
+
+The "Build my program" form uses `SVJSelect`
+(`src/app/components/ui-primitives/SVJSelect.tsx`), a single reusable,
+accessible dark listbox primitive — **not** native `<select>`, which renders
+as a large white unthemeable overlay on Android WebView/Capacitor. It is a
+button + listbox rendered in place (no portal), keyboard accessible on web,
+with ≥44 px touch targets, explicit `aria-haspopup`/`aria-expanded`/
+`role=listbox`/`role=option`/`aria-selected` semantics, and selected state
+marked by a check icon rather than color alone. Sessions / week (1–6) and
+Minutes available (30/45/60/75/90) retain their valid choices; the planning
+algorithm is untouched.

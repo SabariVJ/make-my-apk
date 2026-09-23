@@ -2,12 +2,13 @@
 
 ## Automated Training System (2026-09-21)
 
-**Status:** COMPLETE (continued 2026-09-22 from checkpoint `2e9c8a1`) —
+**Status:** COMPLETE (continued 2026-09-23 from checkpoint `af0cea1`) —
 deterministic foundation (profile, catalog, planner, progression, muscle
 history), additive schema + RPCs, client adapters, the Train → Today /
 Templates / History surface, warm-up persistence, offline workout queue,
-post-save decision sync, legacy template import, plan controls and effort-aware
-history are implemented, wired and tested.
+post-save decision sync, legacy template import, plan controls, effort-aware
+history, and the 2026-09-23 Android runtime repairs (sanitized profile-RPC
+failure surface + dark custom form selects) are implemented, wired and tested.
 
 **Starting SHA:** `6dca0bf` · **Branch:** `release/play-v1-compliance`
 
@@ -48,6 +49,52 @@ pass / 0 fail ✅ · `bun run build` ✅ · `bunx eslint src/` 0 errors ✅ ·
 **Migrations:** none created in the continuation; the 7 Automated Training
 migrations are already in the chain and are **not applied to production yet** —
 see `docs/SVJ_MIGRATION_RECONCILIATION.md` (blocked on Supabase credentials).
+
+**Continuation 2026-09-23 (checkpoint `af0cea1`) — Android runtime repairs:**
+
+1. *Training profile RPC failure.* Root cause analysis: the client
+   (`getTrainingProfile`) correctly calls `svj_get_my_training_profile()` with
+   **no arguments**, and the migration defining it
+   (`supabase/migrations/20260926000000_automated_training.sql:286`) exists in
+   the repository — the production Supabase project has **not** had the
+   Automated Training migration chain applied (blocked on credentials, see the
+   reconciliation doc), so PostgREST reports "Could not find the function
+   public.svj_get_my_training_profile without parameters in the schema cache".
+   The client/SQL contract has **not** drifted. Fixes shipped:
+   - `src/app/lib/trainingErrors.ts` — `sanitizeTrainingRpcError()` maps raw
+     PostgREST failures (PGRST202/42883/schema-cache, auth, network, unknown)
+     to user-safe messages with stable telemetry codes; deployment problems are
+     logged server-side via `console.error` and never shown raw.
+   - `src/app/hooks/useTrainingPlan.ts` — sanitizes every load error before it
+     reaches the UI.
+   - `src/app/components/TrainingToday.tsx` — a failed initial load renders a
+     friendly retry card (`training-load-error`) with defense-in-depth raw-
+     message filtering; raw Supabase/PostgREST errors can no longer surface.
+   - Regression tests: `tests/training-profile-rpc.test.ts` locks the zero-arg
+     RPC contract so signature drift cannot silently regress again.
+   - **Blocker remains:** applying the verified migration chain to production
+     Supabase requires credentials not present in this environment.
+2. *Broken Android select/dropdown UI.* The native `<select>` controls for
+   Sessions / week and Minutes available opened as large white native overlays
+   on Android WebView/Capacitor. Replaced with one reusable, accessible dark
+   primitive: `src/app/components/ui-primitives/SVJSelect.tsx` (button +
+   listbox, no portal — stays inside the viewport, no page zoom, ≥44px touch
+   targets, keyboard support incl. Home/End/Escape, `aria-haspopup`/`aria-
+   expanded`/`role=listbox`/`role=option`/`aria-selected`, selected state marked
+   by an explicit check icon, not color alone). Valid choices retained
+   (1–6 sessions; 30/45/60/75/90 min); the plan algorithm is untouched.
+   The full "HOW DO YOU TRAIN?" card was audited for phone widths: experience /
+   goal / days / equipment / sport / practice-day controls were already flex and
+   grid based (no fixed widths) and need no change.
+3. *Regression coverage.* `tests/training-profile-rpc.test.ts` (14 tests) covers
+   the RPC client contract, envelope normalization, payload shape, sanitization
+   of every failure class, absence of native `<select>` in the setup flow, the
+   accessibility semantics of the replacement control, and the sanitized load-
+   failure state.
+
+**Verification (2026-09-23 continuation):** `bunx tsc --noEmit` ✅ ·
+`bun run test` 997 tests / 995 pass / 0 fail / 2 skipped (native-PostgreSQL-only)
+✅ · targeted ESLint on changed files 0 errors ✅ · `bun run build` ✅.
 
 **Known limitations:** the logger collects session RPE only — per-set RIR and
 the technique/pain flag are modelled by the engine but not collected, so those

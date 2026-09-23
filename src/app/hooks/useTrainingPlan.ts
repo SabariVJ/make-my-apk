@@ -46,6 +46,7 @@ import {
   type TrainingProfile,
 } from "../lib/trainingProfile";
 import { TRAINING_POLICY_VERSION } from "../lib/trainingPolicy";
+import { sanitizeTrainingRpcError } from "../lib/trainingErrors";
 
 export interface TrainingPlanState {
   loading: boolean;
@@ -168,7 +169,20 @@ export function useTrainingPlan(): TrainingPlanState & TrainingPlanActions {
     const firstError =
       profileResult.error ?? planResult.error ?? libraryResult.error ?? ownedResult.error;
     loadedOnce.current = true;
-    setError(firstError ?? null);
+    // Raw PostgREST/Supabase messages (e.g. "Could not find the function
+    // public.svj_get_my_training_profile … schema cache") must never reach
+    // the UI. Deployment problems are named as such and logged for diagnosis.
+    if (firstError) {
+      const { userMessage, meta } = sanitizeTrainingRpcError(firstError);
+      if (meta.deploymentProblem) {
+        console.error("[SVJ training] Automated training RPCs are not deployed", {
+          code: meta.code,
+        });
+      }
+      setError(userMessage);
+    } else {
+      setError(null);
+    }
     setLoading(false);
   }, []);
 

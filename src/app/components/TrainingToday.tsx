@@ -23,6 +23,7 @@ import {
   type Weekday,
 } from "../lib/trainingProfile";
 import { templateForSlot, SESSION_FAMILY_LABELS } from "../lib/trainingTemplates";
+import { SVJSelect } from "./ui-primitives/SVJSelect";
 import { svjStaggerContainer, svjStaggerItem, svjWhileTap } from "../lib/motion";
 import type { PlanSession } from "../lib/trainingPlan";
 import type { MuscleHistoryRow } from "../lib/trainingClient";
@@ -51,6 +52,16 @@ export interface TrainingTodayProps {
 
 const ALL_DAYS: Weekday[] = [1, 2, 3, 4, 5, 6, 0];
 const EQUIPMENT_ORDER: EquipmentId[] = ["full_gym", "dumbbells", "bands", "bodyweight"];
+
+/** Valid choices retained from the previous native selects. */
+const SESSIONS_PER_WEEK_OPTIONS = [1, 2, 3, 4, 5, 6].map((n) => ({
+  value: n,
+  label: `${n} / week`,
+}));
+const SESSION_MINUTES_OPTIONS = [30, 45, 60, 75, 90].map((n) => ({
+  value: n,
+  label: `${n} min`,
+}));
 
 function recencyLabel(row: MuscleHistoryRow): string {
   if (!row.lastTrainedDate) return "No logged training";
@@ -239,34 +250,20 @@ const SetupFlow: React.FC<{
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="text-[11px] font-inter text-[#8C8C90]">
-            Sessions / week
-            <select
-              value={draft.sessionsPerWeek}
-              onChange={(e) => patch({ sessionsPerWeek: Number(e.target.value) })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-2 text-xs font-mono text-white"
-            >
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-[11px] font-inter text-[#8C8C90]">
-            Minutes available
-            <select
-              value={draft.sessionMinutes}
-              onChange={(e) => patch({ sessionMinutes: Number(e.target.value) })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-2 text-xs font-mono text-white"
-            >
-              {[30, 45, 60, 75, 90].map((n) => (
-                <option key={n} value={n}>
-                  {n} min
-                </option>
-              ))}
-            </select>
-          </label>
+          <SVJSelect
+            label="Sessions / week"
+            value={draft.sessionsPerWeek}
+            options={SESSIONS_PER_WEEK_OPTIONS}
+            onChange={(sessionsPerWeek) => patch({ sessionsPerWeek })}
+            testId="sessions-per-week"
+          />
+          <SVJSelect
+            label="Minutes available"
+            value={draft.sessionMinutes}
+            options={SESSION_MINUTES_OPTIONS}
+            onChange={(sessionMinutes) => patch({ sessionMinutes })}
+            testId="session-minutes"
+          />
         </div>
 
         <div>
@@ -386,6 +383,34 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
     return (
       <div className="flex items-center justify-center gap-2 py-10 text-xs font-inter text-[#8C8C90]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading your training plan…
+      </div>
+    );
+  }
+
+  if (error && !profileReady) {
+    // A load failure (including a missing server deployment) shows a friendly
+    // retry card — never a raw Supabase/PostgREST error. Raw messages are
+    // sanitized upstream in useTrainingPlan; this is a defense in depth.
+    const safeMessage =
+      error.length > 0 && !/could not find the function|schema cache|PGRST/i.test(error)
+        ? error
+        : "Couldn't load your training profile. Please try again.";
+    return (
+      <div
+        className="rounded-2xl border border-white/10 bg-[#17171A] p-5 text-center"
+        data-testid="training-load-error"
+      >
+        <p className="font-anton text-sm uppercase text-white">Training needs a connection</p>
+        <p role="alert" className="mt-2 text-xs font-inter text-[#B8B8C0]">
+          {safeMessage}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white"
+        >
+          <RefreshCw className="h-4 w-4" /> Try again
+        </button>
       </div>
     );
   }

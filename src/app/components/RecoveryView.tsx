@@ -14,6 +14,7 @@ import { HeartPulse } from "lucide-react";
 import { TrainRecovery } from "../views/TrainRecovery";
 import { RECOVERY_SECTIONS, type RecoverySection } from "../lib/recoveryNav";
 import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
+import RecoveryHistorySection from "./recovery/RecoveryHistorySection";
 import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
 import { useTrainRecoveryShared } from "../lib/readinessShared";
 import {
@@ -176,18 +177,7 @@ export const RecoveryView: React.FC = () => {
         </div>
       )}
 
-      {section === "history" && (
-        <UpcomingSection
-          section="history"
-          title="History"
-          summary="A calendar heatmap of your real readiness scores and a sleep-vs-performance view built from your own logged nights."
-          points={[
-            "Every day shows an actual derived score — days with no data stay visually empty",
-            "Sleep vs. training load, using wording you already understand",
-            "Personal records and trends computed from real history only",
-          ]}
-        />
-      )}
+      {section === "history" && <RecoveryHistorySection />}
 
       {section === "goals" && (
         <UpcomingSection

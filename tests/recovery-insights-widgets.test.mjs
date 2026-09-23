@@ -391,16 +391,22 @@ describe("muscle recovery map honesty", () => {
 });
 
 describe("Phase 1/2 invariants stay intact", () => {
-  it("keeps the six sections and the honest placeholders", async () => {
+  it("keeps the six sections; unshipped ones stay honest placeholders", async () => {
     await openOverview();
     assert.deepEqual(
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
+    // History shipped in Phase 4 (its own suite covers it); Goals, Records,
+    // Progress and Devices are still honest "Coming next" placeholders.
+    await act(async () => {
+      screen.getByTestId("recovery-section-tab-goals").click();
+    });
+    assert.ok(screen.getByText(/Coming next/));
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });
-    assert.ok(screen.getByText(/Coming next/));
+    assert.ok(screen.getByTestId("recovery-section-history"), "History is real now");
     assert.equal(screen.queryByTestId("recovery-focus"), null, "widgets live only in Overview");
   });
 

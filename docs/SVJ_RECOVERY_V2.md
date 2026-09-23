@@ -304,3 +304,90 @@ Phase 1 UI test.
 Validation for the Phase 3 checkpoint: **1125 tests — 1123 pass / 0 fail / 2
 skipped**, `bunx tsc --noEmit` clean, ESLint 0 errors on changed files,
 Prettier clean, `bun run build` PASS. No database changes.
+
+## Phase 4 — History: heatmap calendar + sleep insights
+
+The Recovery → History placeholder is replaced by a real, server-authoritative
+history experience. Overview, Goals, Records, Progress and Devices are
+unchanged.
+
+### Day-basis decision (locked)
+
+The History calendar is built ONLY from `svj_list_my_recovery_history` rows via
+the existing typed wrapper (`listMyRecoveryHistory`, `RecoveryHistoryPoint`).
+The server-returned `date` string is the canonical day key: rows are placed on
+that key verbatim, never shifted to a local calendar day, and local
+`RecoveryDayRecord` storage is never merged in to "fill" dates (local storage
+remains only for the existing Phase-2 Overview fallback). Documented and pinned
+by `tests/recovery-history-phase4.test.ts`.
+
+### Heatmap (`buildRecoveryHeatmap`)
+
+- Last 35 server calendar days ending on the newest server date (the server is
+  the day authority; a fully empty history renders an empty grid — no invented
+  dates).
+- **Scored day**: every server row is scored — `score > 0` AND `score === 0`
+  are both real data. Intensity derives deterministically from the score via
+  the existing `gradeForScore`: excellent ≥ 78 (emerald ◆), good 60–77 (gold
+  ◆), fair 40–59 (orange ◇), poor < 40 (red ✕).
+- **Missing day**: a calendar day with no server row is a neutral no-data cell
+  (`·`, white/5) with `score: null` — never a fabricated zero, never treated as
+  poor recovery.
+- Colour is never the only signal: every cell carries a glyph, an
+  `aria-label` ("September 18, readiness 72, good, check-in completed" /
+  "September 19, no recovery data") and an sr-only copy. Days are real
+  `<button>`s (44px targets, visible focus, `aria-pressed`); selecting one
+  shows the day's server fields (readiness + grade, check-in, reported sleep,
+  load band) or its honest no-data note. A legend lists all five states with
+  score ranges.
+
+### Sleep vs readiness (`correlateSleepReadiness`)
+
+Deterministic Pearson correlation of `sleepHours` ↔ `score` over the same
+server rows (one authoritative collection per mounted Recovery destination —
+no second history request):
+
+- a pair needs a finite `sleepHours > 0` AND a finite `score ≥ 0` on the same
+  server day; anything else is skipped (missing sleep is never 0),
+- fewer than **5 usable pairs** (`SLEEP_CORRELATION_MIN_SAMPLES`) →
+  `insufficient_data` with the count shown,
+- zero variance on either axis (or any non-finite intermediate) → `r = null`
+  and `no_clear_relationship` — NaN/Infinity can never reach the UI,
+- |r| ≤ **0.3** (`SLEEP_CORRELATION_WEAK_THRESHOLD`) → `no_clear_relationship`,
+- r > 0.3 → "On days after longer reported sleep, your readiness scores have
+  tended to be higher"; r < −0.3 → the opposite. Neutral, non-causal wording
+  only; the card also states the paired-day count and "observed tendency only,
+  not a cause".
+
+### Best sleep (reused)
+
+The History tab reuses the existing `bestSleepRange` (no competing algorithm)
+and shows its honest insufficient-data state until enough paired nights exist;
+a displayed range is labelled "From your own logged recovery history — not a
+clinical recommendation".
+
+### Loading / empty / error
+
+Loading → "Loading your recovery history…"; empty history → "No recovery
+history yet — save a check-in on the Overview tab to start."; RPC failure →
+"Recovery history is unavailable right now." with a retry button (raw
+PostgREST text never reaches the UI). A history failure never affects the
+Overview, Focus, streak, muscle map or check-in flow.
+
+### Tests
+
+- `tests/recovery-history-phase4.test.ts` (22) — scored/low/missing-day rules,
+  server-key authority, check-in distinction, empty/malformed input, ordering,
+  accessible label pieces; correlation: 0 and <5 pairs, excluded missing
+  sleep/score, positive/negative/weak relationships, zero-variance safety,
+  no NaN/Infinity, determinism, non-causal wording.
+- `tests/recovery-history-ui.test.mjs` (15) — the shipped section in jsdom:
+  scored vs low vs no-data cells, accessible labels, button semantics +
+  `aria-pressed`, day detail, legend, empty/loading/error+retry states,
+  insufficient-data and positive-tendency sleep cards, best-sleep honest and
+  populated states, six-section shell intact, standalone Train › Recovery
+  path unchanged.
+
+Validation for the Phase 4 checkpoint: **1162 tests — 1160 pass / 0 fail / 2
+skipped**, `bunx tsc --noEmit` clean, ESLint 0 errors on changed files,
+Prettier clean, `bun run build` PASS. No database changes.

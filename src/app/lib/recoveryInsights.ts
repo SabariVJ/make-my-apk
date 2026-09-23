@@ -865,3 +865,210 @@ export function readinessTrend(
     };
   });
 }
+
+// ── Phase 4 — server-authoritative history heatmap ───────────────────────
+//
+// The History calendar is built ONLY from svj_list_my_recovery_history rows.
+// The server-returned `date` string is the canonical day key: rows are placed
+// on that key verbatim and never shifted to a local calendar day, and local
+// RecoveryDayRecord storage is never merged in to "fill" dates. A calendar
+// cell with no server row is NO DATA — never a fabricated zero score.
+
+import type { RecoveryHistoryPoint } from "./recovery";
+
+export type HeatCellState = "scored" | "no_data";
+
+export interface HeatmapCell {
+  /** Canonical server day key (YYYY-MM-DD) for scored cells; synthesized
+   *  calendar key (same format) for no-data cells. */
+  date: string;
+  state: HeatCellState;
+  /** Server score when state === "scored" (0–100); null for no-data. */
+  score: number | null;
+  grade: RecoveryGrade | null;
+  band: LoadBand | null;
+  hasCheckin: boolean;
+  sleepHours: number | null;
+}
+
+/**
+ * Build the heatmap calendar for the last `days` SERVER days.
+ *
+ * - Every server row is kept: `score > 0` and `score === 0` are BOTH scored
+ *   days (a genuinely low/zero readiness day is real data, not a gap).
+ * - Calendar days inside the window without a server row are `no_data`.
+ * - Row order in the result is oldest → newest. The window ends on the
+ *   newest server date when one exists (the server is the day authority); a
+ *   fully empty history returns an empty grid rather than inventing dates.
+ */
+export function buildRecoveryHeatmap(serverDays: RecoveryHistoryPoint[], days = 35): HeatmapCell[] {
+  const byDate = new Map<string, RecoveryHistoryPoint>();
+  let newest: string | null = null;
+  for (const row of serverDays) {
+    if (typeof row.date !== "string" || row.date === "") continue;
+    byDate.set(row.date, row);
+    if (newest === null || row.date > newest) newest = row.date;
+  }
+  if (newest === null) return [];
+
+  const cells: HeatmapCell[] = [];
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const day = new Date(`${newest}T12:00:00`);
+    day.setDate(day.getDate() - offset);
+    const key = localDayKey(day);
+    const row = byDate.get(key);
+    if (!row) {
+      cells.push({
+        date: key,
+        state: "no_data",
+        score: null,
+        grade: null,
+        band: null,
+        hasCheckin: false,
+        sleepHours: null,
+      });
+      continue;
+    }
+    const score = typeof row.score === "number" && Number.isFinite(row.score) ? row.score : 0;
+    cells.push({
+      date: key,
+      state: "scored",
+      score,
+      grade: gradeForScore(score),
+      band: (["low", "moderate", "high", "very_high"].includes(row.trainingLoad)
+        ? row.trainingLoad
+        : "moderate") as LoadBand,
+      hasCheckin: row.hasCheckin === true,
+      sleepHours: typeof row.sleepHours === "number" ? row.sleepHours : null,
+    });
+  }
+  return cells;
+}
+
+/** Month/day caption for a heatmap cell, e.g. "September 18". */
+export function heatCellDateLabel(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/** Human band word for the accessible label ("good", "no data", …). */
+export function heatCellBandLabel(grade: RecoveryGrade | null): string {
+  if (!grade || grade === "unknown") return "no data";
+  return grade;
+}
+
+// ── Phase 4 — sleep vs readiness (deterministic, honest) ─────────────────
+//
+// Pearson correlation between reported sleep and the SAME day's readiness
+// score, computed only over days that have BOTH a usable sleep value and a
+// server readiness score. Missing inputs are skipped — never treated as 0.
+
+export type SleepCorrelationStrength =
+  | "insufficient_data"
+  | "no_clear_relationship"
+  | "higher_sleep_higher_readiness"
+  | "higher_sleep_lower_readiness";
+
+export interface SleepReadinessCorrelation {
+  strength: SleepCorrelationStrength;
+  /** Paired days actually used. */
+  samples: number;
+  /** Pearson r in [-1, 1], or null when not computable (incl. zero variance). */
+  r: number | null;
+  /** Human-readable, non-causal summary. */
+  summary: string;
+}
+
+/** Below this many usable sleep↔readiness pairs we refuse to interpret. */
+export const SLEEP_CORRELATION_MIN_SAMPLES = 5;
+/** |r| at or below this is reported as "no clear relationship". */
+export const SLEEP_CORRELATION_WEAK_THRESHOLD = 0.3;
+
+/**
+ * Deterministic Pearson correlation of sleepHours ↔ score over server history
+ * rows. Rules (documented for tests):
+ *  - a pair needs a finite sleepHours > 0 AND a finite score ≥ 0 on the SAME
+ *    server day; anything else is skipped (missing sleep is NOT 0),
+ *  - fewer than SLEEP_CORRELATION_MIN_SAMPLES usable pairs → insufficient_data,
+ *  - zero variance on either axis (or a non-finite intermediate) → r = null and
+ *    no_clear_relationship — never NaN/Infinity,
+ *  - |r| ≤ SLEEP_CORRELATION_WEAK_THRESHOLD → no_clear_relationship,
+ *  - r > threshold → higher_sleep_higher_readiness; r < −threshold → the
+ *    opposite. Wording is neutral and never implies causation.
+ */
+export function correlateSleepReadiness(
+  serverDays: RecoveryHistoryPoint[],
+): SleepReadinessCorrelation {
+  const pairs: Array<{ sleep: number; score: number }> = [];
+  for (const row of serverDays) {
+    const sleep = row.sleepHours;
+    const score = row.score;
+    if (typeof sleep !== "number" || !Number.isFinite(sleep) || sleep <= 0) continue;
+    if (typeof score !== "number" || !Number.isFinite(score) || score < 0) continue;
+    pairs.push({ sleep, score });
+  }
+
+  const insufficient = (samples: number): SleepReadinessCorrelation => ({
+    strength: "insufficient_data" as const,
+    samples,
+    r: null,
+    summary:
+      samples === 0
+        ? "No paired sleep and readiness days yet — save a check-in with your sleep hours to build this view."
+        : `Not enough paired sleep and readiness days yet (${samples} of ${SLEEP_CORRELATION_MIN_SAMPLES} needed) — keep logging your check-ins.`,
+  });
+
+  if (pairs.length < SLEEP_CORRELATION_MIN_SAMPLES) return insufficient(pairs.length);
+
+  const n = pairs.length;
+  const meanSleep = pairs.reduce((s, p) => s + p.sleep, 0) / n;
+  const meanScore = pairs.reduce((s, p) => s + p.score, 0) / n;
+  let cov = 0;
+  let varSleep = 0;
+  let varScore = 0;
+  for (const p of pairs) {
+    const ds = p.sleep - meanSleep;
+    const dq = p.score - meanScore;
+    cov += ds * dq;
+    varSleep += ds * ds;
+    varScore += dq * dq;
+  }
+  const denominator = Math.sqrt(varSleep * varScore);
+  if (denominator <= 0 || !Number.isFinite(denominator) || !Number.isFinite(cov)) {
+    return {
+      strength: "no_clear_relationship",
+      samples: n,
+      r: null,
+      summary:
+        "Your logged nights are too similar (or too flat) to show a relationship with readiness yet.",
+    };
+  }
+  const r = cov / denominator;
+  const clamped = Math.max(-1, Math.min(1, r));
+  if (!Number.isFinite(clamped) || Math.abs(clamped) <= SLEEP_CORRELATION_WEAK_THRESHOLD) {
+    return {
+      strength: "no_clear_relationship",
+      samples: n,
+      r: Number.isFinite(clamped) ? clamped : null,
+      summary:
+        "Your recent data does not show a clear relationship between sleep and readiness yet.",
+    };
+  }
+  return clamped > 0
+    ? {
+        strength: "higher_sleep_higher_readiness",
+        samples: n,
+        r: clamped,
+        summary:
+          "On days after longer reported sleep, your readiness scores have tended to be higher.",
+      }
+    : {
+        strength: "higher_sleep_lower_readiness",
+        samples: n,
+        r: clamped,
+        summary:
+          "On days after longer reported sleep, your readiness scores have tended to be lower.",
+      };
+}

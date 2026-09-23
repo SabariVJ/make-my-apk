@@ -76,20 +76,20 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-3xl p-6 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
+          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
         >
           {/* Ambient Lighting */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/20 blur-3xl rounded-full pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
 
           {/* Top Banner */}
           <div className="relative z-10 text-center mb-6 space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Welcome to SVJ Guild</span>
+              <span>Your SVJ Profile</span>
             </div>
             <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
-              Initialize Your Identity
+              Set Up Your Profile
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-sm mx-auto leading-relaxed">
               Set up your personal member profile to start tracking daily challenges, earning XP,
@@ -109,7 +109,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     key={av.id}
                     type="button"
                     onClick={() => setSelectedAvatar(av.url)}
-                    className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                       selectedAvatar === av.url
                         ? "border-[#C81E3A] scale-105 shadow-lg shadow-[#C81E3A]/40"
                         : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
@@ -176,7 +176,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
                     key={goal}
                     type="button"
                     onClick={() => setSelectedGoal(goal)}
-                    className={`px-3 py-2 rounded-xl text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
+                    className={`px-3 py-2 rounded-lg text-xs font-mono font-medium transition-all text-left cursor-pointer border ${
                       selectedGoal === goal
                         ? "bg-[#C81E3A] text-white border-[#C81E3A] shadow-md"
                         : "bg-[#0B0B0C] text-[#8C8C90] border-white/10 hover:text-white"
@@ -219,20 +219,14 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Welcome Bonus Notice */}
-            <div className="p-3 rounded-xl bg-[#C81E3A]/10 border border-[#C81E3A]/30 flex items-center justify-between text-xs font-mono">
-              <span className="text-[#F4F2ED]">🎁 Welcome Bonus Included:</span>
-              <span className="font-bold text-[#C81E3A]">+100 Initiation XP</span>
-            </div>
-
             {/* Submit Button */}
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Initialize Profile & Claim +100 XP</span>
+                <span>Save Profile</span>
               </button>
             </div>
           </form>

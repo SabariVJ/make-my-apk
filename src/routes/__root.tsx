@@ -9,27 +9,34 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { Compass, Home, RotateCw, TriangleAlert } from "lucide-react";
+
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { StatusScreen } from "../app/components/StatusScreen";
+
 function NotFoundComponent() {
+  const goHome = () => {
+    window.location.href = "/";
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
-    </div>
+    <StatusScreen
+      testId="not-found-screen"
+      icon={Compass}
+      eyebrow="Error 404"
+      title="Page not found"
+      message="The page you're looking for doesn't exist or has been moved."
+      primaryAction={{ label: "Go home", onClick: goHome, icon: Home }}
+    >
+      {/* Keeps the SPA navigation path available for in-app links. */}
+      <Link
+        to="/"
+        className="block text-[11px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white transition-colors"
+      >
+        Or navigate back to the app
+      </Link>
+    </StatusScreen>
   );
 }
 
@@ -41,33 +48,28 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
+    <StatusScreen
+      testId="crash-screen"
+      icon={TriangleAlert}
+      eyebrow="Something broke"
+      title="This page didn't load"
+      message="Something went wrong on our end. Try again, or head back home and pick up where you left off."
+      primaryAction={{
+        label: "Try again",
+        icon: RotateCw,
+        onClick: () => {
+          router.invalidate();
+          reset();
+        },
+      }}
+      secondaryAction={{
+        label: "Go home",
+        icon: Home,
+        onClick: () => {
+          window.location.href = "/";
+        },
+      }}
+    />
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -14,26 +15,71 @@ import {
 import { useSVJ } from "../context/SVJContext";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
 import { RedeemPlusCodeForm } from "./RedeemPlusCodeForm";
+import {
+  resolveWhatsAppUrl,
+  buildWhatsAppAppUrl,
+  buildWhatsAppWebUrl,
+  buildActivationMailto,
+  buildPaymentConfirmationMessage,
+  formatWhatsAppNumber,
+  SVJ_WHATSAPP_NUMBER,
+} from "@/lib/whatsapp";
 
 export const UPIPaymentModal: React.FC = () => {
   const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
+  const [showContactFallback, setShowContactFallback] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [numberCopied, setNumberCopied] = useState(false);
 
-  if (!isUPIModalOpen) return null;
+  const supportMessage = buildPaymentConfirmationMessage();
+  const isNative = Capacitor.isNativePlatform();
+  const supportUrl = resolveWhatsAppUrl(supportMessage, isNative);
+  const appUrl = buildWhatsAppAppUrl(supportMessage);
+  const webUrl = buildWhatsAppWebUrl(supportMessage);
+  const mailtoUrl = buildActivationMailto(supportMessage);
+
+  if (!isUPIModalOpen || Capacitor.getPlatform() === "android") return null;
 
   const handleSimulatePayment = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      setIsUPIModalOpen(false);
-      window.open(
-        `https://wa.me/919790833416?text=${encodeURIComponent("Hi! I've paid for SVJ Plus. Please activate my account.")}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-    }, 1500);
+      // Never auto-navigate on the web: popups and WhatsApp web can be blocked
+      // by extensions, filters or embedded frames, leaving a dead tab.
+      setShowContactFallback(true);
+      if (isNative) {
+        try {
+          void import("@capacitor/browser").then(({ Browser }) =>
+            Browser.open({ url: supportUrl }),
+          );
+        } catch {
+          /* fallback panel already shown */
+        }
+      }
+    }, 900);
+  };
+
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(supportMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const handleCopyNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(`+${SVJ_WHATSAPP_NUMBER}`);
+      setNumberCopied(true);
+      setTimeout(() => setNumberCopied(false), 2000);
+    } catch {
+      setNumberCopied(false);
+    }
   };
 
   return (
@@ -43,7 +89,7 @@ export const UPIPaymentModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-6 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-4 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
@@ -66,7 +112,7 @@ export const UPIPaymentModal: React.FC = () => {
                 setPaymentTab("upi");
                 setShowQR(false);
               }}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 paymentTab === "upi"
                   ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
                   : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -77,9 +123,9 @@ export const UPIPaymentModal: React.FC = () => {
             </button>
             <button
               onClick={() => setPaymentTab("code")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 paymentTab === "code"
-                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                  ? "bg-gold text-black shadow-lg shadow-gold/20"
                   : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
               }`}
             >
@@ -101,7 +147,7 @@ export const UPIPaymentModal: React.FC = () => {
           ) : !showQR ? (
             /* Prompt: Would you like to pay via UPI? */
             <div className="space-y-5 text-center py-4">
-              <div className="relative w-28 h-28 rounded-2xl bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
+              <div className="relative w-28 h-28 rounded-lg bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
                 <img
                   src={upiQr.url}
                   alt="SVJ QR Code"
@@ -123,13 +169,13 @@ export const UPIPaymentModal: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => setIsUPIModalOpen(false)}
-                  className="py-3 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-[#8C8C90] font-mono text-xs cursor-pointer"
+                  className="py-3 rounded-2xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-[#8C8C90] font-mono text-xs cursor-pointer"
                 >
                   No, thanks
                 </button>
                 <button
                   onClick={() => setShowQR(true)}
-                  className="py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase text-xs cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                  className="py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase text-xs cursor-pointer shadow-lg shadow-[#C81E3A]/20"
                 >
                   Yes, show QR
                 </button>
@@ -139,7 +185,7 @@ export const UPIPaymentModal: React.FC = () => {
             /* QR Code Scanner Display */
             <div className="space-y-5 text-center py-2">
               <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded flex items-center justify-center overflow-hidden">
+                <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
                   <img
                     src={upiQr.url}
                     alt="SVJ Official Payment QR Code"
@@ -160,7 +206,7 @@ export const UPIPaymentModal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
                 <div className="flex items-center gap-2 text-emerald-400 font-mono font-semibold">
                   <ShieldCheck className="w-4 h-4" />
                   <span>Manual Verification Required</span>
@@ -180,7 +226,7 @@ export const UPIPaymentModal: React.FC = () => {
                   className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <span>Opening WhatsApp...</span>
+                    <span>Preparing contact options...</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
@@ -189,6 +235,54 @@ export const UPIPaymentModal: React.FC = () => {
                   )}
                 </motion.button>
               </div>
+
+              {showContactFallback && (
+                <div className="mt-3 p-3 rounded-2xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
+                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                    Send us your payment details to activate SVJ Plus:
+                  </p>
+                  <a
+                    href={isNative ? supportUrl : appUrl}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    Open WhatsApp app
+                  </a>
+                  <a
+                    href={webUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Open in browser instead
+                  </a>
+                  <button
+                    onClick={handleCopyMessage}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
+                  >
+                    {copied ? "Message copied" : "Copy verification message"}
+                  </button>
+                  <button
+                    onClick={handleCopyNumber}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                  >
+                    {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
+                  </button>
+                  <a
+                    href={mailtoUrl}
+                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                  >
+                    Email us instead
+                  </a>
+                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                    If WhatsApp doesn&apos;t open, message{" "}
+                    <span className="font-mono text-white select-all">
+                      {formatWhatsAppNumber()}
+                    </span>{" "}
+                    from your phone with the copied text.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

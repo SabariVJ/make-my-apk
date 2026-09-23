@@ -90,7 +90,7 @@ export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
           // Poll getSession() over a generous window instead of a single
           // 600ms check, and only settle as "cancelled" if no session arrives
           // before the window closes.
-          console.log("[SVJ] browserFinished — custom tab closed; polling for session…");
+          // Sanitized: no token details logged
           const POLL_MS = 250;
           const WINDOW_MS = 10000;
           const deadline = Date.now() + WINDOW_MS;
@@ -101,11 +101,7 @@ export async function signInWithGoogle(): Promise<GoogleAuthOutcome> {
               return;
             }
             if (Date.now() > deadline) {
-              console.log(
-                "[SVJ] browserFinished — no session within " +
-                  WINDOW_MS +
-                  "ms; treating as cancelled",
-              );
+              // Session polling timed out — treated as cancelled
               finish({ status: "cancelled" });
               return;
             }

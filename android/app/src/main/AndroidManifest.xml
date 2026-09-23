@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The Health Connect client library declares minSdk 26 (Health Connect is
+         an Android 8.0+ platform component). SVJ keeps minSdk 24 and only loads
+         the plugin on API 26+, so devices below 26 never touch its classes. -->
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
 
     <application
         android:allowBackup="true"
@@ -46,9 +52,99 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/admob_app_id"/>
 
+        <!-- SVJ's native activity recorder. A foreground service of type
+             `location` is what keeps recording alive through screen lock and
+             app backgrounding; it exists only while a workout is active. -->
+        <service
+            android:name=".VjWorkoutService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Wear OS Data Layer: receives watch messages (handshake, live
+             samples, session state, completed workout summaries) even when SVJ
+             is not running, and buffers them for the app. -->
+        <service
+            android:name=".VjWearListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/svj/wear/" />
+            </intent-filter>
+        </service>
+
+        <!-- Advertises the phone app to the SVJ Wear OS companion so the watch
+             can find its phone node through capability discovery. -->
+        <meta-data
+            android:name="com.google.android.wearable.capability"
+            android:value="svj_phone_app" />
+
+        <!-- Required Health Connect privacy/rationale declaration. Shown when the
+             user asks why SVJ needs health data; it reuses SVJ's own privacy page
+             via the app's existing deep-link scheme (app.lovable.svj://privacy). -->
+        <activity
+            android:name=".HealthPermissionsRationaleActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android 14+ routes the same rationale through VIEW_PERMISSION_USAGE. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".HealthPermissionsRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
+
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- BLE wearable sensors: Android 12+ runtime permissions. Scan filters to
+         the standard Heart Rate Service and never derives location from
+         results, so neverScanForLocation is set; pre-Android-12 relies on the
+         app's existing ACCESS_FINE_LOCATION. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
+    <!-- Foreground-service location is enough to keep recording while the screen
+         is locked, so SVJ does NOT request background location. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Wear OS Data Layer: lets the SVJ phone app discover and talk to the SVJ
+         Wear OS companion. No Bluetooth permission of its own is required. -->
+    <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+
+    <!-- Health Connect: lets the plugin detect/install the platform provider. -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+
+    <!-- Health Connect READ-ONLY permissions, one per record type the plugin
+         can read. SVJ never writes to Health Connect, so no WRITE permission
+         is declared. No background health read is used either: imports happen
+         only while the user is in the app, in the foreground. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
 </manifest>

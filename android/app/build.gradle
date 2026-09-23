@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+// Kotlin is required only for the Health Connect bridge: the Health Connect
+// client's read APIs are coroutine-based.
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "app.lovable.svj"
@@ -7,7 +10,10 @@ android {
         applicationId "app.lovable.svj"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Play versioning scheme (docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md):
+        // phone builds live in the 100000 band, wear builds in the 200000 band,
+        // with MAJOR*10000 + MINOR*100 + PATCH added. 1.0.0 -> 100100.
+        versionCode 100100
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,8 +22,52 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
+            def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
+            def keyAliasEnv = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPasswordEnv = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+
+            def allPresent = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv
+            if (allPresent) {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAliasEnv
+                keyPassword keyPasswordEnv
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Fail explicitly when signing credentials are missing so an
+            // unsigned release AAB is never silently produced.
+            signingConfig signingConfigs.release
+            def keystorePath = System.getenv('SVJ_KEYSTORE_PATH') ?: ''
+            def keystorePassword = System.getenv('SVJ_KEYSTORE_PASSWORD') ?: ''
+            def keyAliasEnv = System.getenv('SVJ_KEY_ALIAS') ?: ''
+            def keyPasswordEnv = System.getenv('SVJ_KEY_PASSWORD') ?: ''
+            def signingReady = keystorePath && keystorePassword && keyAliasEnv && keyPasswordEnv
+            project.gradle.taskGraph.whenReady { graph ->
+                if (signingReady) return
+                // Match only the app project's release artifact tasks.
+                // Debug, help, sync, lint, install, test tasks must not require credentials.
+                // `task.path` is the fully-qualified task path (e.g. ':app:assembleRelease').
+                // Task has no `projectPath` property, so match on the supported
+                // `path` / `name` properties instead.
+                def needsReleaseSigning = graph.allTasks.any { task ->
+                    task.path.startsWith(':app:') &&
+                    (task.name ==~ /assembleRelease.*/ || task.name ==~ /bundleRelease.*/)
+                }
+                if (needsReleaseSigning) {
+                    throw new GradleException(
+                        'Release signing requires SVJ_KEYSTORE_PATH, SVJ_KEYSTORE_PASSWORD, ' +
+                        'SVJ_KEY_ALIAS, and SVJ_KEY_PASSWORD environment variables. ' +
+                        'Set them before building a release artifact.'
+                    )
+                }
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -40,6 +90,21 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Android's on-device Health Connect store (not a third-party service).
+    implementation "androidx.health.connect:connect-client:$healthConnectVersion"
+
+    // Wear OS Data Layer: discovery of, and messaging with, the SVJ Wear OS
+    // companion app that ships from this same repository (module `:wear`).
+    implementation "com.google.android.gms:play-services-wearable:$playServicesWearableVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
+}
+
+// Match the module's Java 21 target so the Kotlin and Java compilations agree.
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
 
 apply from: 'capacitor.build.gradle'

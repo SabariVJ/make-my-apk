@@ -2,6 +2,12 @@ ext {
     minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36
+    // Health Connect is an Android 8.0+ platform component; the plugin is only
+    // loaded on API 26+, so minSdk stays at 24 for the rest of the app.
+    healthConnectVersion = '1.1.0'
+    // Wear OS Data Layer (phone ↔ SVJ Wear OS companion).
+    playServicesWearableVersion = '18.2.0'
+    kotlinxCoroutinesVersion = '1.8.1'
     androidxActivityVersion = '1.11.0'
     androidxAppCompatVersion = '1.7.1'
     androidxCoordinatorLayoutVersion = '1.3.0'

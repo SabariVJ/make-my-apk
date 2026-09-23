@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
+import { AvatarImage } from "./AvatarImage";
 
 interface MemberProfileModalProps {
   member: LeaderboardEntry | null;
@@ -26,9 +27,13 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
   onClose,
   onCompare,
 }) => {
-  const { triggerConfetti } = useSVJ();
+  const { triggerConfetti, user } = useSVJ();
 
   if (!member) return null;
+
+  // Identity authority is the authenticated account id — never display names,
+  // handles or avatars. Own profile shows information only: no opponent actions.
+  const isSelf = member.id === user.id;
 
   return (
     <AnimatePresence>
@@ -41,7 +46,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl overflow-hidden text-[#F4F2ED] shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           {/* Cover Header */}
-          <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-amber-500/20 relative p-4 flex justify-between items-start">
+          <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-gold/20 relative p-4 flex justify-between items-start">
             <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/10 text-[10px] font-mono text-zinc-300">
               SVJ MEMBER PROFILE
             </div>
@@ -57,25 +62,27 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           <div className="px-6 pb-6 relative">
             <div className="-mt-14 mb-3 flex items-end justify-between">
               <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-4 border-[#17171A] bg-[#0B0B0C] shadow-xl">
-                <img
+                <AvatarImage
                   src={member.avatar}
-                  alt={member.username}
+                  name={member.username}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    onClose();
-                    onCompare(member);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
-                >
-                  <Swords className="w-3.5 h-3.5" />
-                  <span>Compare XP</span>
-                </motion.button>
+                {!isSelf && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      onClose();
+                      onCompare(member);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-[#C81E3A] hover:bg-[#A0182E] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                  >
+                    <Swords className="w-3.5 h-3.5" />
+                    <span>Compare XP</span>
+                  </motion.button>
+                )}
               </div>
             </div>
 
@@ -88,7 +95,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 {member.isVerified && (
                   <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />
                 )}
-                {member.isVIP && <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />}
+                {member.isVIP && <Crown className="w-4 h-4 text-gold fill-gold/20" />}
               </div>
               <div className="text-xs font-mono text-[#8C8C90] flex items-center gap-2 mt-0.5">
                 <span>@{member.username}</span>
@@ -104,8 +111,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
             </div>
 
             {/* Stats Overview Grid */}
-            <div className="grid grid-cols-3 gap-2.5 my-4">
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
+            <div className="grid grid-cols-3 gap-2 my-4">
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
                 <Zap className="w-4 h-4 text-[#C81E3A] mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">
                   {member.totalXP.toLocaleString()}
@@ -113,14 +120,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Total XP</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
-                <Flame className="w-4 h-4 text-orange-500 mx-auto mb-1" />
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
+                <Flame className="w-4 h-4 text-gold mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">{member.streak} Days</div>
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">Streak</div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-center">
-                <Award className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
+                <Award className="w-4 h-4 text-gold mx-auto mb-1" />
                 <div className="text-xs font-mono font-bold text-white">#{member.rank}</div>
                 <div className="text-[9px] font-mono text-[#8C8C90] uppercase mt-0.5">
                   Global Rank
@@ -128,36 +135,20 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Badges & Achievements */}
-            <div className="space-y-3 my-4">
-              <h3 className="font-anton text-sm tracking-wide text-[#8C8C90] uppercase">
-                Member Badges
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>⚔️</span> Iron Will
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>🔥</span> Streak Master
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-[#0B0B0C] border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-1.5">
-                  <span>👑</span> Top 100 Elite
-                </span>
-              </div>
-            </div>
-
             {/* Quick Celebrate Action */}
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  triggerConfetti();
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-                <span>Send Respect & Celebration 🔥</span>
-              </button>
-            </div>
+            {!isSelf && (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    triggerConfetti();
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
+                  <span>Send Respect &amp; Celebration 🔥</span>
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

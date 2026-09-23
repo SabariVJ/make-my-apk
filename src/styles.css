@@ -63,73 +63,78 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* SVJ brand is dark-only: obsidian background, charcoal card, crimson
+     accent, gold reward accent. The light block exists so shadcn tokens
+     resolve, but values mirror the SVJ palette (see --color-gold below). */
+  --background: #0b0b0c;
+  --foreground: #f4f2ed;
+  --card: #17171a;
+  --card-foreground: #f4f2ed;
+  --popover: #17171a;
+  --popover-foreground: #f4f2ed;
+  --primary: #c81e3a;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e22;
+  --secondary-foreground: #f4f2ed;
+  --muted: #1e1e22;
+  --muted-foreground: #8c8c90;
+  --accent: #1e1e22;
+  --accent-foreground: #f4f2ed;
+  --destructive: #c81e3a;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: rgba(200, 30, 58, 0.6);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: #17171a;
+  --sidebar-foreground: #f4f2ed;
+  --sidebar-primary: #c81e3a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1e22;
+  --sidebar-accent-foreground: #f4f2ed;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(200, 30, 58, 0.6);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* SVJ is dark-only; the .dark scope mirrors :root so the dark variant
+     resolves to the same brand palette. */
+  --background: #0b0b0c;
+  --foreground: #f4f2ed;
+  --card: #17171a;
+  --card-foreground: #f4f2ed;
+  --popover: #17171a;
+  --popover-foreground: #f4f2ed;
+  --primary: #c81e3a;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e22;
+  --secondary-foreground: #f4f2ed;
+  --muted: #1e1e22;
+  --muted-foreground: #8c8c90;
+  --accent: #1e1e22;
+  --accent-foreground: #f4f2ed;
+  --destructive: #c81e3a;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: rgba(200, 30, 58, 0.6);
+  --chart-1: #c81e3a;
+  --chart-2: #d4af37;
+  --chart-3: #1e1e22;
+  --chart-4: #8c8c90;
+  --chart-5: #f4f2ed;
+  --sidebar: #17171a;
+  --sidebar-foreground: #f4f2ed;
+  --sidebar-primary: #c81e3a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1e22;
+  --sidebar-accent-foreground: #f4f2ed;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: rgba(200, 30, 58, 0.6);
 }
 
 @layer base {
@@ -152,20 +157,25 @@
   }
 }
 
-/* ===== SVJ app design system ===== */
+/* ===== SVJ design system ===== */
 
 @theme {
   --font-anton: "Anton", sans-serif;
   --font-inter: "Inter", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 
+  /* Single gold token: XP / reward / streak accents app-wide. */
+  --color-gold: #d4af37;
+
   --color-svj-bg: #0b0b0c;
-  --color-svj-card: #17171a;
+  --color-svj-surface: #17171a;
+  --color-svj-surface-raised: #1e1e22;
   --color-svj-card-hover: #212126;
   --color-svj-crimson: #c81e3a;
   --color-svj-crimson-hover: #a0182e;
   --color-svj-text: #f4f2ed;
   --color-svj-secondary: #8c8c90;
+  --color-svj-muted: #5c5c60;
   --color-svj-gold: #d4af37;
   --color-svj-obsidian: #101014;
 }
@@ -182,33 +192,96 @@
     font-family: "IBM Plex Mono", monospace;
   }
 
-  .svj-card-glow {
-    box-shadow: 0 0 25px -5px rgba(200, 30, 58, 0.15);
+  /* ── Surface tokens ─────────────────────────────────────────────── */
+  .svj-surface {
+    background: #17171a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .svj-surface-raised {
+    background: #1e1e22;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .svj-inset {
+    background: #0b0b0c;
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .svj-text-gradient {
-    background: linear-gradient(135deg, #f4f2ed 0%, #8c8c90 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* ── Reduced visual noise: subtle surface instead of heavy glow ─── */
+  .svj-card-clean {
+    background: #17171a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+  }
+  .svj-card-crimson {
+    background: linear-gradient(135deg, #1e1114 0%, #17171a 100%);
+    border: 1px solid rgba(200, 30, 58, 0.15);
+    border-radius: 1rem;
+  }
+  .svj-card-gold {
+    background: linear-gradient(135deg, #1e1a10 0%, #17171a 100%);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 1rem;
   }
 
-  .svj-crimson-gradient {
-    background: linear-gradient(135deg, #e62846 0%, #c81e3a 50%, #800a1d 100%);
+  /* ── Stat pill: connected inline stat ───────────────────────────── */
+  .svj-stat {
+    background: #0b0b0c;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 0.75rem;
   }
 
-  .svj-gold-gradient {
-    background: linear-gradient(135deg, #ffe58f 0%, #d4af37 50%, #997a15 100%);
+  /* ── Typography helpers (reduce monospace for non-technical text) ── */
+  .svj-label {
+    font-family: "Inter", sans-serif;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: #8c8c90;
+  }
+  .svj-label-xs {
+    font-family: "Inter", sans-serif;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    color: #8c8c90;
+  }
+  .svj-heading {
+    font-family: "Anton", sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #f4f2ed;
   }
 
-  .svj-border-glow {
-    border-color: rgba(200, 30, 58, 0.3);
+  /* ── Motion tokens ──────────────────────────────────────────────── */
+  .svj-transition-fast {
+    transition: all 120ms ease-out;
+  }
+  .svj-transition {
+    transition: all 200ms ease-out;
+  }
+  .svj-transition-slow {
+    transition: all 350ms ease-out;
+  }
+
+  /* ── Interactive press feedback ─────────────────────────────────── */
+  .svj-press {
+    transition: transform 120ms ease-out;
+  }
+  .svj-press:active {
+    transform: scale(0.98);
+  }
+
+  /* ── Glow reserved for rare accent moments ─────────────────────── */
+  .svj-glow-crimson {
+    box-shadow: 0 0 20px -6px rgba(200, 30, 58, 0.18);
+  }
+  .svj-glow-gold {
+    box-shadow: 0 0 20px -6px rgba(212, 175, 55, 0.18);
   }
 }
 
-/* Custom scrollbars */
+/* ── Scrollbar ──────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: #0b0b0c;
@@ -221,31 +294,33 @@
   background: #c81e3a;
 }
 
-/* Glass & Card effects */
+/* ── Focus ring (consistent across interactive elements) ────────────── */
+:focus-visible {
+  outline: 2px solid rgba(200, 30, 58, 0.6);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Reduced motion: strip movement, keep state changes ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Glass & legacy utilities (kept for backward compat) ────────────── */
 .svj-glass {
-  background: rgba(23, 23, 26, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(23, 23, 26, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .svj-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Keyframes for subtle ambient animations */
-@keyframes crimson-pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-}
-
-.animate-crimson-pulse {
-  animation: crimson-pulse 4s infinite ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }

@@ -135,7 +135,7 @@ export const AuthScreen: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5"
+        className="w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl space-y-5"
       >
         <div className="space-y-1 text-center">
           <h1 className="font-anton text-2xl uppercase tracking-wider text-white">SVJ</h1>
@@ -214,13 +214,13 @@ export const AuthScreen: React.FC = () => {
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 space-y-2">
-              <p className="text-[11px] text-red-300 font-mono">{error}</p>
+            <div className="rounded-2xl border border-crimson/30 bg-crimson/10 p-3 space-y-2">
+              <p className="text-[11px] text-crimson font-mono">{error}</p>
               <button
                 type="button"
                 onClick={handleGoogle}
                 disabled={busy}
-                className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-red-200 cursor-pointer disabled:opacity-60"
+                className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-crimson cursor-pointer disabled:opacity-60"
               >
                 Try Google sign-in again
               </button>
@@ -228,7 +228,7 @@ export const AuthScreen: React.FC = () => {
           )}
 
           {notice && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-3">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-3">
               <p className="text-[11px] text-emerald-300 font-mono leading-relaxed">{notice}</p>
               {mode === "signup" && (
                 <div className="flex flex-col gap-2">
@@ -287,6 +287,16 @@ export const AuthScreen: React.FC = () => {
         >
           {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
         </button>
+
+        <div className="flex items-center justify-center gap-3 text-[10px] font-mono text-[#8C8C90]">
+          <a href="/privacy" className="hover:text-white">
+            Privacy
+          </a>
+          <span>•</span>
+          <a href="/terms" className="hover:text-white">
+            Terms
+          </a>
+        </div>
       </motion.div>
     </div>
   );

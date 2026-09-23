@@ -77,13 +77,13 @@ export const RedeemPlusCodeForm: React.FC<RedeemPlusCodeFormProps> = ({
   ]);
 
   return (
-    <div className="rounded-2xl bg-[#17171A] border border-amber-500/30 p-4 shadow-xl">
+    <div className="rounded-2xl bg-[#17171A] border border-gold/30 p-4 shadow-xl">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gold/20 border border-gold/40 flex items-center justify-center text-gold shrink-0">
           <KeyRound className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-anton text-amber-400 uppercase tracking-wide">{heading}</div>
+          <div className="text-xs font-anton text-gold uppercase tracking-wide">{heading}</div>
           <p className="text-[11px] text-[#8C8C90] font-inter mt-0.5">{description}</p>
 
           <div className="flex items-center gap-2 mt-3">
@@ -98,12 +98,12 @@ export const RedeemPlusCodeForm: React.FC<RedeemPlusCodeFormProps> = ({
               autoCorrect="off"
               autoCapitalize="characters"
               spellCheck={false}
-              className="flex-1 min-w-0 bg-[#0B0B0C] svj-border rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-widest text-[#F4F2ED] placeholder:text-[#8C8C90]/50 focus:outline-none focus:border-amber-500/60 uppercase"
+              className="flex-1 min-w-0 bg-[#0B0B0C] svj-border rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-widest text-[#F4F2ED] placeholder:text-[#8C8C90]/50 focus:outline-none focus:border-gold/60 uppercase"
             />
             <button
               onClick={() => void handleSubmit()}
               disabled={busy || !input.trim()}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-gold hover:bg-gold disabled:opacity-50 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
             >
               {busy ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

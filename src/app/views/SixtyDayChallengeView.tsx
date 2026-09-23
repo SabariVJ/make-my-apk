@@ -37,10 +37,10 @@ const BANNER_COPY =
 
 const FOCUS_COLORS: Record<string, string> = {
   Physical: "text-[#C81E3A] border-[#C81E3A]/40 bg-[#C81E3A]/10",
-  Discipline: "text-orange-400 border-orange-400/40 bg-orange-400/10",
+  Discipline: "text-gold border-gold/40 bg-gold/10",
   Mental: "text-violet-400 border-violet-400/40 bg-violet-400/10",
   Nutrition: "text-emerald-400 border-emerald-400/40 bg-emerald-400/10",
-  Mindset: "text-amber-400 border-amber-400/40 bg-amber-400/10",
+  Mindset: "text-gold border-gold/40 bg-gold/10",
 };
 
 function formatRemaining(msLeft: number): string {
@@ -127,6 +127,7 @@ export const SixtyDayChallengeView: React.FC = () => {
       setReflection("");
       setSelectedDay(null);
       queryClient.invalidateQueries({ queryKey: ["sixty-challenge"] });
+      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
       // XP is only applied client-side when the SERVER confirms it granted XP
       // for this completion (lastGrantedXp > 0). Replays/double-clicks return 0
       // and never touch the XP counters — exactly-once by construction.
@@ -166,7 +167,7 @@ export const SixtyDayChallengeView: React.FC = () => {
 
   if (stateQuery.isError || !state) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-4 text-center">
         <AlertTriangle className="w-8 h-8 text-[#C81E3A]" />
         <p className="font-anton uppercase tracking-wider text-white">
           Could not load the challenge
@@ -176,7 +177,7 @@ export const SixtyDayChallengeView: React.FC = () => {
         </p>
         <button
           onClick={() => stateQuery.refetch()}
-          className="px-4 py-2 rounded-xl bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
+          className="px-4 py-2 rounded-lg bg-[#C81E3A] text-white font-mono text-xs cursor-pointer"
         >
           Retry
         </button>
@@ -203,7 +204,7 @@ export const SixtyDayChallengeView: React.FC = () => {
   return (
     <div className="space-y-5 pb-28">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#17171A] border border-white/10 p-6 shadow-2xl">
+      <div className="relative overflow-hidden rounded-full bg-[#17171A] border border-white/10 p-4 shadow-2xl">
         <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-[#C81E3A]/15 blur-3xl animate-crimson-pulse pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -211,7 +212,7 @@ export const SixtyDayChallengeView: React.FC = () => {
               <CalendarCheck className="w-4 h-4 text-[#C81E3A]" />
               <span>60-Day Program</span>
               <span>•</span>
-              <span className="text-amber-400 font-bold flex items-center gap-1">
+              <span className="text-gold font-bold flex items-center gap-1">
                 <Crown className="w-3.5 h-3.5" /> 2 Months SVJ Plus Reward
               </span>
             </div>
@@ -226,12 +227,12 @@ export const SixtyDayChallengeView: React.FC = () => {
 
           {state.status !== "not_started" && (
             <div className="flex items-center gap-2 shrink-0">
-              <div className="px-3 py-1.5 rounded-xl bg-[#0B0B0C] border border-white/10 text-xs font-mono flex items-center gap-1.5 text-orange-400">
-                <Flame className="w-4 h-4 fill-orange-500/20" />
+              <div className="px-3 py-1.5 rounded-2xl bg-[#0B0B0C] border border-white/10 text-xs font-mono flex items-center gap-1.5 text-gold">
+                <Flame className="w-4 h-4 fill-gold/20" />
                 <span>{state.currentStreak} streak</span>
               </div>
               {state.status === "completed" && (
-                <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs font-mono flex items-center gap-1.5 text-amber-400 font-bold">
+                <div className="px-3 py-1.5 rounded-2xl bg-gold/15 border border-gold/40 text-xs font-mono flex items-center gap-1.5 text-gold font-bold">
                   <Medal className="w-4 h-4" /> FINISHED
                 </div>
               )}
@@ -241,15 +242,15 @@ export const SixtyDayChallengeView: React.FC = () => {
       </div>
 
       {/* ── Reward banner (always visible, upfront) ─────────────────────── */}
-      <div className="rounded-2xl bg-gradient-to-r from-amber-950/40 via-[#1F1711] to-[#17171A] border border-amber-500/30 p-4 flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+      <div className="rounded-2xl bg-gradient-to-r from-gold/40 via-[#1F1711] to-[#17171A] border border-gold/30 p-4 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-2xl bg-gold/20 border border-gold/40 flex items-center justify-center text-gold shrink-0">
           <Crown className="w-5 h-5" />
         </div>
         <div>
-          <div className="text-xs font-anton text-amber-400 uppercase tracking-wide mb-0.5">
+          <div className="text-xs font-anton text-gold uppercase tracking-wide mb-0.5">
             The Reward — read this before you start
           </div>
-          <p className="text-xs text-amber-100/90 font-inter leading-relaxed">{BANNER_COPY}</p>
+          <p className="text-xs text-gold/90 font-inter leading-relaxed">{BANNER_COPY}</p>
         </div>
       </div>
 
@@ -258,7 +259,7 @@ export const SixtyDayChallengeView: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl bg-[#17171A] border border-white/10 p-6 space-y-4"
+          className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-4"
         >
           <div className="flex items-center gap-2 text-[11px] font-mono text-[#8C8C90] uppercase tracking-wider">
             <Target className="w-4 h-4 text-[#C81E3A]" />
@@ -283,7 +284,7 @@ export const SixtyDayChallengeView: React.FC = () => {
             <li className="flex items-start gap-2">
               <span className="text-[#C81E3A] font-mono mt-0.5">04</span>
               Finish all 60 days and the server verifies the run, then generates one unique
-              <span className="font-mono text-amber-400"> SVJ-XXXX-XXXX </span>
+              <span className="font-mono text-gold"> SVJ-XXXX-XXXX </span>
               redeem code for you. Single use, locked to your account.
             </li>
           </ul>
@@ -291,7 +292,7 @@ export const SixtyDayChallengeView: React.FC = () => {
           <button
             onClick={() => startMutation.mutate()}
             disabled={startMutation.isPending}
-            className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-60 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-2xl shadow-[#C81E3A]/30"
+            className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-60 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-2xl shadow-[#C81E3A]/30"
           >
             {startMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -307,7 +308,7 @@ export const SixtyDayChallengeView: React.FC = () => {
       {(state.status === "active" || state.status === "paused") && (
         <>
           {/* Stats + progress bar */}
-          <div className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-4">
+          <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5">
                 <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1 flex items-center gap-1">
@@ -325,11 +326,9 @@ export const SixtyDayChallengeView: React.FC = () => {
               </div>
               <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5">
                 <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1 flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-orange-400" /> Streak
+                  <Flame className="w-3 h-3 text-gold" /> Streak
                 </div>
-                <div className="font-mono text-lg font-bold text-orange-400">
-                  {state.currentStreak}d
-                </div>
+                <div className="font-mono text-lg font-bold text-gold">{state.currentStreak}d</div>
               </div>
             </div>
 
@@ -353,10 +352,10 @@ export const SixtyDayChallengeView: React.FC = () => {
 
           {/* Missed / paused callout */}
           {state.status === "paused" && (
-            <div className="rounded-2xl bg-[#1F1416] border border-amber-500/40 p-4 flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />
+            <div className="rounded-2xl bg-[#1F1416] border border-gold/40 p-4 flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-gold shrink-0" />
               <div className="flex-1">
-                <div className="text-xs font-anton text-amber-400 uppercase tracking-wide">
+                <div className="text-xs font-anton text-gold uppercase tracking-wide">
                   Day {state.currentDay} was missed — program paused
                 </div>
                 <p className="text-[11px] text-[#8C8C90] font-inter mt-0.5">
@@ -367,7 +366,7 @@ export const SixtyDayChallengeView: React.FC = () => {
               <button
                 onClick={() => resumeMutation.mutate()}
                 disabled={resumeMutation.isPending}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
+                className="px-4 py-2 rounded-lg bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Resume
@@ -389,7 +388,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                     }
                   }}
                   title={d.status === "locked" ? `Day ${d.day} — locked` : def?.title}
-                  className={`relative aspect-square rounded-xl border flex items-center justify-center font-mono text-xs transition-all cursor-pointer ${
+                  className={`relative aspect-square rounded-2xl border flex items-center justify-center font-mono text-xs transition-all cursor-pointer ${
                     d.status === "completed"
                       ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-400"
                       : d.status === "current"
@@ -397,7 +396,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                           ? "bg-[#C81E3A] border-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/30"
                           : "bg-[#C81E3A]/25 border-[#C81E3A]/60 text-[#F4F2ED] font-bold"
                         : d.status === "missed"
-                          ? "bg-amber-950/40 border-amber-500/40 text-amber-400"
+                          ? "bg-gold/40 border-gold/40 text-gold"
                           : "bg-[#0B0B0C] border-white/8 text-[#8C8C90]/60"
                   } ${isSelected ? "ring-2 ring-white/40" : ""}`}
                 >
@@ -423,7 +422,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="rounded-3xl bg-[#17171A] border border-white/10 p-5 space-y-4"
+                className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -451,7 +450,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                     {selectedDef.tasks.map((t, i) => (
                       <div
                         key={i}
-                        className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
+                        className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span className="text-xs text-[#8C8C90] font-inter">{t}</span>
@@ -501,14 +500,14 @@ export const SixtyDayChallengeView: React.FC = () => {
                                 return next;
                               })
                             }
-                            className={`w-full p-3 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
+                            className={`w-full p-3 rounded-2xl border flex items-center gap-3 text-left transition-all cursor-pointer ${
                               isChecked
                                 ? "bg-[#C81E3A]/10 border-[#C81E3A]/50"
                                 : "bg-[#0B0B0C] border-white/10 hover:border-white/25"
                             }`}
                           >
                             <div
-                              className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                              className={`w-5 h-5 rounded-2xl border flex items-center justify-center shrink-0 transition-colors ${
                                 isChecked
                                   ? "bg-[#C81E3A] border-[#C81E3A] text-white"
                                   : "border-white/25 text-transparent"
@@ -533,7 +532,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                     {/* Daily check-in */}
                     <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-white/10 space-y-3">
                       <div className="flex items-center gap-2 text-[11px] font-mono text-[#8C8C90] uppercase tracking-wider">
-                        <PenLine className="w-3.5 h-3.5 text-amber-400" />
+                        <PenLine className="w-3.5 h-3.5 text-gold" />
                         Daily check-in — required to complete this day
                       </div>
                       <div className="flex items-center gap-3">
@@ -561,7 +560,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                     </div>
 
                     {completeMutation.isError && (
-                      <div className="p-3 rounded-xl bg-[#3A1218] border border-[#C81E3A]/40 text-xs text-rose-200 font-inter">
+                      <div className="p-3 rounded-2xl bg-[#3A1218] border border-[#C81E3A]/40 text-xs text-rose-200 font-inter">
                         {completeMutation.error instanceof Error
                           ? completeMutation.error.message
                           : "Could not complete the day. Please retry."}
@@ -577,7 +576,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                         })
                       }
                       disabled={!canComplete || completeMutation.isPending}
-                      className="w-full py-3.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-40 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-[#C81E3A]/25"
+                      className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] disabled:opacity-40 text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-[#C81E3A]/25"
                     >
                       {completeMutation.isPending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -623,16 +622,16 @@ export const SixtyDayChallengeView: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#2A1F10] via-[#17171A] to-[#0B0B0C] border border-amber-500/40 p-8 text-center shadow-2xl"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#2A1F10] via-[#17171A] to-[#0B0B0C] border border-gold/40 p-8 text-center shadow-2xl"
         >
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
 
           <div className="relative space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs font-mono font-bold tracking-widest uppercase">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold/20 border border-gold/50 text-gold text-xs font-mono font-bold tracking-widest uppercase">
               <Medal className="w-4 h-4" /> 60 / 60 Champion
             </div>
             <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
-              You finished the <span className="text-amber-400">Gauntlet</span>
+              You finished the <span className="text-gold">Gauntlet</span>
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-md mx-auto leading-relaxed">
               Every day completed, in order, verified by the server. You earned it — here is your
@@ -641,16 +640,16 @@ export const SixtyDayChallengeView: React.FC = () => {
 
             {state.code ? (
               <div className="max-w-md mx-auto space-y-3">
-                <div className="p-5 rounded-2xl bg-[#0B0B0C] border border-amber-500/30 svj-card-glow">
+                <div className="p-4 rounded-2xl bg-[#0B0B0C] border border-gold/30 svj-card-glow">
                   <div className="text-[10px] font-mono text-[#8C8C90] uppercase tracking-widest mb-2">
                     Your redeem code — locked to your account
                   </div>
-                  <div className="font-mono text-2xl sm:text-3xl font-bold tracking-[0.15em] text-amber-400 break-all">
+                  <div className="font-mono text-2xl sm:text-3xl font-bold tracking-[0.15em] text-gold break-all">
                     {state.code}
                   </div>
                   <button
                     onClick={() => handleCopy(state.code!)}
-                    className="mt-4 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-bold flex items-center gap-2 mx-auto cursor-pointer transition-colors"
+                    className="mt-4 px-5 py-2.5 rounded-xl bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-2 mx-auto cursor-pointer transition-colors"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Copied!" : "Copy code"}
@@ -673,7 +672,7 @@ export const SixtyDayChallengeView: React.FC = () => {
                 )}
               </div>
             ) : (
-              <p className="text-xs font-mono text-amber-300/80">
+              <p className="text-xs font-mono text-gold/80">
                 Verifying your run… your code is being generated.
               </p>
             )}

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sparkles, Flame, Crown, Shield } from "lucide-react";
+import { useAvatarUrl } from "../hooks/useAvatarUrl";
+import { avatarInitials } from "@/lib/avatar";
 
 interface AvatarFrameProps {
-  src: string;
+  src?: string | null;
   alt?: string;
   frameId?: string;
   size?: "sm" | "md" | "lg" | "xl";
@@ -22,18 +24,26 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
   showBadge = false,
   isFounder = false,
 }) => {
+  // Resolve private-bucket storage refs to signed URLs at render time.
+  const resolvedSrc = useAvatarUrl(src);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
   const sizeClasses = {
-    sm: "w-8 h-8 rounded-lg",
-    md: "w-10 h-10 rounded-xl",
-    lg: "w-16 h-16 rounded-2xl",
-    xl: "w-24 h-24 rounded-3xl",
+    sm: "w-8 h-8 rounded-full",
+    md: "w-10 h-10 rounded-full",
+    lg: "w-16 h-16 rounded-full",
+    xl: "w-24 h-24 rounded-full",
   }[size];
 
   const badgeSizeClasses = {
-    sm: "w-3 h-3 text-[8px]",
-    md: "w-4 h-4 text-[10px]",
-    lg: "w-5 h-5 text-xs",
-    xl: "w-6 h-6 text-xs",
+    sm: "w-3 h-3 rounded-full text-[8px]",
+    md: "w-4 h-4 rounded-full text-[10px]",
+    lg: "w-5 h-5 rounded-full text-xs",
+    xl: "w-6 h-6 rounded-full text-xs",
   }[size];
 
   // Determine frame styling
@@ -44,12 +54,12 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
     frameGlowClass =
       "border-2 border-[#C81E3A] shadow-[0_0_20px_rgba(200,30,58,0.6)] animate-pulse";
     auraEffect = (
-      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#C81E3A] via-red-600 to-amber-600 opacity-75 blur-sm -z-10 animate-pulse" />
+      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[#C81E3A] via-crimson to-gold opacity-75 blur-sm -z-10 animate-pulse" />
     );
   } else if (frameId === "frame-gold") {
-    frameGlowClass = "border-2 border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]";
+    frameGlowClass = "border-2 border-gold shadow-[0_0_20px_rgba(251,191,36,0.6)]";
     auraEffect = (
-      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-600 opacity-80 blur-sm -z-10 animate-pulse" />
+      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-gold via-yellow-300 to-gold opacity-80 blur-sm -z-10 animate-pulse" />
     );
   } else if (frameId === "frame-cyber") {
     frameGlowClass = "border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]";
@@ -72,12 +82,24 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
       <div
         className={`relative overflow-hidden bg-[#17171A] ${sizeClasses} ${frameGlowClass} transition-all duration-300`}
       >
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
+        {resolvedSrc && !failed ? (
+          <img
+            src={resolvedSrc}
+            alt={alt}
+            loading="lazy"
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center font-anton text-white uppercase">
+            {avatarInitials(alt)}
+          </div>
+        )}
       </div>
 
       {showBadge && isFounder && (
         <div
-          className={`absolute -top-1 -right-1 ${badgeSizeClasses} rounded-full bg-amber-500 text-black font-bold flex items-center justify-center shadow-md shadow-amber-500/50 border border-black z-10`}
+          className={`absolute -top-1 -right-1 ${badgeSizeClasses} rounded-full bg-gold text-black font-bold flex items-center justify-center shadow-md shadow-gold/50 border border-black z-10`}
         >
           <Crown className="w-2.5 h-2.5" />
         </div>

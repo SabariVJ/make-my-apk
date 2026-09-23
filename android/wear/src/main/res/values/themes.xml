@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SVJ black background, white typography: the watch UI is drawn in code,
+         so the theme only has to set the base colours and remove the system
+         action bar. -->
+    <style name="WearAppTheme" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

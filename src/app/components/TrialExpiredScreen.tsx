@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Lock, ShieldCheck, LogOut, ExternalLink } from "lucide-react";
 import upiQr from "@/assets/upi-qr-clean.png.asset.json";
+import { resolveWhatsAppUrl, buildPaymentConfirmationMessage } from "@/lib/whatsapp";
 
 type Props = {
   email: string | null;
@@ -11,7 +12,7 @@ type Props = {
 export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
   const handleContactSupport = () => {
     window.open(
-      `https://wa.me/919790833416?text=${encodeURIComponent(`Hi! I've paid for SVJ Plus. My email: ${email ?? "(not signed in)"}. Please activate my account.`)}`,
+      resolveWhatsAppUrl(buildPaymentConfirmationMessage(email)),
       "_blank",
       "noopener,noreferrer",
     );
@@ -22,7 +23,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center"
+        className="w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl space-y-5 text-center"
       >
         <div className="space-y-1">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center">
@@ -37,7 +38,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
         </div>
 
         <div className="p-3 rounded-2xl bg-white text-black inline-block shadow-2xl mx-auto border-4 border-[#C81E3A]">
-          <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded flex items-center justify-center overflow-hidden">
+          <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
             <img
               src={upiQr.url}
               alt="SVJ Plus payment QR code"
@@ -56,7 +57,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
           Scan with GPay, PhonePe, Paytm or any UPI App
         </p>
 
-        <div className="p-3 rounded-xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
+        <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
           <div className="flex items-center gap-2 text-emerald-400 font-mono font-semibold">
             <ShieldCheck className="w-4 h-4" />
             <span>Lifetime SVJ Plus Access</span>

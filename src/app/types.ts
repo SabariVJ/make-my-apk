@@ -25,6 +25,11 @@ export interface DailyChallenge {
   completed: boolean;
   completedAt?: string;
   isCustom?: boolean;
+  /** True when this row is a server-backed personalized assignment (stable DB id, server-confirmed completion). */
+  isPersonalized?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  earnedXP?: number;
 }
 
 export interface Achievement {
@@ -121,6 +126,9 @@ export interface UserProfile {
   coverImage?: string;
   tier: TierLevel;
   totalXP: number;
+  /** Display-only receipt watermark. Never used for Reward XP or entitlements. */
+  engagementProfileXp?: number;
+  engagementXpUserId?: string;
   weeklyXP: number;
   monthlyXP: number;
   currentStreak: number;
@@ -153,7 +161,7 @@ export interface UserProfile {
 
   // Stats breakdown
   habitCompletionRate: number; // e.g. 92%
-  xpHistory: { date: string; xp: number }[]; // 30 day history
+  xpHistory: { date: string; dayKey?: string; xp: number }[]; // 30 day history
   weeklyHistory: { week: string; xp: number }[];
 
   achievements: Achievement[];

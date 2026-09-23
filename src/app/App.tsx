@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
+import { EngagementProvider } from "./context/EngagementContext";
+import { ActivityProvider } from "./context/ActivityContext";
 import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
+import { UtilityRail, UtilityDrawer } from "./components/UtilityNav";
 import { ChallengesView } from "./views/ChallengesView";
+import { ActivityView } from "./views/ActivityView";
+import { EarnPlusView } from "./views/EarnPlusView";
 import { WorkoutView } from "./views/WorkoutView";
 import { NutritionView } from "./views/NutritionView";
 import { CommunityView } from "./views/CommunityView";
 import { LeaderboardView } from "./views/LeaderboardView";
 import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
+import { SvjPlanView } from "./views/SvjPlanView";
+import { TransformationReportView } from "./views/TransformationReportView";
 import { ProfileView } from "./views/ProfileView";
+import { RecoveryView } from "./components/RecoveryView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
 import { EditProfileModal } from "./components/EditProfileModal";
@@ -16,14 +26,22 @@ import { LevelUpModal } from "./components/LevelUpModal";
 import { UPIPaymentModal } from "./components/UPIPaymentModal";
 import { PaywallModal } from "./components/PaywallModal";
 import { FirstTimeOnboardingModal } from "./components/FirstTimeOnboardingModal";
-import { DarkCinematicOnboardingModal } from "./components/DarkCinematicOnboardingModal";
 import { GoogleAuthModal } from "./components/GoogleAuthModal";
 import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
+import { StatusScreen } from "./components/StatusScreen";
+import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
+import { isFounderAccount } from "./lib/founderGate";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
+import { useOnlineStatus } from "./lib/useOnlineStatus";
+import {
+  installSessionExpiryWatcher,
+  markIntentionalSignOut,
+  subscribeToSessionExpiry,
+} from "./lib/sessionExpired";
 
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
@@ -51,12 +69,25 @@ const AppContent: React.FC<{
   locked?: boolean;
   lockEmail?: string | null;
 }> = ({ locked = false, lockEmail = null }) => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(locked ? "sixty" : "challenges");
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
+  const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
+  const isAndroid = Capacitor.getPlatform() === "android";
+  // Android Play: prevent stale tabs (community/leaderboard hidden on native)
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (locked) return "sixty";
+    return "challenges";
+  });
 
   useEffect(() => {
     setShowTrialNotice(locked);
   }, [locked]);
+
+  // Android Play: reset hidden tabs if they somehow become active
+  useEffect(() => {
+    if (isAndroid && activeTab === "leaderboard") {
+      setActiveTab("challenges");
+    }
+  }, [activeTab, isAndroid]);
 
   const {
     user,
@@ -66,10 +97,14 @@ const AppContent: React.FC<{
     selectedMemberModal,
     setSelectedMemberModal,
     setIsPaywallOpen,
-    isDarkOnboardingOpen,
-    setIsDarkOnboardingOpen,
+    storageError,
   } = useSVJ();
   const queryClient = useQueryClient();
+
+  // Founder-only staged rollout for Recovery V2. Uses the server-backed
+  // profile flag and stays false until that profile has loaded, so the extra
+  // destination can never flash from the INITIAL_USER placeholder.
+  const founderRecoveryEnabled = isFounderAccount(user, profileLoaded);
 
   // Show a splash while the user profile is being synced from localStorage or
   // the Supabase session. Without this, a fresh sign-in (or session restore on
@@ -87,6 +122,7 @@ const AppContent: React.FC<{
   const handleTabChange = (tab: ActiveTab) => {
     if (tab === "signout") {
       void (async () => {
+        markIntentionalSignOut();
         await queryClient.cancelQueries();
         queryClient.clear();
         await supabase.auth.signOut();
@@ -95,8 +131,14 @@ const AppContent: React.FC<{
     }
     if (tab === "plus") {
       setIsPaywallOpen(true);
-    } else if (locked && tab !== "sixty" && tab !== "redeem" && tab !== "profile") {
-      // Restricted shell: only sixty, redeem, and profile are allowed.
+    } else if (
+      locked &&
+      tab !== "sixty" &&
+      tab !== "redeem" &&
+      tab !== "profile" &&
+      tab !== "earn"
+    ) {
+      // Free reward missions remain available after the trial, not premium tabs.
       return;
     } else {
       setActiveTab(tab);
@@ -109,6 +151,9 @@ const AppContent: React.FC<{
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
         <Header />
 
+        {/* Renders nothing visually — schedules the notification plan. */}
+        <NotificationCoordinator />
+
         {/* Trial-expired notice modal — shown once on first render */}
         {showTrialNotice && (
           <div
@@ -117,7 +162,7 @@ const AppContent: React.FC<{
             aria-labelledby="trial-expired-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
           >
-            <div className="w-full max-w-sm rounded-3xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
+            <div className="w-full max-w-sm rounded-2xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
               <h2
                 id="trial-expired-title"
                 className="font-anton text-xl uppercase tracking-wider text-white"
@@ -125,10 +170,20 @@ const AppContent: React.FC<{
                 Your 7-Day Trial Has Ended
               </h2>
               <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
-                Full SVJ access is now locked. You can continue the 60-Day Challenge, redeem a
-                reward code, manage your profile, or upgrade to SVJ Plus.
+                You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and
+                your profile, or view SVJ Plus membership details.
               </p>
               <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTrialNotice(false);
+                    setActiveTab("earn");
+                  }}
+                  className="w-full rounded-xl border border-rose-400/30 bg-rose-950/20 py-3 text-sm font-semibold text-rose-200"
+                >
+                  Open Earn Plus
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -152,16 +207,29 @@ const AppContent: React.FC<{
         )}
 
         <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 mb-4">
-            <p className="font-anton text-sm uppercase tracking-wider text-amber-300">
+          {storageError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+            >
+              {storageError}
+            </p>
+          )}
+          <div className="rounded-2xl border border-gold/30 bg-gold/10 p-4 mb-4">
+            <p className="font-anton text-sm uppercase tracking-wider text-gold">
               Your 7-Day Trial Has Ended
             </p>
             <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
-              Full SVJ access is locked. You can still complete the 60-Day Challenge, redeem a
+              You can still use Earn Plus daily missions, complete the 60-Day Challenge, redeem a
               reward code, manage your profile or sign out.
             </p>
           </div>
           {activeTab === "sixty" && <SixtyDayChallengeView />}
+          {activeTab === "plan" && (
+            <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+          )}
+          {activeTab === "transform" && <TransformationReportView />}
+          {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
             <div className="space-y-4">
               <h2 className="font-anton text-xl uppercase tracking-wider text-white">
@@ -179,8 +247,13 @@ const AppContent: React.FC<{
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
 
         {/* Global Modals still available in restricted shell */}
-        <UPIPaymentModal />
-        <PaywallModal />
+        {!isAndroid && <UPIPaymentModal />}
+        <PaywallModal
+          onOpenPlan={() => {
+            setIsPaywallOpen(false);
+            setActiveTab("plan");
+          }}
+        />
         <EditProfileModal />
         <GoogleAuthModal />
 
@@ -193,19 +266,72 @@ const AppContent: React.FC<{
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
       {/* Top Bar Header */}
-      <Header />
+      <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
 
-      {/* Main View Area */}
-      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
-        {activeTab === "challenges" && (
-          <ChallengesView onOpenSixtyDay={() => handleTabChange("sixty")} />
+      {/* Renders nothing visually — schedules the notification plan
+          (daily/evening/training) via the existing native infrastructure. */}
+      <NotificationCoordinator />
+
+      {/* Secondary destinations: right rail on desktop, drawer on phones. */}
+      <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />
+      <UtilityDrawer
+        open={utilityMenuOpen}
+        onClose={() => setUtilityMenuOpen(false)}
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+      />
+
+      {/* Main View Area — right padding reserves the rail so it never covers content.
+          Tab switches crossfade with a quick fade+slide. The animation wrapper
+          is visual only: state lives in providers above it, so Activity
+          tracking, workout recorders and native listeners are never reset. */}
+      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6 lg:max-w-5xl lg:pr-28">
+        {storageError && (
+          <p
+            role="alert"
+            className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+          >
+            {storageError}
+          </p>
         )}
-        {activeTab === "workouts" && <WorkoutView />}
-        {activeTab === "nutrition" && <NutritionView />}
-        {activeTab === "community" && <CommunityView />}
-        {activeTab === "leaderboard" && <LeaderboardView />}
-        {activeTab === "sixty" && <SixtyDayChallengeView />}
-        {activeTab === "profile" && <ProfileView />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{
+              type: "spring",
+              stiffness: 420,
+              damping: 34,
+              opacity: { duration: 0.16 },
+            }}
+          >
+            {activeTab === "challenges" && (
+              <ChallengesView
+                onOpenSixtyDay={() => handleTabChange("sixty")}
+                onOpenEarnPlus={() => handleTabChange("earn")}
+                onOpenActivity={() => handleTabChange("activity")}
+              />
+            )}
+            {activeTab === "activity" && (
+              <ActivityView hideRecoverySection={founderRecoveryEnabled} />
+            )}
+            {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
+            {activeTab === "workouts" && <WorkoutView />}
+            {/* Founder-only staged rollout: Recovery as its own destination. */}
+            {activeTab === "recovery" && <RecoveryView />}
+            {activeTab === "nutrition" && <NutritionView />}
+            {activeTab === "community" && <CommunityView />}
+            {activeTab === "leaderboard" && <LeaderboardView />}
+            {activeTab === "sixty" && <SixtyDayChallengeView />}
+            {activeTab === "plan" && (
+              <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+            )}
+            {activeTab === "transform" && <TransformationReportView />}
+            {activeTab === "profile" && <ProfileView />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Global Modals & Overlays */}
@@ -213,6 +339,12 @@ const AppContent: React.FC<{
         member={selectedMemberModal}
         onClose={() => setSelectedMemberModal(null)}
         onCompare={(member) => {
+          // Never route a self-comparison into the rivalry modal — the modal
+          // also guards, but the shared handler is the primary boundary.
+          if (member.id === user.id) {
+            setSelectedMemberModal(null);
+            return;
+          }
           setSelectedMemberModal(null);
           setComparingMember(member);
         }}
@@ -222,14 +354,15 @@ const AppContent: React.FC<{
 
       <EditProfileModal />
       <LevelUpModal />
-      <UPIPaymentModal />
-      <PaywallModal />
+      {!isAndroid && <UPIPaymentModal />}
+      <PaywallModal
+        onOpenPlan={() => {
+          setIsPaywallOpen(false);
+          setActiveTab("plan");
+        }}
+      />
       <FirstTimeOnboardingModal />
       <GoogleAuthModal />
-      <DarkCinematicOnboardingModal
-        isOpen={isDarkOnboardingOpen}
-        onClose={() => setIsDarkOnboardingOpen(false)}
-      />
 
       {/* Bottom Sticky Navigation Bar */}
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
@@ -241,6 +374,71 @@ const AppContent: React.FC<{
 };
 
 export default function App() {
+  // Honor the OS "reduce motion" setting globally so every framer-motion
+  // animation (tab transitions, cards, modals) collapses to fades/none
+  // without touching each component individually.
+  return (
+    <MotionConfig reducedMotion="user">
+      <AppRoot />
+    </MotionConfig>
+  );
+}
+
+function AppRoot() {
+  // No-network gate: covers every blocking state the app can be in (auth,
+  // trial check, app shell). Auto-dismisses when the browser reports online.
+  const online = useOnlineStatus();
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => subscribeToSessionExpiry(() => setSessionExpired(true)), []);
+
+  // Catches background auth/401 failures that no component handles directly.
+  useEffect(() => installSessionExpiryWatcher(), []);
+
+  if (!online) {
+    return (
+      <StatusScreen
+        testId="no-internet-screen"
+        icon={WifiOff}
+        eyebrow="Offline"
+        title="No Internet"
+        message="No connection — check your internet and try again."
+        primaryAction={{
+          label: "Retry",
+          icon: RotateCw,
+          onClick: () => {
+            // Re-evaluate immediately; the listener still dismisses us
+            // automatically the moment the connection returns.
+            if (typeof navigator !== "undefined" && navigator.onLine) window.location.reload();
+          },
+        }}
+      />
+    );
+  }
+
+  if (sessionExpired && hasSupabaseConfig()) {
+    return (
+      <StatusScreen
+        testId="session-expired-screen"
+        icon={LogIn}
+        eyebrow="Session"
+        title="Session Expired"
+        message="Your signed-in session is no longer valid. Log in again to continue where you left off."
+        primaryAction={{
+          label: "Log in again",
+          icon: LogIn,
+          onClick: () => {
+            void (async () => {
+              markIntentionalSignOut();
+              await supabase.auth.signOut().catch(() => undefined);
+              setSessionExpired(false);
+            })();
+          },
+        }}
+      />
+    );
+  }
+
   if (!hasSupabaseConfig()) return <ConfigMissingScreen />;
   return (
     <TrialGate>
@@ -253,7 +451,11 @@ export default function App() {
           isPlusMember={status?.isPlusMember ?? null}
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
-          <AppContent locked={status?.locked} lockEmail={status?.email} />
+          <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
+            <ActivityProvider userId={status?.userId ?? null}>
+              <AppContent locked={status?.locked} lockEmail={status?.email} />
+            </ActivityProvider>
+          </EngagementProvider>
         </SVJProvider>
       )}
     </TrialGate>

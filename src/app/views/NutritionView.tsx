@@ -703,7 +703,7 @@ export const NutritionView: React.FC = () => {
             value={manualName}
             onChange={(e) => setManualName(e.target.value)}
             placeholder="Meal name"
-            className="mt-3 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
+            className="mt-3 min-h-11 w-full rounded-xl px-3 py-2.5 border border-white/10 bg-[#0B0B0C] text-sm text-white"
           />
           <div className="mt-2 grid grid-cols-2 gap-2">
             {[

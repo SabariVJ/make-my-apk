@@ -375,6 +375,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
   onSkipSession,
 }) => {
   const [showWhy, setShowWhy] = useState(false);
+  const [editingSetup, setEditingSetup] = useState(false);
   const [movingSlot, setMovingSlot] = useState<number | null>(null);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -432,6 +433,37 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
       <div className="space-y-4">
         {refreshPending}
         <SetupFlow profile={profile} saving={savingProfile} onSave={onSaveProfile} />
+      </div>
+    );
+  }
+
+  if (profileReady && editingSetup) {
+    return (
+      <div className="space-y-3" data-testid="training-rebuild-setup">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#17171A] px-3 py-2">
+          <div>
+            <p className="font-anton text-sm uppercase text-white">Rebuild your program</p>
+            <p className="text-[11px] font-inter text-[#8C8C90]">
+              Change your goal, days, session length or equipment. Saving creates a fresh plan from these choices.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEditingSetup(false)}
+            className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-inter uppercase tracking-wider text-[#B8B8C0] hover:text-white"
+          >
+            Cancel
+          </button>
+        </div>
+        <SetupFlow
+          profile={profile}
+          saving={savingProfile}
+          onSave={async (next) => {
+            const result = await onSaveProfile(next);
+            if (result.ok) setEditingSetup(false);
+            return result;
+          }}
+        />
       </div>
     );
   }
@@ -518,7 +550,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => void onGeneratePlan()}
+            onClick={() => setEditingSetup(true)}
             disabled={creatingPlan}
             className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white disabled:opacity-40"
           >

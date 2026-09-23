@@ -88,10 +88,15 @@ function cleanText(value: unknown, max = 120): string {
 }
 
 function validDayKey(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(new Date(value + "T12:00:00Z").getTime());
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(new Date(value + "T12:00:00Z").getTime())
+  );
 }
 
-function derivedTargets(body: { daily_calorie_target?: number | null; weight_kg?: number | null } | null): NutritionTargets {
+function derivedTargets(
+  body: { daily_calorie_target?: number | null; weight_kg?: number | null } | null,
+): NutritionTargets {
   const calories = Math.round(clampNumber(body?.daily_calorie_target, 800, 10000, 2200));
   const proteinG = body?.weight_kg
     ? Math.round(clampNumber(body.weight_kg, 25, 400) * 1.6)
@@ -227,7 +232,8 @@ export const getNutritionDashboard = createServerFn({ method: "POST" })
       targets,
       history: [...byDay.values()],
     };
-  });
+    },
+  );
 
 export const saveNutritionTargets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -246,7 +252,9 @@ export const saveNutritionTargets = createServerFn({ method: "POST" })
       source: "custom",
       updated_at: new Date().toISOString(),
     };
-    const { error } = await client.from("svj_nutrition_targets").upsert(row, { onConflict: "user_id" });
+    const { error } = await client
+      .from("svj_nutrition_targets")
+      .upsert(row, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -366,8 +374,8 @@ export const deleteNutritionMeal = createServerFn({ method: "POST" })
 function stripCodeFence(value: string): string {
   return value
     .trim()
-    .replace(/^\`\`\`(?:json)?\s*/i, "")
-    .replace(/\s*\`\`\`$/, "");
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
 }
 
 export const analyzeMealPhoto = createServerFn({ method: "POST" })
@@ -375,7 +383,8 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .validator(
     (input: { imageDataUrl: string; mealTypeHint: NutritionMealType; dayKey: string }) => input,
   )
-  .handler(async ({ context, data }): Promise<NutritionPhotoEstimate> => {
+  .handler(
+    async ({ context, data }): Promise<NutritionPhotoEstimate> => {
     if (!mealTypes.includes(data.mealTypeHint)) throw new Error("Invalid meal type.");
     if (!validDayKey(data.dayKey)) throw new Error("Invalid nutrition date.");
     if (!/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(data.imageDataUrl)) {
@@ -436,12 +445,16 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
 
     if (!response.ok) {
       if (response.status === 402) {
-        throw new Error("AI scan credits are currently exhausted. You can still log the meal manually.");
+        throw new Error(
+          "AI scan credits are currently exhausted. You can still log the meal manually.",
+        );
       }
       if (response.status === 429) {
         throw new Error("AI scanning is busy. Try again shortly or use manual logging.");
       }
-      throw new Error("The meal photo could not be analyzed. Try another photo or log it manually.");
+      throw new Error(
+        "The meal photo could not be analyzed. Try another photo or log it manually.",
+      );
     }
 
     const payload = (await response.json()) as {
@@ -477,7 +490,9 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
       .filter((item) => item.calories > 0 || item.proteinG > 0 || item.carbsG > 0 || item.fatG > 0);
 
     if (items.length === 0) {
-      throw new Error("I couldn't identify enough food in that photo. Try a clearer angle or log it manually.");
+      throw new Error(
+        "I couldn't identify enough food in that photo. Try a clearer angle or log it manually.",
+      );
     }
 
     const totals = items.reduce(
@@ -499,7 +514,12 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
         : null;
 
     return {
-      mealName: cleanText(record.mealName) || items.slice(0, 3).map((item) => item.name).join(" + "),
+      mealName:
+        cleanText(record.mealName) ||
+        items
+          .slice(0, 3)
+          .map((item) => item.name)
+          .join(" + "),
       mealType: data.mealTypeHint,
       items,
       calories: Math.round(totals.calories),

@@ -22,6 +22,10 @@ import type { ChallengeCategory } from "../types";
 import { MUSCLE_GROUPS, MUSCLE_LABELS, type MuscleGroup } from "./strength";
 import type { TaskCompletion } from "./taskCompletions";
 import { localDayKey } from "./taskCompletions";
+import { RECOVERY_GOAL_METRICS } from "./goalsRecords";
+
+/** Recovery day-count metrics — excluded from the training-focus goal signal. */
+const RECOVERY_METRICS: readonly string[] = RECOVERY_GOAL_METRICS;
 
 export type LoadBand = "low" | "moderate" | "high" | "very_high";
 export type RecoveryGrade = "poor" | "fair" | "good" | "excellent" | "unknown";
@@ -725,6 +729,10 @@ export function applicableActivityGoals(
   const today = localDayKey(now);
   for (const goal of goals) {
     if (goal.status !== "active") continue;
+    // Recovery day-count goals never belong in a TRAINING focus sentence
+    // ("complete 5 sleep days" would be nonsense) — they are excluded here;
+    // recovery goal progress lives in the Recovery → Goals section.
+    if (RECOVERY_METRICS.includes(goal.metric ?? "")) continue;
     if (!goal.periodStart || !goal.periodEnd) continue;
     if (goal.periodStart > today || goal.periodEnd < today) continue;
     if (typeof goal.targetValue !== "number" || goal.targetValue <= 0) continue;

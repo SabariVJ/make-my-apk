@@ -397,10 +397,10 @@ describe("Phase 1/2 invariants stay intact", () => {
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
-    // History shipped in Phase 4 (its own suite covers it); Goals, Records,
-    // Progress and Devices are still honest "Coming next" placeholders.
+    // History (Phase 4) and Goals (Phase 5) shipped with their own suites;
+    // Records, Progress and Devices are still honest "Coming next" placeholders.
     await act(async () => {
-      screen.getByTestId("recovery-section-tab-goals").click();
+      screen.getByTestId("recovery-section-tab-records").click();
     });
     assert.ok(screen.getByText(/Coming next/));
     await act(async () => {

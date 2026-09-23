@@ -8,8 +8,27 @@
 // decisions — the server remains the authority.
 // ============================================================================
 
-export const GOAL_METRICS = ["workout_count", "step_total", "active_minutes", "distance"] as const;
+/** Activity (Train) metrics — the original set, unchanged for TrainGoals. */
+export const ACTIVITY_GOAL_METRICS = [
+  "workout_count",
+  "step_total",
+  "active_minutes",
+  "distance",
+] as const;
+
+/** Recovery metrics (Phase 5) — server-derived day counts on svj_goals. */
+export const RECOVERY_GOAL_METRICS = [
+  "recovery_checkin_count",
+  "sleep_7h_day_count",
+  "rest_day_count",
+  "readiness_60_day_count",
+] as const;
+
+/** Combined validation/normalization union. */
+export const GOAL_METRICS = [...ACTIVITY_GOAL_METRICS, ...RECOVERY_GOAL_METRICS] as const;
 export type GoalMetric = (typeof GOAL_METRICS)[number];
+export type ActivityGoalMetric = (typeof ACTIVITY_GOAL_METRICS)[number];
+export type RecoveryGoalMetric = (typeof RECOVERY_GOAL_METRICS)[number];
 
 export const GOAL_PERIODS = ["weekly", "monthly"] as const;
 export type GoalPeriod = (typeof GOAL_PERIODS)[number];
@@ -26,6 +45,10 @@ export const GOAL_METRIC_LABELS: Record<GoalMetric, string> = {
   step_total: "Steps",
   active_minutes: "Active Minutes",
   distance: "Distance",
+  recovery_checkin_count: "Recovery Check-ins",
+  sleep_7h_day_count: "7h+ Sleep Days",
+  rest_day_count: "Rest Days",
+  readiness_60_day_count: "Ready Days (60+)",
 };
 
 export const RECORD_LABELS: Record<RecordType, string> = {
@@ -138,6 +161,14 @@ export function validateGoalInput(input: {
   if (!Number.isFinite(days) || days < 0) return "End date must be on or after the start date.";
   if (input.periodType === "weekly" && days > 7) return "Weekly goals span at most 7 days.";
   if (input.periodType === "monthly" && days > 31) return "Monthly goals span at most 31 days.";
+  // Recovery day-count targets must fit inside the period (server enforces
+  // authoritatively; this mirror is immediate UX only).
+  if ((RECOVERY_GOAL_METRICS as readonly string[]).includes(input.metric as string)) {
+    const target = num(input.targetValue);
+    if (target === null || target !== Math.floor(target))
+      return "Recovery goal targets are whole days.";
+    if (target > days + 1) return "Target cannot exceed the days in this period.";
+  }
   if (
     input.activityType != null &&
     (typeof input.activityType !== "string" || input.activityType.length === 0)
@@ -237,6 +268,7 @@ export function normalizeRecord(value: unknown): RecordDto | null {
 export function formatGoalProgress(metric: GoalMetric, progress: number): string {
   if (metric === "distance")
     return `${(progress / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} km`;
+  // Recovery metrics are day counts — a plain whole number, no units suffix.
   return Math.round(progress).toLocaleString();
 }
 

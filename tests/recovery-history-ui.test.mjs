@@ -369,9 +369,9 @@ describe("Phase 1–3 invariants stay intact", () => {
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
     await act(async () => {
-      screen.getByTestId("recovery-section-tab-goals").click();
+      screen.getByTestId("recovery-section-tab-records").click();
     });
-    assert.ok(screen.getByText(/Coming next/), "Goals stays an honest placeholder");
+    assert.ok(screen.getByText(/Coming next/), "Records stays an honest placeholder");
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });

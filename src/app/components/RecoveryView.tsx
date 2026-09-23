@@ -14,6 +14,7 @@ import { HeartPulse } from "lucide-react";
 import { TrainRecovery } from "../views/TrainRecovery";
 import { RECOVERY_SECTIONS, type RecoverySection } from "../lib/recoveryNav";
 import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
+import RecoveryGoalsSection from "./recovery/RecoveryGoalsSection";
 import RecoveryHistorySection from "./recovery/RecoveryHistorySection";
 import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
 import { useTrainRecoveryShared } from "../lib/readinessShared";
@@ -179,18 +180,7 @@ export const RecoveryView: React.FC = () => {
 
       {section === "history" && <RecoveryHistorySection />}
 
-      {section === "goals" && (
-        <UpcomingSection
-          section="goals"
-          title="Goals"
-          summary="Recovery goals that plug into the SVJ goal framework you already use, with server-derived progress."
-          points={[
-            "Sleep, check-in consistency, rest days and average readiness targets",
-            "Progress calculated on the server from canonical data — never client-authored",
-            "Completed goals feed Discipline through the existing stat event system",
-          ]}
-        />
-      )}
+      {section === "goals" && <RecoveryGoalsSection />}
 
       {section === "records" && (
         <UpcomingSection

@@ -391,3 +391,97 @@ Overview, Focus, streak, muscle map or check-in flow.
 Validation for the Phase 4 checkpoint: **1162 tests — 1160 pass / 0 fail / 2
 skipped**, `bunx tsc --noEmit` clean, ESLint 0 errors on changed files,
 Prettier clean, `bun run build` PASS. No database changes.
+
+## Phase 5 — Recovery goals, lifecycle fix, Discipline progression
+
+Recovery → Goals is now a real section on the EXISTING `svj_goals` system — no
+second goals table, no client-owned progress. All progress is derived on the
+server; the client can only create, retarget and cancel.
+
+### Migration: `20261004000000_recovery_goals.sql` (additive, idempotent)
+
+DEPENDENCY: requires `svj_recovery_checkins` + `svj_readiness_daily`
+(20260919120000_recovery_readiness.sql). It does NOT depend on the Automated
+Training chain. NOT applied anywhere yet (no production credentials in this
+environment).
+
+- Metric CHECK `svj_goals_metric_check` widened: the four activity metrics +
+  `recovery_checkin_count`, `sleep_7h_day_count`, `rest_day_count`,
+  `readiness_60_day_count`. A companion constraint forces `activity_type IS
+NULL` on recovery metrics (day counts can't take an activity filter).
+- `svj_goal_progress(svj_goals)` (same signature) gains the four branches:
+  - `recovery_checkin_count` = COUNT(DISTINCT checkin_date) from
+    `svj_recovery_checkins` in the period — a real stored row is required.
+  - `sleep_7h_day_count` = stored check-in days with `sleep_hours >= 7`;
+    NULL/missing sleep is excluded, never treated as 0.
+  - `rest_day_count` = elapsed period days with NO canonical `svj_activities`
+    row ending that UTC day — the SAME rest-day semantics as
+    `svj_compute_readiness` (reused logic, not a parallel definition).
+  - `readiness_60_day_count` = `svj_readiness_daily` days with `score >= 60`
+    (the existing LOW_READINESS_THRESHOLD boundary); missing days don't count.
+    All four count only ELAPSED days: `period_start .. LEAST(period_end, today)`
+    on the server clock; future days never contribute. Activity branches are
+    byte-for-byte the original rules (anti-cheat guards intact).
+- `svj_goal_target_error()` + `svj_create_goal`: recovery targets must be
+  positive integers ≤ the number of calendar days in the period (weekly ≤ 7,
+  monthly ≤ 31), and reject an activity type. Activity targets unchanged.
+- `svj_goal_metric_units`: recovery metrics return 'days'.
+- **Expiry fix:** `svj_refresh_goal_statuses` (return type stays `void`) now
+  walks every active goal: progress ≥ target → `completed` (completion wins
+  over expiry, even past the end date); `period_end < server today` (unmet) →
+  `expired`; otherwise active. Old goals stuck active past their period
+  repair themselves on the next refresh/list — nothing is deleted.
+- **Discipline progression:** `svj_award_recovery_goal_discipline(user, goal)`
+  (SECURITY DEFINER, revoked from PUBLIC/anon/authenticated, never a callable
+  grant endpoint) inserts `stat_events` with
+  `event_key = 'recovery_goal.completed:<goal_id>'`, `source = 'recovery_goal'`,
+  `delta = +1 discipline`, `ON CONFLICT DO NOTHING` (the partial unique index
+  `stat_events_identity` makes replays no-ops). `user_stats.discipline` is
+  incremented only when the event row was actually inserted. Anti-farming:
+  max +2 `recovery_goal` discipline per server day — an over-cap event is
+  deleted so the ledger stays the sole truth; the `activity` cap sums are
+  independent and untouched. Rewards fire ONLY from an observed
+  active→completed transition during refresh: cancelled/expired/incomplete
+  goals grant nothing, and goals completed before this migration are NOT
+  retroactively rewarded (no backfill).
+
+### UI: `RecoveryGoalsSection.tsx`
+
+Create form (SVJSelect for metric/target/period — no native `<select>`)
+offering ONLY the four Recovery metrics with human labels (Recovery Check-ins,
+7h+ Sleep Days, Rest Days, Ready Days (60+)), plain qualifying-condition hints
+("Check-in days where you reported 7+ hours of sleep" — no medical claims),
+client-side target mirroring for immediate UX only. Goal cards show the server
+status badge, an accessible progressbar (`aria-valuenow` + full label),
+"N / M days" copy, period label, edit (+1 day) and cancel for active goals.
+Loading, empty, deployment-unavailable (sanitized) and retryable error states
+are honest. Goals placeholder removed; Records/Progress/Devices placeholders
+untouched; no top-level navigation changes.
+
+### Compatibility
+
+`GOAL_METRICS` split into `ACTIVITY_GOAL_METRICS` (TrainGoals keeps its
+existing form) + `RECOVERY_GOAL_METRICS` + combined union for
+validation/normalization. `applicableActivityGoals` skips recovery metrics so
+Today's Focus can never say "complete 5 sleep days". Standalone Train ›
+Recovery unchanged; non-founder navigation unchanged.
+
+### Tests
+
+- `tests/recovery-goals-db.test.mjs` (33, real PostgreSQL via
+  PGlite/native-local convention): activity metrics unchanged (incl. manual
+  step anti-cheat), each recovery metric definition (duplicate-day upserts
+  can't double-count, 7h boundary, NULL sleep, future days, missing readiness
+  days), target validation, full lifecycle (active/completed/expired/
+  completed-not-expired/cancelled/stuck-repair), and the stat contract
+  (+1 on completion, idempotent replays, repeated lists, zero for
+  cancelled/expired/incomplete, +2 daily cap with third rolled back,
+  activity-cap independence).
+- `tests/recovery-goals-ui.test.mjs` (13, jsdom): four metrics only, no
+  activity metrics, no native select, qualifying hints, create/edit/cancel
+  flows, completed/expired cards, empty/loading/error+retry states,
+  placeholder and standalone-path invariants.
+
+Validation for the Phase 5 checkpoint: **1208 tests — 1206 pass / 0 fail / 2
+skipped**, `bunx tsc --noEmit` clean, `bunx eslint src/` 0 errors (38
+pre-existing warnings elsewhere), Prettier clean, `bun run build` PASS.

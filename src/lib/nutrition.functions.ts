@@ -72,6 +72,7 @@ export interface NutritionPhotoEstimate {
   fiberG: number;
   confidence: number | null;
   note: string;
+  scanUsage?: { used: number; limit: number };
 }
 
 const mealTypes: NutritionMealType[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -371,14 +372,33 @@ function stripCodeFence(value: string): string {
 
 export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: { imageDataUrl: string; mealTypeHint: NutritionMealType }) => input)
-  .handler(async ({ data }): Promise<NutritionPhotoEstimate> => {
+  .validator(
+    (input: { imageDataUrl: string; mealTypeHint: NutritionMealType; dayKey: string }) => input,
+  )
+  .handler(async ({ context, data }): Promise<NutritionPhotoEstimate> => {
     if (!mealTypes.includes(data.mealTypeHint)) throw new Error("Invalid meal type.");
+    if (!validDayKey(data.dayKey)) throw new Error("Invalid nutrition date.");
     if (!/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(data.imageDataUrl)) {
       throw new Error("Choose a JPEG, PNG or WebP meal photo.");
     }
     // ~4 MB encoded ceiling. The client compresses much smaller than this.
     if (data.imageDataUrl.length > 5_500_000) throw new Error("That photo is too large.");
+
+    // Claim the server-authoritative daily quota before spending an AI request.
+    // The RPC derives identity and Plus status from the authenticated session;
+    // the client cannot raise its own limit.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = context.supabase as any;
+    const { data: usageRaw, error: usageError } = await client.rpc("svj_claim_nutrition_scan", {
+      p_day_key: data.dayKey,
+    });
+    if (usageError) throw new Error("Meal scanning is temporarily unavailable. Use manual logging.");
+    const usage = usageRaw as { allowed?: boolean; used?: number; limit?: number } | null;
+    if (!usage?.allowed) {
+      throw new Error(
+        `You've used today's ${Number(usage?.limit ?? 3)} AI meal scans. You can still log meals manually.`,
+      );
+    }
 
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
@@ -491,5 +511,9 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
       note:
         cleanText(record.note, 300) ||
         "Photo-based nutrition is an estimate. Review portions and values before saving.",
+      scanUsage: {
+        used: Number(usage.used ?? 0),
+        limit: Number(usage.limit ?? 0),
+      },
     };
   });

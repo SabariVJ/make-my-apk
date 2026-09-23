@@ -28,7 +28,9 @@ import {
   type PersonalizationData,
 } from "@/lib/personalization.functions";
 import { getChallengeInsights, selectPersonalizedChallenges } from "@/lib/challenge-engine";
-import { getMyReadiness } from "@/app/lib/recovery";
+import { getMyReadiness, type ReadinessData } from "@/app/lib/recovery";
+import { readinessFromServer } from "@/app/lib/recoveryInsights";
+import { PlanRecoveryCard } from "@/app/components/recovery/PlanRecoveryCard";
 import { useActivityOptional } from "@/app/context/ActivityContext";
 
 // ── Stat display config ──────────────────────────────────────────────────
@@ -324,13 +326,13 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   const callGetPersonalization = useServerFn(getPersonalization);
   const activity = useActivityOptional();
   const history30 = activity?.history30 ?? [];
-  const [readinessScore, setReadinessScore] = useState<number | null>(null);
+  const [readiness, setReadiness] = useState<ReadinessData | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void getMyReadiness()
       .then((r) => {
-        if (!cancelled && r.ok && r.readiness) setReadinessScore(r.readiness.score);
+        if (!cancelled && r.ok && r.readiness) setReadiness(r.readiness);
       })
       .catch(() => undefined);
     return () => {
@@ -527,7 +529,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
               </li>
               <li className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-3 py-2">
                 <span>Readiness (today)</span>
-                <span className="text-white">{readinessScore ?? "No check-in"}</span>
+                <span className="text-white">{readiness ? readiness.score : "No check-in"}</span>
               </li>
             </ul>
           </div>
@@ -572,6 +574,11 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
               ))}
             </div>
           </div>
+
+          {/* Recovery integration: presentation-only context for the current
+              day, reusing the ONE authoritative focus emphasis. It never
+              changes missions, XP or entitlement — only how today reads. */}
+          {readiness && <PlanRecoveryCard readiness={readinessFromServer(readiness)} />}
 
           {/* Recommended Missions */}
           <div>

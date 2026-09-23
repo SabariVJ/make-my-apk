@@ -106,6 +106,7 @@ before(async () => {
             "../context/SVJContext": "context",
             "../../context/SVJContext": "context",
             "../hooks/useRecoveryInsights": "insights",
+            "../../hooks/useRecoveryInsights": "insights",
             // Decorative motion only.
             "motion/react": "motion",
           };
@@ -388,7 +389,12 @@ describe("shared goal surface compatibility", () => {
     });
     await waitFor(() => assert.ok(screen.getByTestId("recovery-section-records")));
     assert.equal(screen.queryByText(/Coming next/), null, "Records is no longer a placeholder");
-    for (const section of ["progress", "devices"]) {
+    // Progress shipped in Phase 7 (its own suite) — a real weekly digest panel.
+    await act(async () => {
+      screen.getByTestId("recovery-section-tab-progress").click();
+    });
+    assert.ok(screen.getByTestId("recovery-section-progress"), "Progress is real now");
+    for (const section of ["devices"]) {
       await act(async () => {
         screen.getByTestId(`recovery-section-tab-${section}`).click();
       });

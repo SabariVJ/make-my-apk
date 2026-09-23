@@ -234,8 +234,12 @@ describe("Recovery → Records shell", () => {
     await waitFor(() => assert.ok(screen.getByTestId("recovery-section-records")));
     assert.equal(screen.queryByText(/Coming next/), null);
     assert.equal(document.body.textContent.includes("Nothing is shown here yet"), false);
-    // Progress and Devices stay honest placeholders.
-    for (const section of ["progress", "devices"]) {
+    // Progress shipped in Phase 7 (its own suite); Devices stays a placeholder.
+    await act(async () => {
+      screen.getByTestId("recovery-section-tab-progress").click();
+    });
+    assert.ok(screen.getByTestId("recovery-section-progress"), "Progress is real now");
+    for (const section of ["devices"]) {
       await act(async () => {
         screen.getByTestId(`recovery-section-tab-${section}`).click();
       });

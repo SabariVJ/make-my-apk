@@ -69,6 +69,7 @@ before(async () => {
           const map = {
             // The recovery RPC boundary (readiness/history) — real shapes.
             "../lib/recovery": "recovery",
+            "../../lib/recovery": "recovery",
             "../lib/trainingClient": "trainingClient",
             "../lib/trainingErrors": "trainingErrors",
             "../lib/goalsRecords": "goalsRecords",
@@ -398,9 +399,9 @@ describe("Phase 1/2 invariants stay intact", () => {
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
-    // History (Phase 4), Goals (Phase 5) and Records (Phase 6) shipped with
-    // their own suites; Progress and Devices are still honest "Coming next"
-    // placeholders.
+    // History (Phase 4), Goals (Phase 5), Records (Phase 6) and Progress
+    // (Phase 7) shipped with their own suites; Devices is the only remaining
+    // honest "Coming next" placeholder.
     await act(async () => {
       screen.getByTestId("recovery-section-tab-records").click();
     });
@@ -408,7 +409,7 @@ describe("Phase 1/2 invariants stay intact", () => {
     await act(async () => {
       screen.getByTestId("recovery-section-tab-progress").click();
     });
-    assert.ok(screen.getByText(/Coming next/));
+    assert.ok(screen.getByTestId("recovery-section-progress"), "Progress is real now");
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });

@@ -17,6 +17,8 @@ import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
 import RecoveryGoalsSection from "./recovery/RecoveryGoalsSection";
 import RecoveryHistorySection from "./recovery/RecoveryHistorySection";
 import RecoveryRecordsSection from "./recovery/RecoveryRecordsSection";
+import RecoveryWeeklyDigest from "./recovery/RecoveryWeeklyDigest";
+import { RestDayAlertCard } from "./recovery/RestDayAlertCard";
 import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
 import { useTrainRecoveryShared } from "../lib/readinessShared";
 import {
@@ -60,21 +62,25 @@ const UpcomingSection: React.FC<{
   </div>
 );
 
-const OverviewWithInsights: React.FC = () => {
+const OverviewWithInsights: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const { goals, trainingProfile, muscleRows, muscleAvailability } = useRecoveryInsights();
   const shared = useTrainRecoveryShared();
 
   return (
     <>
-      {/* Focus + streak derive from the SAME readiness the panel renders — the
-          panel publishes its computed values upward. Until the first publish
-          completes, the widgets stay quiet instead of guessing. */}
+      {/* Focus, the Rest-Day alert and the streak all derive from the SAME
+          readiness the panel renders — the panel publishes its computed values
+          upward. Until the first publish completes, these stay quiet instead
+          of guessing. */}
       {shared?.today && (
-        <TodaysFocusCard
-          readiness={shared.today}
-          trainingGoal={trainingProfile.goal}
-          goals={goals}
-        />
+        <>
+          <RestDayAlertCard readiness={shared.today} onReviewPlan={onOpenPlan} />
+          <TodaysFocusCard
+            readiness={shared.today}
+            trainingGoal={trainingProfile.goal}
+            goals={goals}
+          />
+        </>
       )}
       {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
       <TrainRecovery />
@@ -83,7 +89,7 @@ const OverviewWithInsights: React.FC = () => {
   );
 };
 
-export const RecoveryView: React.FC = () => {
+export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const [section, setSection] = useState<RecoverySection>("overview");
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -174,7 +180,7 @@ export const RecoveryView: React.FC = () => {
           data-testid="recovery-section-overview"
         >
           <ReadinessHistoryProvider>
-            <OverviewWithInsights />
+            <OverviewWithInsights onOpenPlan={onOpenPlan} />
           </ReadinessHistoryProvider>
         </div>
       )}
@@ -185,18 +191,7 @@ export const RecoveryView: React.FC = () => {
 
       {section === "records" && <RecoveryRecordsSection />}
 
-      {section === "progress" && (
-        <UpcomingSection
-          section="progress"
-          title="Progress"
-          summary="A weekly recovery digest drawn from your real readiness, sleep, consistency and load."
-          points={[
-            "Average readiness and its trend across the week",
-            "Average sleep, check-in consistency and rest-day count",
-            "Also surfaced inside My SVJ Plan once it ships",
-          ]}
-        />
-      )}
+      {section === "progress" && <RecoveryWeeklyDigest />}
 
       {section === "devices" && (
         <div className="space-y-3">

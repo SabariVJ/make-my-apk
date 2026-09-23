@@ -33,7 +33,7 @@ are preferred over fabricated analytics.
 | 4     | History (readiness heatmap, sleep vs. performance)                                   | **shipped (server-backed, no fabricated days)**                           |
 | 5     | Recovery goals + Discipline progression                                              | **shipped (server-derived progress)**                                     |
 | 6     | Derived recovery records                                                             | **shipped (derived on read, read-only)**                                  |
-| 7     | Weekly digest, My SVJ Plan integration, rest-day alert card                          | pending                                                                   |
+| 7     | Weekly digest, My SVJ Plan integration, rest-day alert card                          | **shipped (digest + alert founder-only; plan note Plus-only)**            |
 
 The next phase starts only when the user explicitly says "continue to phase N".
 
@@ -605,3 +605,187 @@ skipped**, `bunx tsc --noEmit` clean, `bunx eslint src/` 0 errors (38
 pre-existing warnings elsewhere), Prettier clean in the checked scope (`src/**`,
 plus the new files — the repo-wide `prettier --check .` baseline is unchanged),
 `bun run build` PASS.
+
+## Phase 7 — weekly recovery intelligence, MY SVJ PLAN integration, Rest-Day alert
+
+Three connected features, all deterministic and derived from data SVJ already
+stores. No new table, no persisted digest prose, no AI, and **no production
+migration applied**. The Recovery destination stays founder-only; the MY SVJ
+PLAN note ships to anyone who can see MY SVJ PLAN (its existing Plus gate).
+
+### Data sources (reused — nothing new)
+
+- `svj_list_my_recovery_history` via `listMyRecoveryHistory()` →
+  `RecoveryHistoryPoint[]` (`date`, `score`, `trainingLoad`, `hasCheckin`,
+  `sleepHours`, `restDaysLast3`, …). The same rows Overview/History/Records use.
+- The panel's already-computed `ReadinessResult` published through
+  `ReadinessHistoryProvider` — the digest/alert never recompute readiness.
+- `svj_get_my_readiness` (server snapshot) in MY SVJ PLAN, through the new
+  `readinessFromServer()` adapter.
+- `svj_recent_muscle_history` (via the existing `useRecoveryInsights`) for the
+  optional strength line.
+- Reused pure helpers: `gradeForScore`, `bandForLoad`, `readinessAdvice`,
+  `estimateMuscleRecovery`, `todaysFocus`.
+
+### One authoritative focus decision (hardened)
+
+The Phase-3 thresholds were extracted verbatim into
+`readinessEmphasis(readiness): "rest" | "lighter" | "normal" | "stronger"` and
+`todaysFocus` now delegates to it. **Every Phase-7 surface consumes that one
+function — the threshold is never copied into a component.**
+
+| Emphasis   | Rule                                                               |
+| ---------- | ------------------------------------------------------------------ |
+| `rest`     | `score < 40` OR (`band === "very_high"` AND `restDaysLast3 === 0`) |
+| `lighter`  | `score < 60` OR (`band === "high"` AND `restDaysLast3 === 0`)      |
+| `stronger` | `score ≥ 78` AND (`band === "low"` OR `restDaysLast3 > 0`)         |
+| `normal`   | everything else                                                    |
+
+The server-readiness adapter `readinessFromServer()` maps
+`svj_get_my_readiness` onto the canonical `ReadinessResult`. **Documented
+limitation:** the server cannot see the local task-completion ledger, so
+`taskLoadPoints` is 0 in the adapter — it is the activity-only reading, and the
+Recovery destination's combined reading remains the authority.
+
+### A. Weekly Recovery Digest — Recovery → Progress
+
+The Progress placeholder is replaced by a real, server-authoritative digest
+built from the latest **seven canonical server days** (day keys are used
+verbatim; local history is never merged in). Pure helper
+`buildWeeklyRecoveryDigest(serverDays, days = 7)`:
+
+- **State:** 0 scored days → `insufficient`; a full seven scored days →
+  `complete`; anything between → `partial`. `unavailable` is **not** a digest
+  state — a failed read is the caller's separate retryable error, so a
+  transient outage can never masquerade as "no data".
+- `averageReadiness` = mean of the window's finite scores, rounded (null when
+  none). A real stored score of `0` counts as data; a **missing calendar day is
+  never averaged in as 0**.
+- `checkinDays` counts rows with `hasCheckin === true`; `sleepDays` counts rows
+  with a finite `sleepHours > 0` (**missing sleep is never 0 hours**).
+- `restDaysLast3`/`loadBand` come from the newest row and are `null` when the
+  server did not report them (the UI then omits those rows instead of guessing).
+- A concise strength line reuses `estimateMuscleRecovery` and is shown only
+  when `svj_recent_muscle_history` actually answered.
+
+### Readiness trend (exact algorithm)
+
+`readinessTrendDirection(serverDays, days = 7)`, documented and tested:
+
+1. Take the finite scores of the last seven canonical server days, oldest →
+   newest (gaps ignored — never filled with 0).
+2. Fewer than **`READINESS_TREND_MIN_DAYS = 4`** scored days →
+   `insufficient_data` (no trend is claimed from a tiny sample).
+3. Split in half (`earlier` = first `floor(n/2)`, `recent` = the rest) and
+   compare their means; `delta = recentAvg − earlierAvg`.
+4. `delta > +READINESS_TREND_STABLE_BAND (3)` → **improving**; `delta < −3` →
+   **declining**; otherwise → **stable** (a tiny/noisy change stays stable).
+
+The UI always renders the trend as a sentence (`digestTrendSentence`) — colour
+and the icon are decorative only.
+
+### B. MY SVJ PLAN Recovery Integration
+
+`SvjPlanView` already reads `svj_get_my_readiness`; it now adapts that snapshot
+with `readinessFromServer()` and renders the presentation-only
+`PlanRecoveryCard`, which calls `readinessEmphasis`/`todaysFocus`. Copy by
+emphasis: rest → “Prioritise recovery today”, lighter → “Keep it light today”,
+normal → “Train normally today”, stronger → “Green light for a strong session”.
+
+**Safety (enforced by design):** the card is pure presentation. It never deletes
+a completed mission, edits historical activity, changes earned XP, rewrites a
+past plan, awards XP or touches entitlement. The rest/lighter cards state
+“Today's planned missions stay exactly as they are”; the stronger card states
+“Progressive overload still follows your existing training plan — today's
+readiness is context, not an automatic increase.”
+
+### C. Rest-Day alert card
+
+`restDayAlert(readiness)` is active **only** when `readinessEmphasis` returns
+`rest` — the Phase-3 rule, reused, never duplicated. It renders nothing
+ootherwise, so it can never become a generic banner. Evidence is limited to what
+the reading actually contains: the score (always), the load line only when the
+band is `high`/`very_high`, and the rest line only when `restDaysLast3 === 0`.
+The suggestion (“Prioritise sleep, hydration, mobility and low-intensity
+movement.”) is clearly a suggestion, never a deficiency claim. It is rendered at
+the top of the founder Overview (above Today's Focus) from the same published
+`ReadinessResult`, has a semantic heading (`h2`), `role="status"`, readable
+evidence text, and a ≥44 px CTA (“Review today's plan”). The CTA is passed only
+when a real destination exists — `RecoveryView` receives `onOpenPlan` from
+`App.tsx` (`handleTabChange("plan")`), so the button is never dead.
+
+### Notification integration decision (documented limitation)
+
+The existing `NotificationCoordinator` builds a **deterministic, app-wide**
+plan from local state (`buildNotificationPlan`) and replaces the whole native
+schedule set (`replaceNativeNotificationSchedules` — idempotent, no duplicates).
+That planner carries no readiness input, and the coordinator is mounted for
+**every** user (including non-founders). Wiring a rest-day alert into it would
+require loading readiness into the app shell for all users and adding a second,
+unrelated data path with its own staleness/permission semantics — a substantial
+change outside Phase 7's scope. Per the phase spec it is therefore **not
+forced**: the rest-day recommendation is delivered in-app (Overview alert +
+MY SVJ PLAN note) only, and this limitation is recorded here.
+
+### Failure isolation & missing data
+
+Each source fails honestly and independently: a failed history read → a
+sanitized “Your weekly recovery summary is unavailable right now.” with a
+retryable ≥44 px button (raw `PGRST…`/SQL text never reaches the UI);
+`useRecoveryInsights` unavailable/error simply omits the strength line; the
+plan note renders nothing when no readiness exists. Readiness, check-in, Focus,
+streak, muscle map, History, Goals, Records and Train are all unaffected by a
+Phase-7 failure.
+
+### Database decision
+
+**None.** No table, column, index, policy, grant or RPC was added and no
+migration was written or applied. The digest and alert are derived on read from
+existing canonical history; the plan note reuses the existing readiness RPC.
+
+### Tests
+
+- `tests/recovery-weekly-phase7.test.ts` (31, pure) — digest sufficiency
+  (none / one row / partial / full / real 0 / gaps / window cap / malformed
+  input), sleep + check-in consistency, trend thresholds and tiny-sample /
+  noise / gap / NaN safety and wording, the server adapter (mapping + band
+  fallback + NaN safety), the emphasis matrix (rest below 40, very-high-no-rest,
+  high-no-rest, lighter, stronger, high-with-rest normal) plus its exact
+  agreement with `todaysFocus`, and the alert (inactive/empty, score-only,
+  load+rest evidence, neutral non-medical wording).
+- `tests/recovery-weekly-ui.test.mjs` (18, jsdom; only the Supabase transport is
+  mocked) — digest loading / full week / partial / insufficient / sanitized
+  retryable error + successful retry, the alert absent when unjustified and
+  present with real evidence when justified, no CTA without a handler and a
+  working CTA with one, the four plan states (rest/lighter/normal/stronger,
+  including “not an automatic increase”), the Progress panel is real and the
+  placeholder is gone, Overview wires the alert CTA to the plan, and the
+  standalone Train › Recovery path carries no Phase-7 surfaces.
+- Updated: `tests/recovery-goals-ui.test.mjs`, `tests/recovery-records-ui.test.mjs`
+  and `tests/recovery-insights-widgets.test.mjs` no longer treat Progress as a
+  placeholder (Devices is the only remaining one), and their mock maps now cover
+  the digest's imports.
+
+Validation for the Phase 7 checkpoint: **1320 tests — 1318 pass / 0 fail / 2
+skipped** (both skips pre-existing native-PostgreSQL-only), `bunx tsc --noEmit`
+clean, ESLint 0 errors on changed files, Prettier clean on changed files,
+`bun run build` PASS. No database changes.
+
+### Known limitations
+
+- The plan's recovery note sees the activity-only server reading (no local task
+  ledger), so it can differ slightly from the Overview's combined number.
+- Strength lines depend on `svj_recent_muscle_history` being deployed; until
+  then the digest simply omits them.
+- Production migrations remain unapplied (no credentials here), so Recovery
+  Goals/Records are unaffected but still require the authorized push.
+- Rest-day notifications are deliberately not wired (see the decision above).
+
+### Manual verification
+
+Signed-in founder: open Recovery → Progress shows a real weekly digest for the
+last seven recorded days; a very-high-load week with no rest surfaces the
+Rest-Day alert at the top of Overview with working evidence and a “Review
+today's plan” button that opens MY SVJ PLAN; a normal reading shows no alert.
+A Plus account: MY SVJ PLAN shows the Recovery check note matching the reading,
+and completing/uncompleting missions still behaves exactly as before.

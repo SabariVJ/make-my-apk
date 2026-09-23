@@ -176,6 +176,21 @@ export interface ReadinessInput {
 }
 
 /**
+ * One-sentence, non-medical advice for a readiness score. Extracted so the
+ * server-readiness adapter (Phase 7) reuses the exact same wording instead of
+ * growing a second copy that could drift.
+ */
+export function readinessAdvice(score: number): string {
+  return score >= 78
+    ? "Train normally — push if you feel good."
+    : score >= 60
+      ? "Train normally."
+      : score >= 40
+        ? "Light session recommended."
+        : "Rest or very light movement today.";
+}
+
+/**
  * Transparent readiness score. Mirrors svj_compute_readiness() and then adds
  * the task-load contribution, so completed tasks genuinely move the score.
  */
@@ -236,14 +251,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessResult {
       restDaysLast3: restDays,
       sources,
     },
-    advice:
-      score >= 78
-        ? "Train normally — push if you feel good."
-        : score >= 60
-          ? "Train normally."
-          : score >= 40
-            ? "Light session recommended."
-            : "Rest or very light movement today.",
+    advice: readinessAdvice(score),
     isLow: score < LOW_READINESS_THRESHOLD,
   };
 }
@@ -640,51 +648,65 @@ const goalLabel = (trainingGoal: string | null): string =>
   })[trainingGoal ?? "general"] ?? "general fitness";
 
 /**
- * Deterministic, explainable recommendation. Every branch keys off the shared
- * ReadinessResult (score/band/penalty/rest days) — the exact object the
- * Recovery panel renders — so this can never disagree with the ring.
- *
- *  rest      : score < 40, or (high/very_high load AND no rest day in 3)
- *  lighter   : score < 60, or moderate load with no rest day in 3
- *  stronger  : score ≥ 78 AND (low load OR a rest day in the last 3) AND a
- *              strength-adjacent profile goal
- *  normal    : everything else
+ * Deterministic, explainable recommendation built on the shared ReadinessResult
+ * (the exact object the Recovery panel renders) so it can never disagree with
+ * the ring. The emphasis comes from readinessEmphasis below; the applicable
+ * activity goal (secondary signal) only appends a progress sentence.
  */
+/**
+ * The SINGLE authoritative recovery→training emphasis decision, derived only
+ * from the shared ReadinessResult. Every Phase-7 surface (Today's Focus, the
+ * Rest-Day alert and MY SVJ PLAN's recovery note) consumes THIS function, so
+ * there is exactly one set of thresholds and they can never compete.
+ *
+ *   rest     : score < 40, or (very_high load AND no rest day in the last 3)
+ *   lighter  : score < 60, or (high load AND no rest day in the last 3)
+ *   stronger : score ≥ 78 AND (low load OR a rest day in the last 3)
+ *   normal   : everything else
+ */
+export function readinessEmphasis(readiness: ReadinessResult): FocusEmphasis {
+  const band = readiness.band;
+  const restDays = readiness.components.restDaysLast3;
+  const score = readiness.score;
+
+  if (score < 40 || (band === "very_high" && restDays === 0)) return "rest";
+  if (score < 60 || (band === "high" && restDays === 0)) return "lighter";
+  if (score >= 78 && (band === "low" || (typeof restDays === "number" && restDays > 0))) {
+    return "stronger";
+  }
+  return "normal";
+}
+
 export function todaysFocus(input: FocusInput): FocusRecommendation {
   const { readiness, trainingGoal, activityGoal } = input;
   const band = readiness.band;
-  const restDays = readiness.components.restDaysLast3;
   const goal = goalLabel(trainingGoal);
   const score = readiness.score;
 
   const goalClause =
     trainingGoal && trainingGoal !== "general" ? ` while keeping your ${goal} goal on track` : "";
 
-  let emphasis: FocusEmphasis;
+  const emphasis = readinessEmphasis(readiness);
   let headline: string;
   let detail: string;
 
-  if (score < 40 || (band === "very_high" && restDays === 0)) {
-    emphasis = "rest";
+  if (emphasis === "rest") {
     headline = "Prioritise recovery today";
     detail = `Readiness is ${score} with a ${
       band === "very_high" ? "very high" : "low"
     } training load$?
       goalClause
     }. Rest or keep movement very light so your body can catch up.`;
-  } else if (score < 60 || (band === "high" && restDays === 0)) {
-    emphasis = "lighter";
+  } else if (emphasis === "lighter") {
     headline = "Keep it light today";
     detail = `Readiness is ${score} — a lighter session is the right call${goalClause}.`;
-  } else if (score >= 78 && (band === "low" || (typeof restDays === "number" && restDays > 0))) {
-    emphasis = "stronger";
+  } else if (emphasis === "stronger") {
     headline = "Green light for a strong session";
     detail =
       readiness.components.activityLoadPoints === 0 && readiness.components.taskLoadPoints === 0
         ? `Readiness is ${score} and your week is light — a solid session would land well${goalClause}.`
         : `Readiness is ${score} with a ${band} load — a strong session fits${goalClause}.`;
   } else {
-    emphasis = "normal";
     headline = "Train normally today";
     detail = `Readiness is ${score} on a ${band} load — train normally${goalClause}.`;
   }
@@ -1079,4 +1101,341 @@ export function correlateSleepReadiness(
         summary:
           "On days after longer reported sleep, your readiness scores have tended to be lower.",
       };
+}
+
+// ── Phase 7 — weekly recovery intelligence (pure + deterministic) ───────────
+//
+// The weekly digest, its readiness trend and the Rest-Day alert all derive from
+// the SAME canonical server days the Overview/History already use
+// (svj_list_my_recovery_history → RecoveryHistoryPoint). Nothing is invented:
+// a missing day is never a 0, missing sleep is never 0 hours, and a metric that
+// cannot be supported from real rows is omitted rather than guessed.
+
+export const VALID_LOAD_BANDS: readonly LoadBand[] = ["low", "moderate", "high", "very_high"];
+
+/** The digest window: the latest seven canonical server days. */
+export const WEEKLY_DIGEST_DAYS = 7;
+
+/** Fewer scored days than this and no trend is claimed (tiny-sample guard). */
+export const READINESS_TREND_MIN_DAYS = 4;
+
+/** |recent − earlier| ≤ this many points is reported as "stable". */
+export const READINESS_TREND_STABLE_BAND = 3;
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The last `days` REAL server days, oldest → newest, by canonical server date.
+ * Rows without a valid server day key are dropped (never repositioned), so the
+ * window can only ever contain days the server actually returned.
+ */
+function canonicalWindow<T extends { date: string }>(serverDays: T[], days: number): T[] {
+  if (!Array.isArray(serverDays)) return [];
+  return serverDays
+    .filter((row) => !!row && typeof row.date === "string" && DAY_KEY.test(row.date))
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-Math.max(1, days));
+}
+
+/** Whole calendar days from `start` to `end` inclusive, from their own parts. */
+function daySpanInclusive(start: string, end: string): number {
+  const parts = (iso: string) => iso.split("-").map(Number) as [number, number, number];
+  const [sy, sm, sd] = parts(start);
+  const [ey, em, ed] = parts(end);
+  const from = Date.UTC(sy, sm - 1, sd);
+  const to = Date.UTC(ey, em - 1, ed);
+  const span = Math.round((to - from) / 86_400_000) + 1;
+  return Number.isFinite(span) && span > 0 ? span : 1;
+}
+
+// ── Server readiness → the shared ReadinessResult shape ─────────────────────
+
+/**
+ * The structural shape svj_get_my_readiness returns (see ../lib/recovery).
+ * Declared locally so this module never has to import the network client.
+ */
+export interface ServerReadinessLike {
+  score: number;
+  trainingLoad?: string;
+  recovery?: string;
+  todayAdvice?: string;
+  components?: {
+    loadPoints7d?: number;
+    loadBand?: string;
+    restDaysLast3?: number | null;
+    loadPenalty?: number;
+    dataSources?: string[];
+  } | null;
+}
+
+/**
+ * Adapt the SERVER readiness snapshot to the canonical ReadinessResult so MY
+ * SVJ PLAN can reuse todaysFocus instead of inventing its own thresholds.
+ *
+ * Honest limits (documented, never papered over): the server cannot see the
+ * local task-completion ledger, so taskLoadPoints is 0 here — this is the
+ * activity-only reading, and the Recovery destination's combined reading stays
+ * the authority. A non-finite score becomes 0; a missing band falls back to
+ * the load points' band rather than a guessed band.
+ */
+export function readinessFromServer(raw: ServerReadinessLike): ReadinessResult {
+  const components = raw.components ?? {};
+  const load = Math.max(0, Number(components.loadPoints7d) || 0);
+  const declared = String(components.loadBand ?? raw.trainingLoad ?? "");
+  const band = (VALID_LOAD_BANDS as readonly string[]).includes(declared)
+    ? (declared as LoadBand)
+    : bandForLoad(load);
+  const score = Number.isFinite(raw.score) ? Math.max(0, Math.min(100, Math.round(raw.score))) : 0;
+  const restDays =
+    typeof components.restDaysLast3 === "number" && Number.isFinite(components.restDaysLast3)
+      ? Math.max(0, Math.round(components.restDaysLast3))
+      : null;
+  return {
+    score,
+    band,
+    recovery: gradeForScore(score),
+    components: {
+      activityLoadPoints: load,
+      taskLoadPoints: 0,
+      totalLoadPoints: load,
+      loadPenalty: Math.max(0, Number(components.loadPenalty) || 0),
+      taskCount: 0,
+      restDaysLast3: restDays,
+      sources: Array.isArray(components.dataSources) ? components.dataSources : [],
+    },
+    advice: readinessAdvice(score),
+    isLow: score < LOW_READINESS_THRESHOLD,
+  };
+}
+
+// ── Readiness trend ─────────────────────────────────────────────────────────
+
+export type ReadinessTrendDirection = "improving" | "stable" | "declining" | "insufficient_data";
+
+export interface ReadinessTrend {
+  direction: ReadinessTrendDirection;
+  /** Scored days actually compared. */
+  samples: number;
+  /** Mean of the earlier half of the window (rounded); null when insufficient. */
+  earlierAvg: number | null;
+  /** Mean of the more recent half of the window (rounded); null when insufficient. */
+  recentAvg: number | null;
+  /** recentAvg − earlierAvg, one decimal; null when insufficient. */
+  delta: number | null;
+}
+
+/**
+ * Deterministic trend over the window's REAL readiness rows, gaps ignored
+ * (never filled with 0). Rule, exactly:
+ *  - take the finite scores of the last `days` canonical server days, oldest →
+ *    newest;
+ *  - fewer than READINESS_TREND_MIN_DAYS scored days → insufficient_data;
+ *  - split in half (earlier = first floor(n/2), recent = the rest) and compare
+ *    their means;
+ *  - delta > +READINESS_TREND_STABLE_BAND → improving; delta < −band →
+ *    declining; otherwise stable. A tiny/noisy change therefore stays stable
+ *    and never becomes a claim.
+ */
+export function readinessTrendDirection(
+  serverDays: { date: string; score: number }[],
+  days = WEEKLY_DIGEST_DAYS,
+): ReadinessTrend {
+  const scores = canonicalWindow(serverDays, days)
+    .map((row) => row.score)
+    .filter((score) => typeof score === "number" && Number.isFinite(score));
+
+  if (scores.length < READINESS_TREND_MIN_DAYS) {
+    return {
+      direction: "insufficient_data",
+      samples: scores.length,
+      earlierAvg: null,
+      recentAvg: null,
+      delta: null,
+    };
+  }
+
+  const half = Math.floor(scores.length / 2);
+  const earlier = scores.slice(0, half);
+  const recent = scores.slice(half);
+  const earlierAvg = earlier.reduce((sum, s) => sum + s, 0) / earlier.length;
+  const recentAvg = recent.reduce((sum, s) => sum + s, 0) / recent.length;
+  const delta = recentAvg - earlierAvg;
+  const direction: ReadinessTrendDirection =
+    delta > READINESS_TREND_STABLE_BAND
+      ? "improving"
+      : delta < -READINESS_TREND_STABLE_BAND
+        ? "declining"
+        : "stable";
+
+  return {
+    direction,
+    samples: scores.length,
+    earlierAvg: Math.round(earlierAvg),
+    recentAvg: Math.round(recentAvg),
+    delta: Math.round(delta * 10) / 10,
+  };
+}
+
+// ── Weekly recovery digest ──────────────────────────────────────────────────
+
+export type DigestState = "complete" | "partial" | "insufficient";
+
+export interface WeeklyRecoveryDigest {
+  /** Data sufficiency of the window (a failed read is handled by the caller). */
+  state: DigestState;
+  /** Calendar days covered by the window (1–7), 0 when there is no data. */
+  windowDays: number;
+  windowStart: string | null;
+  windowEnd: string | null;
+  /** Server days that carry a finite readiness score. */
+  readinessDays: number;
+  /** Mean readiness over the real rows, rounded; null when none. */
+  averageReadiness: number | null;
+  trend: ReadinessTrend;
+  /** Days in the window with a real stored check-in. */
+  checkinDays: number;
+  /** Days in the window with a reported sleep value > 0. */
+  sleepDays: number;
+  /** Newest row's rest-day count (last 3 days), or null when not reported. */
+  restDaysLast3: number | null;
+  /** Newest row's load band, or null when not reported. */
+  loadBand: LoadBand | null;
+}
+
+const EMPTY_TREND: ReadinessTrend = {
+  direction: "insufficient_data",
+  samples: 0,
+  earlierAvg: null,
+  recentAvg: null,
+  delta: null,
+};
+
+/**
+ * Build the weekly digest from the canonical server days.
+ *
+ * State rule: 0 scored days → insufficient; a full `days` of scored days →
+ * complete; anything in between → partial. "unavailable" is never returned
+ * here — that is the caller's read-failure state, kept separate so a transient
+ * error can never masquerade as "no data". Every metric is derived from a real
+ * row; a metric with no supporting rows is null/0 and the UI omits it.
+ */
+export function buildWeeklyRecoveryDigest(
+  serverDays: RecoveryHistoryPoint[],
+  days = WEEKLY_DIGEST_DAYS,
+): WeeklyRecoveryDigest {
+  const window = canonicalWindow(serverDays, days);
+  if (window.length === 0) {
+    return {
+      state: "insufficient",
+      windowDays: 0,
+      windowStart: null,
+      windowEnd: null,
+      readinessDays: 0,
+      averageReadiness: null,
+      trend: EMPTY_TREND,
+      checkinDays: 0,
+      sleepDays: 0,
+      restDaysLast3: null,
+      loadBand: null,
+    };
+  }
+
+  const scores = window
+    .map((row) => row.score)
+    .filter((score) => typeof score === "number" && Number.isFinite(score));
+  const readinessDays = scores.length;
+  const averageReadiness = readinessDays
+    ? Math.round(scores.reduce((sum, s) => sum + s, 0) / readinessDays)
+    : null;
+  const checkinDays = window.filter((row) => row.hasCheckin === true).length;
+  const sleepDays = window.filter(
+    (row) =>
+      typeof row.sleepHours === "number" && Number.isFinite(row.sleepHours) && row.sleepHours > 0,
+  ).length;
+
+  const newest = window[window.length - 1];
+  const restDaysLast3 =
+    typeof newest.restDaysLast3 === "number" && Number.isFinite(newest.restDaysLast3)
+      ? Math.max(0, Math.round(newest.restDaysLast3))
+      : null;
+  const declaredBand = String(newest.trainingLoad ?? "");
+  const loadBand = (VALID_LOAD_BANDS as readonly string[]).includes(declaredBand)
+    ? (declaredBand as LoadBand)
+    : null;
+
+  const state: DigestState =
+    readinessDays === 0 ? "insufficient" : readinessDays >= days ? "complete" : "partial";
+
+  return {
+    state,
+    windowDays: daySpanInclusive(window[0].date, newest.date),
+    windowStart: window[0].date,
+    windowEnd: newest.date,
+    readinessDays,
+    averageReadiness,
+    trend: readinessTrendDirection(window, days),
+    checkinDays,
+    sleepDays,
+    restDaysLast3,
+    loadBand,
+  };
+}
+
+/** Non-colour trend wording (the text equivalent of the trend indicator). */
+export function digestTrendSentence(trend: ReadinessTrend): string {
+  switch (trend.direction) {
+    case "improving":
+      return "Your readiness has been trending upward across the last few recorded days.";
+    case "declining":
+      return "Your readiness has been trending downward across the last few recorded days.";
+    case "stable":
+      return "Your readiness has been holding steady across the last few recorded days.";
+    case "insufficient_data":
+      return "There are not enough recorded days this week to call a trend yet.";
+  }
+}
+
+// ── Rest-Day alert ──────────────────────────────────────────────────────────
+
+export interface RestDayAlert {
+  active: boolean;
+  headline: string;
+  /** Concise, real evidence — only factors actually available are included. */
+  evidence: string[];
+  /** General recovery suggestion (never a medical or deficiency claim). */
+  suggestion: string;
+}
+
+/**
+ * The Rest-Day alert is active ONLY when the single authoritative emphasis is
+ * "rest" — it consumes readinessEmphasis, so the threshold is never copied.
+ * Evidence is drawn only from the real readiness components: the score, the
+ * load band when it is genuinely high, and an actually-zero rest count.
+ */
+export function restDayAlert(readiness: ReadinessResult): RestDayAlert {
+  if (readinessEmphasis(readiness) !== "rest") {
+    return { active: false, headline: "", evidence: [], suggestion: "" };
+  }
+
+  const score = readiness.score;
+  const band = readiness.band;
+  const restDays = readiness.components.restDaysLast3;
+
+  const evidence: string[] = [`Readiness is ${score} today.`];
+  if (band === "high" || band === "very_high") {
+    evidence.push(
+      `Your recent training load is ${band === "very_high" ? "very high" : "high"} relative to your recovery.`,
+    );
+  }
+  if (restDays === 0) {
+    evidence.push("You have not recorded a rest day in the last 3 days.");
+  }
+
+  return {
+    active: true,
+    headline: "Take a recovery-focused day",
+    evidence,
+    suggestion: "Prioritise sleep, hydration, mobility and low-intensity movement.",
+  };
 }

@@ -320,7 +320,9 @@ const AppContent: React.FC<{
             {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
             {activeTab === "workouts" && <WorkoutView />}
             {/* Founder-only staged rollout: Recovery as its own destination. */}
-            {activeTab === "recovery" && <RecoveryView />}
+            {activeTab === "recovery" && (
+              <RecoveryView onOpenPlan={() => handleTabChange("plan")} />
+            )}
             {activeTab === "nutrition" && <NutritionView />}
             {activeTab === "community" && <CommunityView />}
             {activeTab === "leaderboard" && <LeaderboardView />}

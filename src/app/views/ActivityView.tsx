@@ -220,7 +220,9 @@ const HistoryPanel: React.FC<{
  * Activity provider is not mounted above this screen (e.g. after a hot reload
  * swaps the context module identity).
  */
-export const ActivityView: React.FC = () => {
+export const ActivityView: React.FC<{ hideRecoverySection?: boolean }> = ({
+  hideRecoverySection = false,
+}) => {
   const activity = useActivityOptional();
   if (!activity) {
     return (
@@ -234,7 +236,7 @@ export const ActivityView: React.FC = () => {
       </div>
     );
   }
-  return <ActivityViewContent activity={activity} />;
+  return <ActivityViewContent activity={activity} hideRecoverySection={hideRecoverySection} />;
 };
 
 type TrainSection =
@@ -248,7 +250,15 @@ type TrainSection =
   | "progress"
   | "recovery";
 
-const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ activity }) => {
+const ActivityViewContent: React.FC<{
+  activity: ActivityContextValue;
+  /**
+   * Founder-only staged rollout: Recovery lives at its own top-level
+   * destination, so the inner section is hidden to avoid exposing two Recovery
+   * entry points to the same person. Ordinary users keep it exactly as shipped.
+   */
+  hideRecoverySection?: boolean;
+}> = ({ activity, hideRecoverySection = false }) => {
   const {
     todaySteps,
     milestoneSteps,
@@ -368,20 +378,22 @@ const ActivityViewContent: React.FC<{ activity: ActivityContextValue }> = ({ act
             { id: "progress", label: "Progress" },
             { id: "recovery", label: "Recovery" },
           ] as const
-        ).map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setSection(s.id)}
-            className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-inter font-medium transition-colors ${
-              section === s.id
-                ? "bg-[#C81E3A]/15 text-white"
-                : "bg-white/[0.04] text-[#8C8C90] hover:text-white"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+        )
+          .filter((s) => !hideRecoverySection || s.id !== "recovery")
+          .map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSection(s.id)}
+              className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-inter font-medium transition-colors ${
+                section === s.id
+                  ? "bg-[#C81E3A]/15 text-white"
+                  : "bg-white/[0.04] text-[#8C8C90] hover:text-white"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
       </div>
 
       {section === "goals" && <TrainGoals />}

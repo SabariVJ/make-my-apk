@@ -41,7 +41,12 @@ test("the Activity tab exists between Challenges and Train", () => {
 test("the app routes the Activity tab and mounts the tracking provider", () => {
   assert.match(app, /import \{ ActivityView \} from "\.\/views\/ActivityView"/);
   assert.match(app, /import \{ ActivityProvider \} from "\.\/context\/ActivityContext"/);
-  assert.match(app, /\{activeTab === "activity" && <ActivityView \/>\}/);
+  // Routed to the same ActivityView; the founder-only recovery rollout hides
+  // the inner Recovery section (the default false keeps everyone else intact).
+  assert.match(
+    app,
+    /\{activeTab === "activity" && \(\s*<ActivityView hideRecoverySection=\{founderRecoveryEnabled\} \/>\s*\)\}/,
+  );
   assert.match(app, /<ActivityProvider userId=\{status\?\.userId \?\? null\}>/);
   // The app-local Android plugin is registered natively before the bridge is
   // created, and JS reaches it through Capacitor.registerPlugin (never through

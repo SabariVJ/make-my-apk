@@ -18,6 +18,7 @@ import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
 import { SvjPlanView } from "./views/SvjPlanView";
 import { TransformationReportView } from "./views/TransformationReportView";
 import { ProfileView } from "./views/ProfileView";
+import { RecoveryView } from "./components/RecoveryView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
 import { EditProfileModal } from "./components/EditProfileModal";
@@ -32,6 +33,7 @@ import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
+import { isFounderAccount } from "./lib/founderGate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
@@ -98,6 +100,11 @@ const AppContent: React.FC<{
     storageError,
   } = useSVJ();
   const queryClient = useQueryClient();
+
+  // Founder-only staged rollout for Recovery V2. Uses the server-backed
+  // profile flag and stays false until that profile has loaded, so the extra
+  // destination can never flash from the INITIAL_USER placeholder.
+  const founderRecoveryEnabled = isFounderAccount(user, profileLoaded);
 
   // Show a splash while the user profile is being synced from localStorage or
   // the Supabase session. Without this, a fresh sign-in (or session restore on
@@ -307,9 +314,13 @@ const AppContent: React.FC<{
                 onOpenActivity={() => handleTabChange("activity")}
               />
             )}
-            {activeTab === "activity" && <ActivityView />}
+            {activeTab === "activity" && (
+              <ActivityView hideRecoverySection={founderRecoveryEnabled} />
+            )}
             {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
             {activeTab === "workouts" && <WorkoutView />}
+            {/* Founder-only staged rollout: Recovery as its own destination. */}
+            {activeTab === "recovery" && <RecoveryView />}
             {activeTab === "nutrition" && <NutritionView />}
             {activeTab === "community" && <CommunityView />}
             {activeTab === "leaderboard" && <LeaderboardView />}

@@ -11,14 +11,17 @@ import {
   LogOut,
   Gift,
   Activity,
+  HeartPulse,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { isFounderAccount } from "../lib/founderGate";
 
 export type ActiveTab =
   | "challenges"
   | "activity"
   | "earn"
   | "workouts"
+  | "recovery"
   | "nutrition"
   | "community"
   | "leaderboard"
@@ -29,6 +32,13 @@ export type ActiveTab =
   | "profile"
   | "plan"
   | "transform";
+
+interface PrimaryNavItem {
+  id: ActiveTab;
+  label: string;
+  icon: typeof Flame;
+  highlight?: boolean;
+}
 
 interface NavigationProps {
   activeTab: ActiveTab;
@@ -55,12 +65,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   restricted = false,
 }) => {
-  const { user } = useSVJ();
+  const { user, profileLoaded } = useSVJ();
 
   // Primary destinations only. Community / Leaderboard / Profile moved to the
   // right-side utility rail (desktop) and utility drawer (mobile); 60-Day moved
   // into Challenges. Their routes, data and permissions are unchanged.
-  const allNavItems = [
+  const primaryNavItems: PrimaryNavItem[] = [
     { id: "challenges", label: "Challenges", icon: Flame },
     { id: "activity", label: "Activity", icon: Activity },
     { id: "workouts", label: "Train", icon: Dumbbell },
@@ -68,9 +78,19 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "plus", label: "Plus", icon: Crown, highlight: !user.isPremium },
   ];
 
+  // Recovery V2 is staged for the founder account only: Recovery becomes its
+  // own destination directly after Train, and everyone else keeps the exact
+  // five destinations they have today. The gate stays false until the real
+  // server-backed profile has loaded, so a founder-only tab can never flash.
+  const recoveryEnabled = isFounderAccount(user, profileLoaded);
+  const recoveryItem: PrimaryNavItem = { id: "recovery", label: "Recovery", icon: HeartPulse };
+  const allNavItems: PrimaryNavItem[] = recoveryEnabled
+    ? [...primaryNavItems.slice(0, 3), recoveryItem, ...primaryNavItems.slice(3)]
+    : primaryNavItems;
+
   // The free earning path must outlive the seven-day introductory trial, so the
   // restricted shell keeps its own (unchanged) set of destinations.
-  const restrictedNavItems: typeof allNavItems = [
+  const restrictedNavItems: PrimaryNavItem[] = [
     { id: "earn", label: "Earn Plus", icon: Gift },
     { id: "sixty", label: "60 Day", icon: CalendarCheck },
     { id: "redeem", label: "Redeem Code", icon: KeyRound },
@@ -78,6 +98,9 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "signout", label: "Sign Out", icon: LogOut },
   ];
   const navItems = restricted ? restrictedNavItems : allNavItems;
+  // Mobile dock columns follow the destination count, so the founder's sixth
+  // destination stays on one readable row instead of wrapping.
+  const dockColumns = navItems.length === 6 ? "grid grid-cols-6" : "grid grid-cols-5";
 
   return (
     <nav
@@ -87,7 +110,9 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* Compact centered dock — w-fit + gap keeps tabs grouped as one
           control instead of spreading across the viewport. Mobile uses
           full-width grid-cols-5 for maximum touch-target size. */}
-      <div className="mx-auto w-fit grid grid-cols-5 gap-1 sm:flex sm:w-fit sm:justify-center sm:gap-1.5 md:gap-2">
+      <div
+        className={`mx-auto w-fit ${dockColumns} gap-1 sm:flex sm:w-fit sm:justify-center sm:gap-1.5 md:gap-2`}
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id || CLUSTERED_TABS[activeTab] === item.id;
@@ -96,7 +121,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveTab(item.id as ActiveTab)}
+              onClick={() => setActiveTab(item.id)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
               className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-colors cursor-pointer group min-w-[64px] md:min-w-[74px] svj-press"

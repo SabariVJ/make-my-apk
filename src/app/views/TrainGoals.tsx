@@ -12,7 +12,7 @@ import {
 import {
   GOAL_METRICS,
   GOAL_METRIC_LABELS,
-  RECORD_LABELS,
+  TRAINING_RECORD_LABELS,
   createGoal,
   cancelGoal,
   updateGoal,
@@ -27,7 +27,7 @@ import {
   type GoalDto,
   type GoalMetric,
   type GoalPeriod,
-  type RecordDto,
+  type TrainingRecordDto,
 } from "../lib/goalsRecords";
 import {
   STRENGTH_RECORD_LABELS,
@@ -433,7 +433,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
 // ── Progress / Personal Records section ───────────────────────────────────
 
 export const TrainProgress: React.FC = () => {
-  const [records, setRecords] = useState<RecordDto[] | null>(null);
+  const [records, setRecords] = useState<TrainingRecordDto[] | null>(null);
   const [strengthRecords, setStrengthRecords] = useState<StrengthRecordDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [historyExercise, setHistoryExercise] = useState<{ id: string; name: string } | null>(null);
@@ -506,29 +506,31 @@ export const TrainProgress: React.FC = () => {
 
       {!error && records !== null && (
         <ul className="space-y-2">
-          {RECORD_LABELS &&
-            (Object.keys(RECORD_LABELS) as (keyof typeof RECORD_LABELS)[]).map((type) => {
-              const record = records.find((r) => r.recordType === type);
-              return (
-                <li
-                  key={type}
-                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 p-3"
-                >
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
-                    {RECORD_LABELS[type]}
-                  </span>
-                  {record ? (
-                    <span className="font-mono text-sm font-bold text-[#E62846]">
-                      {formatRecordValue(record.recordType, record.value)}
+          {TRAINING_RECORD_LABELS &&
+            (Object.keys(TRAINING_RECORD_LABELS) as (keyof typeof TRAINING_RECORD_LABELS)[]).map(
+              (type) => {
+                const record = records.find((r) => r.recordType === type);
+                return (
+                  <li
+                    key={type}
+                    className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 p-3"
+                  >
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
+                      {TRAINING_RECORD_LABELS[type]}
                     </span>
-                  ) : (
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-                      Complete more activities to set this record
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+                    {record ? (
+                      <span className="font-mono text-sm font-bold text-[#E62846]">
+                        {formatRecordValue(record.recordType, record.value)}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+                        Complete more activities to set this record
+                      </span>
+                    )}
+                  </li>
+                );
+              },
+            )}
         </ul>
       )}
 
@@ -600,7 +602,7 @@ export const TrainProgress: React.FC = () => {
                     })}
                   </span>
                   <span className="text-[10px] font-mono text-white">
-                    {RECORD_LABELS[r.recordType]} ·{" "}
+                    {TRAINING_RECORD_LABELS[r.recordType]} ·{" "}
                     <span className="text-[#E62846]">
                       {formatRecordValue(r.recordType, r.value)}
                     </span>

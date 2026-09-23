@@ -16,6 +16,7 @@ import { RECOVERY_SECTIONS, type RecoverySection } from "../lib/recoveryNav";
 import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
 import RecoveryGoalsSection from "./recovery/RecoveryGoalsSection";
 import RecoveryHistorySection from "./recovery/RecoveryHistorySection";
+import RecoveryRecordsSection from "./recovery/RecoveryRecordsSection";
 import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
 import { useTrainRecoveryShared } from "../lib/readinessShared";
 import {
@@ -182,18 +183,7 @@ export const RecoveryView: React.FC = () => {
 
       {section === "goals" && <RecoveryGoalsSection />}
 
-      {section === "records" && (
-        <UpcomingSection
-          section="records"
-          title="Records"
-          summary="Derived personal bests from your own recovery history."
-          points={[
-            "Highest legitimate readiness score",
-            "Longest check-in streak",
-            "Most consistent sleep duration (duration, not sleep window)",
-          ]}
-        />
-      )}
+      {section === "records" && <RecoveryRecordsSection />}
 
       {section === "progress" && (
         <UpcomingSection

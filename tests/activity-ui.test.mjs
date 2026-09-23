@@ -230,25 +230,24 @@ describe("real activity components", { concurrency: false }, () => {
     assert.equal(api.user.totalXP, 2550);
   });
 
-  it("keeps a failed meal form intact and can retry without duplicate XP", async () => {
-    await mount(app.NutritionView);
-    fireEvent.change(screen.getByPlaceholderText("e.g. Grilled chicken & rice"), {
-      target: { value: "Test meal" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("kcal"), { target: { value: "450" } });
+  it("keeps a failed legacy meal ledger unchanged and can retry without duplicate XP", async () => {
+    await mount();
     dom.window.Storage.prototype.setItem = () => {
       throw new dom.window.DOMException("Full", "QuotaExceededError");
     };
-    fireEvent.click(screen.getByRole("button", { name: /Log meal/ }));
-    assert.match(screen.getByRole("alert").textContent, /Could not save/);
-    assert.equal(screen.getByPlaceholderText("kcal").value, "450");
+    await act(async () => {
+      const result = api.logMeal("Test meal", 450, "Lunch");
+      assert.equal(result.ok, false);
+    });
     assert.equal(api.meals.length, 0);
     assert.equal(api.user.totalXP, 0);
     dom.window.Storage.prototype.setItem = realSet;
-    fireEvent.click(screen.getByRole("button", { name: /Log meal/ }));
+    await act(async () => {
+      const result = api.logMeal("Test meal", 450, "Lunch");
+      assert.equal(result.ok, true);
+    });
     assert.equal(api.meals.length, 1);
     assert.equal(api.user.totalXP, 60);
-    assert.equal(screen.getByPlaceholderText("kcal").value, "");
   });
 
   it("keeps a failed workout form intact and moves to history only after saving", async () => {

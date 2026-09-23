@@ -1,0 +1,40 @@
+name: Format Nutrition Once
+
+on:
+  push:
+    branches:
+      - release/play-v1-compliance
+    paths:
+      - .github/workflows/format-nutrition-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/play-v1-compliance
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Format changed nutrition files
+        run: |
+          bunx prettier --write \
+            src/app/views/NutritionView.tsx \
+            src/lib/nutrition.functions.ts \
+            src/app/components/TrainingToday.tsx \
+            tests/activity-ui.test.mjs \
+            tests/nutrition-v2.test.ts \
+            package.json
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/views/NutritionView.tsx src/lib/nutrition.functions.ts src/app/components/TrainingToday.tsx tests/activity-ui.test.mjs tests/nutrition-v2.test.ts package.json
+          if ! git diff --cached --quiet; then
+            git commit -m "style(nutrition): format Fuel V2 implementation"
+            git push origin HEAD:release/play-v1-compliance
+          fi

@@ -89,8 +89,7 @@ function cleanText(value: unknown, max = 120): string {
 
 function validDayKey(value: string): boolean {
   return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    Number.isFinite(new Date(value + "T12:00:00Z").getTime())
+    /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(new Date(value + "T12:00:00Z").getTime())
   );
 }
 
@@ -232,8 +231,7 @@ export const getNutritionDashboard = createServerFn({ method: "POST" })
       targets,
       history: [...byDay.values()],
     };
-    },
-  );
+  });
 
 export const saveNutritionTargets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -383,8 +381,7 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
   .validator(
     (input: { imageDataUrl: string; mealTypeHint: NutritionMealType; dayKey: string }) => input,
   )
-  .handler(
-    async ({ context, data }): Promise<NutritionPhotoEstimate> => {
+  .handler(async ({ context, data }): Promise<NutritionPhotoEstimate> => {
     if (!mealTypes.includes(data.mealTypeHint)) throw new Error("Invalid meal type.");
     if (!validDayKey(data.dayKey)) throw new Error("Invalid nutrition date.");
     if (!/^data:image\/(jpeg|jpg|png|webp);base64,/i.test(data.imageDataUrl)) {
@@ -401,7 +398,8 @@ export const analyzeMealPhoto = createServerFn({ method: "POST" })
     const { data: usageRaw, error: usageError } = await client.rpc("svj_claim_nutrition_scan", {
       p_day_key: data.dayKey,
     });
-    if (usageError) throw new Error("Meal scanning is temporarily unavailable. Use manual logging.");
+    if (usageError)
+      throw new Error("Meal scanning is temporarily unavailable. Use manual logging.");
     const usage = usageRaw as { allowed?: boolean; used?: number; limit?: number } | null;
     if (!usage?.allowed) {
       throw new Error(

@@ -113,12 +113,16 @@ function MacroCard({
   return (
     <div className="rounded-2xl border border-white/[0.06] bg-[#101012] p-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">{label}</span>
+        <span className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">
+          {label}
+        </span>
         <span className="text-[10px] font-mono text-[#8C8C90]">{pct}%</span>
       </div>
       <p className="mt-1 font-anton text-lg text-[#F4F2ED]">
         {Math.round(value)}
-        <span className="ml-1 text-[10px] font-inter text-[#8C8C90]">/ {Math.round(target)} {unit}</span>
+        <span className="ml-1 text-[10px] font-inter text-[#8C8C90]">
+          / {Math.round(target)} {unit}
+        </span>
       </p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/60">
         <div className="h-full rounded-full bg-[#C81E3A]" style={{ width: `${pct}%` }} />
@@ -248,7 +252,9 @@ export const NutritionView: React.FC = () => {
       setScanReview(result);
     } catch (error) {
       console.error("[SVJ nutrition] meal scan failed", error);
-      setScanError(error instanceof Error ? error.message : "Meal scanning failed. Use manual logging.");
+      setScanError(
+        error instanceof Error ? error.message : "Meal scanning failed. Use manual logging.",
+      );
     } finally {
       setBusy(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -404,7 +410,9 @@ export const NutritionView: React.FC = () => {
       <div className="rounded-2xl border border-white/10 bg-[#17171A] p-5 text-center">
         <AlertTriangle className="mx-auto h-5 w-5 text-[#C81E3A]" />
         <p className="mt-2 font-anton text-sm uppercase text-white">Fuel needs a connection</p>
-        <p className="mt-1 text-xs text-[#8C8C90]">{loadError ?? "Nutrition data is unavailable."}</p>
+        <p className="mt-1 text-xs text-[#8C8C90]">
+          {loadError ?? "Nutrition data is unavailable."}
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -459,7 +467,11 @@ export const NutritionView: React.FC = () => {
               <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
             </button>
             <p className="mt-1 text-[10px] text-[#8C8C90]">
-              {Math.max(0, Math.round(dashboard.targets.calories - daily.calories)).toLocaleString()} kcal left
+              {Math.max(
+                0,
+                Math.round(dashboard.targets.calories - daily.calories),
+              ).toLocaleString()}{" "}
+              kcal left
             </p>
           </div>
         </div>
@@ -486,7 +498,11 @@ export const NutritionView: React.FC = () => {
                 Starts from your Body Profile estimate; you can override it here.
               </p>
             </div>
-            <button type="button" onClick={() => setEditingTargets(false)} aria-label="Close targets">
+            <button
+              type="button"
+              onClick={() => setEditingTargets(false)}
+              aria-label="Close targets"
+            >
               <X className="h-4 w-4 text-[#8C8C90]" />
             </button>
           </div>
@@ -521,7 +537,8 @@ export const NutritionView: React.FC = () => {
             disabled={busy}
             className="mt-3 flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] font-anton text-xs uppercase text-white disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save targets
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}
+            Save targets
           </button>
         </section>
       )}
@@ -555,12 +572,16 @@ export const NutritionView: React.FC = () => {
 
       <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
         <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
-        Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step before saving.
-        Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual logging stays available.
+        Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
+        before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
+        logging stays available.
       </p>
 
       {scanError && (
-        <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-950/20 p-3 text-xs text-rose-300">
+        <p
+          role="alert"
+          className="rounded-xl border border-rose-400/20 bg-rose-950/20 p-3 text-xs text-rose-300"
+        >
           {scanError}
         </p>
       )}
@@ -576,17 +597,25 @@ export const NutritionView: React.FC = () => {
           >
             <div className="flex items-start gap-3">
               {photoPreview ? (
-                <img src={photoPreview} alt="Meal preview" className="h-16 w-16 rounded-xl object-cover" />
+                <img
+                  src={photoPreview}
+                  alt="Meal preview"
+                  className="h-16 w-16 rounded-xl object-cover"
+                />
               ) : (
                 <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-black/30">
                   <ImageIcon className="h-5 w-5 text-[#8C8C90]" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-wider text-[#C81E3A]">Review estimate</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#C81E3A]">
+                  Review estimate
+                </p>
                 <input
                   value={scanReview.mealName}
-                  onChange={(e) => setScanReview((prev) => (prev ? { ...prev, mealName: e.target.value } : prev))}
+                  onChange={(e) =>
+                    setScanReview((prev) => (prev ? { ...prev, mealName: e.target.value } : prev))
+                  }
                   className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-2 text-sm font-semibold text-white"
                 />
                 {scanReview.scanUsage && (
@@ -600,13 +629,18 @@ export const NutritionView: React.FC = () => {
             <div className="mt-3">
               <MealTypePicker
                 value={scanReview.mealType}
-                onChange={(mealType) => setScanReview((prev) => (prev ? { ...prev, mealType } : prev))}
+                onChange={(mealType) =>
+                  setScanReview((prev) => (prev ? { ...prev, mealType } : prev))
+                }
               />
             </div>
 
             <div className="mt-3 space-y-2">
               {scanReview.items.map((item, index) => (
-                <div key={`${index}-${item.name}`} className="rounded-xl border border-white/[0.06] bg-[#0B0B0C] p-3">
+                <div
+                  key={`${index}-${item.name}`}
+                  className="rounded-xl border border-white/[0.06] bg-[#0B0B0C] p-3"
+                >
                   <div className="flex gap-2">
                     <input
                       aria-label={`Food item ${index + 1}`}
@@ -619,7 +653,9 @@ export const NutritionView: React.FC = () => {
                       aria-label={`Remove ${item.name}`}
                       onClick={() =>
                         setScanReview((prev) =>
-                          prev ? { ...prev, items: prev.items.filter((_, i) => i !== index) } : prev,
+                          prev
+                            ? { ...prev, items: prev.items.filter((_, i) => i !== index) }
+                            : prev,
                         )
                       }
                       className="p-1 text-[#8C8C90] hover:text-[#C81E3A]"
@@ -646,7 +682,9 @@ export const NutritionView: React.FC = () => {
                           type="number"
                           inputMode="decimal"
                           value={String(item[key as keyof NutritionItemInput] ?? 0)}
-                          onChange={(e) => patchReviewItem(index, { [key]: Number(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            patchReviewItem(index, { [key]: Number(e.target.value) || 0 })
+                          }
                           className="mt-1 min-h-10 w-full rounded-lg border border-white/10 bg-black/30 px-1.5 text-xs text-white"
                         />
                       </label>
@@ -657,10 +695,28 @@ export const NutritionView: React.FC = () => {
             </div>
 
             <div className="mt-3 grid grid-cols-4 gap-2 rounded-xl bg-black/25 p-3 text-center">
-              <div><p className="font-anton text-base text-white">{Math.round(reviewedTotals.calories)}</p><p className="text-[9px] text-[#8C8C90]">kcal</p></div>
-              <div><p className="font-anton text-base text-white">{Math.round(reviewedTotals.proteinG)}</p><p className="text-[9px] text-[#8C8C90]">protein</p></div>
-              <div><p className="font-anton text-base text-white">{Math.round(reviewedTotals.carbsG)}</p><p className="text-[9px] text-[#8C8C90]">carbs</p></div>
-              <div><p className="font-anton text-base text-white">{Math.round(reviewedTotals.fatG)}</p><p className="text-[9px] text-[#8C8C90]">fat</p></div>
+              <div>
+                <p className="font-anton text-base text-white">
+                  {Math.round(reviewedTotals.calories)}
+                </p>
+                <p className="text-[9px] text-[#8C8C90]">kcal</p>
+              </div>
+              <div>
+                <p className="font-anton text-base text-white">
+                  {Math.round(reviewedTotals.proteinG)}
+                </p>
+                <p className="text-[9px] text-[#8C8C90]">protein</p>
+              </div>
+              <div>
+                <p className="font-anton text-base text-white">
+                  {Math.round(reviewedTotals.carbsG)}
+                </p>
+                <p className="text-[9px] text-[#8C8C90]">carbs</p>
+              </div>
+              <div>
+                <p className="font-anton text-base text-white">{Math.round(reviewedTotals.fatG)}</p>
+                <p className="text-[9px] text-[#8C8C90]">fat</p>
+              </div>
             </div>
             <p className="mt-2 text-[10px] leading-relaxed text-[#8C8C90]">{scanReview.note}</p>
 
@@ -689,10 +745,17 @@ export const NutritionView: React.FC = () => {
       </AnimatePresence>
 
       {showManual && (
-        <form onSubmit={saveManual} className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
+        <form
+          onSubmit={saveManual}
+          className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4"
+        >
           <div className="flex items-center justify-between">
             <p className="font-anton text-sm uppercase text-white">Manual meal</p>
-            <button type="button" onClick={() => setShowManual(false)} aria-label="Close manual meal">
+            <button
+              type="button"
+              onClick={() => setShowManual(false)}
+              aria-label="Close manual meal"
+            >
               <X className="h-4 w-4 text-[#8C8C90]" />
             </button>
           </div>
@@ -718,7 +781,9 @@ export const NutritionView: React.FC = () => {
                   type="number"
                   inputMode="decimal"
                   value={String(value)}
-                  onChange={(e) => (setter as React.Dispatch<React.SetStateAction<string>>)(e.target.value)}
+                  onChange={(e) =>
+                    (setter as React.Dispatch<React.SetStateAction<string>>)(e.target.value)
+                  }
                   className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
                 />
               </label>
@@ -735,7 +800,9 @@ export const NutritionView: React.FC = () => {
       )}
 
       <section className="space-y-3">
-        <p className="text-[10px] font-inter uppercase tracking-[0.2em] text-[#8C8C90]">Today&apos;s meals</p>
+        <p className="text-[10px] font-inter uppercase tracking-[0.2em] text-[#8C8C90]">
+          Today&apos;s meals
+        </p>
         {MEAL_TYPES.map((type) => (
           <div key={type} className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
             <div className="flex items-center justify-between">
@@ -749,12 +816,16 @@ export const NutritionView: React.FC = () => {
             ) : (
               <div className="mt-2 space-y-2">
                 {grouped[type].map((meal) => (
-                  <div key={meal.id} className="rounded-xl border border-white/[0.04] bg-[#0B0B0C] p-3">
+                  <div
+                    key={meal.id}
+                    className="rounded-xl border border-white/[0.04] bg-[#0B0B0C] p-3"
+                  >
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-[#F4F2ED]">{meal.name}</p>
                         <p className="mt-0.5 text-[10px] text-[#8C8C90]">
-                          {meal.calories} kcal · P {Math.round(meal.proteinG)} · C {Math.round(meal.carbsG)} · F {Math.round(meal.fatG)}
+                          {meal.calories} kcal · P {Math.round(meal.proteinG)} · C{" "}
+                          {Math.round(meal.carbsG)} · F {Math.round(meal.fatG)}
                           {meal.aiEstimated ? " · AI estimate reviewed" : ""}
                         </p>
                       </div>
@@ -790,22 +861,33 @@ export const NutritionView: React.FC = () => {
         </p>
         <div className="mt-4 flex h-28 items-end justify-between gap-2">
           {dashboard.history.map((day) => {
-            const max = Math.max(dashboard.targets.calories, ...dashboard.history.map((row) => row.calories), 1);
+            const max = Math.max(
+              dashboard.targets.calories,
+              ...dashboard.history.map((row) => row.calories),
+              1,
+            );
             const height = Math.round((day.calories / max) * 100);
             return (
-              <div key={day.dayKey} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+              <div
+                key={day.dayKey}
+                className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+              >
                 <div className="flex h-full w-full items-end">
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${Math.max(day.mealCount > 0 ? 6 : 2, height)}%` }}
                     className={`w-full rounded-t-md ${
-                      day.mealCount > 0 ? "bg-gradient-to-t from-[#8C1327] to-[#C81E3A]" : "bg-white/5"
+                      day.mealCount > 0
+                        ? "bg-gradient-to-t from-[#8C1327] to-[#C81E3A]"
+                        : "bg-white/5"
                     }`}
                     title={`${day.dayKey}: ${day.calories} kcal, ${Math.round(day.proteinG)} g protein`}
                   />
                 </div>
                 <span className="text-[9px] text-[#8C8C90]">
-                  {new Date(day.dayKey + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2)}
+                  {new Date(day.dayKey + "T12:00:00")
+                    .toLocaleDateString(undefined, { weekday: "short" })
+                    .slice(0, 2)}
                 </span>
               </div>
             );
@@ -835,7 +917,8 @@ export const NutritionView: React.FC = () => {
 
       <div className="rounded-xl border border-white/[0.05] bg-[#101012] p-3 text-[10px] leading-relaxed text-[#8C8C90]">
         <Flame className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
-        Nutrition targets and photo estimates are planning tools, not medical prescriptions. For medical dietary needs, use professional guidance.
+        Nutrition targets and photo estimates are planning tools, not medical prescriptions. For
+        medical dietary needs, use professional guidance.
       </div>
     </div>
   );

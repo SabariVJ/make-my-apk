@@ -444,7 +444,8 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
           <div>
             <p className="font-anton text-sm uppercase text-white">Rebuild your program</p>
             <p className="text-[11px] font-inter text-[#8C8C90]">
-              Change your goal, days, session length or equipment. Saving creates a fresh plan from these choices.
+              Change your goal, days, session length or equipment. Saving creates a fresh plan from
+              these choices.
             </p>
           </div>
           <button

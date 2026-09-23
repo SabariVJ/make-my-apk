@@ -20,14 +20,18 @@ import {
   RECOVERY_HISTORY_STORAGE_KEY,
   bestSleepRange,
   computeReadiness,
+  mergeServerHistory,
   normalizeHistory,
   readinessTrend,
   recomputeSleepWindow,
   taskLoadForDay,
   taskLoadPoints,
   upsertDayRecord,
+  type LoadBand,
   type ReadinessResult,
   type RecoveryDayRecord,
+  type RecoveryGrade,
+  type ServerHistoryDay,
 } from "../lib/recoveryInsights";
 
 const LOAD_LABELS: Record<string, string> = {
@@ -149,6 +153,24 @@ function combine(
   });
 }
 
+/**
+ * Adapter: one server history row → the client's day-record merge input.
+ * Only real server values are forwarded; nothing is inferred here.
+ */
+const serverDay = (point: RecoveryHistoryPoint): ServerHistoryDay => ({
+  date: point.date,
+  score: point.score,
+  band: point.trainingLoad as LoadBand,
+  recovery: point.recovery as RecoveryGrade,
+  hasCheckin: point.hasCheckin,
+  sleepHours: point.sleepHours,
+  soreness: point.soreness,
+  energy: point.energy,
+  perceivedRecovery: point.perceivedRecovery,
+  activityLoadPoints: point.activityLoadPoints,
+  restDaysLast3: point.restDaysLast3,
+});
+
 export const TrainRecovery: React.FC = () => {
   // Task completions live on the client, so the task share of today's training
   // load is computed here and combined with the server's activity load.
@@ -161,6 +183,9 @@ export const TrainRecovery: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // True when the server's own history could not be read — the local days are
+  // still shown, and the athlete is told instead of silently losing them.
+  const [historyError, setHistoryError] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const [sleepHours, setSleepHours] = useState<string>("");
@@ -197,6 +222,7 @@ export const TrainRecovery: React.FC = () => {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setHistoryError(false);
     const stored = normalizeHistory(readStoredJson(RECOVERY_HISTORY_STORAGE_KEY, []));
     const r = await getMyReadiness();
     if (r.ok && r.readiness) {
@@ -211,33 +237,14 @@ export const TrainRecovery: React.FC = () => {
       setError(r.error ?? "Could not load readiness.");
     }
     const h = await listMyRecoveryHistory(14);
+    setHistoryError(!h.ok);
     if (h.ok) setHistory(h.history ?? []);
 
-    // Backfill the local history with the server's own recorded days so trends
-    // and the sleep correlation use everything the user has actually logged.
-    let merged = stored;
-    if (h.ok && h.history) {
-      for (const point of h.history) {
-        const existing = merged.find((row) => row.date === point.date);
-        if (existing && existing.score > 0) continue;
-        merged = upsertDayRecord(merged, {
-          ...(existing ?? {
-            date: point.date,
-            checkin: { sleepHours: null, soreness: null, energy: null, perceivedRecovery: null },
-            activityLoadPoints: 0,
-            taskLoadPoints: 0,
-            totalLoadPoints: 0,
-            taskCount: 0,
-            recovery: "unknown" as const,
-            band: "low" as const,
-          }),
-          date: point.date,
-          score: point.score,
-          band: point.trainingLoad as RecoveryDayRecord["band"],
-          recovery: point.recovery as RecoveryDayRecord["recovery"],
-        });
-      }
-    }
+    // Fold the server's own days into this device's store so the 7-day trend
+    // and the sleep correlation are rebuilt from durable server data (the only
+    // copy of the athlete's check-ins that survives a reinstall) — every rule
+    // lives in mergeServerHistory, and only days the server returned are touched.
+    const merged = mergeServerHistory(stored, (h.history ?? []).map(serverDay));
     writeStoredJson(RECOVERY_HISTORY_STORAGE_KEY, merged);
     setDayHistory(merged);
     setLoading(false);
@@ -368,17 +375,21 @@ export const TrainRecovery: React.FC = () => {
         <>
           {/* Score summary */}
           <div className="mb-4 flex items-center gap-4 rounded-2xl border border-white/5 bg-black/40 p-4">
-            <ScoreRing score={readiness.score} />
+            {/* One readiness number: the same combined reading that drives the
+                advice, the low-readiness flag and the recorded history, so real
+                completed tasks genuinely move the headline score. */}
+            <ScoreRing score={today.score} />
             <div className="min-w-0 flex-1 space-y-1.5">
               <div>
                 <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
                   Readiness
                 </p>
                 <p
+                  data-testid="recovery-score"
                   className="font-anton text-xl uppercase"
-                  style={{ color: SCORE_COLOR(readiness.score) }}
+                  style={{ color: SCORE_COLOR(today.score) }}
                 >
-                  {readiness.score} / 100
+                  {today.score} / 100
                 </p>
               </div>
               <div>
@@ -397,8 +408,8 @@ export const TrainRecovery: React.FC = () => {
                   Recovery
                 </p>
                 <p className="text-sm font-mono font-bold capitalize text-white">
-                  {readiness.recovery === "unknown" ? "No check-in yet" : readiness.recovery}
-                  {readiness.recovery !== "unknown" && (
+                  {today.recovery === "unknown" ? "No check-in yet" : today.recovery}
+                  {today.recovery !== "unknown" && (
                     <span className="ml-1.5 text-[9px] uppercase text-[#8C8C90]">
                       your check-in
                     </span>
@@ -408,8 +419,13 @@ export const TrainRecovery: React.FC = () => {
             </div>
           </div>
 
-          {/* Load breakdown — every number is labeled with its source */}
-          <div className="mb-3 grid grid-cols-2 gap-2" data-testid="recovery-load-breakdown">
+          {/* Load breakdown — every number is labeled with its source. The task
+              COUNT and the task LOAD are separate figures: the count is real
+              completed work, the load is the strain it contributed. */}
+          <div
+            className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
+            data-testid="recovery-load-breakdown"
+          >
             <div className="rounded-xl border border-white/5 bg-black/40 p-3">
               <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
                 Recorded activity
@@ -419,16 +435,28 @@ export const TrainRecovery: React.FC = () => {
                 <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">pts / 7d</span>
               </p>
             </div>
-            <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+            <div
+              className="rounded-xl border border-white/5 bg-black/40 p-3"
+              data-testid="recovery-completed-tasks"
+            >
               <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
                 Completed tasks
               </p>
               <p className="font-mono text-lg font-bold text-white">
+                {today.components.taskCount}
+                <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">tasks / 7d</span>
+              </p>
+            </div>
+            <div
+              className="rounded-xl border border-white/5 bg-black/40 p-3"
+              data-testid="recovery-task-load"
+            >
+              <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+                Task load
+              </p>
+              <p className="font-mono text-lg font-bold text-white">
                 {Math.round(today.components.taskLoadPoints)}
-                <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">
-                  pts · {today.components.taskCount} task
-                  {today.components.taskCount === 1 ? "" : "s"}
-                </span>
+                <span className="ml-1 text-[9px] uppercase text-[#8C8C90]">pts / 7d</span>
               </p>
             </div>
           </div>
@@ -632,6 +660,16 @@ export const TrainRecovery: React.FC = () => {
             <p className="mt-1.5 text-[9px] font-mono text-[#8C8C90]">
               Bars: readiness score · gold: hours slept ({history.length} server days recorded)
             </p>
+            {historyError && (
+              <p
+                role="status"
+                data-testid="recovery-history-note"
+                className="mt-1.5 text-[9px] font-mono text-gold"
+              >
+                Server history is unavailable right now — showing only the days this device
+                recorded. Nothing is invented.
+              </p>
+            )}
           </div>
         </>
       )}

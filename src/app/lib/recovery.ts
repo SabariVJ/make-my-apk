@@ -28,6 +28,16 @@ export interface RecoveryHistoryPoint {
   score: number;
   trainingLoad: string;
   recovery: string;
+  /** True when a check-in row exists for that day on the server. */
+  hasCheckin: boolean;
+  /** The athlete's own check-in — the durable copy, not a local cache. */
+  sleepHours: number | null;
+  soreness: number | null;
+  energy: number | null;
+  perceivedRecovery: number | null;
+  /** Real recorded-activity load behind that day's score. */
+  activityLoadPoints: number;
+  restDaysLast3: number | null;
 }
 
 export interface CheckinInput {
@@ -35,6 +45,11 @@ export interface CheckinInput {
   soreness: number | null;
   energy: number | null;
   perceivedRecovery: number | null;
+}
+
+/** Finite number, or null — never a fabricated zero for a missing input. */
+function numericOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function normalizeReadiness(raw: unknown): ReadinessData | null {
@@ -120,6 +135,13 @@ export async function listMyRecoveryHistory(
               score: typeof r.score === "number" ? r.score : 0,
               trainingLoad: String(r.trainingLoad ?? "moderate"),
               recovery: String(r.recovery ?? "unknown"),
+              hasCheckin: r.hasCheckin === true,
+              sleepHours: numericOrNull(r.sleepHours),
+              soreness: numericOrNull(r.soreness),
+              energy: numericOrNull(r.energy),
+              perceivedRecovery: numericOrNull(r.perceivedRecovery),
+              activityLoadPoints: numericOrNull(r.loadPoints7d) ?? 0,
+              restDaysLast3: numericOrNull(r.restDaysLast3),
             };
           })
           .filter((p) => p.date !== "")

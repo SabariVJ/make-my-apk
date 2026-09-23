@@ -28,7 +28,7 @@ are preferred over fabricated analytics.
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Recovery destination + navigation shell | **shipped (founder-only)** |
-| 2 | Automation audit + missing gaps (partial readiness, task counts, history automation) | pending |
+| 2 | Automation audit + missing gaps (partial readiness, task counts, history automation) | **shipped (audit + load/readiness verified, history made server-backed)** |
 | 3 | Overview intelligence (Today's Focus, Recovery Streak, Muscle Recovery Map) | pending |
 | 4 | History (readiness heatmap, sleep vs. performance) | pending |
 | 5 | Recovery goals + Discipline progression | pending |
@@ -116,3 +116,112 @@ sign in as the founder → six destinations with Recovery after Train → open
 Recovery → Overview shows the live readiness surface → confirm the Activity
 screen no longer shows a Recovery section. A non-founder account must still show
 five destinations and the existing Train › Recovery section.
+
+## Phase 2 — automated readiness data pipeline (audit + missing gaps only)
+
+Audit first, then only the gaps that were actually broken or missing. No
+Recovery screen was redesigned and no train/plan algorithm was touched.
+
+### Audited and deliberately left unchanged
+
+- **Training load** — `svj_activity_load_points` (real `duration_seconds`,
+  transparent type weights, 3h cap) and `svj_training_load_points` (canonical
+  `svj_activities`, trailing 7 days, `ended_at < now()`) are correct; no
+  hardcoded or demo load exists anywhere. Pinned by tests so it cannot drift.
+- **Partial readiness** — the base score `70 − load penalty` is computed
+  *before* the check-in branch, so a day with no check-in still yields a real
+  score (70 / 58 / 50 / 42 by band and rest days). The manual inputs refine that
+  number rather than unlocking it. Verified in SQL, in the client mirror, and
+  end-to-end in PGlite; no formula changed.
+- **Best sleep** — already an honest insufficient-data state driven by the
+  athlete's own paired nights (never a generic range). Kept, now also fed by
+  server history.
+
+### Real gaps found and fixed
+
+1. **The shipped history RPC was broken at runtime.**
+   `20260919120000_recovery_readiness.sql` ended its
+   `svj_list_my_recovery_history` body with
+   `jsonb_agg(row ORDER BY row.readiness_date DESC)`. `row` is a jsonb *column*
+   alias, not a table alias, so every call raised
+   `missing FROM-clause entry for table "row"`. plpgsql does not validate the
+   statement at creation time, so the function existed and failed only when
+   used — and the client treated a failed history read as an empty history.
+   Server-backed history was therefore silently invisible and the trend/sleep
+   correlation fell back to whatever the device had cached.
+   *Fix:* `20261003000000_recovery_history_checkin_values.sql` replaces the RPC
+   (same name, same signature, `SECURITY DEFINER` + `auth.uid()` preserved) and
+   orders by a real subquery column (`jsonb_agg(s.row ORDER BY
+   s.readiness_date DESC)`).
+2. **History did not carry the athlete's own inputs.** The RPC returned only
+   date/score/band/recovery, so sleep evidence existed solely in local storage
+   and was lost on reinstall or a new device. The replacement also returns
+   `hasCheckin`, `sleepHours`, `soreness`, `energy`, `perceivedRecovery` and the
+   day's `loadPoints7d`. Existing keys are unchanged, so older clients keep
+   working (additive, idempotent, no table/index/policy change).
+3. **Server history was merged silently and lossily.** The component ignored
+   `h.ok` and only backfilled days it had no score for. The merge rules now live
+   in one tested pure function, `mergeServerHistory()`: real server days are
+   adopted, the athlete's check-in values are taken from the durable server copy,
+   a day this device already scored keeps its richer score (it included the local
+   completion ledger) while a server-only day uses the server's snapshot, and no
+   day, check-in or trend point is ever invented.
+4. **"Completed tasks" mislabelled load as a count.** The card titled
+   "Completed tasks" displayed task *load points*. It now shows the real
+   completed-task count (`tasks / 7d`) with **Task load** (`pts / 7d`) as a
+   separate card, alongside recorded activity.
+5. **Two different readiness numbers on one screen.** The readiness ring showed
+   the server score (which cannot see the local completion ledger) while the
+   advice, the low-readiness flag and the recorded history all used the combined
+   client reading — so real completed tasks visibly moved everything except the
+   headline number. The ring now shows that same single combined reading.
+6. **A failed history read was invisible.** When the server history is
+   unreachable the Overview now says so in plain words ("Server history is
+   unavailable right now — showing only the days this device recorded. Nothing
+   is invented.") instead of silently pretending the athlete has no history. Raw
+   RPC text is never surfaced.
+
+### Database
+
+- Created: `supabase/migrations/20261003000000_recovery_history_checkin_values.sql`
+  (additive; replaces one read-only RPC). **Not applied to production**: this
+  environment has no Supabase credentials/CLI and no `.env` keys, exactly as
+  recorded in `docs/SVJ_MIGRATION_RECONCILIATION.md` §5. The migration is
+  recorded there in §6 for the next authorized `supabase db push`.
+- Reused: `svj_recovery_checkins`, `svj_readiness_daily`,
+  `svj_activities`, `svj_activity_load_points`, `svj_training_load_points`,
+  `svj_load_band`, `svj_compute_readiness`, `svj_get_my_readiness`,
+  `svj_save_my_recovery_checkin`. No new table, column, index or policy.
+
+### Tests
+
+- `tests/recovery-history-db.test.mjs` (13) — real PostgreSQL (PGlite, and
+  native PG 17 in CI when a local DB is provided) replaying the full migration
+  chain: real duration/type load, the 3h cap, a very-high week with no rest day,
+  partial readiness with no check-in, check-in refinement + per-day idempotency,
+  the history payload carrying the athlete's own values, the
+  with/without-limit PostgREST contract, unauthenticated rejection, cross-user
+  isolation and the signature/`SECURITY DEFINER`/`search_path` shape.
+- `tests/recovery-automation.test.ts` (21) — SQL audit pins (load, partial
+  readiness ordering, additive-only migration, grants, the corrected aggregate)
+  plus every `mergeServerHistory` rule and the honest best-sleep/trend states.
+- `tests/recovery-automation-ui.test.mjs` (9) — the real Overview component in
+  jsdom: partial score with no check-in, completed tasks moving the headline
+  score, real task COUNT vs task LOAD, unchecked/out-of-window completions
+  ignored, server history restoring real sleep, the honest unreachable-server
+  note (and no raw error text), and no fabricated trend bars.
+
+Validation for the Phase 2 checkpoint: **1079 tests — 1077 pass / 0 fail / 2
+skipped** (both skips pre-existing native-PostgreSQL-only cases),
+`bunx tsc --noEmit` clean, `bunx eslint src/` 0 errors, Prettier clean,
+`bun run build` PASS, Android phone/wear builds via CI.
+
+### Manual verification
+
+Signed-in founder check: open Recovery → Overview shows a score even before the
+daily check-in (never 0), "Completed tasks" shows a count with Task load shown
+separately, saving a check-in refines the score, the 7-day chart shows only the
+days actually recorded, and "your best sleep" stays in its honest
+insufficient-data state until enough nights are logged. After the migration is
+applied in production, reinstalling (or signing in on a new device) must
+reproduce the same trend and sleep evidence from the server.

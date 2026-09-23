@@ -306,6 +306,93 @@ export function trailingRecords(
     .map((date) => byDate.get(date) ?? emptyDayRecord(date));
 }
 
+/**
+ * One day of the server's recovery history (svj_list_my_recovery_history).
+ * The check-in fields are the athlete's own durable inputs — the only copy
+ * that survives a reinstall or a new device.
+ */
+export interface ServerHistoryDay {
+  date: string;
+  score: number;
+  band: LoadBand;
+  recovery: RecoveryGrade;
+  /** True when a check-in row actually exists for that day. */
+  hasCheckin?: boolean;
+  sleepHours?: number | null;
+  soreness?: number | null;
+  energy?: number | null;
+  perceivedRecovery?: number | null;
+  /** Real recorded-activity load behind that day's score. */
+  activityLoadPoints?: number;
+  restDaysLast3?: number | null;
+}
+
+/**
+ * Fold the server's own history into this device's store, so the trend and the
+ * sleep correlation are rebuilt from durable data instead of only from what
+ * happens to be cached locally.
+ *
+ * Rules (no fabricated days, ever):
+ *  - only days the server actually returned are touched;
+ *  - the athlete's check-in values are adopted whenever the server has them;
+ *    a day with no check-in never has local values erased or invented;
+ *  - a day this device already scored keeps that score — it was computed with
+ *    the local completion ledger at the time and is the richer record — while
+ *    a day only the server knows about uses the server's own snapshot.
+ */
+export function mergeServerHistory(
+  history: RecoveryDayRecord[],
+  serverDays: ServerHistoryDay[],
+): RecoveryDayRecord[] {
+  let merged = history;
+
+  // "Already scored by this device" is decided from the store we were given,
+  // not from days this merge itself creates, so a server day can never shield
+  // itself from a newer server value for the same date.
+  const locallyScored = new Set(history.filter((row) => row.score > 0).map((row) => row.date));
+
+  for (const day of serverDays) {
+    if (!day || typeof day.date !== "string" || day.date === "") continue;
+    const existing = merged.find((row) => row.date === day.date);
+    const base = existing ?? emptyDayRecord(day.date);
+
+    const serverCheckin: Partial<RecoveryCheckin> = {};
+    if (day.hasCheckin) {
+      if (typeof day.sleepHours === "number") serverCheckin.sleepHours = day.sleepHours;
+      if (typeof day.soreness === "number") serverCheckin.soreness = day.soreness;
+      if (typeof day.energy === "number") serverCheckin.energy = day.energy;
+      if (typeof day.perceivedRecovery === "number") {
+        serverCheckin.perceivedRecovery = day.perceivedRecovery;
+      }
+    }
+    const checkin: RecoveryCheckin = { ...base.checkin, ...serverCheckin };
+    const serverLoad = Math.max(0, Number(day.activityLoadPoints) || 0);
+    const keepLocalScore = locallyScored.has(day.date);
+
+    const record: RecoveryDayRecord = keepLocalScore
+      ? {
+          ...base,
+          date: day.date,
+          checkin,
+          activityLoadPoints: base.activityLoadPoints > 0 ? base.activityLoadPoints : serverLoad,
+        }
+      : {
+          ...base,
+          date: day.date,
+          checkin,
+          activityLoadPoints: serverLoad,
+          totalLoadPoints: base.totalLoadPoints > 0 ? base.totalLoadPoints : serverLoad,
+          score: Math.max(0, Math.min(100, Number(day.score) || 0)),
+          band: day.band ?? base.band,
+          recovery: day.recovery ?? base.recovery,
+        };
+
+    merged = upsertDayRecord(merged, record);
+  }
+
+  return merged;
+}
+
 // ── Personal best sleep ─────────────────────────────────────────────────────
 
 export interface SleepBucket {

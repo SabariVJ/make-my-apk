@@ -126,3 +126,41 @@ environment:
 Recommended apply order once authorized: confirm the Step-0 queries → one
 maintenance window → `supabase db push` (or `psql` per file, in the order above)
 → re-run `bun run test` including the DB suites against the migrated database.
+
+## 6. RECOVERY V2 — Phase 2 migration (2026-09-23)
+
+```
+20261003000000_recovery_history_checkin_values.sql
+```
+
+Additive only: no table, column, index, policy or grant is created or dropped.
+It `CREATE OR REPLACE`s **one** read-only RPC with the same name and the same
+signature as the one from `20260919120000_recovery_readiness.sql`:
+`svj_list_my_recovery_history(p_limit integer DEFAULT 30)`.
+
+Why it is required — the shipped body was broken:
+
+```sql
+-- 20260919120000 (runtime error for every caller)
+jsonb_agg(row ORDER BY row.readiness_date DESC)
+-- ERROR: missing FROM-clause entry for table "row"
+```
+
+`row` is a jsonb column alias, not a table alias, and plpgsql does not validate
+the statement body at creation time, so the function existed and failed only
+when called. The client treats a failed history read as an empty history, so
+server-backed recovery history was effectively invisible: the trend and "your
+best sleep" fell back to whatever the device had cached. The replacement orders
+by a real subquery column (`jsonb_agg(s.row ORDER BY s.readiness_date DESC)`)
+and, in the same change, returns each day's real check-in values (`sleepHours`,
+`soreness`, `energy`, `perceivedRecovery`, `hasCheckin`) and the recorded
+activity load (`loadPoints7d`) alongside the existing keys.
+
+Dependency: needs `20260919120000_recovery_readiness.sql`
+(`svj_readiness_daily` + `svj_recovery_checkins`). It is safe to apply at any
+point after that file, including on top of the current production schema.
+
+Application status: **not applied to production** — same credentials blocker as
+section 5. Verified instead by `tests/recovery-history-db.test.mjs`, which
+replays the whole chain plus this file in isolated PGlite and exercises the RPC
+as the authenticated user (load, partial readiness, check-in values, privacy).

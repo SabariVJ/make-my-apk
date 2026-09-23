@@ -131,7 +131,8 @@ before(async () => {
                   readiness: { score: 70, trainingLoad: 'moderate', recovery: 'good', todayAdvice: 'Train normally.', components: { loadPoints7d: 200, loadBand: 'moderate', restDaysLast3: 2, loadPenalty: 0, sleepHours: null, soreness: null, energy: null, perceivedRecovery: null, dataSources: ['recorded_activity'] } },
                 });
                 export const saveMyRecoveryCheckin = async () => ({ ok: false, error: 'skipped' });
-                export const listMyRecoveryHistory = async () => ({ ok: true, history: [] });`,
+                export const listMyRecoveryHistory = async () => ({ ok: true, history: [] });
+                export const listMyRecoveryRecords = async () => ({ ok: true, records: [] });`,
               storage: `
                 export const readStoredJson = (k, f) => f;
                 export const writeStoredJson = () => {};`,
@@ -372,7 +373,7 @@ describe("goal states from the server", () => {
 });
 
 describe("shared goal surface compatibility", () => {
-  it("Goals is a real panel in the shell; Records/Progress/Devices stay placeholders", async () => {
+  it("Goals is a real panel in the shell; Progress and Devices stay placeholders", async () => {
     await act(async () => {
       render(React.createElement(app.RecoveryView));
     });
@@ -381,7 +382,13 @@ describe("shared goal surface compatibility", () => {
       screen.getByTestId("recovery-section-tab-goals").click();
     });
     assert.ok(screen.getByTestId("recovery-section-goals"));
-    for (const section of ["records", "progress", "devices"]) {
+    // Records shipped in Phase 6 (with its own suite) — a real derived panel.
+    await act(async () => {
+      screen.getByTestId("recovery-section-tab-records").click();
+    });
+    await waitFor(() => assert.ok(screen.getByTestId("recovery-section-records")));
+    assert.equal(screen.queryByText(/Coming next/), null, "Records is no longer a placeholder");
+    for (const section of ["progress", "devices"]) {
       await act(async () => {
         screen.getByTestId(`recovery-section-tab-${section}`).click();
       });

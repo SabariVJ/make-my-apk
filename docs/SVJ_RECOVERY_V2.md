@@ -29,10 +29,10 @@ are preferred over fabricated analytics.
 | ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
 | 1     | Recovery destination + navigation shell                                              | **shipped (founder-only)**                                                |
 | 2     | Automation audit + missing gaps (partial readiness, task counts, history automation) | **shipped (audit + load/readiness verified, history made server-backed)** |
-| 3     | Overview intelligence (Today's Focus, Recovery Streak, Muscle Recovery Map)          | pending                                                                   |
-| 4     | History (readiness heatmap, sleep vs. performance)                                   | pending                                                                   |
-| 5     | Recovery goals + Discipline progression                                              | pending                                                                   |
-| 6     | Derived recovery records                                                             | pending                                                                   |
+| 3     | Overview intelligence (Today's Focus, Recovery Streak, Muscle Recovery Map)          | **shipped (founder-only)**                                                |
+| 4     | History (readiness heatmap, sleep vs. performance)                                   | **shipped (server-backed, no fabricated days)**                           |
+| 5     | Recovery goals + Discipline progression                                              | **shipped (server-derived progress)**                                     |
+| 6     | Derived recovery records                                                             | **shipped (derived on read, read-only)**                                  |
 | 7     | Weekly digest, My SVJ Plan integration, rest-day alert card                          | pending                                                                   |
 
 The next phase starts only when the user explicitly says "continue to phase N".
@@ -485,3 +485,123 @@ Recovery unchanged; non-founder navigation unchanged.
 Validation for the Phase 5 checkpoint: **1208 tests — 1206 pass / 0 fail / 2
 skipped**, `bunx tsc --noEmit` clean, `bunx eslint src/` 0 errors (38
 pre-existing warnings elsewhere), Prettier clean, `bun run build` PASS.
+
+## Phase 6 — derived Recovery records
+
+Recovery → Records is now a real section whose values are **derived on read**
+from canonical server history — no record table, no record column, no stored
+record value, and no record write RPC of any kind. The client can only ask the
+server for records it can prove from the athlete's own history.
+
+### Migration: `20261005000000_recovery_records.sql` (additive, idempotent)
+
+DEPENDENCY: requires `svj_recovery_checkins` + `svj_readiness_daily`
+(20260919120000_recovery_readiness.sql). It re-declares nothing that Training
+uses (`svj_list_records`, `svj_record_eligible`, `svj_record_value`,
+`svj_save_activity` are untouched) and touches no goal, stat or event table.
+**No table, no column, no index** — the migration is one function plus its
+grants. NOT applied anywhere yet (no production credentials in this
+environment).
+
+Canonical sources: `public.svj_readiness_daily` (server readiness snapshots) and
+`public.svj_recovery_checkins` (stored check-ins). No localStorage history, no
+optimistic client state, no demo data, no Character Matrix input.
+
+- `svj_list_recovery_records()` — `STABLE`, `SECURITY INVOKER` (the same rights
+  as the existing `svj_list_records()` reader, so RLS remains the second line of
+  defence), `SET search_path = public`, identity from `auth.uid()` only, no
+  caller-supplied user id, `REVOKE` from `PUBLIC, anon`, `GRANT EXECUTE` to
+  `authenticated`. Envelope:
+  `{ ok, records: [{ record_type, value, achieved_date, start_date }] }`.
+  Only records that genuinely exist appear in the array — the client never
+  receives a placeholder 0. `value` keeps full numeric precision
+  (`SUM(score) / 7.0`); rounding happens in the display layer only.
+
+The four records (locked, no others):
+
+| Record type                 | Definition                                                                                                                                                                                       | Tie-break                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| `highest_readiness_score`   | `MAX(score)` over canonical readiness days                                                                                                                                                       | most recent qualifying day |
+| `longest_checkin_streak`    | longest run of consecutive stored check-in dates (one date counts once; a missing calendar day breaks it)                                                                                        | most recent run            |
+| `longest_ready_streak`      | longest run of consecutive readiness days with `score >= 60` — the existing Phase 2/5 boundary (`svj_compute_readiness` "good", `svj_goal_progress.readiness_60_day_count`), not a new threshold | most recent run            |
+| `best_7d_readiness_average` | highest `SUM(score) / 7.0` over 7 consecutive server calendar days that **all** have canonical rows; a missing day invalidates the window and is never counted as 0                              | most recent window         |
+
+- Streaks use gaps-and-islands (`date - row_number()`); consecutiveness is
+  exactly `date + 1 calendar day` on the canonical SERVER date. No local-calendar
+  shifting, no merging of local history, no synthesized days.
+- `achieved_date` is the anchor server day (score day, streak end, window end);
+  `start_date` carries the first day of a streak/window and is `null` otherwise.
+- A real stored score of `0` is data: it sets `highest_readiness_score` to 0 and
+  is counted inside a 7-day average. An absent record type is simply absent —
+  never rendered as 0. Records agree with History's row set: a day History does
+  not show can never enter a streak or a 7-day window.
+- Read/derive/display only: no XP, no Discipline, no Recovery stat, no badge, no
+  Plus access and no achievement is awarded, and goals are never completed,
+  progressed or expired by reading records.
+
+**Why a narrow `svj_list_recovery_records()` instead of extending
+`svj_list_records()`:** the actual DTO/callers decide it. The Training record DTO
+requires `activity_id`, `activity_type` and `source` (a Recovery record has no
+activity, so a fabricated id or a loosened normalizer would be needed), and
+`TrainProgress` renders one card per key of `RECORD_LABELS` — merging Recovery
+types into the shared list would have made Train › Progress advertise "Longest
+Check-in Streak — complete more activities to set this record". Extending the
+shared reader would also have meant re-declaring the whole Training records
+function inside a Recovery migration, which the "Training Records must remain
+unchanged" invariant forbids in spirit. Training's reader is therefore
+byte-identical, and its failure surface, cost profile and deployment are
+independent.
+
+### Client
+
+- `src/app/lib/recoveryRecords.ts` (new, pure — no network): the
+  `RECOVERY_RECORD_TYPES` group (the training group is a separate
+  `TRAINING_RECORD_TYPES`, so neither can leak into the other), labels,
+  `RecoveryRecordDto` + normalizer (a real 0 survives; broken rows are dropped),
+  display order, and formatting — value with units, spoken values for screen
+  readers, and date/range labels built from the ISO parts so a server day can
+  never shift into a neighbouring local day. The client never computes a record.
+- `src/app/lib/recovery.ts` gains `listMyRecoveryRecords()` — the same thin
+  `rewardsRpcClient()` wrapper pattern as the other recovery readers.
+- `src/app/components/recovery/RecoveryRecordsSection.tsx` renders the four
+  records as cards (label, value, achieved/ending date, covered range, short
+  explanation) with honest per-record "no record yet" copy, an insufficient
+  history state for the 7-day average, semantic `h2`/`h3`/`ul` structure,
+  `aria-hidden` decorative icons, spoken value equivalents, and a 44px retry on
+  failure ("Recovery records are unavailable right now." — raw PGRST/SQL text
+  never reaches the user). A failed records read leaves Overview, History and
+  Goals fully working. No ranking, percentile or benchmark language.
+- `src/app/lib/goalsRecords.ts` exports were renamed to make the split
+  explicit: `TRAINING_RECORD_TYPES`, `TrainingRecordType`,
+  `TRAINING_RECORD_LABELS`, `TrainingRecordDto` (mechanical, no behaviour
+  change; `TrainGoals` updated). Record values, eligibility rules and the
+  `svj_list_records` contract are unchanged.
+
+### Tests
+
+- `tests/recovery-records-db.test.mjs` (30, real PostgreSQL via
+  PGlite/native-local convention): no rows → no record, a real 0 as data,
+  highest score, most-recent tie-breaks for all four records, streaks growing
+  and breaking on missing days / a 59 / duplicate same-day rows, exactly seven
+  complete days vs six, a missing middle day invalidating a window, overlapping
+  windows with the highest average winning, real zeros inside an average, no
+  NaN/Infinity, agreement with History's day set, "no record table / no write
+  RPC / hardened reader (search_path, not definer, anon denied)", re-derivation
+  after canonical edits, no stat/goal side effects, and per-user isolation.
+- `tests/recovery-records-ui.test.mjs` (20, jsdom; only the Supabase transport is
+  mocked, the shipped section/client/normalizer render as-is): Records is no
+  longer a placeholder while Progress/Devices still are, six-section shell
+  intact, exactly four cards with the locked labels and order, one rendering
+  test per record, a real 0 rendered as data, absent records never rendered as 0,
+  insufficient-history state, honest empty state, loading, sanitized retryable
+  error with a ≥44px target, only the derived reader ever called, competition
+  language absent, semantic headings, and unshifted date labels.
+- `src/app/lib/recoveryRecords.test.ts` (13, pure): registry/label contract,
+  training-vs-recovery type separation, normalization (including the 0 case),
+  ordering, value/spoken/date/range formatting.
+
+Validation for the Phase 6 checkpoint: **1271 tests — 1269 pass / 0 fail / 2
+skipped**, `bunx tsc --noEmit` clean, `bunx eslint src/` 0 errors (38
+pre-existing warnings elsewhere), Prettier clean in the checked scope (`src/**`,
+plus the new files — the repo-wide `prettier --check .` baseline is unchanged),
+`bun run build` PASS.

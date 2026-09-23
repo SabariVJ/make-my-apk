@@ -97,7 +97,8 @@ before(async () => {
               recovery: `
                 export const getMyReadiness = async () => globalThis.__svjP4.readiness;
                 export const saveMyRecoveryCheckin = async () => ({ ok: true, readiness: globalThis.__svjP4.readiness.readiness });
-                export const listMyRecoveryHistory = async (limit) => globalThis.__svjP4.history(limit);`,
+                export const listMyRecoveryHistory = async (limit) => globalThis.__svjP4.history(limit);
+                export const listMyRecoveryRecords = async () => ({ ok: true, records: [] });`,
               storage: `
                 export const readStoredJson = (k, f) => globalThis.__svjP4.localHistory ?? f;
                 export const writeStoredJson = (k, v) => { globalThis.__svjP4.localHistory = v; };`,
@@ -368,10 +369,13 @@ describe("Phase 1–3 invariants stay intact", () => {
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
+    // Records is a real derived panel since Phase 6; Progress/Devices remain
+    // honest placeholders.
     await act(async () => {
       screen.getByTestId("recovery-section-tab-records").click();
     });
-    assert.ok(screen.getByText(/Coming next/), "Records stays an honest placeholder");
+    assert.ok(screen.getByTestId("recovery-section-records"));
+    assert.equal(screen.queryByText(/Coming next/), null, "Records is no longer a placeholder");
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });

@@ -19,6 +19,7 @@
  * sleep correlation can be computed from the user's own logged days.
  */
 import type { ChallengeCategory } from "../types";
+import { MUSCLE_GROUPS, MUSCLE_LABELS, type MuscleGroup } from "./strength";
 import type { TaskCompletion } from "./taskCompletions";
 import { localDayKey } from "./taskCompletions";
 
@@ -557,6 +558,281 @@ export function recomputeSleepWindow(
     note: personalised
       ? `Based on your own logged sleep. Load adjustment: +${loadAdjustmentMinutes} min.`
       : "Log a few more nights to personalise this from your own sleep history.",
+  };
+}
+
+// ── Phase 3 — founder Overview intelligence (pure + deterministic) ─────────
+
+// ── Recovery streak ─────────────────────────────────────────────────────────
+
+/**
+ * Consecutive-day check-in streak counted over SERVER history days only.
+ *
+ * Day basis: the server's own dates (svj_recovery_checkins.checkin_date is a
+ * UTC calendar day) are authoritative. Local records are never merged into
+ * this number. The streak counts back from the most recent check-in day and
+ * breaks at the first missing calendar day — it is not required to include
+ * today, so the streak survives until the day after the athlete last checked
+ * in. Only days with a real stored check-in count: opening Recovery writes no
+ * server row, and a failed save writes no row either.
+ */
+export function recoveryCheckinStreak(
+  /** Minimal shape: the streak only reads a day's date + hasCheckin flag. */
+  serverDays: { date: string; hasCheckin?: boolean }[],
+  now: Date = new Date(),
+): number {
+  const checkedDays = new Set(
+    serverDays
+      .filter((day) => !!day && typeof day.date === "string" && day.hasCheckin === true)
+      .map((day) => day.date),
+  );
+  if (checkedDays.size === 0) return 0;
+
+  // Start at the most recent checked-in day (today when there is one) so a
+  // yesterday-only streak is still shown as alive, and count backwards over
+  // consecutive calendar days. A gap breaks the count immediately.
+  const cursor = new Date(now);
+  while (!checkedDays.has(localDayKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    // A server history can only ever contain dates at or before today; going
+    // further back than the window can reach means the set is empty.
+    if (checkedDays.size === 0) return 0;
+  }
+
+  let streak = 0;
+  while (checkedDays.has(localDayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+// ── Today's Focus ───────────────────────────────────────────────────────────
+
+export type FocusEmphasis = "rest" | "lighter" | "normal" | "stronger";
+
+export interface FocusInput {
+  /** The same combined readiness the existing Recovery panel renders. */
+  readiness: ReadinessResult;
+  /** Training-profile goal — the primary goal signal. */
+  trainingGoal: string | null;
+  /** Applicable active svj_goals rows (already filtered, may be empty). */
+  activityGoal: { metric: string; progress: number; targetValue: number } | null;
+}
+
+export interface FocusRecommendation {
+  emphasis: FocusEmphasis;
+  headline: string;
+  /** One deterministic, explainable sentence; no medical claims. */
+  detail: string;
+}
+
+const goalLabel = (trainingGoal: string | null): string =>
+  ({
+    muscle: "building muscle",
+    athletic: "athletic performance",
+    strength: "strength progress",
+    general: "general fitness",
+  })[trainingGoal ?? "general"] ?? "general fitness";
+
+/**
+ * Deterministic, explainable recommendation. Every branch keys off the shared
+ * ReadinessResult (score/band/penalty/rest days) — the exact object the
+ * Recovery panel renders — so this can never disagree with the ring.
+ *
+ *  rest      : score < 40, or (high/very_high load AND no rest day in 3)
+ *  lighter   : score < 60, or moderate load with no rest day in 3
+ *  stronger  : score ≥ 78 AND (low load OR a rest day in the last 3) AND a
+ *              strength-adjacent profile goal
+ *  normal    : everything else
+ */
+export function todaysFocus(input: FocusInput): FocusRecommendation {
+  const { readiness, trainingGoal, activityGoal } = input;
+  const band = readiness.band;
+  const restDays = readiness.components.restDaysLast3;
+  const goal = goalLabel(trainingGoal);
+  const score = readiness.score;
+
+  const goalClause =
+    trainingGoal && trainingGoal !== "general" ? ` while keeping your ${goal} goal on track` : "";
+
+  let emphasis: FocusEmphasis;
+  let headline: string;
+  let detail: string;
+
+  if (score < 40 || (band === "very_high" && restDays === 0)) {
+    emphasis = "rest";
+    headline = "Prioritise recovery today";
+    detail = `Readiness is ${score} with a ${
+      band === "very_high" ? "very high" : "low"
+    } training load$?
+      goalClause
+    }. Rest or keep movement very light so your body can catch up.`;
+  } else if (score < 60 || (band === "high" && restDays === 0)) {
+    emphasis = "lighter";
+    headline = "Keep it light today";
+    detail = `Readiness is ${score} — a lighter session is the right call${goalClause}.`;
+  } else if (score >= 78 && (band === "low" || (typeof restDays === "number" && restDays > 0))) {
+    emphasis = "stronger";
+    headline = "Green light for a strong session";
+    detail =
+      readiness.components.activityLoadPoints === 0 && readiness.components.taskLoadPoints === 0
+        ? `Readiness is ${score} and your week is light — a solid session would land well${goalClause}.`
+        : `Readiness is ${score} with a ${band} load — a strong session fits${goalClause}.`;
+  } else {
+    emphasis = "normal";
+    headline = "Train normally today";
+    detail = `Readiness is ${score} on a ${band} load — train normally${goalClause}.`;
+  }
+
+  // An applicable activity goal refines the wording without ever contradicting
+  // the emphasis derived from readiness (secondary signal only).
+  if (activityGoal && activityGoal.targetValue > 0) {
+    const metric =
+      activityGoal.metric === "workout_count"
+        ? "workout"
+        : activityGoal.metric === "step_total"
+          ? "step"
+          : activityGoal.metric === "distance"
+            ? "distance"
+            : "active-minute";
+    const percent = Math.min(
+      99,
+      Math.round((activityGoal.progress / activityGoal.targetValue) * 100),
+    );
+    detail += ` You are ${percent}% into your weekly ${metric} goal.`;
+  }
+
+  return { emphasis, headline, detail };
+}
+
+/**
+ * Filter raw goal rows down to the applicable set for Focus: active AND the
+ * period covers today. Broken server expiry is deliberately not fixed here —
+ * a non-current goal is simply ignored (the real lifecycle fix is Phase 5).
+ */
+export function applicableActivityGoals(
+  goals: {
+    status?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    metric?: string;
+    progress?: number;
+    targetValue?: number;
+  }[],
+  now: Date = new Date(),
+): NonNullable<FocusInput["activityGoal"]> | null {
+  const today = localDayKey(now);
+  for (const goal of goals) {
+    if (goal.status !== "active") continue;
+    if (!goal.periodStart || !goal.periodEnd) continue;
+    if (goal.periodStart > today || goal.periodEnd < today) continue;
+    if (typeof goal.targetValue !== "number" || goal.targetValue <= 0) continue;
+    return {
+      metric: typeof goal.metric === "string" ? goal.metric : "workout_count",
+      progress: Math.max(0, Number(goal.progress) || 0),
+      targetValue: goal.targetValue,
+    };
+  }
+  return null;
+}
+
+// ── Estimated muscle recovery (NOT physiology) ───────────────────────────
+
+export type MuscleRecoveryState = "fresh" | "moderate" | "high" | "no_recent_data";
+
+export interface MuscleRecoveryEntry {
+  muscle: string;
+  label: string;
+  state: MuscleRecoveryState;
+  /** Deterministic, explainable reason for the state (also the a11y text). */
+  reason: string;
+}
+
+export interface MuscleRecoveryMap {
+  entries: MuscleRecoveryEntry[];
+  /** True when no real training evidence exists at all in the window. */
+  hasAnyData: boolean;
+}
+
+const MUSCLE_RECOVERY_STATES: Record<MuscleRecoveryState, string> = {
+  fresh: "Fresh",
+  moderate: "Moderate",
+  high: "High",
+  no_recent_data: "No recent data",
+};
+
+export const muscleRecoveryStateLabel = (state: MuscleRecoveryState): string =>
+  MUSCLE_RECOVERY_STATES[state];
+
+/**
+ * Estimated recovery state per muscle, derived ONLY from real recent training
+ * history (last-trained recency + direct/supporting set counts + volume).
+ *
+ * This is an activity summary, NOT physiology: it says nothing about soreness,
+ * damage, HRV or what the muscle can actually do. The UI must present it as
+ * estimated from recent training history.
+ *
+ * Rule (deterministic, explainable):
+ *   high     — trained today or yesterday (direct or supporting work)
+ *   moderate — trained 2–3 days ago
+ *   fresh    — trained 4+ days ago within the window
+ *   none     — no logged training in the window
+ * Volume only breaks ties in the reasons, never moves a state.
+ */
+export function estimateMuscleRecovery(
+  rows: {
+    muscle: string;
+    directSets: number;
+    supportingSets: number;
+    directVolume: number;
+    lastTrainedDate: string | null;
+  }[],
+  now: Date = new Date(),
+): MuscleRecoveryMap {
+  const byMuscle = new Map(rows.map((row) => [row.muscle, row]));
+  const entries: MuscleRecoveryEntry[] = MUSCLE_GROUPS.map((muscle: MuscleGroup) => {
+    const row = byMuscle.get(muscle);
+    const label = MUSCLE_LABELS[muscle] ?? muscle;
+    if (
+      !row ||
+      row.lastTrainedDate === null ||
+      (row.directSets === 0 && row.supportingSets === 0)
+    ) {
+      return {
+        muscle,
+        label,
+        state: "no_recent_data",
+        reason: "No logged training in the last 7 days.",
+      };
+    }
+    const [y, m, d] = row.lastTrainedDate.split("-").map(Number);
+    const then = new Date(y, (m ?? 1) - 1, d ?? 1);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const days = Math.floor((today.getTime() - then.getTime()) / 86_400_000);
+    const direct = row.directSets;
+    const supporting = row.supportingSets;
+    const volume = Math.round(Number(row.directVolume) || 0);
+
+    let state: MuscleRecoveryState;
+    if (days <= 1) state = "high";
+    else if (days <= 3) state = "moderate";
+    else state = "fresh";
+
+    const daysLabel = days <= 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
+    const work =
+      direct > 0 && supporting > 0
+        ? `${direct} direct + ${supporting} supporting sets`
+        : direct > 0
+          ? `${direct} direct sets`
+          : `${supporting} supporting sets`;
+    const reason = `Last trained ${daysLabel} — ${work}${volume > 0 ? `, ${volume.toLocaleString()} kg volume` : ""}.`;
+    return { muscle, label, state, reason };
+  });
+
+  return {
+    entries,
+    hasAnyData: entries.some((entry) => entry.state !== "no_recent_data"),
   };
 }
 

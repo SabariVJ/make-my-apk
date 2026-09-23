@@ -13,6 +13,14 @@ import React, { useCallback, useRef, useState } from "react";
 import { HeartPulse } from "lucide-react";
 import { TrainRecovery } from "../views/TrainRecovery";
 import { RECOVERY_SECTIONS, type RecoverySection } from "../lib/recoveryNav";
+import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
+import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
+import { useTrainRecoveryShared } from "../lib/readinessShared";
+import {
+  MuscleRecoveryCard,
+  RecoveryStreakCard,
+  TodaysFocusCard,
+} from "./recovery/RecoveryInsightsWidgets";
 
 /**
  * Honest placeholder for a section whose phase has not shipped yet. It states
@@ -48,6 +56,29 @@ const UpcomingSection: React.FC<{
     </p>
   </div>
 );
+
+const OverviewWithInsights: React.FC = () => {
+  const { goals, trainingProfile, muscleRows, muscleAvailability } = useRecoveryInsights();
+  const shared = useTrainRecoveryShared();
+
+  return (
+    <>
+      {/* Focus + streak derive from the SAME readiness the panel renders — the
+          panel publishes its computed values upward. Until the first publish
+          completes, the widgets stay quiet instead of guessing. */}
+      {shared?.today && (
+        <TodaysFocusCard
+          readiness={shared.today}
+          trainingGoal={trainingProfile.goal}
+          goals={goals}
+        />
+      )}
+      {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
+      <TrainRecovery />
+      <MuscleRecoveryCard rows={muscleRows} availability={muscleAvailability} />
+    </>
+  );
+};
 
 export const RecoveryView: React.FC = () => {
   const [section, setSection] = useState<RecoverySection>("overview");
@@ -130,7 +161,8 @@ export const RecoveryView: React.FC = () => {
         })}
       </div>
 
-      {/* Overview is the live surface: the one existing Recovery engine. */}
+      {/* Overview is the live surface: the one existing Recovery engine, with
+          the founder's Phase-3 insight widgets around it. */}
       {section === "overview" && (
         <div
           role="tabpanel"
@@ -138,7 +170,9 @@ export const RecoveryView: React.FC = () => {
           aria-labelledby="recovery-tab-overview"
           data-testid="recovery-section-overview"
         >
-          <TrainRecovery />
+          <ReadinessHistoryProvider>
+            <OverviewWithInsights />
+          </ReadinessHistoryProvider>
         </div>
       )}
 

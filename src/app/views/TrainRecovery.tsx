@@ -33,6 +33,7 @@ import {
   type RecoveryGrade,
   type ServerHistoryDay,
 } from "../lib/recoveryInsights";
+import { useTrainRecoveryPublisher } from "../lib/readinessShared";
 
 const LOAD_LABELS: Record<string, string> = {
   low: "Low",
@@ -172,6 +173,10 @@ const serverDay = (point: RecoveryHistoryPoint): ServerHistoryDay => ({
 });
 
 export const TrainRecovery: React.FC = () => {
+  // Day records + history are also lifted into a shared context so the
+  // founder's Phase-3 widgets (Today's Focus / streak) reuse the SAME
+  // readiness history without a second round of queries. See the provider
+  // below; when absent (ordinary Train › Recovery) the component works alone.
   // Task completions live on the client, so the task share of today's training
   // load is computed here and combined with the server's activity load.
   const { taskCompletions } = useSVJ();
@@ -329,6 +334,12 @@ export const TrainRecovery: React.FC = () => {
     }
     setSaving(false);
   };
+
+  const publish = useTrainRecoveryPublisher();
+  useEffect(() => {
+    if (!publish) return;
+    publish({ dayHistory, historyPoints: history, today });
+  }, [publish, dayHistory, history, today]);
 
   return (
     <div

@@ -74,6 +74,13 @@ before(async () => {
             path: "overview",
             namespace: "mock",
           }));
+          // The Phase-3 data hook must stay out of this shell test — the real
+          // one reads Supabase env config at mount. The widgets themselves are
+          // covered by tests/recovery-insights-widgets.test.mjs.
+          builder.onResolve({ filter: /^\.\.\/hooks\/useRecoveryInsights$/ }, () => ({
+            path: "insights",
+            namespace: "mock",
+          }));
           builder.onResolve({ filter: /^motion\/react$/ }, () => ({
             path: "motion",
             namespace: "mock",
@@ -83,6 +90,8 @@ before(async () => {
             resolveDir: process.cwd(),
             contents: {
               context: "export const useSVJ = () => globalThis.__svjRecoveryAccount;",
+              insights:
+                "export const useRecoveryInsights = () => ({ goals: [], trainingProfile: null, muscleRows: [], muscleAvailability: 'ready', loading: false, reload() {} });",
               overview:
                 "import React from 'react'; export const TrainRecovery = () => React.createElement('div', { 'data-testid': 'train-recovery' }, 'readiness');",
               motion: `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,layoutId,...rest}=props;return React.createElement(tag,rest,children)}});`,

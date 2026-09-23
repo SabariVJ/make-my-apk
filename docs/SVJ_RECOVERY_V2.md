@@ -25,15 +25,15 @@ are preferred over fabricated analytics.
 
 ## Phases
 
-| Phase | Scope | Status |
-| --- | --- | --- |
-| 1 | Recovery destination + navigation shell | **shipped (founder-only)** |
-| 2 | Automation audit + missing gaps (partial readiness, task counts, history automation) | **shipped (audit + load/readiness verified, history made server-backed)** |
-| 3 | Overview intelligence (Today's Focus, Recovery Streak, Muscle Recovery Map) | pending |
-| 4 | History (readiness heatmap, sleep vs. performance) | pending |
-| 5 | Recovery goals + Discipline progression | pending |
-| 6 | Derived recovery records | pending |
-| 7 | Weekly digest, My SVJ Plan integration, rest-day alert card | pending |
+| Phase | Scope                                                                                | Status                                                                    |
+| ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 1     | Recovery destination + navigation shell                                              | **shipped (founder-only)**                                                |
+| 2     | Automation audit + missing gaps (partial readiness, task counts, history automation) | **shipped (audit + load/readiness verified, history made server-backed)** |
+| 3     | Overview intelligence (Today's Focus, Recovery Streak, Muscle Recovery Map)          | pending                                                                   |
+| 4     | History (readiness heatmap, sleep vs. performance)                                   | pending                                                                   |
+| 5     | Recovery goals + Discipline progression                                              | pending                                                                   |
+| 6     | Derived recovery records                                                             | pending                                                                   |
+| 7     | Weekly digest, My SVJ Plan integration, rest-day alert card                          | pending                                                                   |
 
 The next phase starts only when the user explicitly says "continue to phase N".
 
@@ -129,7 +129,7 @@ Recovery screen was redesigned and no train/plan algorithm was touched.
   `svj_activities`, trailing 7 days, `ended_at < now()`) are correct; no
   hardcoded or demo load exists anywhere. Pinned by tests so it cannot drift.
 - **Partial readiness** — the base score `70 − load penalty` is computed
-  *before* the check-in branch, so a day with no check-in still yields a real
+  _before_ the check-in branch, so a day with no check-in still yields a real
   score (70 / 58 / 50 / 42 by band and rest days). The manual inputs refine that
   number rather than unlocking it. Verified in SQL, in the client mirror, and
   end-to-end in PGlite; no formula changed.
@@ -142,17 +142,17 @@ Recovery screen was redesigned and no train/plan algorithm was touched.
 1. **The shipped history RPC was broken at runtime.**
    `20260919120000_recovery_readiness.sql` ended its
    `svj_list_my_recovery_history` body with
-   `jsonb_agg(row ORDER BY row.readiness_date DESC)`. `row` is a jsonb *column*
+   `jsonb_agg(row ORDER BY row.readiness_date DESC)`. `row` is a jsonb _column_
    alias, not a table alias, so every call raised
    `missing FROM-clause entry for table "row"`. plpgsql does not validate the
    statement at creation time, so the function existed and failed only when
    used — and the client treated a failed history read as an empty history.
    Server-backed history was therefore silently invisible and the trend/sleep
    correlation fell back to whatever the device had cached.
-   *Fix:* `20261003000000_recovery_history_checkin_values.sql` replaces the RPC
+   _Fix:_ `20261003000000_recovery_history_checkin_values.sql` replaces the RPC
    (same name, same signature, `SECURITY DEFINER` + `auth.uid()` preserved) and
    orders by a real subquery column (`jsonb_agg(s.row ORDER BY
-   s.readiness_date DESC)`).
+s.readiness_date DESC)`).
 2. **History did not carry the athlete's own inputs.** The RPC returned only
    date/score/band/recovery, so sleep evidence existed solely in local storage
    and was lost on reinstall or a new device. The replacement also returns
@@ -167,7 +167,7 @@ Recovery screen was redesigned and no train/plan algorithm was touched.
    completion ledger) while a server-only day uses the server's snapshot, and no
    day, check-in or trend point is ever invented.
 4. **"Completed tasks" mislabelled load as a count.** The card titled
-   "Completed tasks" displayed task *load points*. It now shows the real
+   "Completed tasks" displayed task _load points_. It now shows the real
    completed-task count (`tasks / 7d`) with **Task load** (`pts / 7d`) as a
    separate card, alongside recorded activity.
 5. **Two different readiness numbers on one screen.** The readiness ring showed
@@ -225,3 +225,82 @@ days actually recorded, and "your best sleep" stays in its honest
 insufficient-data state until enough nights are logged. After the migration is
 applied in production, reinstalling (or signing in on a new device) must
 reproduce the same trend and sleep evidence from the server.
+
+## Phase 3 — Overview intelligence (founder-only)
+
+Three widgets added **around** the existing TrainRecovery panel in the founder
+Overview — the panel stays the single readiness engine, unchanged.
+
+### Today's Focus (`todaysFocus` in recoveryInsights.ts)
+
+Deterministic, explainable recommendation derived from the **same combined
+`ReadinessResult` the panel renders** (published via the shared channel below —
+never recomputed, so it cannot disagree with the ring):
+
+- `rest` — score < 40, or very-high load with no rest day in the last 3.
+- `lighter` — score < 60, or high load with no rest day in the last 3.
+- `stronger` — score ≥ 78 AND (low load or a rest day in the last 3).
+- `normal` — everything else.
+
+The Training Profile goal (primary signal) is reflected in the wording; an
+applicable `svj_goals` row (secondary) appends a progress sentence. A goal is
+ignored unless `status === 'active'` AND `period_start ≤ today ≤ period_end`
+(`applicableActivityGoals`); `personalization.goals` is not used. No medical
+advice, no AI generation.
+
+### Recovery Streak (`recoveryCheckinStreak`)
+
+Consecutive calendar days ending today (local day basis) where the
+**server-backed** history row has `hasCheckin === true`. A missing day breaks
+the streak; local-only placeholder days never count; opening Recovery without
+saving a check-in never counts; a failed save never counts (the save RPC must
+succeed for the server row to exist). No new table/RPC. The widget reuses the
+Header 60-Day gold Flame pill styling.
+
+### Muscle recovery map (`estimateMuscleRecovery`)
+
+Estimated training recency/load per muscle group from the real
+`svj_recent_muscle_history` rows (recency, direct/supporting sets, volume).
+States: Fresh (last trained ≥ 4 days ago), Moderate (1–3 days), High (today),
+No recent data (nothing in the 7-day window). Explicitly labelled
+"Estimated from recent training history — not a medical or sensor
+measurement", with a full sr-only text equivalent (state + reason per muscle).
+**RPC unavailability is a first-class state**: if `svj_recent_muscle_history`
+is not deployed (PGRST202/42883/42P01, sanitized via the existing
+`sanitizeTrainingRpcError`), the map shows "Muscle recovery data isn't
+available on this deployment yet." — no fake values, and Focus, streak,
+readiness, check-in and history are unaffected. A transient failure shows a
+retry card. Data loads through the lightweight `useRecoveryInsights` hook
+(`svj_list_goals`, `svj_get_my_training_profile`, `svj_recent_muscle_history`
+only — `useTrainingPlan` is deliberately not mounted).
+
+### Shared readiness channel (smallest refactor)
+
+`TrainRecovery` now publishes its already-computed combined `ReadinessResult`
+and day history upward through `ReadinessHistoryProvider`
+(`src/app/lib/readinessShared.ts` + `src/app/components/ReadinessHistoryProvider.tsx`),
+so the Focus and Streak widgets read exactly the panel's numbers instead of
+computing a second, competing readiness. The standalone Train › Recovery path
+is unchanged (no provider → no widgets), and its behavior is pinned by the
+Phase 1 UI test.
+
+### Tests
+
+- `tests/recovery-insights-phase3.test.ts` (31) — streak (0 with no
+  check-ins, consecutive counts, missing-day break, local placeholders never
+  counted), Focus (profile-goal first, svj_goals secondary, expired-by-date
+  and future goals ignored, deterministic reactions to readiness/load/band
+  changes, never contradicting the panel score), fatigue (states from real
+  rows, stale history, empty data, broken rows tolerated, disabled muscles
+  skipped).
+- `tests/recovery-insights-widgets.test.mjs` (15) — the real Overview widgets
+  in jsdom against mocked RPC boundaries: widget stacking around the panel,
+  gold Flame pill, focus wording with profile goal + applicable goal, expired
+  goal ignored, all three muscle states + sr-only text equivalent, the
+  deployment-unavailable and transient-error states (no raw error text), empty
+  muscle state, loading state, six sections intact, standalone Train ›
+  Recovery path widget-free.
+
+Validation for the Phase 3 checkpoint: **1125 tests — 1123 pass / 0 fail / 2
+skipped**, `bunx tsc --noEmit` clean, ESLint 0 errors on changed files,
+Prettier clean, `bun run build` PASS. No database changes.

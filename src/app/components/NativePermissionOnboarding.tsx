@@ -22,7 +22,8 @@ const STEP_COPY: Record<
   activity: {
     title: "Physical activity",
     description: "Track real steps and movement with your device sensors.",
-    detail: "Used by Activity tracking and progress. SVJ only counts while its tracking flow is active.",
+    detail:
+      "Used by Activity tracking and progress. SVJ only counts while its tracking flow is active.",
     Icon: Activity,
   },
   notifications: {
@@ -128,11 +129,7 @@ export const NativePermissionOnboarding: React.FC = () => {
       setBusy(false);
     }
 
-    setResult(
-      granted
-        ? "Allowed"
-        : "Not allowed — you can enable it later when the feature needs it.",
-    );
+    setResult(granted ? "Allowed" : "Not allowed — you can enable it later when the feature needs it.");
     window.setTimeout(() => advance(), 550);
   };
 
@@ -192,7 +189,8 @@ export const NativePermissionOnboarding: React.FC = () => {
         </div>
 
         <p className="mt-4 text-center text-[10px] leading-relaxed text-[#6F6F75]">
-          Skipping does not block SVJ. The relevant feature can request permission again when you use it.
+          Skipping does not block SVJ. The relevant feature can request permission again when you
+          use it.
         </p>
       </section>
     </div>

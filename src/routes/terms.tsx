@@ -36,8 +36,9 @@ function TermsPage() {
           <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">2. Account</h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              You must be at least 13 years old to create an account. You are responsible for
-              maintaining the security of your account credentials. One account per person.
+              You must be at least 18 years old to create an account. SVJ does not offer accounts to
+              children or operate a parental-consent flow. You are responsible for maintaining the
+              security of your account credentials. One account per person.
             </p>
           </div>
         </section>
@@ -54,6 +55,12 @@ function TermsPage() {
             <p>
               Membership is non-transferable and locked to your account. Lifetime membership
               (Founder accounts) cannot be downgraded or replaced with timed membership.
+            </p>
+            <p>
+              Paid SVJ Plus access is a one-time purchase, not a recurring subscription. The price
+              and access period are shown before payment, access is activated after the owner
+              verifies the payment, and no automatic renewal or cancellation charge is created.
+              Refund requests are handled through the in-app support contact.
             </p>
           </div>
         </section>

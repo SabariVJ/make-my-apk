@@ -276,7 +276,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                 >
                   Yearly
                   <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-gold text-[9px] font-bold text-black uppercase">
-                    Save 58%
+                    Save 50%
                   </span>
                 </button>
               </div>
@@ -318,14 +318,16 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                     Yearly
                   </div>
                   <div className="text-2xl font-anton text-white flex items-baseline gap-1">
+                    {/* ₹99 × 12 = ₹1,188 is the real monthly-equivalent total, so
+                        the comparison figure is not inflated. */}
                     <span className="text-xs font-mono text-[#8C8C90] line-through font-normal">
-                      ₹1,200
+                      ₹1,188
                     </span>
                     ₹599
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / year</span>
                   </div>
                   <p className="text-[10px] font-mono text-emerald-400 mt-1 font-semibold">
-                    50% OFF — Save ₹600 vs monthly
+                    50% OFF — Save ₹589 vs 12 months
                   </p>
                 </div>
               </div>
@@ -375,7 +377,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                       to upgrade to SVJ Plus.
                     </p>
                     <p className="text-[10px] font-mono text-[#8C8C90] mt-2">
-                      Already paid? Contact support to activate your subscription:
+                      Already paid? Contact support to activate your SVJ Plus access:
                     </p>
                     <a
                       href={buildWhatsAppUrl(
@@ -413,7 +415,39 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                         Secure Payment
                       </span>
                       <span>•</span>
-                      <span>Cancel Anytime</span>
+                      <span>One-time payment</span>
+                    </div>
+
+                    {/* Truthful purchase disclosure shown next to the CTA. SVJ
+                        Plus is a one-time UPI transfer with manual activation:
+                        there is no subscription and nothing recurs, so no
+                        auto-renewal, trial conversion or "cancel anytime"
+                        promise is made. */}
+                    <div
+                      data-testid="plus-purchase-disclosure"
+                      className="rounded-2xl border border-white/10 bg-[#17171A] p-3 space-y-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]"
+                    >
+                      <p className="text-[#B8B8C0]">
+                        <span className="text-white font-bold">Price & term:</span> ₹99 for 1 month,
+                        or ₹599 for 12 months, in INR.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">No auto-renewal:</span> this is a
+                        one-time payment. It does not renew and no recurring charge is created.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">Activation:</span> SVJ Plus is turned
+                        on manually after the payment is verified, so it is not instant.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">Cancel & refunds:</span> there is no
+                        subscription to cancel and nothing to stop. For a refund or a billing
+                        question, contact support from Profile → Contact support. See the{" "}
+                        <a href="/terms" className="text-[#C81E3A] underline underline-offset-2">
+                          Terms of Service
+                        </a>
+                        .
+                      </p>
                     </div>
                   </>
                 )}

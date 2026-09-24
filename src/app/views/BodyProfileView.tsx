@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "motion/react";
 import { Calculator, Scale, Flame, Target, Apple, Loader2, ChevronRight, Info } from "lucide-react";
+import { SVJDatePicker } from "../components/ui-primitives/SVJDatePicker";
+import { todayDateValue } from "../components/ui-primitives/datePickerUtils";
 import {
   saveBodyProfile,
   getBodyProfile,
@@ -302,6 +304,9 @@ export const BodyProfileView: React.FC = () => {
         setLoading(false);
       }
     })();
+    // This is an intentional mount-only hydration. Re-running when TanStack
+    // returns a fresh server-function wrapper would refetch and overwrite edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSave = async () => {
@@ -363,12 +368,14 @@ export const BodyProfileView: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Date of Birth</label>
-            <input
-              type="date"
+            {/* Dark in-app calendar: a native date field would open the Android
+                system DatePicker dialog (white sheet) instead. */}
+            <SVJDatePicker
+              label="Date of Birth"
+              testId="body-dob"
               value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              max={todayDateValue()}
+              onChange={setDob}
             />
           </div>
           <div className="space-y-1">

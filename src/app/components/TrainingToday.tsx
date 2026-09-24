@@ -24,6 +24,7 @@ import {
 } from "../lib/trainingProfile";
 import { templateForSlot, SESSION_FAMILY_LABELS } from "../lib/trainingTemplates";
 import { SVJSelect } from "./ui-primitives/SVJSelect";
+import { SVJDatePicker } from "./ui-primitives/SVJDatePicker";
 import { svjStaggerContainer, svjStaggerItem, svjWhileTap } from "../lib/motion";
 import type { PlanSession } from "../lib/trainingPlan";
 import type { MuscleHistoryRow } from "../lib/trainingClient";
@@ -655,29 +656,39 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
                 )}
 
                 {editable && movingSlot === session.slotIndex && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <label className="text-[10px] font-inter text-[#8C8C90]">
-                      New day
-                      <input
-                        type="date"
-                        aria-label={`New date for ${session.label}`}
-                        disabled={sessionBusy}
-                        onChange={async (e) => {
-                          const value = e.target.value;
-                          if (!value || !serverId) return;
-                          setSessionBusy(true);
-                          setSessionError(null);
-                          const result = await onMoveSession(serverId, value);
-                          setSessionBusy(false);
-                          if (!result.ok) {
-                            setSessionError(result.error ?? "Couldn't move that session.");
-                          } else {
-                            setMovingSlot(null);
-                          }
-                        }}
-                        className="ml-2 rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] font-mono text-white"
-                      />
-                    </label>
+                  <div className="mt-2">
+                    {/*
+                     * Dark in-app calendar, never a native HTML date field.
+                     * Android WebView hands a native date input to the OS
+                     * DatePicker dialog, which is themed by Android rather than
+                     * by the web UI and shows up as a giant white sheet with a
+                     * dimmed app behind it — unthemeable from CSS. Cancel leaves
+                     * the schedule untouched; Set moves the session server-side.
+                     */}
+                    <SVJDatePicker
+                      label="New day"
+                      testId={`move-session-date-${session.slotIndex}`}
+                      value={session.scheduledDate}
+                      disabled={sessionBusy}
+                      onChange={async (value) => {
+                        if (!serverId) return;
+                        // Re-picking the day it already sits on is a no-op: close
+                        // the Move panel without a pointless server write.
+                        if (value === session.scheduledDate) {
+                          setMovingSlot(null);
+                          return;
+                        }
+                        setSessionBusy(true);
+                        setSessionError(null);
+                        const result = await onMoveSession(serverId, value);
+                        setSessionBusy(false);
+                        if (!result.ok) {
+                          setSessionError(result.error ?? "Couldn't move that session.");
+                        } else {
+                          setMovingSlot(null);
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </motion.li>

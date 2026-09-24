@@ -16,6 +16,10 @@ import {
   Target,
 } from "lucide-react";
 import { GpsActivityDetail } from "./GpsActivityDetail";
+import { SVJSelect } from "../components/ui-primitives/SVJSelect";
+import { SVJDatePicker } from "../components/ui-primitives/SVJDatePicker";
+import { todayDateValue } from "../components/ui-primitives/datePickerUtils";
+import { SVJTimePicker } from "../components/ui-primitives/SVJTimePicker";
 import { useActivityOptional, type ActivityTypeFromLib } from "../context/ActivityContext";
 import {
   ACTIVITY_TYPES,
@@ -99,17 +103,15 @@ export const CompletedSessionCard: React.FC = () => {
       )}
 
       <div className="mt-4 flex items-center gap-2">
-        <select
+        {/* Dark in-app listbox: a native select renders as a white Android popup. */}
+        <SVJSelect
+          label="Activity type"
+          testId="saved-activity-type"
+          className="flex-1"
           value={type}
-          onChange={(e) => setType(e.target.value as ActivityTypeFromLib)}
-          className="flex-1 rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white"
-        >
-          {TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          options={TYPE_OPTIONS}
+          onChange={(next) => setType(next)}
+        />
         <button
           type="button"
           onClick={() => void save()}
@@ -679,31 +681,25 @@ const ManualActivityForm: React.FC<{
           <X className="w-3.5 h-3.5 text-[#8C8C90]" />
         </button>
       </div>
-      <select
+      {/* Dark in-app listbox + calendar + time dialog. Native date/time/select
+          controls are handed to the Android system dialogs, which are themed by
+          the OS (big white sheets) and cannot be styled from CSS. */}
+      <SVJSelect
+        label="Activity type"
+        testId="log-activity-type"
         value={type}
-        onChange={(e) => setType(e.target.value as ActivityTypeFromLib)}
-        className="w-full rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white"
-      >
-        {TYPE_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
+        options={TYPE_OPTIONS}
+        onChange={(next) => setType(next)}
+      />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <SVJDatePicker
+          label="Date"
+          testId="log-activity-date"
           value={date}
-          max={new Date().toISOString().slice(0, 10)}
-          onChange={(e) => setDate(e.target.value)}
-          className="rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white"
+          max={todayDateValue()}
+          onChange={setDate}
         />
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white"
-        />
+        <SVJTimePicker label="Time" testId="log-activity-time" value={time} onChange={setTime} />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <label className="text-[9px] font-mono uppercase text-[#8C8C90]">

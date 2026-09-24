@@ -7,6 +7,7 @@
 **Impact:** Cannot produce a signed release AAB for Play Console upload.
 
 **Resolution:**
+
 - The original Lovable build environment may have generated an upload keystore
 - If lost, generate a new one (note: you will need to enroll in Play App Signing and upload the new key)
 - Set environment variables: `SVJ_KEYSTORE_PATH`, `SVJ_KEYSTORE_PASSWORD`, `SVJ_KEY_ALIAS`, `SVJ_KEY_PASSWORD`
@@ -17,6 +18,7 @@
 **Impact:** Ads will not serve in EEA/UK regions without the required UMP consent form.
 
 **Resolution:**
+
 1. Go to [AdMob Console](https://apps.admob.com) → Privacy & messaging
 2. Create a GDPR consent message
 3. Configure it to match the app's data usage declarations
@@ -28,7 +30,8 @@
 **Impact:** The web build passes but the native Android APK has not been tested in this sprint environment.
 
 **Resolution:**
-- Run `npx cap sync android` then `cd android && ./gradlew assembleDebug` locally
+
+- Run `bun run cap:sync`, then `cd android && ./gradlew assembleDebug` locally
 - Install the debug APK on a test device
 - Verify all 5 tabs render on Android (Challenges, Train, Fuel, 60 Day, Profile)
 - Verify Community and Leaderboard are hidden
@@ -41,6 +44,7 @@
 **Impact:** New developer accounts require 12 closed testers opted in for 14 consecutive days before production release is allowed.
 
 **Resolution:**
+
 - Register 12 test accounts in Play Console → Testing → Closed testing
 - Create a release track and upload the signed AAB
 - Ensure all 12 testers are opted in for 14 days before requesting production
@@ -49,16 +53,17 @@
 
 The account deletion implementation (`src/lib/account.functions.ts`) assumes:
 
-| Table | Assumption | Risk |
-|---|---|---|
-| `profiles` | Has `id` column matching `auth.users.id` | Low — standard Supabase pattern |
-| `challenge_enrollments` | Has `user_id` column | Low — visible in migrations |
-| `challenge_day_progress` | Has `user_id` column | Low — visible in migrations |
-| `redemption_codes` | Has `redeemed_by` column (nullable) | Low — standard pattern |
-| `friendships` | Has `user_id` and `friend_id` columns | Medium — naming not verified in production |
-| `friend_requests` | Has `sender_id` and `receiver_id` columns | Medium — naming not verified in production |
+| Table                    | Assumption                                | Risk                                       |
+| ------------------------ | ----------------------------------------- | ------------------------------------------ |
+| `profiles`               | Has `id` column matching `auth.users.id`  | Low — standard Supabase pattern            |
+| `challenge_enrollments`  | Has `user_id` column                      | Low — visible in migrations                |
+| `challenge_day_progress` | Has `user_id` column                      | Low — visible in migrations                |
+| `redemption_codes`       | Has `redeemed_by` column (nullable)       | Low — standard pattern                     |
+| `friendships`            | Has `user_id` and `friend_id` columns     | Medium — naming not verified in production |
+| `friend_requests`        | Has `sender_id` and `receiver_id` columns | Medium — naming not verified in production |
 
 **All tables use `ON DELETE CASCADE` from `auth.users`**, meaning Supabase will automatically cascade-delete owned rows when the Auth user is deleted. The deletion function additionally:
+
 1. Anonymizes friendships (sets both sides to null)
 2. Clears redemption code ownership
 3. Calls `supabaseAdmin.auth.admin.deleteUser()` as the final step
@@ -68,17 +73,21 @@ The account deletion implementation (`src/lib/account.functions.ts`) assumes:
 ## What Was Completed
 
 ### Commit 1: Harden Supabase administrator key selection
+
 - `normalizeKey()` with `.trim()` + `||` for whitespace-safe fallback
 - Priority: `SVJ_SUPABASE_SECRET_KEY` > `SUPABASE_SERVICE_ROLE_KEY`
 - 20+ tests for key selection, fallback, and rejection
 
 ### Commit 2: Enforce admin-key guard on privileged server operations
+
 - `requireAdminKey()` guard exported from `client.server.ts`
 - All 6 server functions that use `supabaseAdmin` now check for a valid admin key before database access
 - 40 total tests
 
 ### Commit 3: Release hardening (this sprint)
+
 Files changed:
+
 - `src/app/components/NativeBannerAd.tsx` — UMP consent flow + privacy options
 - `src/app/views/ProfileView.tsx` — Privacy Choices button (Android) + delete account link
 - `src/app/components/Navigation.tsx` — Hide Community/Leaderboard on Android
@@ -93,6 +102,22 @@ Files changed:
 - `src/routes/delete-account.tsx` — Public account deletion page
 - `src/lib/account.functions.ts` — Server-authorized account deletion
 - `src/routeTree.gen.ts` — Regenerated route tree
+
+## Final hardening audit — 24 September 2026
+
+### Verified code fixes
+
+- Signup and Google signup now require an explicit 18+ self-attestation; the Terms use the same adult-only eligibility statement.
+- SVJ Plus copy now describes a one-time, manually activated purchase and no recurring subscription.
+- The Play Console data-deletion entry point is `/data-deletion`, backed by the existing authenticated deletion flow.
+- Capacitor cleartext traffic is disabled; the Android manifest disables application-data backup.
+- Activity graphs and native Android date/time picker surfaces are covered by regression tests.
+
+### Validation boundary
+
+- Web tests, TypeScript, focused ESLint/Prettier, Android theme tests, and the production web build are verified in this workspace.
+- Capacitor sync passes, but Java and the Android SDK are not installed here, so Gradle lint, unit tests, `assembleDebug`, and on-device verification remain unverified.
+- Play signing secrets and the AdMob GDPR message are external owner configuration and cannot be verified in the repository.
 
 ## Owner Action Items
 

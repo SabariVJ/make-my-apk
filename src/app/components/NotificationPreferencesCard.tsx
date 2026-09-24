@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Bell, BellOff, Check, Loader2, Send } from "lucide-react";
+import { SVJTimePicker } from "./ui-primitives/SVJTimePicker";
 import { Capacitor } from "@capacitor/core";
 import { useSVJ } from "../context/SVJContext";
 import {
@@ -202,7 +203,9 @@ export const NotificationPreferencesCard: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+      {/* Dark in-app time dialog per slot — a native time field opens the
+          Android system TimePicker dialog, which is a white sheet. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {[
           ["Morning", "morningTime"],
           ["Evening", "eveningTime"],
@@ -210,19 +213,13 @@ export const NotificationPreferencesCard: React.FC = () => {
           ["Nutrition", "nutritionTime"],
           ["Session", "trainingTime"],
         ].map(([label, key]) => (
-          <label key={key} className="rounded-xl border border-white/5 bg-black/30 p-2.5">
-            <span className="mb-1 block text-[9px] font-mono uppercase text-[#8C8C90]">
-              {label}
-            </span>
-            <input
-              type="time"
-              value={prefs[key as keyof NotificationPreferences] as string}
-              onChange={(event) =>
-                patch(key as keyof NotificationPreferences, event.target.value as never)
-              }
-              className="w-full bg-transparent text-xs font-mono text-white outline-none"
-            />
-          </label>
+          <SVJTimePicker
+            key={key}
+            label={label}
+            testId={`notify-${key}`}
+            value={prefs[key as keyof NotificationPreferences] as string}
+            onChange={(next) => patch(key as keyof NotificationPreferences, next as never)}
+          />
         ))}
       </div>
 

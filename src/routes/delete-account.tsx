@@ -16,7 +16,12 @@ export const Route = createFileRoute("/delete-account")({
   component: DeleteAccountPage,
 });
 
-function DeleteAccountPage() {
+/**
+ * Exported so `/data-deletion` can render the identical flow. Play Console asks
+ * for a "data deletion" URL while the app links to `/delete-account`; both paths
+ * must reach the same deliberate, re-authenticated deletion screen.
+ */
+export function DeleteAccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");

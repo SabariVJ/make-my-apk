@@ -44,6 +44,20 @@ function PrivacyPage() {
               <strong className="text-white">Social data:</strong> Friend connections and friend
               requests you initiate or receive.
             </p>
+            <p>
+              <strong className="text-white">Fitness and recovery data:</strong> Workouts, sets,
+              reps, load, training plans, activity steps and routes, GPS points, recovery check-ins,
+              reported sleep, readiness history, goals, progress, and consistency insights. Health
+              Connect data is read only when you explicitly connect and authorize it; SVJ does not
+              write to Health Connect.
+            </p>
+            <p>
+              <strong className="text-white">Device and communication data:</strong> Notification
+              preferences, support messages you send, and advertising/device identifiers handled by
+              Google AdMob. SVJ keeps fitness data in the app while you use the service; you can
+              delete your account from Profile or the deletion page. SVJ is intended for people aged
+              18 or older and does not knowingly create accounts for children.
+            </p>
           </div>
         </section>
 
@@ -53,9 +67,10 @@ function PrivacyPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              Your data is used to provide the SVJ experience: tracking your challenges, XP,
-              streaks, membership status, and social connections. Activity data powers the
-              leaderboard and friend comparisons.
+              Your data is used to provide the SVJ experience: tracking challenges, training,
+              recovery, XP, streaks, membership status, reminders, and social connections. Activity
+              data powers the leaderboard and friend comparisons. Location and route data are used
+              to record the routes and distance you choose to track.
             </p>
             <p>
               We do not sell your personal data to third parties. We do not directly use your data
@@ -88,6 +103,12 @@ function PrivacyPage() {
               <strong className="text-white">Google OAuth:</strong> If you use "Continue with
               Google," Google processes your authentication. We receive your email and profile
               information per your Google permissions. We do not access other Google data.
+            </p>
+            <p>
+              <strong className="text-white">Health Connect and device sensors:</strong> With your
+              permission, SVJ reads health and activity records, step counts, and location during an
+              activity you start. Sensor readings stay on your device unless you save or sync the
+              resulting activity.
             </p>
             <p>
               <strong className="text-white">Google AdMob:</strong> The Android app displays

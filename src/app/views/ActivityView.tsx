@@ -12,7 +12,6 @@ import {
   Cpu,
   AlertCircle,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
 import { TrainGoals, TrainProgress } from "./TrainGoals";
@@ -94,90 +93,36 @@ const ProgressRing: React.FC<{
   );
 };
 
-const StepChart: React.FC<{ data: { label: string; steps: number }[] }> = ({ data }) => (
-  <ResponsiveContainer width="100%" height={160}>
-    <BarChart data={data} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-      <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-      <XAxis
-        dataKey="label"
-        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
-        axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-        tickLine={false}
-        interval="preserveStartEnd"
-      />
-      <YAxis
-        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
-        axisLine={false}
-        tickLine={false}
-        tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))}
-      />
-      <Tooltip
-        cursor={{ fill: "rgba(230,40,70,0.08)" }}
-        contentStyle={{
-          background: "#141116",
-          border: "1px solid rgba(230,40,70,0.35)",
-          borderRadius: 12,
-          fontFamily: "monospace",
-          fontSize: 11,
-        }}
-        labelStyle={{ color: "#F4F2ED" }}
-        itemStyle={{ color: "#E62846" }}
-      />
-      <Bar dataKey="steps" fill="#E62846" radius={[4, 4, 0, 0]} maxBarSize={26} />
-    </BarChart>
-  </ResponsiveContainer>
-);
-
-const KcalChart: React.FC<{ data: { label: string; activeKcal: number }[] }> = ({ data }) => (
-  <ResponsiveContainer width="100%" height={160}>
-    <BarChart data={data} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-      <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-      <XAxis
-        dataKey="label"
-        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
-        axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-        tickLine={false}
-        interval="preserveStartEnd"
-      />
-      <YAxis
-        tick={{ fill: "#8C8C90", fontSize: 9, fontFamily: "monospace" }}
-        axisLine={false}
-        tickLine={false}
-      />
-      <Tooltip
-        cursor={{ fill: "rgba(245,158,11,0.08)" }}
-        contentStyle={{
-          background: "#141116",
-          border: "1px solid rgba(245,158,11,0.35)",
-          borderRadius: 12,
-          fontFamily: "monospace",
-          fontSize: 11,
-        }}
-        labelStyle={{ color: "#F4F2ED" }}
-        itemStyle={{ color: "#F59E0B" }}
-      />
-      <Bar dataKey="activeKcal" fill="#F59E0B" radius={[4, 4, 0, 0]} maxBarSize={26} />
-    </BarChart>
-  </ResponsiveContainer>
-);
-
+/**
+ * Period summaries only.
+ *
+ * The two per-period bar graphs (steps, and estimated calories burned) were
+ * removed from this screen — they were the only Activity chart visualizations
+ * and the summary tiles already convey the same period numbers. `Avg Steps`,
+ * `Best Day`
+ * and `Avg KCAL` are still computed by the Activity provider and rendered here,
+ * so no aggregation was dropped. Do not re-add a chart block to this card; the
+ * `activity-summary` test guards against the graphs returning.
+ */
 const HistoryPanel: React.FC<{
   title: string;
-  history: { label: string; steps: number; activeKcal: number }[];
   summary: {
     averageSteps: number;
     bestDay: { label: string; steps: number } | null;
     averageActiveKcal: number;
   };
-}> = ({ title, history, summary }) => (
-  <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
-    <div className="flex items-center gap-2 mb-3">
+}> = ({ title, summary }) => (
+  <div
+    data-testid="activity-period-summary"
+    className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-3"
+  >
+    <div className="flex items-center gap-2 mb-2.5">
       <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
       <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
         {title}
       </span>
     </div>
-    <div className="grid grid-cols-3 gap-2 mb-4">
+    <div className="grid grid-cols-3 gap-2">
       <div className="svj-stat p-2.5 text-center">
         <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg Steps</div>
         <div className="font-mono text-sm font-bold text-white">
@@ -198,18 +143,6 @@ const HistoryPanel: React.FC<{
         <div className="font-mono text-sm font-bold text-gold">
           {summary.averageActiveKcal.toLocaleString()}
         </div>
-      </div>
-    </div>
-    <div className="space-y-3">
-      <div>
-        <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Daily Steps</div>
-        <StepChart data={history} />
-      </div>
-      <div>
-        <div className="text-[11px] font-inter text-[#8C8C90] mb-1">
-          Daily Calories Burned (est.)
-        </div>
-        <KcalChart data={history} />
       </div>
     </div>
   </div>
@@ -277,8 +210,6 @@ const ActivityViewContent: React.FC<{
     getSensorInfo,
     statusMessage,
     stepSource,
-    history7,
-    history30,
     summary7,
     summary30,
     debugInfo,
@@ -299,16 +230,6 @@ const ActivityViewContent: React.FC<{
   const [plannedRoute, setPlannedRoute] = useState<SavedRoute | null>(null);
 
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
-  const chart7 = history7.map((d) => ({
-    label: d.label,
-    steps: d.steps,
-    activeKcal: d.activeKcal,
-  }));
-  const chart30 = history30.map((d) => ({
-    label: d.label,
-    steps: d.steps,
-    activeKcal: d.activeKcal,
-  }));
 
   return (
     <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
@@ -524,11 +445,11 @@ const ActivityViewContent: React.FC<{
       {/* Server-backed activity history + manual logging (Update 01) */}
       {section === "history" && <ActivityHistory />}
 
-      {/* Charts */}
+      {/* Period summaries (Avg Steps / Best Day / Avg KCAL) — no chart blocks. */}
       {section === "activity" && (
         <>
-          <HistoryPanel title="Last 7 Days" history={chart7} summary={summary7} />
-          <HistoryPanel title="Last 30 Days" history={chart30} summary={summary30} />
+          <HistoryPanel title="Last 7 Days" summary={summary7} />
+          <HistoryPanel title="Last 30 Days" summary={summary30} />
         </>
       )}
 

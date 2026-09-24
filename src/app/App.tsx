@@ -32,6 +32,7 @@ import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
+import { NativePermissionOnboarding } from "./components/NativePermissionOnboarding";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -81,13 +82,6 @@ const AppContent: React.FC<{
   useEffect(() => {
     setShowTrialNotice(locked);
   }, [locked]);
-
-  // Android Play: reset hidden tabs if they somehow become active
-  useEffect(() => {
-    if (isAndroid && activeTab === "leaderboard") {
-      setActiveTab("challenges");
-    }
-  }, [activeTab, isAndroid]);
 
   const {
     user,
@@ -271,6 +265,11 @@ const AppContent: React.FC<{
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
       <NotificationCoordinator />
+
+      {/* Native first-run permission education. Each permission is requested
+          only after the user taps Allow; skipped permissions are requested
+          again contextually by the feature that needs them. */}
+      <NativePermissionOnboarding />
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />

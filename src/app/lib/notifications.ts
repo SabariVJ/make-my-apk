@@ -88,6 +88,21 @@ export interface TrainingPlanDay {
   title?: string | null;
 }
 
+export const TRAINING_SESSION_NOTIFICATION_ID_BASE = 108_000_000;
+
+/**
+ * Stable per-day Android notification id for automated training reminders.
+ * AlarmManager PendingIntents must be unique per scheduled day; a single
+ * hard-coded id would cause later plan days to replace earlier ones.
+ */
+export function trainingSessionNotificationId(date: string): number {
+  const compact = Number(date.replace(/-/g, ""));
+  if (!Number.isInteger(compact) || compact <= 0) {
+    return TRAINING_SESSION_NOTIFICATION_ID_BASE;
+  }
+  return TRAINING_SESSION_NOTIFICATION_ID_BASE + (compact % 1_000_000);
+}
+
 export interface NotificationPlannerInput {
   now: Date;
   firstName: string;
@@ -366,7 +381,7 @@ export function buildNotificationPlan(
       if (triggerAt.getTime() <= now.getTime()) continue; // already past today
       if (isWithinQuietHours(triggerAt)) continue; // never deliver at night
       schedules.push({
-        id: 108,
+        id: trainingSessionNotificationId(day.date),
         title: "Training session today",
         body: day.title
           ? `${day.title} is scheduled for today.`

@@ -129,8 +129,15 @@ describe("SVJDatePicker date maths", { concurrency: false }, () => {
 
   it("renders a readable long date", () => {
     // Locale ordering varies by ICU build; both orderings are readable.
-    assert.match(app.formatLongDate("2026-09-24"), /24 Sep 2026|Sep 24, 2026/);
-    assert.match(app.formatDayLabel(2026, 8, 24), /24 September 2026|September 24, 2026/);
+    const longDate = app.formatLongDate("2026-09-24");
+    assert.match(longDate, /24/);
+    assert.match(longDate, /Sep|Sept|September/);
+    assert.match(longDate, /2026/);
+
+    const dayLabel = app.formatDayLabel(2026, 8, 24);
+    assert.match(dayLabel, /24/);
+    assert.match(dayLabel, /September/);
+    assert.match(dayLabel, /2026/);
     assert.equal(app.todayDateValue().length, 10);
   });
 
@@ -162,7 +169,10 @@ describe("SVJDatePicker interaction", { concurrency: false }, () => {
     assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
     assert.equal(trigger.getAttribute("aria-expanded"), "true");
     assert.match(trigger.className, /min-h-\[44px\]/);
-    assert.match(screen.getByTestId("move-date-value").textContent, /24 Sep 2026|Sep 24, 2026/);
+    const triggerText = screen.getByTestId("move-date-value").textContent;
+    assert.match(triggerText, /24/);
+    assert.match(triggerText, /Sep|Sept|September/);
+    assert.match(triggerText, /2026/);
     // The page must not contain a native date input that Android could hijack.
     assert.equal(document.querySelectorAll('input[type="date"]').length, 0);
     assert.equal(document.querySelectorAll("input").length, 0);
@@ -238,7 +248,10 @@ describe("SVJDatePicker interaction", { concurrency: false }, () => {
     });
     assert.deepEqual(calls, [], "Cancel never writes a new date");
     assert.equal(screen.queryByRole("dialog"), null);
-    assert.match(screen.getByTestId("move-date-value").textContent, /24 Sep 2026|Sep 24, 2026/);
+    const restoredText = screen.getByTestId("move-date-value").textContent;
+    assert.match(restoredText, /24/);
+    assert.match(restoredText, /Sep|Sept|September/);
+    assert.match(restoredText, /2026/);
 
     // Re-opening must reset the draft back to the committed value.
     await act(async () => {

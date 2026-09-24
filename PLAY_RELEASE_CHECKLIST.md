@@ -2,21 +2,21 @@
 
 ## 1. Pre-Submission Code Checks (✅ Completed)
 
-| Check                                    | Result                                         |
-| ---------------------------------------- | ---------------------------------------------- |
-| `bun install --frozen-lockfile`          | ✅ PASS                                        |
-| `bunx tsc --noEmit`                      | ✅ PASS                                        |
-| `bun run build` (web)                    | ✅ PASS                                        |
-| `bun run test`                           | ✅ 1,347 tests: 1,345 pass, 0 fail, 2 skipped  |
-| `bunx eslint <changed files>`            | ✅ PASS — 0 errors, 0 warnings                 |
-| `bunx prettier --check <changed files>`  | ✅ PASS                                        |
-| `git diff --check`                       | ✅ PASS                                        |
-| `python3 scripts/test_android_themes.py` | ✅ 8/8 PASS                                    |
-| `bun run cap:sync`                       | ✅ PASS — configuration/plugins synchronized   |
-| Android lint / unit tests                | NOT RUN — Java and Android SDK are unavailable |
-| `gradlew assembleDebug`                  | NOT RUN — Java and Android SDK are unavailable |
+| Check                                                               | Result                                                |
+| ------------------------------------------------------------------- | ----------------------------------------------------- |
+| `bun install --frozen-lockfile`                                     | ✅ PASS                                               |
+| `bunx tsc --noEmit`                                                 | ✅ PASS                                               |
+| `bun run build` (web)                                               | ✅ PASS                                               |
+| `bun run test`                                                      | ✅ 1,348 tests: 1,346 pass, 0 fail, 2 skipped         |
+| `bunx eslint <changed files>`                                       | ✅ PASS — 0 errors, 0 warnings                        |
+| `bunx prettier --check <changed files>`                             | ✅ PASS                                               |
+| `git diff --check`                                                  | ✅ PASS                                               |
+| `python3 scripts/test_android_themes.py`                            | ✅ 8/8 PASS                                           |
+| `bun run cap:sync`                                                  | ✅ PASS — configuration/plugins synchronized          |
+| GitHub Actions Android phone/wear lint, unit tests and debug builds | ✅ PASS in CI                                         |
+| GitHub Actions release bundle validation                            | ✅ PASS — phone/wear AABs and shared signing identity |
 
-**Verdict:** CODE CHECKS = PASS (web), NOT TESTED (Android native)
+**Verdict:** CODE + CI CHECKS PASS; physical-device verification remains
 
 ## 2. Signing Configuration
 

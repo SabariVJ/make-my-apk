@@ -134,4 +134,14 @@ describe("CI release validation", () => {
     assert.match(y, /svj-validation-only/);
     assert.match(y, /EPHEMERAL VALIDATION key/);
   });
+
+  it("uses current Node 24 action runtimes and makes Android lint blocking", () => {
+    const y = ci();
+    assert.match(y, /actions\/checkout@v7/);
+    assert.match(y, /actions\/cache@v6/);
+    assert.match(y, /actions\/setup-java@v6/);
+    assert.match(y, /actions\/upload-artifact@v7/);
+    assert.doesNotMatch(y, /actions\/(?:checkout|cache|setup-java|upload-artifact)@v[1-5]\b/);
+    assert.doesNotMatch(y, /continue-on-error:\s*true/);
+  });
 });

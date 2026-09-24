@@ -148,13 +148,13 @@
 
 ## Final release-hardening continuation — 24 September 2026
 
-| Phase                                      | Status            | Evidence                                                                                                                                              |
-| ------------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A — Activity graph removal                 | ✅ DONE           | Avg Steps / Best Day / Avg KCAL retained; two chart blocks removed; focused regression test                                                           |
-| B — Android Train picker                   | ✅ DONE           | App-controlled dark date/time dialogs replace native WebView picker surfaces; focused interaction and source-guard tests                              |
-| C — Native/security/legal/compliance audit | ✅ DONE           | Findings recorded in `COMPLIANCE_BLOCKERS.md` and `PLAY_RELEASE_CHECKLIST.md`                                                                         |
-| D — Verified blocker/high fixes            | ✅ DONE           | Adult eligibility alignment, truthful Plus purchase copy, Play data-deletion route, cleartext disabled, backups disabled, privacy disclosure expanded |
-| E — Final validation                       | ✅ WEB / ⚠ NATIVE | Full web suite, TypeScript, lint/format, Android theme tests, and production build pass; native Gradle/device validation unavailable without Java/SDK |
+| Phase                                      | Status               | Evidence                                                                                                                                              |
+| ------------------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A — Activity graph removal                 | ✅ DONE              | Avg Steps / Best Day / Avg KCAL retained; two chart blocks removed; focused regression test                                                           |
+| B — Android Train picker                   | ✅ DONE              | App-controlled dark date/time dialogs replace native WebView picker surfaces; focused interaction and source-guard tests                              |
+| C — Native/security/legal/compliance audit | ✅ DONE              | Findings recorded in `COMPLIANCE_BLOCKERS.md` and `PLAY_RELEASE_CHECKLIST.md`                                                                         |
+| D — Verified blocker/high fixes            | ✅ DONE              | Adult eligibility alignment, truthful Plus purchase copy, Play data-deletion route, cleartext disabled, backups disabled, privacy disclosure expanded |
+| E — Final validation                       | ✅ BUILDS / ⚠ DEVICE | Full web suite, TypeScript, lint/format, phone/wear native CI, release AABs, and signing identity pass; physical-device verification remains          |
 
 Starting SHA for this continuation: `0862e0996101ef531ee1f2f532852207734770b8`.
 

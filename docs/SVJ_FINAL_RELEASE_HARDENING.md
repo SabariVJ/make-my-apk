@@ -37,6 +37,7 @@
 - Disabled Android application-data backup so local authenticated/offline application data is not copied into platform backups.
 - Expanded the privacy disclosure to cover training, recovery, GPS/routes, Health Connect, notifications, support data, and adult-only eligibility.
 - Added `tests/release-hardening.test.mjs` to guard the verified release decisions.
+- Upgraded CI to current Node 24 action runtimes (`checkout@v7`, `cache@v6`, `setup-java@v6`, `upload-artifact@v7`) and made phone/wear Android lint failures block CI instead of being ignored.
 
 ## Database changes
 
@@ -49,14 +50,14 @@
 | Check                                        | Result                                                                                                            |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Focused Activity/Train/release tests         | PASS                                                                                                              |
-| Full `bun run test`                          | PASS — 1,347 tests: 1,345 passed, 0 failed, 2 skipped                                                             |
+| Full `bun run test`                          | PASS — 1,348 tests: 1,346 passed, 0 failed, 2 skipped                                                             |
 | `bunx tsc --noEmit`                          | PASS                                                                                                              |
 | Focused ESLint                               | PASS — 0 errors, 0 warnings                                                                                       |
 | Prettier check for changed source/tests/docs | PASS                                                                                                              |
 | `bun run build`                              | PASS                                                                                                              |
 | `python3 scripts/test_android_themes.py`     | PASS — 8/8                                                                                                        |
 | `bun run cap:sync`                           | PASS — Capacitor configuration/plugins synchronized; hosted `server.url` correctly skips copying local web assets |
-| Gradle lint/tests/`assembleDebug`            | NOT RUN — Java and Android SDK are unavailable in this environment                                                |
+| GitHub Actions phone/wear Android CI         | PASS — theme tests, native unit tests, blocking lint, debug APK builds, release AABs, and shared signing identity |
 | Real-device Android verification             | NOT RUN — no device/emulator is attached                                                                          |
 
 ## Release decision
@@ -66,7 +67,7 @@
 The following require the repository owner and cannot be completed or truthfully verified from this workspace:
 
 1. Configure the Play upload keystore and provide `SVJ_KEYSTORE_PATH`, `SVJ_KEYSTORE_PASSWORD`, `SVJ_KEY_ALIAS`, and `SVJ_KEY_PASSWORD` outside Git.
-2. Run Gradle Android lint/tests, `assembleDebug`, and a signed `bundleRelease` on a machine with Java and Android SDK 36.
+2. Download and inspect the CI phone/wear APK and AAB artifacts, then repeat the native build with the production upload key on a controlled Java/Android SDK 36 machine.
 3. Install the signed build on a physical Android phone/tablet and verify the Train Move picker, manual activity controls, activity summaries, recovery/training flows, notifications, AdMob UMP, Health Connect, and account deletion.
 4. Configure and verify the AdMob EEA/UK GDPR consent message in the AdMob console.
 5. Complete the Play Data Safety form using the documented fitness, recovery, health, location, notification, and advertising disclosures.

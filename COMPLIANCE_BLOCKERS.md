@@ -25,14 +25,14 @@
 4. The message must be activated before ads will request/show consent forms
 5. Without this, `isConsentFormAvailable` returns `false` and the SDK falls back to not serving ads in regulated regions
 
-### 3. Native Android Build Not Verified ⛔
+### 3. Native Android On-Device Verification Not Completed ⛔
 
-**Impact:** The web build passes but the native Android APK has not been tested in this sprint environment.
+**Impact:** CI builds and validates the phone/wear APKs and AABs, but no physical-device run has verified the final UI and native permission flows.
 
 **Resolution:**
 
-- Run `bun run cap:sync`, then `cd android && ./gradlew assembleDebug` locally
-- Install the debug APK on a test device
+- Download the CI phone APK and install it on a physical phone and tablet
+- Repeat the production-signed build with the upload key on a controlled Java/Android SDK machine
 - Verify all 5 tabs render on Android (Challenges, Train, Fuel, 60 Day, Profile)
 - Verify Community and Leaderboard are hidden
 - Verify trial-expired modal appears for locked users
@@ -116,14 +116,14 @@ Files changed:
 ### Validation boundary
 
 - Web tests, TypeScript, focused ESLint/Prettier, Android theme tests, and the production web build are verified in this workspace.
-- Capacitor sync passes, but Java and the Android SDK are not installed here, so Gradle lint, unit tests, `assembleDebug`, and on-device verification remain unverified.
+- GitHub Actions validates phone/wear theme tests, native unit tests, blocking Android lint, debug APK builds, release AABs, and their shared signing identity; no physical-device run is available here.
 - Play signing secrets and the AdMob GDPR message are external owner configuration and cannot be verified in the repository.
 
 ## Owner Action Items
 
 1. **Generate/upload signing keystore** and set `SVJ_KEYSTORE_*` env vars
 2. **Configure AdMob GDPR consent message** in the AdMob console
-3. **Run native Android build** and test on a real device
+3. **Install the CI/production-signed Android build** and test it on real phone and tablet hardware
 4. **Fill Play Console Data Safety form** per the declarations in `PLAY_RELEASE_CHECKLIST.md`
 5. **Create listing assets** (screenshots, icon, descriptions)
 6. **Set up 12 closed testers** if this is a new developer account

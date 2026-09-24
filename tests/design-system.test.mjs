@@ -64,11 +64,13 @@ describe("Performance OS design tokens (src/styles.css)", () => {
 describe("JS token mirror (src/app/lib/designTokens.ts)", () => {
   it("preserves the original Character Matrix identity exactly", async () => {
     const tokens = await read("../src/app/lib/designTokens.ts");
-    const radar = await read("../src/app/components/HexagonRadarChart.tsx");
+    const matrix = await read("../src/app/components/CharacterMatrix.tsx");
     for (const hex of ["#10B981", "#A855F7", "#F59E0B", "#EAB308", "#3B82F6", "#F43F5E"]) {
       assert.ok(tokens.includes(hex), `designTokens missing ${hex}`);
-      assert.ok(radar.includes(hex), `radar chart identity changed for ${hex}`);
     }
+    // Matrix geometry reads attribute colors from the token mirror.
+    assert.match(matrix, /ATTRIBUTE_COLORS\[[^\]]+\]/, "matrix must read token colors");
+    assert.doesNotMatch(matrix, /💪|👑|📖|🧠|👥|⚔️/, "no emoji in Character Matrix");
   });
 
   it("exposes brand, status, radii, motion and breakpoint scales", async () => {

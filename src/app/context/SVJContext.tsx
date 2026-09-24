@@ -676,7 +676,10 @@ export const SVJProvider: React.FC<{
           : `Earned +${outcome.row.xpAwarded} XP in ${current.category}.`,
         outcome.row.xpAwarded,
       );
-      triggerConfetti();
+      // No confetti here: challenge completion is celebrated by the concise,
+      // auto-dismissing ChallengeCompletionBanner (single restrained moment).
+      // Confetti remains only for the pre-existing workout/nutrition/reward/
+      // onboarding flows it was built for.
     }
     return { ok: true };
   };

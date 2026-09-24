@@ -311,7 +311,14 @@ describe("wiring", () => {
   });
 
   it("the checkbox is the only undo affordance", () => {
-    assert.match(view, /Only today's tasks can be undone|Uncheck to undo today's completion/);
-    assert.match(view, /if \(challenge\.completed\) return;/);
+    const card = readFileSync("src/app/components/ChallengeCard.tsx", "utf8");
+    assert.match(
+      card,
+      /Only today's tasks can be undone|Uncheck to undo today's completion|only today's tasks are reversible/,
+    );
+    // Locked today: the control itself is the one undo path, and it is
+    // disabled when the completion is not reversible (locked history).
+    assert.match(card, /disabled=\{pending \|\| state === "locked"\}/);
+    assert.match(view, /if \(challenge\.completed && completionLocked\(challenge\)\) return;/);
   });
 });

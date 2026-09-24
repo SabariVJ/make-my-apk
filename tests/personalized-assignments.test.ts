@@ -156,7 +156,7 @@ describe("client wiring", () => {
     assert.match(view, /svj_complete_my_personalized_task|callCompletePersonalized/);
     assert.match(
       view,
-      /personalizedQuery\.data\?\.challenges\?\.some\(\(p\) => p\.id === id\)/,
+      /personalizedQuery\.data\?\.challenges\?\.some\(\(p\) => p\.id === challenge\.id\)/,
       "the handler must branch personalized IDs away from toggleChallenge",
     );
   });
@@ -173,6 +173,9 @@ describe("client wiring", () => {
   test("completed state renders from SERVER assignment state", () => {
     assert.match(view, /completed: p\.completed \?\? false/);
     assert.match(view, /await personalizedQuery\.refetch\(\)/);
+    // The banner figures come from the server response, never from client math.
+    assert.match(view, /xpAwarded: result\.xpAwarded \?\? challenge\.xp/);
+    assert.match(view, /newTotalXp: user\.totalXP \+ \(result\.xpAwarded \?\? challenge\.xp\)/);
   });
 
   test("reward invalidation: user-stats and profile refresh, no optimistic writes", () => {

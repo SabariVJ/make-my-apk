@@ -70,4 +70,23 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(manifest, /\.VjNotificationReceiver/);
   });
 
+  it("mounts Android first-run permission onboarding in the authenticated app shell", async () => {
+    const [app, onboarding] = await Promise.all([
+      source("src/app/App.tsx"),
+      source("src/app/components/NativePermissionOnboarding.tsx"),
+    ]);
+    assert.match(app, /<NativePermissionOnboarding \/>/);
+    assert.match(onboarding, /Physical activity/);
+    assert.match(onboarding, /Location/);
+    assert.match(onboarding, /Notifications/);
+    assert.match(onboarding, /Health & fitness/);
+    assert.match(onboarding, /Nearby devices/);
+    assert.match(onboarding, /Not now/);
+    assert.match(onboarding, /vjRequestPermissions/);
+    assert.match(onboarding, /requestWorkoutPermissions/);
+    assert.match(onboarding, /requestNotificationPermission/);
+    assert.match(onboarding, /requestHealthConnectPermissions/);
+    assert.match(onboarding, /VjWearable\.requestPermissions/);
+  });
+
 });

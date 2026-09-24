@@ -1,6 +1,7 @@
 // Regression tests for Android Plus/Community tab restoration and payment safeguards.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 // ─── Navigation filtering logic ──────────────────────────────────────────────
 // These tests validate the filtering predicate used by Navigation.tsx to decide
@@ -140,5 +141,56 @@ describe("Membership display — pricing", () => {
     assert.ok(yearlyPrice < monthlyPrice * 12, "Yearly must be cheaper than 12× monthly");
     assert.equal(yearlyPrice, 599, "Yearly price must be ₹599");
     assert.equal(monthlyPrice, 99, "Monthly price must be ₹99");
+  });
+});
+
+
+describe("Native permission + notification repair", () => {
+  it("registers the native notification plugin and receiver", () => {
+    const main = readFileSync("android/app/src/main/java/app/lovable/svj/MainActivity.java", "utf8");
+    const manifest = readFileSync("android/app/src/main/AndroidManifest.xml", "utf8");
+    const plugin = readFileSync(
+      "android/app/src/main/java/app/lovable/svj/VjNotificationsPlugin.java",
+      "utf8",
+    );
+    assert.match(main, /registerPlugin\(VjNotificationsPlugin\.class\)/);
+    assert.match(manifest, /android:name="\.VjNotificationReceiver"/);
+    assert.match(plugin, /@CapacitorPlugin\(/[\s\S]*name = "VjNotifications"/);
+    assert.match(plugin, /requestPermissionForAlias\("notifications"/);
+  });
+
+  it("ships one-by-one native permission onboarding for all required capabilities", () => {
+    const onboarding = readFileSync(
+      "src/app/components/NativePermissionOnboarding.tsx",
+      "utf8",
+    );
+    for (const capability of [
+      "activity",
+      "notifications",
+      "health",
+      "location",
+      "nearby",
+    ]) {
+      assert.match(onboarding, new RegExp('"' + capability + '"'));
+    }
+    assert.match(onboarding, /vjRequestPermissions/);
+    assert.match(onboarding, /requestNotificationPermission/);
+    assert.match(onboarding, /requestHealthConnectPermissions/);
+    assert.match(onboarding, /requestWorkoutPermissions/);
+    assert.match(onboarding, /VjWearable\.requestPermissions/);
+    assert.match(onboarding, /Not now/);
+  });
+
+  it("keeps workout location requests separate from notification permission", () => {
+    const workout = readFileSync(
+      "android/app/src/main/java/app/lovable/svj/VjWorkoutPlugin.java",
+      "utf8",
+    );
+    const method = workout.slice(
+      workout.indexOf("public void requestPermissions"),
+      workout.indexOf("@PermissionCallback", workout.indexOf("public void requestPermissions")),
+    );
+    assert.doesNotMatch(method, /requestPermissionForAlias\("notifications"/);
+    assert.match(method, /requestPermissionForAlias\("location"/);
   });
 });

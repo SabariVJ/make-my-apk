@@ -3,7 +3,11 @@ import { Activity, Bell, Bluetooth, HeartPulse, Loader2, MapPin, ShieldCheck } f
 import { Capacitor } from "@capacitor/core";
 import { useSVJ } from "../context/SVJContext";
 import { vjRequestPermissions } from "../lib/vj-pedometer";
-import { requestNotificationPermission } from "../lib/notifications";
+import {
+  loadNotificationPreferences,
+  requestNotificationPermission,
+  saveNotificationPreferences,
+} from "../lib/notifications";
 import { requestHealthConnectPermissions } from "../lib/healthConnect";
 import { requestWorkoutPermissions } from "../lib/nativeWorkout";
 import { isNativeWearableAvailable, VjWearable } from "../lib/wearable";
@@ -113,6 +117,10 @@ export const NativePermissionOnboarding: React.FC = () => {
         granted = (await vjRequestPermissions())?.activityRecognition === "granted";
       } else if (step === "notifications") {
         granted = await requestNotificationPermission();
+        if (granted) {
+          const current = loadNotificationPreferences(user.id);
+          saveNotificationPreferences(user.id, { ...current, enabled: true });
+        }
       } else if (step === "health") {
         const permissions = await requestHealthConnectPermissions();
         granted = Object.values(permissions).some((value) => value === "granted");

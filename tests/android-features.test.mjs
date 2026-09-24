@@ -155,7 +155,7 @@ describe("Native permission + notification repair", () => {
     );
     assert.match(main, /registerPlugin\(VjNotificationsPlugin\.class\)/);
     assert.match(manifest, /android:name="\.VjNotificationReceiver"/);
-    assert.match(plugin, /@CapacitorPlugin\(/[\s\S]*name = "VjNotifications"/);
+    assert.match(plugin, /@CapacitorPlugin\([\s\S]*name = "VjNotifications"/);
     assert.match(plugin, /requestPermissionForAlias\("notifications"/);
   });
 

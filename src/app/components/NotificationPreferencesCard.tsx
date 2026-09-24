@@ -134,7 +134,8 @@ export const NotificationPreferencesCard: React.FC = () => {
       {nativeAndroid && permissionDenied && !permissionGranted && (
         <div className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2">
           <p className="text-[11px] text-gold">
-            Android notification permission is off. If Android no longer shows the prompt, open app settings and allow Notifications.
+            Android notification permission is off. If Android no longer shows the prompt, open app
+            settings and allow Notifications.
           </p>
           <button
             type="button"

@@ -32,6 +32,7 @@ import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
+import { NativePermissionOnboarding } from "./components/NativePermissionOnboarding";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -271,6 +272,10 @@ const AppContent: React.FC<{
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
       <NotificationCoordinator />
+
+      {/* Android-only, first-run education/request flow. It is non-blocking:
+          every step supports Not now and feature-level permission requests remain authoritative. */}
+      <NativePermissionOnboarding />
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />

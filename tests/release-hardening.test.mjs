@@ -52,4 +52,22 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(config, /cleartext: false/);
     assert.match(manifest, /android:allowBackup="false"/);
   });
+  it("ships a registered durable native notification bridge", async () => {
+    const [plugin, receiver, main, manifest] = await Promise.all([
+      source("android/app/src/main/java/app/lovable/svj/VjNotificationsPlugin.java"),
+      source("android/app/src/main/java/app/lovable/svj/VjNotificationReceiver.java"),
+      source("android/app/src/main/java/app/lovable/svj/MainActivity.java"),
+      source("android/app/src/main/AndroidManifest.xml"),
+    ]);
+    assert.match(plugin, /name = "VjNotifications"/);
+    assert.match(plugin, /replaceSchedules/);
+    assert.match(plugin, /requestPermission/);
+    assert.match(receiver, /AlarmManager/);
+    assert.match(receiver, /ACTION_BOOT_COMPLETED/);
+    assert.match(receiver, /setAndAllowWhileIdle/);
+    assert.match(main, /registerPlugin\(VjNotificationsPlugin\.class\)/);
+    assert.match(manifest, /android\.permission\.RECEIVE_BOOT_COMPLETED/);
+    assert.match(manifest, /\.VjNotificationReceiver/);
+  });
+
 });

@@ -7,6 +7,7 @@ import {
   loadNotificationPreferences,
   notificationPermission,
   requestNotificationPermission,
+  openNotificationSettings,
   saveNotificationPreferences,
   sendTestNotification,
   type NotificationPreferences,
@@ -40,6 +41,7 @@ export const NotificationPreferencesCard: React.FC = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const nativeAndroid = Capacitor.getPlatform() === "android";
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export const NotificationPreferencesCard: React.FC = () => {
     setBusy(true);
     const granted = await requestNotificationPermission();
     setPermissionGranted(granted);
+    setPermissionDenied(!granted);
     if (granted) {
       persist({ ...prefs, enabled: true });
       setNotice("Notifications enabled.");
@@ -128,10 +131,19 @@ export const NotificationPreferencesCard: React.FC = () => {
         </p>
       )}
 
-      {prefs.enabled && nativeAndroid && !permissionGranted && (
-        <p className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] text-gold">
-          Android notification permission is off. Tap Enable to request it again.
-        </p>
+      {nativeAndroid && permissionDenied && !permissionGranted && (
+        <div className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2">
+          <p className="text-[11px] text-gold">
+            Android notification permission is off. If Android no longer shows the prompt, open app settings and allow Notifications.
+          </p>
+          <button
+            type="button"
+            onClick={() => void openNotificationSettings()}
+            className="mt-2 rounded-lg border border-gold/30 bg-black/20 px-3 py-2 text-[10px] font-mono font-bold uppercase text-gold"
+          >
+            Open Android settings
+          </button>
+        </div>
       )}
 
       <div className="divide-y divide-white/5">

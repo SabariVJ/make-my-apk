@@ -32,6 +32,7 @@ import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
+import { NativePermissionSetup } from "./components/NativePermissionSetup";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -72,7 +73,6 @@ const AppContent: React.FC<{
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
-  // Android Play: prevent stale tabs (community/leaderboard hidden on native)
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     if (locked) return "sixty";
     return "challenges";
@@ -82,12 +82,6 @@ const AppContent: React.FC<{
     setShowTrialNotice(locked);
   }, [locked]);
 
-  // Android Play: reset hidden tabs if they somehow become active
-  useEffect(() => {
-    if (isAndroid && activeTab === "leaderboard") {
-      setActiveTab("challenges");
-    }
-  }, [activeTab, isAndroid]);
 
   const {
     user,
@@ -271,6 +265,8 @@ const AppContent: React.FC<{
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
       <NotificationCoordinator />
+
+      <NativePermissionSetup />
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />

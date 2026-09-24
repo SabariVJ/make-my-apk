@@ -82,11 +82,6 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
       requestPermissionForAlias("location", call, "locationPermCallback");
       return;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        && getPermissionState("notifications") != PermissionState.GRANTED) {
-      requestPermissionForAlias("notifications", call, "locationPermCallback");
-      return;
-    }
     call.resolve(permissionSnapshot());
   }
 

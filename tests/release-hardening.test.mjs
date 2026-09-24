@@ -43,13 +43,35 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(checklist, /\/data-deletion/);
   });
 
-  it("does not permit cleartext hosting or Android app-data backup", async () => {
+  it("packages the built app locally and disables Android app-data backup", async () => {
     const [config, manifest] = await Promise.all([
       source("capacitor.config.ts"),
       source("android/app/src/main/AndroidManifest.xml"),
     ]);
-    assert.match(config, /url: "https:\/\/savaje-com\.lovable\.app"/);
-    assert.match(config, /cleartext: false/);
+    assert.match(config, /webDir: "dist\/client"/);
+    assert.doesNotMatch(config, /server:\s*\{/);
+    assert.doesNotMatch(config, /savaje-com\.lovable\.app/);
     assert.match(manifest, /android:allowBackup="false"/);
+  });
+
+  it("registers native notifications and the first-run permission setup", async () => {
+    const [main, manifest, app, setup] = await Promise.all([
+      source("android/app/src/main/java/app/lovable/svj/MainActivity.java"),
+      source("android/app/src/main/AndroidManifest.xml"),
+      source("src/app/App.tsx"),
+      source("src/app/components/NativePermissionSetup.tsx"),
+    ]);
+    assert.match(main, /registerPlugin\(VjNotificationsPlugin\.class\)/);
+    assert.match(manifest, /VjNotificationReceiver/);
+    assert.match(app, /<NativePermissionSetup \/>/);
+    for (const label of [
+      "Physical activity",
+      "Notifications",
+      "Health & fitness",
+      "Location",
+      "Nearby devices & Bluetooth",
+    ]) {
+      assert.match(setup, new RegExp(label.replace(/[&]/g, "\\&")));
+    }
   });
 });

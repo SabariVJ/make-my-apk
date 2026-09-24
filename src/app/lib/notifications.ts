@@ -112,6 +112,7 @@ export interface NotificationPlannerInput {
 interface VjNotificationsPlugin {
   checkPermission(): Promise<{ granted: boolean }>;
   requestPermission(): Promise<{ granted: boolean }>;
+  openSettings(): Promise<void>;
   replaceSchedules(options: {
     schedules: NativeNotificationSchedule[];
   }): Promise<{ scheduled: number }>;
@@ -424,6 +425,15 @@ export async function requestNotificationPermission(): Promise<boolean> {
     return (await VjNotifications.requestPermission()).granted;
   } catch {
     return false;
+  }
+}
+
+export async function openNotificationSettings(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    await VjNotifications.openSettings();
+  } catch {
+    // Settings fallback is best-effort.
   }
 }
 

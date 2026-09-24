@@ -18,7 +18,7 @@ export const UTILITY_NAV_ITEMS: UtilityNavItem[] = [
   { id: "profile", label: "Profile" },
 ];
 
-/** Android Play hides the unfinished Leaderboard claim, exactly as before. */
-export function visibleUtilityItems(isAndroid: boolean): UtilityNavItem[] {
-  return UTILITY_NAV_ITEMS.filter((item) => !(isAndroid && item.id === "leaderboard"));
+/** All utility destinations ship on Android and web. */
+export function visibleUtilityItems(_isAndroid: boolean): UtilityNavItem[] {
+  return UTILITY_NAV_ITEMS;
 }

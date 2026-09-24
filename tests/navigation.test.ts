@@ -134,8 +134,9 @@ describe("secondary destinations moved to the utility rail", () => {
     assert.deepEqual(ids, ["community", "leaderboard", "profile"]);
   });
 
-  it("keeps the Android Leaderboard rule in the shared utility model", () => {
-    assert.match(utilityModel, /isAndroid && item\.id === "leaderboard"/);
+  it("keeps Leaderboard reachable on Android and web", () => {
+    assert.match(utilityModel, /return UTILITY_NAV_ITEMS/);
+    assert.doesNotMatch(utilityModel, /item\.id === "leaderboard"/);
   });
 
   it("renders a fixed right-side vertical rail", () => {

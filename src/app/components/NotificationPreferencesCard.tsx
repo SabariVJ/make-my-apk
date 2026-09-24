@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Bell, BellOff, Check, Loader2, Send } from "lucide-react";
+import { Bell, BellOff, Check, Loader2, Send, Settings } from "lucide-react";
 import { SVJTimePicker } from "./ui-primitives/SVJTimePicker";
 import { Capacitor } from "@capacitor/core";
 import { useSVJ } from "../context/SVJContext";
@@ -7,6 +7,7 @@ import {
   loadNotificationPreferences,
   notificationPermission,
   requestNotificationPermission,
+  openNotificationSettings,
   saveNotificationPreferences,
   sendTestNotification,
   type NotificationPreferences,
@@ -81,6 +82,9 @@ export const NotificationPreferencesCard: React.FC = () => {
     key: K,
     value: NotificationPreferences[K],
   ) => persist({ ...prefs, [key]: value });
+
+  const noticeProblem =
+    notice?.includes("not granted") === true || notice?.startsWith("Could not") === true;
 
   const testNotification = async () => {
     setBusy(true);
@@ -235,6 +239,17 @@ export const NotificationPreferencesCard: React.FC = () => {
             Send test
           </button>
         )}
+        {nativeAndroid && !permissionGranted && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void openNotificationSettings()}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-mono font-bold uppercase text-white disabled:opacity-50"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Open settings
+          </button>
+        )}
         {prefs.enabled && (
           <button
             type="button"
@@ -248,9 +263,11 @@ export const NotificationPreferencesCard: React.FC = () => {
         {notice && (
           <span
             role="status"
-            className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400"
+            className={`inline-flex items-center gap-1.5 text-[10px] ${
+              noticeProblem ? "text-amber-300" : "text-emerald-400"
+            }`}
           >
-            <Check className="h-3.5 w-3.5" />
+            {noticeProblem ? <BellOff className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
             {notice}
           </span>
         )}

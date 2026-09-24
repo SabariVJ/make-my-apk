@@ -2,7 +2,7 @@
  * Challenge completion UI regressions:
  *  - raw ISO timestamps never reach the UI (human-friendly formatter instead)
  *  - the completion control reads as a checkbox (rounded-md, not rounded-2xl/full)
- *  - the completed row is visually simplified (no strikethrough, no red/green pile-up)
+ *  - the completed row is visually simplified (no strikethrough, no heavy dimming)
  *  - semantic radius usage across the app (cards kept, controls corrected)
  */
 import { describe, it } from "node:test";
@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { formatCompletedAt } from "../src/app/lib/dateFormat";
 
 const challenges = readFileSync("src/app/views/ChallengesView.tsx", "utf8");
+const card = readFileSync("src/app/components/ChallengeCard.tsx", "utf8");
 
 describe("formatCompletedAt", () => {
   const now = new Date(2026, 8, 21, 18, 0, 0); // 21 Sep 2026, 6:00 PM local
@@ -42,47 +43,47 @@ describe("formatCompletedAt", () => {
 
 describe("challenge completion UI", () => {
   it("never renders the raw completedAt value", () => {
-    assert.doesNotMatch(challenges, /Done \{challenge\.completedAt\}/);
-    assert.match(challenges, /formatCompletedAt\(challenge\.completedAt\)/);
+    assert.doesNotMatch(card, /Done \{challenge\.completedAt\}/);
+    assert.match(card, /formatCompletedAt\(challenge\.completedAt\)/);
   });
 
   it("completion control is a square checkbox, not a pill", () => {
-    const checkbox = challenges.match(/w-5 h-5 rounded-(\w+) border flex items-center/);
+    const checkbox = card.match(/rounded-(\w+) border transition-colors/);
     assert.ok(checkbox, "checkbox class found");
     assert.equal(checkbox![1], "md");
   });
 
   it("completed row is simplified: no strikethrough, no heavy dimming", () => {
-    assert.doesNotMatch(challenges, /line-through/);
-    assert.doesNotMatch(challenges, /opacity-60/);
-    assert.match(challenges, /opacity-80/);
+    assert.doesNotMatch(card, /line-through/);
+    assert.doesNotMatch(card, /opacity-60/);
+    assert.match(card, /opacity-80/);
   });
 
   it("completion timestamp uses the muted text token, not green", () => {
-    const block = challenges.split("formatCompletedAt(challenge.completedAt)")[1] ?? "";
+    const block = card.split("formatCompletedAt(challenge.completedAt)")[1] ?? "";
     assert.doesNotMatch(block.slice(0, 200), /emerald/);
   });
 
-  it("difficulty badge and XP pill are pills, status chips are chips", () => {
-    assert.match(challenges, /rounded-full text-\[9px\]/); // difficulty badge
-    assert.match(challenges, /px-2\.5 py-1 rounded-full text-\[11px\]/); // XP pill
+  it("difficulty is a compact bordered chip, XP is a rounded-md mono readout", () => {
+    assert.match(card, /rounded border px-1\.5 py-px font-inter text-\[9px\]/); // difficulty
+    assert.match(card, /rounded-md px-1\.5 py-0\.5 font-mono text-\[11px\]/); // XP chip
   });
 
   it("completion checkbox is not a radio-style circle or card radius", () => {
-    assert.doesNotMatch(challenges, /w-5 h-5 rounded-2xl/);
-    assert.doesNotMatch(challenges, /w-5 h-5 rounded-full/);
+    assert.doesNotMatch(card, /rounded-2xl border-svj-crimson bg-svj-crimson/);
+    assert.doesNotMatch(card, /rounded-full bg-svj-crimson/);
   });
 });
 
 describe("radius semantics", () => {
-  const card = readFileSync("src/app/components/EarnPlusCard.tsx", "utf8");
+  const earn = readFileSync("src/app/components/EarnPlusCard.tsx", "utf8");
   const nav = readFileSync("src/app/components/Navigation.tsx", "utf8");
   const nutrition = readFileSync("src/app/views/NutritionView.tsx", "utf8");
   const frame = readFileSync("src/app/components/AvatarFrame.tsx", "utf8");
 
   it("cards keep rounded-2xl", () => {
-    assert.match(card, /rounded-2xl/);
-    assert.match(challenges, /p-4 rounded-2xl bg-\[#17171A\]/);
+    assert.match(earn, /rounded-2xl/);
+    assert.match(challenges, /rounded-2xl border border-white\/\[0\.06\] bg-svj-surface/);
   });
 
   it("nav buttons use button radius, not panel radius", () => {

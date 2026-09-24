@@ -62,13 +62,13 @@ test("the app routes the Activity tab and mounts the tracking provider", () => {
   assert.doesNotMatch(vjPedometer, /Capacitor\?\.plugins/);
 });
 
-test("the homepage shows a compact Activity card above the Character Hexagon Matrix", () => {
+test("the homepage shows a compact Activity card above the Character Matrix", () => {
   assert.match(challengesView, /onOpenActivity/);
   assert.match(challengesView, /<ActivitySummaryCard onOpen=\{onOpenActivity\} \/>/);
   const cardIdx = challengesView.indexOf("ActivitySummaryCard");
-  const hexagonIdx = challengesView.indexOf("Character Hexagon Matrix");
-  assert.ok(cardIdx > -1 && hexagonIdx > -1);
-  assert.ok(cardIdx < hexagonIdx, "activity card must render above the hexagon");
+  const matrixIdx = challengesView.indexOf("Character Matrix — Level");
+  assert.ok(cardIdx > -1 && matrixIdx > -1);
+  assert.ok(cardIdx < matrixIdx, "activity card must render above the matrix");
   assert.match(activitySummary, /% OF STEP GOAL/);
   assert.match(activitySummary, /KCAL/);
 });

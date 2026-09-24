@@ -1,34 +1,25 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { motion, AnimatePresence } from "motion/react";
-import { svjStaggerContainer, svjStaggerItem, svjSpringSoft, svjWhileTap } from "../lib/motion";
+import { AnimatePresence, motion } from "motion/react";
+import { svjStaggerContainer, svjStaggerItem, svjWhileTap } from "../lib/motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Flame,
-  Check,
-  Lock,
-  Plus,
-  X,
-  Clock,
-  Zap,
-  Target,
-  ShieldAlert,
-  Sparkles,
-  Filter,
-  ChevronDown,
-  Pencil,
-  ClipboardCheck,
-  Loader2,
-} from "lucide-react";
+import { ClipboardCheck, Flame, Loader2, Plus, RotateCw, Sparkles, Target, X } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { useActivityOptional } from "../context/ActivityContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
 import { EarnPlusCard } from "../components/EarnPlusCard";
 import { SixtyDayProgramCard } from "../components/SixtyDayProgramCard";
 import { ActivitySummaryCard } from "../components/ActivitySummaryCard";
+import { ChallengeCard } from "../components/ChallengeCard";
+import { CharacterMatrix } from "../components/CharacterMatrix";
+import { XpLevelStrip } from "../components/XpLevelStrip";
+import {
+  ChallengeCompletionBanner,
+  useChallengeCompletion,
+} from "../components/ChallengeCompletionBanner";
+import { SVJSkeleton, SVJEmptyState, SVJErrorState } from "../components/ui-primitives";
 import { ChallengeCategory, DailyChallenge } from "../types";
-import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 import {
   getPersonalizedChallenges,
@@ -42,8 +33,9 @@ import {
   type UserStatsData,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
-import { formatCompletedAt } from "../lib/dateFormat";
-import { localDayKey } from "../lib/taskCompletions";
+import { localDayKey, type TaskCompletion } from "../lib/taskCompletions";
+import { categoryColor, SERVER_STAT_MATRIX_MAP } from "../lib/challengeUI";
+import type { AttributeKey } from "../lib/designTokens";
 
 export const ChallengesView: React.FC<{
   onOpenSixtyDay?: () => void;
@@ -59,7 +51,11 @@ export const ChallengesView: React.FC<{
     user,
     leaderboard,
     getTodayCompletion,
+    taskCompletions,
   } = useSVJ();
+
+  // Signature completion moment — concise, auto-dismissing, server-fed numbers.
+  const completionFlash = useChallengeCompletion();
 
   // Fetch server-authoritative challenge state to hide 60-Day CTA when completed
   const callGetState = useServerFn(getChallengeState);
@@ -75,7 +71,7 @@ export const ChallengesView: React.FC<{
     staleTime: 5 * 60_000,
     retry: false,
   });
-  const [selectedCategory, setSelectedCategory] = useState<ChallengeCategory | "All">("All");
+  const [selectedKey, setSelectedKey] = useState<ChallengeCategory | "All">("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<DailyChallenge | null>(null);
   const [showAssessment, setShowAssessment] = useState(false);
@@ -169,10 +165,7 @@ export const ChallengesView: React.FC<{
 
       if (!result.ok) {
         if (result.cooldownRemainingMs > 0) {
-          setRefreshState({
-            status: "cooldown",
-            remainingMs: result.cooldownRemainingMs,
-          });
+          setRefreshState({ status: "cooldown", remainingMs: result.cooldownRemainingMs });
         } else {
           setRefreshState({ status: "error", message: result.error ?? "Refresh failed." });
         }
@@ -216,16 +209,54 @@ export const ChallengesView: React.FC<{
     retry: false,
   });
 
-  const radarStats = statsQuery.data
-    ? {
-        physical: statsQuery.data.fitness,
-        ambition: statsQuery.data.confidence,
-        intellect: statsQuery.data.consistency,
-        mental: statsQuery.data.focus,
-        social: statsQuery.data.social,
-        discipline: statsQuery.data.discipline,
+  // ── Matrix data ───────────────────────────────────────────────────────────
+  // Assessment-backed server stats map onto the six attributes through the
+  // SAME relationship pre-Phase-2 used (the data-table meaning), pinned by
+  // SERVER_STAT_MATRIX_MAP. Fallback: the device-local attribute values.
+  // A UI redesign must not redefine what the attributes mean.
+  const serverStats: UserStatsData | null = statsQuery.data ?? null;
+  const radarStats: Record<AttributeKey, number> = useMemo(() => {
+    const s = serverStats;
+    if (s) {
+      // Derive from the pinned server-stat → attribute relationship (single
+      // source of truth, identical to the original radar identity).
+      const source = s as unknown as Record<string, number>;
+      const next: Record<AttributeKey, number> = {
+        physical: 0,
+        discipline: 0,
+        mental: 0,
+        intellect: 0,
+        ambition: 0,
+        social: 0,
+      };
+      for (const [statKey, attrKey] of Object.entries(SERVER_STAT_MATRIX_MAP)) {
+        const value = source[statKey];
+        if (Number.isFinite(value)) next[attrKey] = value;
       }
-    : user.stats;
+      return next;
+    }
+    const local = user.stats;
+    return {
+      physical: local.physical,
+      discipline: local.discipline,
+      mental: local.mental,
+      intellect: local.intellect,
+      ambition: local.ambition,
+      social: local.social,
+    };
+  }, [serverStats, user.stats]);
+
+  const radarUserStats = useMemo(
+    () => ({
+      physical: radarStats.physical,
+      discipline: radarStats.discipline,
+      mental: radarStats.mental,
+      intellect: radarStats.intellect,
+      ambition: radarStats.ambition,
+      social: radarStats.social,
+    }),
+    [radarStats],
+  );
 
   // Merge personalized SERVER assignments with user's existing challenges.
   // Personalized rows carry stable database IDs and server completion state,
@@ -276,47 +307,95 @@ export const ChallengesView: React.FC<{
     return true;
   };
 
-  const handleToggle = async (id: string) => {
-    // Personalized assignments complete through the server-validated RPC —
-    // never through the local toggleChallenge()/applyActivityXp path. This
-    // removes the false "This task is no longer available" error (their IDs
-    // are not local challenge IDs) and keeps XP server-controlled.
-    if (personalizedQuery.data?.challenges?.some((p) => p.id === id)) {
-      if (completingId) return; // prevent duplicate taps on the pending task
-      setCompletingId(id);
-      setActionError(null);
-      try {
-        const result = (await callCompletePersonalized({ data: { assignmentId: id } })) as {
-          ok: boolean;
-          xpAwarded?: number;
-          statChanges?: Record<string, number>;
-          error?: string;
-        };
-        if (!result.ok) {
-          // Friendly copy only — raw Postgres internals never reach users.
-          setActionError(
-            /could not find the function|PGRST202/i.test(result.error ?? "")
-              ? "Personalized task service is not available in this environment."
-              : (result.error ?? "Could not complete this task. Please retry."),
-          );
-          return;
-        }
-        // Refetch so the checked state comes from SERVER assignment state.
-        await personalizedQuery.refetch();
-        // Invalidate profile/XP + stats so Character Matrix, total XP and
-        // XP Today refresh from ledger-confirmed data. No optimistic writes.
-        void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
-        void queryClient.invalidateQueries({ queryKey: ["profile"] });
-      } catch {
-        setActionError("Could not complete this task. Please retry.");
-      } finally {
-        setCompletingId(null);
+  /**
+   * Personalized assignments complete through the server-validated RPC —
+   * never through the local toggleChallenge()/applyActivityXp path. This
+   * removes the false "This task is no longer available" error (their IDs
+   * are not local challenge IDs) and keeps XP server-controlled.
+   */
+  const handlePersonalizedComplete = async (challenge: DailyChallenge) => {
+    if (completingId) return; // prevent duplicate taps on the pending task
+    setCompletingId(challenge.id);
+    setActionError(null);
+    try {
+      const result = (await callCompletePersonalized({
+        data: { assignmentId: challenge.id },
+      })) as {
+        ok: boolean;
+        xpAwarded?: number;
+        statChanges?: Record<string, number>;
+        error?: string;
+      };
+      if (!result.ok) {
+        // Friendly copy only — raw Postgres internals never reach users.
+        setActionError(
+          /could not find the function|PGRST202/i.test(result.error ?? "")
+            ? "Personalized task service is not available in this environment."
+            : (result.error ?? "Could not complete this task. Please retry."),
+        );
+        return;
       }
+      // Refetch so the checked state comes from SERVER assignment state.
+      await personalizedQuery.refetch();
+      // Invalidate profile/XP + stats so Character Matrix, total XP and
+      // XP Today refresh from ledger-confirmed data. No optimistic writes.
+      void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+
+      // The RPC returns the awarded XP but NOT an authoritative lifetime
+      // total. Option B (per repair scope): show the server-returned award
+      // WITHOUT a level-up — a client-estimated total must never be labeled
+      // authoritative. Level-up can only come from real before/after totals
+      // (local ledger toggles). No lifetime XP is fabricated here.
+      completionFlash.display({
+        id: `personalized-${challenge.id}-${Date.now()}`,
+        title: challenge.title,
+        category: challenge.category,
+        xpAwarded: result.xpAwarded ?? challenge.xp,
+        previousTotalXp: null,
+        newTotalXp: 0,
+        deferLevelUp: true,
+      });
+    } catch {
+      setActionError("Could not complete this task. Please retry.");
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
+  const handleToggle = (challenge: DailyChallenge) => {
+    // Locked history can't be undone: personalized rows are server-owned and
+    // older days have no reversible payout. The disabled checkbox backs this.
+    if (challenge.completed && completionLocked(challenge)) return;
+    if (personalizedQuery.data?.challenges?.some((p) => p.id === challenge.id)) {
+      // Personalized rows complete through the server RPC; they never undo.
+      if (challenge.completed) return;
+      void handlePersonalizedComplete(challenge);
       return;
     }
 
-    const result = toggleChallenge(id);
+    // Local completion is a true toggle: the checkbox completes today's task
+    // AND undoes it. The banner only celebrates a completion — undoing is
+    // silent, since XP already went back down.
+    const wasCompleted = challenge.completed;
+    const result = toggleChallenge(challenge.id);
     setActionError(result.ok ? null : result.error);
+    if (result.ok && !wasCompleted && result.meta) {
+      // `meta` is derived from the real ledger outcome (xpAwarded / reused)
+      // and the recorded before/after totals. Read ONLY from it — never from
+      // challenge.xp (the displayed badge XP) and never recomputed here, so a
+      // reused payout or stored earnedXP is reported exactly as awarded.
+      const meta = result.meta;
+      completionFlash.display({
+        id: `local-${challenge.id}-${Date.now()}`,
+        title: challenge.title,
+        category: challenge.category,
+        xpAwarded: meta.xpAwarded,
+        previousTotalXp: meta.previousTotalXp,
+        newTotalXp: meta.newTotalXp,
+        reused: meta.reused,
+      });
+    }
   };
 
   const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalXP - a.totalXP);
@@ -326,13 +405,12 @@ export const ChallengesView: React.FC<{
   const userRank = myIndexInSorted !== -1 ? myIndexInSorted + 1 : sortedLeaderboard.length;
 
   const filteredChallenges =
-    selectedCategory === "All"
+    selectedKey === "All"
       ? displayChallenges
-      : displayChallenges.filter((c) => c.category === selectedCategory);
+      : displayChallenges.filter((c) => c.category === selectedKey);
 
   const completedCount = displayChallenges.filter((c) => c.completed).length;
   const totalCount = displayChallenges.length;
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   // Task XP today is the sum of the STORED payouts on rows still completed —
   // never the nominal challenge XP, so a re-check reuses the original amount.
   const todayXP = displayChallenges
@@ -366,21 +444,37 @@ export const ChallengesView: React.FC<{
     "Nutrition",
   ];
 
-  const getDifficultyBadge = (diff: DailyChallenge["difficulty"]) => {
-    switch (diff) {
-      case "Easy":
-        return "bg-emerald-500/10 text-emerald-400";
-      case "Medium":
-        return "bg-gold/10 text-gold";
-      case "Hard":
-        return "bg-rose-500/10 text-rose-400";
-      case "Elite":
-        return "bg-purple-500/10 text-purple-300";
-    }
+  // Answers "what should I do first": highest-XP, incomplete, available task.
+  const availableChallenges = displayChallenges.filter((c) => !c.completed);
+  const primaryObjective =
+    availableChallenges.length > 0
+      ? [...availableChallenges].sort((a, b) => (b.earnedXP ?? b.xp) - (a.earnedXP ?? a.xp))[0]
+      : null;
+
+  // ── Contribution evidence (real completion-ledger rows only) ─────────────
+  const todayKey = localDayKey();
+  const todayActiveRows: TaskCompletion[] = taskCompletions.filter(
+    (row) => row.dayKey === todayKey && !row.undoneAt,
+  );
+  const matrixContributions = todayActiveRows.map((row) => ({
+    statCategory: row.statCategory,
+    statPoints: row.statPoints,
+  }));
+
+  const loadingChallenges = personalizationQuery.isLoading || personalizedQuery.isLoading;
+  // Failures should never hide real local/custom challenges; the error surface
+  // only appears when there is nothing else to render.
+  const serverListFailed = personalizationQuery.isError || personalizedQuery.isError;
+
+  const retryAll = () => {
+    void personalizationQuery.refetch();
+    void personalizedQuery.refetch();
+    void statsQuery.refetch();
   };
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-4 pb-24" data-testid="challenges-view">
+      {/* ── Assessment gate ─────────────────────────────────────────────── */}
       {!personalizationQuery.isLoading &&
         !personalizationQuery.data?.personalization?.assessmentCompleted && (
           <button
@@ -389,7 +483,8 @@ export const ChallengesView: React.FC<{
             className="w-full svj-card-crimson p-4 text-left svj-press"
           >
             <span className="flex items-center gap-2 font-anton text-sm uppercase tracking-wide text-white">
-              <ClipboardCheck className="h-4 w-4 text-[#C81E3A]" /> Complete Your SVJ Assessment
+              <ClipboardCheck className="h-4 w-4 text-[#C81E3A]" aria-hidden="true" />
+              Complete Your SVJ Assessment
             </span>
             <span className="mt-1 block text-xs font-inter text-[#8C8C90]">
               Personalize challenges around your goals, interests and improvement areas.
@@ -412,7 +507,7 @@ export const ChallengesView: React.FC<{
             className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
             aria-label="Close assessment"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       )}
@@ -428,337 +523,230 @@ export const ChallengesView: React.FC<{
         />
       )}
 
-      {/* Today's Mission Banner */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-inter text-[#8C8C90] uppercase tracking-wider mb-1">
-              <span>Today&apos;s Mission</span>
-            </div>
-            <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
-              Forge Your Day
-            </h1>
+      {/* ── HERO — orientation without overwhelm ─────────────────────────── */}
+      <section
+        aria-label="Today overview"
+        className="overflow-hidden rounded-2xl border border-white/[0.06] bg-svj-surface"
+      >
+        <div className="h-0.5 w-full bg-svj-crimson" aria-hidden="true" />
+        <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5">
+          <div className="min-w-0">
+            <p className="svj-label-xs flex items-center gap-1.5 uppercase tracking-[0.14em]">
+              <Target className="h-3.5 w-3.5 text-svj-crimson" aria-hidden="true" />
+              Today's Mission
+            </p>
+            <h1 className="svj-heading text-2xl leading-tight sm:text-3xl">Forge Your Day</h1>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-2xl bg-[#0b0b0c] border border-white/[0.04] text-xs font-inter flex items-center gap-1.5 text-gold">
-              <Flame className="w-4 h-4 fill-gold/20" />
-              <span>{user.currentStreak}d streak</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Metrics — connected stat strip */}
-        <div className={`grid gap-2 mb-5 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
-          <div className="svj-stat p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-              <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
-              XP Today
-            </div>
-            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
-          </div>
-
-          <div className="svj-stat p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-              <Target className="w-3.5 h-3.5 text-emerald-400" />
-              Completed
-            </div>
-            <div className="font-mono text-xl font-bold text-white">
-              {completedCount}{" "}
-              <span className="text-xs text-[#8C8C90] font-normal">/ {totalCount}</span>
-            </div>
-          </div>
-
-          {!isAndroid && (
-            <div className="svj-stat p-3">
-              <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-gold" />
-                Global Rank
-              </div>
-              <div className="font-mono text-xl font-bold text-gold">#{userRank}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Progress Bar */}
-        <div className="space-y-1.5 mb-5">
-          <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
-            <span>Daily XP Goal</span>
-            <span>{totalTodayXp} / 500 XP</span>
-          </div>
-          <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round((totalTodayXp / 500) * 100))}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
-            />
+          <div
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-white/[0.06] bg-svj-bg px-2.5 py-1.5"
+            title="Current streak"
+          >
+            <Flame className="h-4 w-4 text-gold" aria-hidden="true" />
+            <span className="font-mono text-xs font-semibold tabular-nums text-gold">
+              {user.currentStreak}
+            </span>
+            <span className="font-inter text-[10px] uppercase tracking-wide text-svj-secondary">
+              day streak
+            </span>
           </div>
         </div>
 
-        {/* Compact live Activity card — automatic step counter summary */}
+        {/* XP / level progression — the ONE premium treatment. */}
+        <XpLevelStrip
+          totalXp={user.totalXP}
+          todayXp={totalTodayXp}
+          level={user.level}
+          className="px-4 pt-3 sm:px-5"
+        />
+
         {onOpenActivity && <ActivitySummaryCard onOpen={onOpenActivity} />}
 
-        {/* Character Hexagon Matrix */}
-        <div className="border-t border-white/[0.06] pt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-gold" />
-                Character Matrix — Level {user.level || 1}
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
-                {user.leagueRank || "APPRENTICE I"}
-              </span>
-            </div>
-            <span className="text-[11px] font-inter text-[#8C8C90]">Complete tasks to grow</span>
+        {/* Character Matrix — the signature graphic, as hero preview. */}
+        <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 sm:px-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="svj-label-xs flex items-center gap-1.5 uppercase tracking-[0.14em] text-svj-text">
+              <Sparkles className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+              Character Matrix — Level {user.level || 1}
+            </span>
+            <span className="shrink-0 rounded bg-svj-crimson/10 px-2 py-0.5 font-inter text-[10px] font-semibold uppercase text-svj-crimson">
+              {user.leagueRank || "APPRENTICE I"}
+            </span>
           </div>
 
-          <HexagonRadarChart
-            stats={radarStats}
-            level={user.level}
-            onStatClick={(statKey) => {
-              // Quick filter by clicked attribute's category!
-              const statCatMap: Record<string, ChallengeCategory> = {
-                physical: "Physical",
-                mental: "Mental",
-                discipline: "Discipline",
-                social: "Mindset",
-                intellect: "Mindset",
-                ambition: "Mindset",
-              };
-              if (statCatMap[statKey]) {
-                setSelectedCategory(statCatMap[statKey]);
-              }
-            }}
+          <CharacterMatrix
+            className="mt-1"
+            stats={radarUserStats}
+            interactive
+            contributions={matrixContributions}
           />
         </div>
-      </div>
+      </section>
 
-      {/* Categories & Custom Task Button */}
+      {/* ── Filters + Add Task ──────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
         <div className="flex items-center gap-1.5">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-inter font-medium transition-all shrink-0 cursor-pointer ${
-                selectedCategory === cat
-                  ? "bg-[#C81E3A] text-white"
-                  : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/[0.04]"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const active = selectedKey === cat;
+            const catHex = cat === "All" ? undefined : categoryColor(cat as ChallengeCategory);
+            return (
+              <button
+                key={cat}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setSelectedKey(cat)}
+                className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 font-inter text-[11px] font-medium transition-colors ${
+                  active
+                    ? "border-svj-crimson/40 bg-svj-crimson/10 text-svj-text"
+                    : "border-white/[0.06] bg-svj-surface text-svj-secondary hover:text-white"
+                }`}
+              >
+                {cat !== "All" && catHex && (
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: catHex }}
+                    aria-hidden="true"
+                  />
+                )}
+                {cat}
+              </button>
+            );
+          })}
         </div>
-
         <button
+          type="button"
           onClick={(event) => {
             editorTrigger.current = event.currentTarget;
             setEditingTask(null);
             setIsAddModalOpen(true);
           }}
-          className="px-3 py-1.5 rounded-lg bg-[#17171A] hover:bg-white/[0.06] text-white border border-white/[0.06] text-[11px] font-inter font-medium flex items-center gap-1.5 shrink-0 cursor-pointer"
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-white/[0.06] bg-svj-surface px-3 py-2 font-inter text-[11px] font-medium text-white hover:bg-white/[0.06]"
         >
-          <Plus className="w-3.5 h-3.5 text-[#C81E3A]" />
+          <Plus className="h-3.5 w-3.5 text-svj-crimson" aria-hidden="true" />
           <span>Add Task</span>
         </button>
       </div>
 
       {actionError && (
-        <p role="alert" className="text-sm font-inter text-rose-300">
-          {actionError}
-        </p>
+        <SVJErrorState title="Couldn't update this task" message={actionError} compact />
       )}
 
-      {/* Personalized challenge insight */}
-      {personalizationQuery.data?.personalization?.assessmentCompleted &&
-        personalizedQuery.data && (
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/10">
-            <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0" />
-            <div className="flex-1">
-              <p className="text-[11px] font-inter text-[#8C8C90]">
-                <span className="text-[#C81E3A] font-semibold">Personalized</span> —{" "}
-                {personalizedQuery.data.reason}
-              </p>
-            </div>
-            <RefreshButton
-              onClick={handleRefreshPersonalized}
-              refreshState={refreshState}
-              disabled={refreshState.status === "loading"}
-            />
-          </div>
-        )}
-
-      {/* Challenges List — staggered entrance, tactile press feedback */}
-      <motion.div
-        variants={svjStaggerContainer}
-        initial="hidden"
-        animate="show"
-        className="space-y-3"
-      >
-        <AnimatePresence mode="popLayout">
-          {filteredChallenges.map((challenge) => (
-            <motion.div
-              key={challenge.id}
-              layout
-              variants={svjStaggerItem}
-              whileTap={svjWhileTap}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={() => {
-                // Undoing is deliberate: the checkbox owns it, so a stray tap on
-                // a completed row never reverses XP.
-                if (challenge.completed) return;
-                handleToggle(challenge.id);
-              }}
-              className={`group p-4 rounded-2xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
-                completingId === challenge.id
-                  ? "border-[#C81E3A]/40"
-                  : challenge.completed
-                    ? "border-white/[0.06] opacity-80"
-                    : "border-white/[0.06] hover:border-white/[0.12]"
-              }`}
+      {/* ── Daily challenge list — real state, clear hierarchy ───────────── */}
+      {loadingChallenges ? (
+        <div role="status" aria-label="Loading challenges" className="space-y-3">
+          <SVJSkeleton className="h-24 w-full rounded-2xl" />
+          <SVJSkeleton className="h-24 w-full rounded-2xl" />
+          <SVJSkeleton className="h-24 w-full rounded-2xl" />
+        </div>
+      ) : serverListFailed && displayChallenges.length === 0 ? (
+        <SVJErrorState
+          title="Challenges unavailable"
+          message="We couldn't load your challenges. Check your connection and try again."
+          action={
+            <button
+              type="button"
+              onClick={retryAll}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-svj-crimson px-3.5 py-2 font-inter text-xs font-semibold text-white hover:bg-svj-crimson-hover svj-press"
             >
-              <div className="flex items-start gap-3">
-                {/* Custom Checkbox */}
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={challenge.completed}
-                  aria-busy={completingId === challenge.id}
-                  aria-label={`${challenge.completed ? "Uncomplete" : "Complete"} ${challenge.title}${
-                    completionLocked(challenge) ? " (locked)" : ""
-                  }`}
-                  title={
-                    completionLocked(challenge)
-                      ? "This completion can't be undone — only today's tasks are reversible."
-                      : challenge.completed
-                        ? "Uncheck to undo today's completion"
-                        : undefined
-                  }
-                  disabled={
-                    completingId === challenge.id ||
-                    (challenge.completed && completionLocked(challenge))
-                  }
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleToggle(challenge.id);
-                  }}
-                  className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
-                    challenge.completed
-                      ? "bg-[#C81E3A] border-[#C81E3A] text-white"
-                      : "border-white/20 group-hover:border-[#C81E3A]/60"
-                  } ${completingId === challenge.id ? "cursor-wait" : ""}`}
+              <RotateCw className="h-3.5 w-3.5" aria-hidden="true" />
+              Retry
+            </button>
+          }
+        />
+      ) : filteredChallenges.length === 0 ? (
+        <section aria-label="Challenges">
+          <div className="mb-3">
+            <h2 className="svj-heading text-sm">
+              {selectedKey === "All" ? "Daily Challenges" : selectedKey}
+            </h2>
+          </div>
+          <SVJEmptyState
+            icon={Sparkles}
+            title="No challenges here"
+            description={
+              selectedKey === "All"
+                ? "Daily challenges are generated once you complete the SVJ Assessment, matched to your goals and growth areas."
+                : "No challenges in this category yet. Complete the assessment or add your own task."
+            }
+          />
+        </section>
+      ) : (
+        <section aria-label="Challenges">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="svj-heading text-sm">
+                {selectedKey === "All" ? "Daily Challenges" : selectedKey}
+              </h2>
+              {completedCount > 0 && (
+                <p className="mt-0.5 svj-label-xs">
+                  {completedCount} of {totalCount} complete
+                </p>
+              )}
+            </div>
+            {/* Tertiary context — supporting, not louder than the list. */}
+            {!isAndroid && totalCount > 0 && (
+              <span className="font-mono text-[11px] tabular-nums text-svj-secondary">
+                Global rank #{userRank}
+              </span>
+            )}
+          </div>
+
+          <motion.div
+            variants={svjStaggerContainer}
+            initial="hidden"
+            animate="show"
+            className="space-y-2.5"
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {filteredChallenges.map((challenge) => (
+                <motion.div
+                  key={challenge.id}
+                  layout
+                  variants={svjStaggerItem}
+                  whileTap={svjWhileTap}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
                 >
-                  {completingId === challenge.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white/70" />
-                  ) : challenge.completed ? (
-                    completionLocked(challenge) ? (
-                      <Lock className="w-3 h-3 text-white/80" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                    )
-                  ) : null}
-                </button>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3
-                      className={`font-inter font-medium text-sm ${
-                        challenge.completed ? "text-[#8C8C90]" : "text-white"
-                      }`}
-                    >
-                      {challenge.title}
-                    </h3>
-                    <span
-                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-inter font-medium ${getDifficultyBadge(
-                        challenge.difficulty,
-                      )}`}
-                    >
-                      {challenge.difficulty}
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-inter text-[#8C8C90] mt-1 line-clamp-1">
-                    {challenge.description}
-                  </p>
-
-                  {/* Inline error for THIS task (plus the global alert above) */}
-                  {completingId === challenge.id && actionError && (
-                    <p role="status" className="text-[11px] font-inter text-rose-300 mt-1.5">
-                      {actionError}
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-3 text-[11px] font-inter text-[#8C8C90] mt-2">
-                    <span className="text-[#C81E3A] font-medium">{challenge.category}</span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {challenge.durationMinutes}m
-                    </span>
-                    {formatCompletedAt(challenge.completedAt) && (
-                      <>
-                        <span>·</span>
-                        <span className="text-[#8C8C90]">
-                          {formatCompletedAt(challenge.completedAt)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* XP Value Pill */}
-              <div className="flex items-center gap-2 shrink-0">
-                {challenge.isCustom && (
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      editorTrigger.current = event.currentTarget;
-                      setEditingTask(challenge);
+                  <ChallengeCard
+                    challenge={challenge}
+                    pending={completingId === challenge.id}
+                    completionLocked={completionLocked(challenge)}
+                    isPrimary={primaryObjective?.id === challenge.id}
+                    onToggle={handleToggle}
+                    onEdit={(c) => {
+                      editorTrigger.current = document.activeElement as HTMLButtonElement | null;
+                      setEditingTask(c);
                       setIsAddModalOpen(true);
                     }}
-                    aria-label={`Edit ${challenge.title}`}
-                    className="p-1.5 rounded-lg text-[#A6A6AD] hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#C81E3A]"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                )}
-                {/* Server-assigned personalized tasks are never locally
-                    removable — they are completed or replaced via the
-                    authorized Refresh flow only. */}
-                {!challenge.isPersonalized && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeChallenge(challenge.id);
-                    }}
-                    aria-label={`Remove ${challenge.title}`}
-                    title={`Remove ${challenge.title}`}
-                    className="p-1.5 rounded-lg text-[#8C8C90] hover:text-[#C81E3A] hover:bg-[#C81E3A]/10 transition-colors cursor-pointer shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-                <div
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-inter font-semibold shrink-0 ${
-                    challenge.completed
-                      ? "bg-[#C81E3A]/10 text-[#C81E3A]"
-                      : "bg-[#0b0b0c] text-[#C81E3A]"
-                  }`}
-                >
-                  +{challenge.xp} XP
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+                    onRemove={(c) => removeChallenge(c.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </section>
+      )}
+
+      {/* ── Personalized context — real reasoning from the engine ────────── */}
+      {personalizedQuery.data &&
+        personalizationQuery.data?.personalization?.assessmentCompleted && (
+          <section aria-label="Personalization" data-testid="personalized-reason">
+            <div className="flex items-center justify-between gap-3">
+              <p className="min-w-0 flex-1 truncate font-inter text-[11px] text-svj-secondary">
+                <span className="font-semibold text-svj-crimson">Personalized</span> —{" "}
+                {personalizedQuery.data.reason}
+              </p>
+              <RefreshButton
+                onClick={handleRefreshPersonalized}
+                refreshState={refreshState}
+                disabled={refreshState.status === "loading"}
+              />
+            </div>
+          </section>
+        )}
+
+      {/* Signature completion moment — concise, auto-dismissing, never a modal. */}
+      <ChallengeCompletionBanner flash={completionFlash.active} />
 
       <TaskEditorDialog
         open={isAddModalOpen}
@@ -801,19 +789,19 @@ function RefreshButton({
       type="button"
       onClick={onClick}
       disabled={disabled || refreshState.status === "loading" || isCooldown}
-      className={`px-2.5 py-1 rounded-lg text-[10px] font-inter font-semibold shrink-0 cursor-pointer transition-colors ${
+      className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-inter font-semibold transition-colors ${
         disabled || refreshState.status === "loading"
-          ? "bg-white/[0.04] text-[#8C8C90] cursor-not-allowed"
+          ? "cursor-not-allowed bg-white/[0.04] text-[#8C8C90]"
           : refreshState.status === "success"
             ? "bg-emerald-500/10 text-emerald-400"
             : isCooldown
-              ? "bg-gold/10 text-gold cursor-not-allowed"
+              ? "cursor-not-allowed bg-gold/10 text-gold"
               : "bg-[#C81E3A]/10 text-[#C81E3A] hover:bg-[#C81E3A]/20"
       }`}
       aria-label={cooldownLabel ?? "Renew personalized tasks"}
     >
       {refreshState.status === "loading" && (
-        <Loader2 className="h-3 w-3 animate-spin inline-block" />
+        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
       )}
       {refreshState.status === "success" && "Renewed"}
       {refreshState.status === "error" && "Error"}

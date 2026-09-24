@@ -23,6 +23,8 @@ const read = async (rel: string) =>
 
 const serverSource = await read("src/lib/challenge-engine.server.ts");
 const viewSource = await read("src/app/views/ChallengesView.tsx");
+const cardSource = await read("src/app/components/ChallengeCard.tsx");
+const errorStateSource = await read("src/app/components/ui-primitives/SVJErrorState.tsx");
 const xpFixMigration = await read(
   "supabase/migrations/20260925000000_personalized_completion_xp_report.sql",
 );
@@ -86,37 +88,39 @@ test("completed assignments are idempotent no-ops with zero additional XP", () =
 // ── 8–12. UI behaviors ────────────────────────────────────────────────────
 
 test("personalized tasks never route through local toggleChallenge", () => {
-  const toggleIdx = viewSource.indexOf("const result = toggleChallenge(id)");
+  const toggleIdx = viewSource.indexOf("const result = toggleChallenge(challenge.id)");
   const personalizedBranch = viewSource.slice(
     viewSource.indexOf("if (personalizedQuery.data?.challenges?.some"),
-    toggleIdx,
+    viewSource.indexOf("// Local completion is a true toggle"),
   );
   assert.ok(toggleIdx > -1, "custom challenges still use toggleChallenge");
   assert.doesNotMatch(personalizedBranch, /toggleChallenge/);
-  assert.match(personalizedBranch, /callCompletePersonalized/);
+  assert.match(personalizedBranch, /handlePersonalizedComplete/);
+  // The server path itself must still invoke the completion RPC wrapper.
+  assert.match(viewSource, /callCompletePersonalized\(\{/);
 });
 
 test("personalized tasks do not show the local remove button", () => {
-  // Remove button is wrapped in a non-personalized guard.
-  assert.match(viewSource, /\{!challenge\.isPersonalized && \(/);
+  // Remove button is wrapped in a non-personalized guard (ChallengeCard).
+  assert.match(cardSource, /onRemove && !challenge\.isPersonalized/);
+  assert.match(cardSource, /!challenge\.isPersonalized && \(/);
   // Edit (pencil) stays custom-only.
-  assert.match(viewSource, /challenge\.isCustom && \(/);
+  assert.match(cardSource, /onEdit && challenge\.isCustom/);
 });
 
 test("pending completion disables only the tapped task and shows a spinner", () => {
-  assert.match(viewSource, /completingId === challenge\.id \? \(\s*\n?\s*<Loader2/);
+  assert.match(cardSource, /pending \? \(\s*\n?\s*<Loader2/);
   // Completed rows stay interactive unless the completion is locked (personalized
   // server rows or past days), because completion is now a real toggle.
-  assert.match(
-    viewSource,
-    /disabled=\{\s*completingId === challenge\.id \|\|\s*\(challenge\.completed && completionLocked\(challenge\)\)\s*\}/,
-  );
+  assert.match(cardSource, /disabled=\{\s*pending \|\| state === "locked"\s*\}/);
   // Duplicate tap guard.
   assert.match(viewSource, /if \(completingId\) return/);
 });
 
 test("completion failure surfaces an accessible, friendly error", () => {
-  assert.match(viewSource, /role="alert"/);
+  // The shared SVJErrorState surfaces the message with role="alert".
+  assert.match(errorStateSource, /role="alert"/);
+  assert.match(viewSource, /<SVJErrorState/);
   // Environment-specific message when the RPC is missing.
   assert.match(viewSource, /Personalized task service is not available in this environment\./);
   assert.match(viewSource, /Could not complete this task\. Please retry\./);

@@ -156,7 +156,7 @@ describe("client wiring", () => {
     assert.match(view, /svj_complete_my_personalized_task|callCompletePersonalized/);
     assert.match(
       view,
-      /personalizedQuery\.data\?\.challenges\?\.some\(\(p\) => p\.id === id\)/,
+      /personalizedQuery\.data\?\.challenges\?\.some\(\(p\) => p\.id === challenge\.id\)/,
       "the handler must branch personalized IDs away from toggleChallenge",
     );
   });
@@ -173,6 +173,12 @@ describe("client wiring", () => {
   test("completed state renders from SERVER assignment state", () => {
     assert.match(view, /completed: p\.completed \?\? false/);
     assert.match(view, /await personalizedQuery\.refetch\(\)/);
+    // The banner shows the server-returned award but never fabricates a
+    // lifetime total: previousTotalXp is null and the level-up is deferred
+    // (client estimates are never labeled authoritative).
+    assert.match(view, /xpAwarded: result\.xpAwarded \?\? challenge\.xp/);
+    assert.match(view, /previousTotalXp: null/);
+    assert.match(view, /deferLevelUp: true/);
   });
 
   test("reward invalidation: user-stats and profile refresh, no optimistic writes", () => {

@@ -137,7 +137,9 @@ export const NativePermissionOnboarding: React.FC = () => {
       setBusy(false);
     }
 
-    setResult(granted ? "Allowed" : "Not allowed — you can enable it later when the feature needs it.");
+    setResult(
+      granted ? "Allowed" : "Not allowed — you can enable it later when the feature needs it.",
+    );
     window.setTimeout(() => advance(), 550);
   };
 

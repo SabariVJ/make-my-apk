@@ -85,11 +85,13 @@
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(200, 30, 58, 0.6);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* SVJ is dark-only: chart tokens mirror the .dark palette so shadcn
+     charts never flash a light-mode color scheme (fixes :root/.dark drift). */
+  --chart-1: #c81e3a;
+  --chart-2: #d4af37;
+  --chart-3: #1e1e22;
+  --chart-4: #8c8c90;
+  --chart-5: #f4f2ed;
   --sidebar: #17171a;
   --sidebar-foreground: #f4f2ed;
   --sidebar-primary: #c81e3a;
@@ -164,13 +166,20 @@
   --font-inter: "Inter", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 
+  /* ── SVJ PERFORMANCE OS — responsive breakpoints ──────────────────
+     xs covers large phones (412px class), sm/md/lg stay on Tailwind
+     defaults so existing screens keep their current behavior. */
+  --breakpoint-xs: 26rem; /* 416px */
+
   /* Single gold token: XP / reward / streak accents app-wide. */
   --color-gold: #d4af37;
 
+  /* ── Near-black surface hierarchy (base → raised) ───────────────── */
   --color-svj-bg: #0b0b0c;
   --color-svj-surface: #17171a;
   --color-svj-surface-raised: #1e1e22;
   --color-svj-card-hover: #212126;
+  --color-svj-overlay: #212126;
   --color-svj-crimson: #c81e3a;
   --color-svj-crimson-hover: #a0182e;
   --color-svj-text: #f4f2ed;
@@ -178,6 +187,46 @@
   --color-svj-muted: #5c5c60;
   --color-svj-gold: #d4af37;
   --color-svj-obsidian: #101014;
+
+  /* ── Character Matrix data colors ─────────────────────────────────
+     The six attribute colors ARE the secondary data palette. Each maps
+     to an OS domain: physical→Body, discipline→Training/Discipline,
+     mental→Recovery, intellect→Nutrition/Fuel, ambition→Progression,
+     social→Competition/Community. Values preserved from the original
+     radar chart identity — only promoted to tokens. */
+  --color-attr-physical: #10b981;
+  --color-attr-ambition: #a855f7;
+  --color-attr-intellect: #f59e0b;
+  --color-attr-mental: #eab308;
+  --color-attr-social: #3b82f6;
+  --color-attr-discipline: #f43f5e;
+
+  /* ── Status / telemetry colors (readiness, load, alerts) ────────── */
+  --color-state-positive: #34d399;
+  --color-state-warning: #eab308;
+  --color-state-caution: #fb923c;
+  --color-state-critical: #f87171;
+  --color-state-info: #60a5fa;
+
+  /* ── Elevation: depth from shadow, never glow ───────────────────── */
+  --shadow-svj-1: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-svj-2: 0 4px 12px -4px rgb(0 0 0 / 0.5);
+  --shadow-svj-3: 0 12px 32px -12px rgb(0 0 0 / 0.6);
+
+  /* ── Motion: one house easing curve ─────────────────────────────── */
+  --ease-svj: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Skeleton shimmer ───────────────────────────────────────────── */
+  --animate-svj-shimmer: svj-shimmer 1.6s linear infinite;
+
+  @keyframes svj-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
 }
 
 @layer utilities {
@@ -275,6 +324,27 @@
   }
   .svj-glow-gold {
     box-shadow: 0 0 20px -6px rgba(212, 175, 55, 0.18);
+  }
+
+  /* ── Android gesture-bar clearance ─────────────────────────────────
+     Fixed-bottom UI (dock, sheets, dialog footers) must never sit under
+     the system navigation bar. */
+  .svj-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ── Skeleton loading surfaces ───────────────────────────────────── */
+  .svj-skeleton {
+    background: linear-gradient(90deg, #17171a 25%, #1e1e22 50%, #17171a 75%);
+    background-size: 200% 100%;
+    animation: svj-shimmer 1.6s linear infinite;
+    border-radius: 0.5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .svj-skeleton {
+      animation: none;
+      background: #17171a;
+    }
   }
 }
 

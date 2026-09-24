@@ -123,6 +123,7 @@ interface VjNotificationsPlugin {
     channel: NotificationChannel;
     target: NotificationTarget;
   }): Promise<void>;
+  openSettings(): Promise<void>;
 }
 
 const VjNotifications = registerPlugin<VjNotificationsPlugin>("VjNotifications");
@@ -422,6 +423,16 @@ export async function requestNotificationPermission(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false;
   try {
     return (await VjNotifications.requestPermission()).granted;
+  } catch {
+    return false;
+  }
+}
+
+export async function openNotificationSettings(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    await VjNotifications.openSettings();
+    return true;
   } catch {
     return false;
   }

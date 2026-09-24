@@ -122,7 +122,7 @@
 - 16 KB page alignment (Android 15+)
 - ProGuard/R8 minification (currently `minifyEnabled false`)
 
-## Phase 6 — Validation Results
+## Phase 6 — Historical Validation Results
 
 | Check                   | Result                           |
 | ----------------------- | -------------------------------- |
@@ -138,11 +138,11 @@
 | Android unit tests      | NOT TESTED                       |
 | `gradlew assembleDebug` | NOT TESTED                       |
 
-## Unresolved Blockers
+## Phase 6 Blockers (superseded where noted)
 
 1. **Upload keystore** — Must be obtained from original build environment or generated fresh
 2. **AdMob GDPR consent message** — Must be configured in AdMob dashboard
-3. **Native Android build verification** — Must be tested locally or in CI
+3. **Native Android verification** — Automated CI is now green; physical phone/tablet verification remains
 4. **Privacy policy content review** — Contact email, retention period should be verified by human
 5. **12-testers-for-14-days** — If new Play Console developer account
 
@@ -156,7 +156,9 @@
 | D — Verified blocker/high fixes            | ✅ DONE              | Adult eligibility alignment, truthful Plus purchase copy, Play data-deletion route, cleartext disabled, backups disabled, privacy disclosure expanded |
 | E — Final validation                       | ✅ BUILDS / ⚠ DEVICE | Full web suite, TypeScript, lint/format, phone/wear native CI, release AABs, and signing identity pass; physical-device verification remains          |
 
-Starting SHA for this continuation: `0862e0996101ef531ee1f2f532852207734770b8`.
+- Starting SHA for this continuation: `0862e0996101ef531ee1f2f532852207734770b8`.
+- Validated implementation SHA: `07438d0155d8f318666de3e7f975926b2ad25522`.
+- Implementation CI: [run 35964114638](https://github.com/SabariVJ/make-my-apk/actions/runs/35964114638) — all five jobs passed.
 
 No database migrations were added or applied by this release-hardening work. Recovery, Train, and Activity data paths remain intact.
 

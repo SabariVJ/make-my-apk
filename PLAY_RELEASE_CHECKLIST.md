@@ -2,19 +2,19 @@
 
 ## 1. Pre-Submission Code Checks (✅ Completed)
 
-| Check                                                               | Result                                                |
-| ------------------------------------------------------------------- | ----------------------------------------------------- |
-| `bun install --frozen-lockfile`                                     | ✅ PASS                                               |
-| `bunx tsc --noEmit`                                                 | ✅ PASS                                               |
-| `bun run build` (web)                                               | ✅ PASS                                               |
-| `bun run test`                                                      | ✅ 1,348 tests: 1,346 pass, 0 fail, 2 skipped         |
-| `bunx eslint <changed files>`                                       | ✅ PASS — 0 errors, 0 warnings                        |
-| `bunx prettier --check <changed files>`                             | ✅ PASS                                               |
-| `git diff --check`                                                  | ✅ PASS                                               |
-| `python3 scripts/test_android_themes.py`                            | ✅ 8/8 PASS                                           |
-| `bun run cap:sync`                                                  | ✅ PASS — configuration/plugins synchronized          |
-| GitHub Actions Android phone/wear lint, unit tests and debug builds | ✅ PASS in CI                                         |
-| GitHub Actions release bundle validation                            | ✅ PASS — phone/wear AABs and shared signing identity |
+| Check                                                               | Result                                                   |
+| ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `bun install --frozen-lockfile`                                     | ✅ PASS                                                  |
+| `bunx tsc --noEmit`                                                 | ✅ PASS                                                  |
+| `bun run build` (web)                                               | ✅ PASS                                                  |
+| `bun run test`                                                      | ✅ 1,349 tests: 1,347 pass, 0 fail, 2 skipped            |
+| `bunx eslint <changed files>`                                       | ✅ PASS — 0 errors, 0 warnings                           |
+| `bunx prettier --check <changed files>`                             | ✅ PASS                                                  |
+| `git diff --check`                                                  | ✅ PASS                                                  |
+| `python3 scripts/test_android_themes.py`                            | ✅ 8/8 PASS                                              |
+| `bun run cap:sync`                                                  | ✅ PASS — configuration/plugins synchronized             |
+| GitHub Actions Android phone/wear lint, unit tests and debug builds | ✅ PASS in CI                                            |
+| GitHub Actions release bundle validation                            | ✅ PASS — run `35964114638` at `07438d0`; all jobs green |
 
 **Verdict:** CODE + CI CHECKS PASS; physical-device verification remains
 
@@ -132,7 +132,7 @@ cd android && ./gradlew bundleRelease
 
 ## 10. Known Limitations
 
-1. **No automated Android build in CI** — native build must be done locally or in a CI with Java and Android SDK
+1. **No physical-device Android verification** — CI builds, native unit tests, and blocking lint pass; final phone/tablet permission and UI flows still require real hardware
 2. **AdMob consent dashboard** — GDPR message must be configured before ads work in EEA
 3. **12-testers-for-14-days** — New developer accounts require 12 closed testers for 14 days before production access
 4. **Upload keystore** — Must be obtained from original Lovable build or a new one generated (and backed up securely)

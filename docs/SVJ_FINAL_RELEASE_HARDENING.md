@@ -1,8 +1,10 @@
 # SVJ Final Release Hardening Report
 
-**Date:** 24 September 2026  
-**Branch:** `release/play-v1-compliance`  
-**Starting SHA:** `0862e0996101ef531ee1f2f532852207734770b8`
+- **Date:** 24 September 2026
+- **Branch:** `release/play-v1-compliance`
+- **Starting SHA:** `0862e0996101ef531ee1f2f532852207734770b8`
+- **Validated implementation SHA:** `07438d0155d8f318666de3e7f975926b2ad25522`
+- **Implementation CI:** [run 35964114638](https://github.com/SabariVJ/make-my-apk/actions/runs/35964114638) — all five jobs passed
 
 ## Scope completed
 
@@ -38,6 +40,7 @@
 - Expanded the privacy disclosure to cover training, recovery, GPS/routes, Health Connect, notifications, support data, and adult-only eligibility.
 - Added `tests/release-hardening.test.mjs` to guard the verified release decisions.
 - Upgraded CI to current Node 24 action runtimes (`checkout@v7`, `cache@v6`, `setup-java@v6`, `upload-artifact@v7`) and made phone/wear Android lint failures block CI instead of being ignored.
+- Hardened Android runtime permission revocation handling, API-gated Health Connect time conversion, and companion-only Wear manifest metadata so the enforced phone/wear lint gates pass without weakening native behavior.
 
 ## Database changes
 
@@ -50,14 +53,14 @@
 | Check                                        | Result                                                                                                            |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Focused Activity/Train/release tests         | PASS                                                                                                              |
-| Full `bun run test`                          | PASS — 1,348 tests: 1,346 passed, 0 failed, 2 skipped                                                             |
+| Full `bun run test`                          | PASS — 1,349 tests: 1,347 passed, 0 failed, 2 skipped                                                             |
 | `bunx tsc --noEmit`                          | PASS                                                                                                              |
 | Focused ESLint                               | PASS — 0 errors, 0 warnings                                                                                       |
 | Prettier check for changed source/tests/docs | PASS                                                                                                              |
 | `bun run build`                              | PASS                                                                                                              |
 | `python3 scripts/test_android_themes.py`     | PASS — 8/8                                                                                                        |
 | `bun run cap:sync`                           | PASS — Capacitor configuration/plugins synchronized; hosted `server.url` correctly skips copying local web assets |
-| GitHub Actions phone/wear Android CI         | PASS — theme tests, native unit tests, blocking lint, debug APK builds, release AABs, and shared signing identity |
+| GitHub Actions phone/wear Android CI         | PASS — implementation SHA `07438d0`, run `35964114638`; web/database/phone/wear/release jobs all green            |
 | Real-device Android verification             | NOT RUN — no device/emulator is attached                                                                          |
 
 ## Release decision

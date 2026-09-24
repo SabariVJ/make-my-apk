@@ -333,6 +333,7 @@ public class VjWearablePlugin extends Plugin {
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
+        @SuppressLint("MissingPermission")
         @SuppressWarnings("deprecation")
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String deviceId = gatt.getDevice() != null ? gatt.getDevice().getAddress() : null;

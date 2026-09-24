@@ -1,5 +1,6 @@
 package app.lovable.svj;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.location.LocationListener;
@@ -302,25 +304,39 @@ public class VjWorkoutService extends Service {
       public void onProviderDisabled(String provider) {}
     };
     boolean registered = false;
-    try {
-      if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-        locationManager.requestLocationUpdates(
-            LocationManager.GPS_PROVIDER, MIN_TIME_MS, MIN_DISTANCE_M,
-            locationListener, Looper.getMainLooper());
-        registered = true;
+    if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        != PackageManager.PERMISSION_GRANTED) {
+      Log.w(TAG, "Fine location permission is not available");
+    } else {
+      try {
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+          locationManager.requestLocationUpdates(
+              LocationManager.GPS_PROVIDER, MIN_TIME_MS, MIN_DISTANCE_M,
+              locationListener, Looper.getMainLooper());
+          registered = true;
+        }
+      } catch (SecurityException e) {
+        Log.w(TAG, "GPS permission was revoked", e);
+      } catch (IllegalArgumentException e) {
+        Log.w(TAG, "GPS provider unavailable", e);
       }
-    } catch (Exception e) {
-      Log.w(TAG, "GPS provider unavailable", e);
     }
-    try {
-      if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-        locationManager.requestLocationUpdates(
-            LocationManager.NETWORK_PROVIDER, MIN_TIME_MS, MIN_DISTANCE_M,
-            locationListener, Looper.getMainLooper());
-        registered = true;
+    if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+        != PackageManager.PERMISSION_GRANTED) {
+      Log.w(TAG, "Coarse location permission is not available");
+    } else {
+      try {
+        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+          locationManager.requestLocationUpdates(
+              LocationManager.NETWORK_PROVIDER, MIN_TIME_MS, MIN_DISTANCE_M,
+              locationListener, Looper.getMainLooper());
+          registered = true;
+        }
+      } catch (SecurityException e) {
+        Log.w(TAG, "Network location permission was revoked", e);
+      } catch (IllegalArgumentException e) {
+        Log.w(TAG, "Network provider unavailable", e);
       }
-    } catch (Exception e) {
-      Log.w(TAG, "Network provider unavailable", e);
     }
     if (!registered) {
       Log.w(TAG, "No location provider is enabled");

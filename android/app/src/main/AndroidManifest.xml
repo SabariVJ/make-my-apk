@@ -79,6 +79,11 @@
             android:name="com.google.android.wearable.capability"
             android:value="svj_phone_app" />
 
+        <!-- The phone is the companion host, not a standalone watch app. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
+
         <!-- Required Health Connect privacy/rationale declaration. Shown when the
              user asks why SVJ needs health data; it reuses SVJ's own privacy page
              via the app's existing deep-link scheme (app.lovable.svj://privacy). -->
@@ -126,9 +131,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Wear OS Data Layer: lets the SVJ phone app discover and talk to the SVJ
-         Wear OS companion. No Bluetooth permission of its own is required. -->
-    <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+    <!-- The phone is a Wear OS companion host, not a watch-only APK. Do not
+         declare android.hardware.type.watch here: that feature is invalid in a
+         phone manifest and Play applies it to the Wear OS module instead. -->
 
     <!-- Health Connect: lets the plugin detect/install the platform provider. -->
     <queries>

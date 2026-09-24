@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 const read = (p: string) => readFileSync(p, "utf8");
 
 const appGradle = () => read("android/app/build.gradle");
+const appManifest = () => read("android/app/src/main/AndroidManifest.xml");
 const wearGradle = () => read("android/wear/build.gradle");
 const wearManifest = () => read("android/wear/src/main/AndroidManifest.xml");
 
@@ -41,12 +42,23 @@ describe("Play release packaging", () => {
     assert.notEqual(phone, wear);
   });
 
-  it("declares the watch hardware feature as required", () => {
+  it("targets watches only in the wear module, not the companion phone manifest", () => {
     const m = wearManifest();
     assert.match(m, /<uses-feature android:name="android\.hardware\.type\.watch" \/>/);
     assert.doesNotMatch(
       m,
       /uses-feature android:name="android\.hardware\.type\.watch"[^>]*required="false"/,
+    );
+    assert.doesNotMatch(
+      appManifest(),
+      /<uses-feature android:name="android\.hardware\.type\.watch"/,
+    );
+  });
+
+  it("declares the phone as a non-standalone Wear companion host", () => {
+    assert.match(
+      appManifest(),
+      /android:name="com\.google\.android\.wearable\.standalone"\s*\n\s*android:value="false"/,
     );
   });
 

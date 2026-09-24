@@ -64,6 +64,10 @@
         <!-- Wear OS Data Layer: receives watch messages (handshake, live
              samples, session state, completed workout summaries) even when SVJ
              is not running, and buffers them for the app. -->
+        <receiver
+            android:name=".VjNotificationReceiver"
+            android:exported="false" />
+
         <service
             android:name=".VjWearListenerService"
             android:exported="true">

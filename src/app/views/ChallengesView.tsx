@@ -34,7 +34,7 @@ import {
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
 import { localDayKey, type TaskCompletion } from "../lib/taskCompletions";
-import { categoryColor } from "../lib/challengeUI";
+import { categoryColor, SERVER_STAT_MATRIX_MAP } from "../lib/challengeUI";
 import type { AttributeKey } from "../lib/designTokens";
 
 export const ChallengesView: React.FC<{
@@ -210,21 +210,30 @@ export const ChallengesView: React.FC<{
   });
 
   // ── Matrix data ───────────────────────────────────────────────────────────
-  // Assessment-backed stats are mapped onto the six attributes using the same
-  // relationship the data tables define. Fallbacks reflect the attribute the
-  // server stat READ would land on — never invented magnitudes.
+  // Assessment-backed server stats map onto the six attributes through the
+  // SAME relationship pre-Phase-2 used (the data-table meaning), pinned by
+  // SERVER_STAT_MATRIX_MAP. Fallback: the device-local attribute values.
+  // A UI redesign must not redefine what the attributes mean.
   const serverStats: UserStatsData | null = statsQuery.data ?? null;
   const radarStats: Record<AttributeKey, number> = useMemo(() => {
     const s = serverStats;
     if (s) {
-      return {
-        physical: s.fitness,
-        discipline: s.discipline,
-        mental: s.focus,
-        intellect: s.nutrition,
-        ambition: s.consistency,
-        social: s.social,
+      // Derive from the pinned server-stat → attribute relationship (single
+      // source of truth, identical to the original radar identity).
+      const source = s as unknown as Record<string, number>;
+      const next: Record<AttributeKey, number> = {
+        physical: 0,
+        discipline: 0,
+        mental: 0,
+        intellect: 0,
+        ambition: 0,
+        social: 0,
       };
+      for (const [statKey, attrKey] of Object.entries(SERVER_STAT_MATRIX_MAP)) {
+        const value = source[statKey];
+        if (Number.isFinite(value)) next[attrKey] = value;
+      }
+      return next;
     }
     const local = user.stats;
     return {
@@ -333,14 +342,19 @@ export const ChallengesView: React.FC<{
       void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
 
-      // Banner figures come from the server response — XP is never computed
-      // or mutated client-side.
+      // The RPC returns the awarded XP but NOT an authoritative lifetime
+      // total. Option B (per repair scope): show the server-returned award
+      // WITHOUT a level-up — a client-estimated total must never be labeled
+      // authoritative. Level-up can only come from real before/after totals
+      // (local ledger toggles). No lifetime XP is fabricated here.
       completionFlash.display({
         id: `personalized-${challenge.id}-${Date.now()}`,
         title: challenge.title,
         category: challenge.category,
         xpAwarded: result.xpAwarded ?? challenge.xp,
-        newTotalXp: user.totalXP + (result.xpAwarded ?? challenge.xp),
+        previousTotalXp: null,
+        newTotalXp: 0,
+        deferLevelUp: true,
       });
     } catch {
       setActionError("Could not complete this task. Please retry.");
@@ -364,20 +378,22 @@ export const ChallengesView: React.FC<{
     // AND undoes it. The banner only celebrates a completion — undoing is
     // silent, since XP already went back down.
     const wasCompleted = challenge.completed;
-    const beforeXP = user.totalXP;
     const result = toggleChallenge(challenge.id);
     setActionError(result.ok ? null : result.error);
-    if (result.ok && !wasCompleted) {
-      const xpAwarded = challenge.earnedXP ?? challenge.xp;
+    if (result.ok && !wasCompleted && result.meta) {
+      // `meta` is derived from the real ledger outcome (xpAwarded / reused)
+      // and the recorded before/after totals. Read ONLY from it — never from
+      // challenge.xp (the displayed badge XP) and never recomputed here, so a
+      // reused payout or stored earnedXP is reported exactly as awarded.
+      const meta = result.meta;
       completionFlash.display({
         id: `local-${challenge.id}-${Date.now()}`,
         title: challenge.title,
         category: challenge.category,
-        xpAwarded,
-        newTotalXp: beforeXP + xpAwarded,
-        // Re-completing today reuses the original payout; the banner says
-        // "Completed again" instead of implying a fresh XP award.
-        reused: (result as { reused?: boolean }).reused,
+        xpAwarded: meta.xpAwarded,
+        previousTotalXp: meta.previousTotalXp,
+        newTotalXp: meta.newTotalXp,
+        reused: meta.reused,
       });
     }
   };

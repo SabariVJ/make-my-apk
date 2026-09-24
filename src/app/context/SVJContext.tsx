@@ -27,6 +27,7 @@ import {
   getTierForXP,
   normalizeUserProfile,
   summarizeWorkout,
+  type ChallengeToggleResult,
   type SaveResult,
 } from "../lib/activity";
 import { appStorage, readStoredArray, readStoredJson, writeStoredJson } from "../lib/storage";
@@ -71,7 +72,14 @@ interface SVJContextType {
   isGoogleAuthModalOpen: boolean;
 
   // Actions
-  toggleChallenge: (id: string) => SaveResult;
+  /**
+   * Toggle a task's completion through the reversible ledger. On a COMPLETE,
+   * the returned `meta` carries read-only completion metadata derived from
+   * the real ledger outcome (xpAwarded / reused / previousTotalXp /
+   * newTotalXp) for the completion banner; nothing in the UI may use it to
+   * add XP. On an un-complete, `meta` is absent.
+   */
+  toggleChallenge: (id: string) => ChallengeToggleResult;
   /**
    * The stored completion row for a task TODAY, if it has one. Its
    * xpAwarded/statPoints are the amounts an uncheck would reverse.
@@ -611,7 +619,7 @@ export const SVJProvider: React.FC<{
   const getTodayCompletion = (challengeId: string) =>
     findActiveRow(ledger, challengeId, localDayKey());
 
-  const toggleChallenge = (id: string): SaveResult => {
+  const toggleChallenge = (id: string): ChallengeToggleResult => {
     const current = challenges.find((challenge) => challenge.id === id);
     if (!current) return { ok: false, error: "This task is no longer available." };
     if (current.isPersonalized) {
@@ -622,6 +630,10 @@ export const SVJProvider: React.FC<{
         error: "Server-assigned tasks can only be completed, not undone.",
       };
     }
+    // Authoritative lifetime total BEFORE the toggle — read directly from user
+    // state. The banner's level-up check compares this real "before" with the
+    // real "after" (previousTotalXp + the ledger's actual xpAwarded).
+    const previousTotalXp = user.totalXP;
     const now = new Date();
     const outcome = toggleTaskCompletion(ledger, {
       id: current.id,
@@ -680,6 +692,18 @@ export const SVJProvider: React.FC<{
       // auto-dismissing ChallengeCompletionBanner (single restrained moment).
       // Confetti remains only for the pre-existing workout/nutrition/reward/
       // onboarding flows it was built for.
+      // Read-only completion metadata for the banner — derived ONLY from the
+      // real ledger outcome (row.xpAwarded / outcome.reused) and the recorded
+      // before/after totals. No reward amounts are recomputed here.
+      return {
+        ok: true,
+        meta: {
+          xpAwarded: Math.max(0, outcome.row.xpAwarded),
+          reused: outcome.reused,
+          previousTotalXp,
+          newTotalXp: previousTotalXp + Math.max(0, outcome.row.xpAwarded),
+        },
+      };
     }
     return { ok: true };
   };

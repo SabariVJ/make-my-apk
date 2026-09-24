@@ -9,8 +9,34 @@
  */
 
 import { ATTRIBUTE_COLORS, type AttributeKey } from "./designTokens";
-import { CHALLENGE_XP, getChallengeStat } from "./activity";
+import { CHALLENGE_XP } from "./activity";
 import type { ChallengeCategory, DailyChallenge, UserStats } from "../types";
+
+/**
+ * Server-stat → Character Matrix attribute mapping.
+ *
+ * This is the relationship the data tables define and the PRE-Phase-2
+ * ChallengesView used to build its radar:
+ *
+ *   physical   ← fitness
+ *   discipline ← discipline
+ *   mental     ← focus
+ *   social     ← social
+ *   ambition   ← confidence
+ *   intellect  ← consistency
+ *
+ * A UI redesign must not redefine what the six attributes MEAN, so this map
+ * stays authoritative even though it differs from the marketing "domain"
+ * label shown on the CharacterMatrix detail drawer.
+ */
+export const SERVER_STAT_MATRIX_MAP: Record<string, AttributeKey> = {
+  fitness: "physical",
+  discipline: "discipline",
+  focus: "mental",
+  social: "social",
+  confidence: "ambition",
+  consistency: "intellect",
+};
 
 /**
  * Visual state of a challenge row. Derived from the exact fields the business
@@ -38,13 +64,25 @@ export function getChallengeVisualState(
 }
 
 /**
- * The Character Matrix attribute a challenge category feeds. This is the
- * SAME mapping the completion ledger uses for stat points (getChallengeStat),
- * so the color and the "growing with this challenge" attribution always agree
- * with real awarded stat points.
+ * The Character Matrix attribute a challenge category feeds. Derived from the
+ * SAME server-stat → attribute relationship the data tables define (see
+ * SERVER_STAT_MATRIX_MAP), so the color and the "growing with this challenge"
+ * attribution agree with the original radar identity. The challenge engine's
+ * 5 coarse stat buckets (Physical/Nutrition → physical, etc.) are used only
+ * for balancing daily challenge rows.
  */
 export function categoryAttribute(category: ChallengeCategory): AttributeKey {
-  return getChallengeStat(category) as AttributeKey;
+  switch (category) {
+    case "Physical":
+      return "physical";
+    case "Discipline":
+      return "discipline";
+    case "Mental":
+    case "Mindset":
+      return "mental";
+    case "Nutrition":
+      return "intellect";
+  }
 }
 
 /** Attribute color for a challenge category — no ad-hoc category colors. */

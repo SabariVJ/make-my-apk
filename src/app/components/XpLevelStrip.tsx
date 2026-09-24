@@ -3,43 +3,19 @@ import { useReducedMotion } from "motion/react";
 import { Zap } from "lucide-react";
 import { getTierForXP } from "../lib/activity";
 import { MOTION } from "../lib/designTokens";
+import { XP_PER_LEVEL, levelProgress } from "../lib/xp";
 
 /**
  * XpLevelStrip — one premium XP / level progression treatment.
  *
  * The single place XP is presented as a journey toward the next level: total
- * (mono), tier name, and a meter that spans the CURRENT level's XP band.
- * Totals render instantly; the meter animates transform/width only, once per
- * real value change, and settles instantly under prefers-reduced-motion.
+ * (mono), tier name, and a meter that spans the CURRENT level's 500-XP band.
+ * The visible readout is band-relative (e.g. 100 / 500 at 600 total XP), and
+ * the meter's aria-valuemax is that same band. Totals render instantly; the
+ * meter animates width only, once per real value change, and settles
+ * instantly under prefers-reduced-motion.
  * This is READ-ONLY: XP itself is never mutated here.
  */
-
-/** The 500 XP band a level occupies (matches applyActivityXp / profile level). */
-export const XP_PER_LEVEL = 500;
-
-export function levelProgress(totalXp: number): {
-  level: number;
-  levelXp: number;
-  nextLevelXp: number;
-  pct: number;
-  remaining: number;
-} {
-  const level = Math.max(1, Math.floor(nonNegative(totalXp) / XP_PER_LEVEL) + 1);
-  const levelStart = (level - 1) * XP_PER_LEVEL;
-  const levelXp = nonNegative(totalXp) - levelStart;
-  const pct = Math.max(0, Math.min(100, Math.round((levelXp / XP_PER_LEVEL) * 100)));
-  return {
-    level,
-    levelXp,
-    nextLevelXp: levelStart + XP_PER_LEVEL,
-    pct,
-    remaining: Math.max(0, levelStart + XP_PER_LEVEL - nonNegative(totalXp)),
-  };
-}
-
-function nonNegative(value: number): number {
-  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-}
 
 export const XpLevelStrip: React.FC<{
   totalXp: number;
@@ -60,7 +36,7 @@ export const XpLevelStrip: React.FC<{
   useEffect(() => {
     if (first.current) {
       first.current = false;
-      setWidth(reduce ? prog.pct : prog.pct);
+      setWidth(prog.pct);
       return;
     }
     if (reduce) {
@@ -89,8 +65,10 @@ export const XpLevelStrip: React.FC<{
         </div>
         <div className="flex shrink-0 items-center gap-1.5 font-mono text-[11px] tabular-nums text-svj-secondary">
           <Zap className="h-3.5 w-3.5 text-svj-crimson" aria-hidden="true" />
-          {prog.levelXp.toLocaleString()}
-          <span className="text-svj-muted">/ {prog.nextLevelXp.toLocaleString()}</span>
+          <span className="font-mono text-[13px] font-semibold tabular-nums text-svj-crimson">
+            {prog.levelXp.toLocaleString()}
+          </span>
+          <span className="text-svj-muted">/ {XP_PER_LEVEL.toLocaleString()} this level</span>
           {typeof todayXp === "number" && (
             <span className="font-mono text-[11px] font-semibold tabular-nums text-svj-crimson">
               +{todayXp} today
@@ -107,6 +85,7 @@ export const XpLevelStrip: React.FC<{
         aria-label={`Level ${displayLevel} progress`}
         className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.05]"
         data-testid="xp-level-meter"
+        data-level-xp={prog.levelXp}
         data-remaining={prog.remaining}
       >
         <div

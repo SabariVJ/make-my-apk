@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check } from "lucide-react";
-import { levelProgress } from "./XpLevelStrip";
+import { evaluateCompletionFlash, type CompletionFlashEvent } from "../lib/completionFlash";
 import { ATTRIBUTE_META, categoryAttribute } from "../lib/challengeUI";
 import { ATTRIBUTE_COLORS } from "../lib/designTokens";
 import type { ChallengeCategory } from "../types";
@@ -10,30 +10,29 @@ import type { ChallengeCategory } from "../types";
  * Signature challenge-completion moment.
  *
  * One concise, non-blocking banner (NOT a modal): check transition, +XP delta,
- * and — when a level threshold was crossed since this screen mounted — a brief
+ * and — only when a real 500-XP level threshold was crossed — a brief
  * "level up" treatment. Total motion stays under ~2s and is auto-dismissed.
- * XP is NEVER mutated here: every figure is passed in from server/ledger
- * authoritative results by the caller.
+ *
+ * Authority contract (see src/app/lib/completionFlash.ts):
+ *  - Level-up compares the level of a REAL previous total with the level of a
+ *    REAL new total, supplied by the caller (ledger-confirmed for local
+ *    toggles) — never relative to this banner's own first event.
+ *  - Personalized completions pass `previousTotalXp: null` + `deferLevelUp:
+ *    true`: the server RPC returns no authoritative lifetime total, so the
+ *    banner shows the awarded XP WITHOUT fabricating a level-up.
+ *  - XP is NEVER mutated here.
  */
 
-export interface CompletionFlashEvent {
-  /** Unique per event — drives AnimatePresence keys. */
-  id: string;
-  title: string;
-  /** Category of the completed challenge (drives attribute attribution). */
-  category?: ChallengeCategory;
-  /** Server/ledger XP actually awarded for THIS completion. */
-  xpAwarded: number;
-  /** Authoritative new lifetime XP (after the award). */
-  newTotalXp: number;
-  /** True when a previous row's payout was reused (re-completion). */
-  reused?: boolean;
-}
+/** Re-exported for callers that build completion events (single contract). */
+export type { CompletionFlashEvent };
 
 interface CompletionFlash extends CompletionFlashEvent {
-  /** Screen-mount level, so level-up is relative to where the user started. */
+  /** Level of the real previous total (0 when deferred). */
   levelBefore: number;
+  /** Level of the real new total. */
   levelAfter: number;
+  /** A real 500-XP threshold was crossed (never for deferred events). */
+  levelUp: boolean;
 }
 
 interface InternalFlash extends CompletionFlash {
@@ -52,6 +51,12 @@ export interface ChallengeCompletionController {
  * (local toggle, personalized RPC) can complete challenges, this hook owns a
  * small FIFO so fast successive completions never stack banners on top of
  * each other.
+ *
+ * The previous-total baseline updates from each real event, so even the FIRST
+ * completion after opening Challenges correctly shows a level-up when its own
+ * previousTotalXp vs newTotalXp crosses a threshold. A personalized event
+ * without an authoritative total never updates the baseline (nothing real to
+ * compare against) and never shows a level-up.
  */
 export function useChallengeCompletion(): ChallengeCompletionController & {
   active: InternalFlash | null;
@@ -60,7 +65,7 @@ export function useChallengeCompletion(): ChallengeCompletionController & {
   const [active, setActive] = useState<InternalFlash | null>(null);
   const queueRef = useRef<InternalFlash[]>([]);
   const timerRef = useRef<number | null>(null);
-  const levelRef = useRef<number | null>(null);
+  const baselineRef = useRef<number | null>(null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -84,23 +89,23 @@ export function useChallengeCompletion(): ChallengeCompletionController & {
   const clear = useCallback(() => {
     stopTimer();
     queueRef.current = [];
+    baselineRef.current = null;
     setActive(null);
   }, [stopTimer]);
 
   const display = useCallback(
     (event: CompletionFlashEvent) => {
-      const levelBefore = levelRef.current ?? levelProgress(event.newTotalXp).level;
-      const levelAfter = levelProgress(event.newTotalXp).level;
+      const { evaluation, nextBaseline } = evaluateCompletionFlash(event, baselineRef.current);
       const flash: InternalFlash = {
         ...event,
         key: event.id,
-        levelBefore,
-        levelAfter,
+        ...evaluation,
       };
-      // Level-up is relative to the first completion the user sees on this
-      // screen; after crossing, the new level becomes the baseline so the
-      // treatment never repeats for the same threshold.
-      if (levelAfter > levelRef.current!) levelRef.current = levelAfter;
+
+      // Advance the real baseline to the new authoritative total (a deferred
+      // personalized event leaves the baseline untouched — nothing real to
+      // compare against).
+      baselineRef.current = nextBaseline;
 
       if (active || queueRef.current.length > 0) {
         queueRef.current.push(flash);
@@ -122,7 +127,7 @@ export const ChallengeCompletionBanner: React.FC<{
   flash: InternalFlash | null;
 }> = ({ flash }) => {
   const reduce = useReducedMotion();
-  const levelUp = flash !== null && flash.levelAfter > flash.levelBefore;
+  const levelUp = flash !== null && flash.levelUp;
   // Attribute attribution uses the category's canonical matrix attribute —
   // determined by business logic, never invented client-side.
   const attributed = flash && flash.category ? categoryAttribute(flash.category) : null;

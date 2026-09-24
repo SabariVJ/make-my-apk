@@ -3,6 +3,24 @@ import { INITIAL_USER, TIERS } from "../data/initialData";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * Read-only completion metadata for a LOCAL (ledger) challenge toggle.
+ *
+ * Every figure is derived from the real ledger outcome (outcome.row.xpAwarded /
+ * outcome.reused / outcome.xpDelta). It is display-only: reward amounts and
+ * lifetime XP are never recomputed independently here, and nothing in the
+ * completion UI may mutate XP from it.
+ */
+export interface ChallengeToggleMeta {
+  xpAwarded: number;
+  reused: boolean;
+  previousTotalXp: number;
+  newTotalXp: number;
+}
+
+/** A successful local toggle, optionally carrying completion metadata. */
+export type ChallengeToggleResult = SaveResult & { meta?: ChallengeToggleMeta };
+
 export const CHALLENGE_XP: Record<DailyChallenge["difficulty"], number> = {
   Easy: 50,
   Medium: 80,

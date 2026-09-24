@@ -4,7 +4,8 @@
 - **Branch:** `release/play-v1-compliance`
 - **Starting SHA:** `0862e0996101ef531ee1f2f532852207734770b8`
 - **Validated implementation SHA:** `07438d0155d8f318666de3e7f975926b2ad25522`
-- **Implementation CI:** [run 35964114638](https://github.com/SabariVJ/make-my-apk/actions/runs/35964114638) — all five jobs passed
+- **Final branch CI:** [run 35964536514](https://github.com/SabariVJ/make-my-apk/actions/runs/35964536514) at `1e0f696` — all five jobs passed
+- **Implementation CI:** [run 35964114638](https://github.com/SabariVJ/make-my-apk/actions/runs/35964114638) at `07438d0` — all five jobs passed
 
 ## Scope completed
 
@@ -60,7 +61,7 @@
 | `bun run build`                              | PASS                                                                                                              |
 | `python3 scripts/test_android_themes.py`     | PASS — 8/8                                                                                                        |
 | `bun run cap:sync`                           | PASS — Capacitor configuration/plugins synchronized; hosted `server.url` correctly skips copying local web assets |
-| GitHub Actions phone/wear Android CI         | PASS — implementation SHA `07438d0`, run `35964114638`; web/database/phone/wear/release jobs all green            |
+| GitHub Actions phone/wear Android CI         | PASS — final branch run `35964536514` at `1e0f696`; web/database/phone/wear/release jobs all green                |
 | Real-device Android verification             | NOT RUN — no device/emulator is attached                                                                          |
 
 ## Release decision

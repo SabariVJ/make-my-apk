@@ -175,7 +175,9 @@ public class VjNotificationsPlugin extends Plugin {
             for (String value : ids) {
                 try {
                     int id = Integer.parseInt(value);
-                    alarmManager.cancel(VjNotificationReceiver.pendingIntent(getContext(), id, PendingIntent.FLAG_NO_CREATE));
+                    PendingIntent existing = VjNotificationReceiver.pendingIntent(
+                        getContext(), id, PendingIntent.FLAG_NO_CREATE);
+                    if (existing != null) alarmManager.cancel(existing);
                 } catch (Exception ignored) {
                     // A stale/corrupt local id must never block notification cleanup.
                 }

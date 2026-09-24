@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Flame, Flag, Loader2, RefreshCw, Trash2, Trophy } from "lucide-react";
 import { SVJ_STREET_TILES, createTileViewport, type MapBounds } from "../components/ActivityMap";
+import { useElementWidth } from "../hooks/useElementWidth";
 import {
   HEATMAP_RANGES,
   HEATMAP_RANGE_LABELS,
@@ -57,10 +58,15 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
   cells,
   height = 260,
 }) => {
-  const width = 400;
+  // Projected at the container's real width so the density cells stay on the
+  // streets behind them on phones, tablets and desktop alike.
+  const { ref: containerRef, width } = useElementWidth<HTMLDivElement>(400);
   const mapPoints = useMemo(() => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })), [cells]);
 
-  const viewport = useMemo(() => createTileViewport(mapPoints, width, height), [mapPoints, height]);
+  const viewport = useMemo(
+    () => createTileViewport(mapPoints, width, height),
+    [mapPoints, width, height],
+  );
 
   const maxWeight = useMemo(
     () => cells.reduce((max, cell) => Math.max(max, cell.weight), 0),
@@ -89,7 +95,9 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
+      ref={containerRef}
+      className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#08080A]"
+      style={{ height }}
       data-testid="heatmap"
     >
       {SVJ_STREET_TILES.urlTemplate &&
@@ -108,8 +116,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
         ))}
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0 w-full"
-        style={{ height }}
+        className="absolute inset-0 h-full w-full"
         role="img"
         aria-label="Personal activity heatmap"
       >

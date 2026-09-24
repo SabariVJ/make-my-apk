@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { GpsActivityDetail } from "./GpsActivityDetail";
 import { SVJSelect } from "../components/ui-primitives/SVJSelect";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
+import { SVJErrorState } from "../components/ui-primitives/SVJErrorState";
+import { SVJSkeleton } from "../components/ui-primitives/SVJSkeleton";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
+import { SVJStatusPill } from "../components/ui-primitives/SVJStatusPill";
 import { SVJDatePicker } from "../components/ui-primitives/SVJDatePicker";
 import { todayDateValue } from "../components/ui-primitives/datePickerUtils";
 import { SVJTimePicker } from "../components/ui-primitives/SVJTimePicker";
@@ -48,6 +53,16 @@ import { strengthRpcClient } from "../lib/strengthClient";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 
 type LoadState = "loading" | "loaded" | "error";
+
+/**
+ * Real start time of a stored activity, in the device timezone. Empty for an
+ * unreadable timestamp — never a guessed value.
+ */
+function formatStartTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 /**
  * Completion summary shown after STOP TRACKING, with the SAVE ACTIVITY
@@ -270,34 +285,34 @@ export const ActivityHistory: React.FC = () => {
 
   return (
     <div
-      className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5"
+      className="mb-5 rounded-2xl border border-white/[0.06] bg-svj-surface p-4"
       data-testid="activity-history"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <HistoryIcon className="w-4 h-4 text-[#C81E3A]" />
-          <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
-            Activity History
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowManual((v) => !v)}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-mono uppercase text-[#8C8C90] hover:text-white"
-          >
-            <Plus className="w-3 h-3" /> Log
-          </button>
-          <button
-            type="button"
-            onClick={() => void load()}
-            aria-label="Refresh history"
-            className="rounded-lg border border-white/10 bg-black/40 p-1.5 text-[#8C8C90] hover:text-white"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+      <SVJSectionHeader
+        title="Activity History"
+        icon={HistoryIcon}
+        className="mb-3"
+        trailing={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowManual((v) => !v)}
+              aria-expanded={showManual}
+              className="flex min-h-11 items-center gap-1 rounded-lg border border-white/[0.08] bg-svj-bg px-2.5 font-mono text-[10px] uppercase tracking-wider text-svj-secondary transition-colors hover:text-svj-text svj-press"
+            >
+              <Plus className="w-3 h-3" aria-hidden="true" /> Log
+            </button>
+            <button
+              type="button"
+              onClick={() => void load()}
+              aria-label="Refresh history"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.08] bg-svj-bg text-svj-secondary transition-colors hover:text-svj-text svj-press"
+            >
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        }
+      />
 
       {showManual && activity && (
         <ManualActivityForm
@@ -316,83 +331,102 @@ export const ActivityHistory: React.FC = () => {
       )}
 
       {state === "loading" && (
-        <p className="py-6 text-center text-[11px] font-mono uppercase text-[#8C8C90]">
-          Loading history…
-        </p>
+        <div className="space-y-2 py-1" aria-busy="true" aria-live="polite">
+          <span className="sr-only">Loading history…</span>
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="rounded-xl border border-white/[0.04] bg-svj-bg p-3">
+              <SVJSkeleton className="h-3 w-28" />
+              <SVJSkeleton className="mt-2.5 h-2.5 w-full" />
+            </div>
+          ))}
+        </div>
       )}
 
       {state === "error" && (
-        <div className="rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
-          <p className="text-[11px] font-mono text-crimson mb-2">{error}</p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
-          >
-            Retry
-          </button>
-        </div>
+        <SVJErrorState
+          compact
+          title="Couldn't load history"
+          message={error ?? "Your activities could not be loaded."}
+          action={
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="min-h-11 rounded-lg border border-svj-crimson/40 bg-svj-crimson/10 px-3 font-mono text-[10px] uppercase tracking-wider text-svj-crimson svj-press"
+            >
+              Retry
+            </button>
+          }
+        />
       )}
 
       {state === "loaded" && items.length === 0 && (
-        <div className="py-8 text-center">
-          <p className="font-anton text-sm uppercase tracking-wider text-white">
-            NO ACTIVITIES YET
-          </p>
-          <p className="mt-1 text-[11px] font-mono text-[#8C8C90]">
-            Your completed workouts will appear here.
-          </p>
-        </div>
+        <SVJEmptyState
+          icon={HistoryIcon}
+          title="No activities yet"
+          description="Your completed workouts will appear here."
+          className="py-6"
+        />
       )}
 
       {state === "loaded" && items.length > 0 && (
         <ul className="space-y-2">
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => setSelected(item)}
-                className="w-full rounded-2xl border border-white/5 bg-black/40 p-3 text-left transition-colors hover:border-[#C81E3A]/40"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
-                    {ACTIVITY_TYPE_LABELS[item.activityType]}
-                  </span>
-                  <span className="text-[10px] font-mono text-[#8C8C90]">
-                    {formatActivityDate(item.startedAt)}
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
-                  <span>{formatDurationLabel(item.durationSeconds)}</span>
-                  {item.stepCount > 0 && <span>· {item.stepCount.toLocaleString()} steps</span>}
-                  {(summaryFor(item)?.exerciseCount ?? 0) > 0 && (
-                    <span>
-                      · {summaryFor(item)!.exerciseCount}{" "}
-                      {summaryFor(item)!.exerciseCount === 1 ? "exercise" : "exercises"} ·{" "}
-                      {summaryFor(item)!.setCount}{" "}
-                      {summaryFor(item)!.setCount === 1 ? "set" : "sets"}
+          {items.map((item) => {
+            const summary = summaryFor(item);
+            const startedAt = formatStartTime(item.startedAt);
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelected(item)}
+                  className="w-full rounded-xl border border-white/[0.04] bg-svj-bg p-3 text-left transition-colors hover:border-svj-crimson/40 svj-press"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-inter text-sm font-semibold text-svj-text">
+                      {ACTIVITY_TYPE_LABELS[item.activityType]}
                     </span>
-                  )}
-                  {(summaryFor(item)?.volumeKg ?? 0) > 0 && (
-                    <span>· {formatVolume(summaryFor(item)!.volumeKg)} volume</span>
-                  )}
-                  <span
-                    className={`rounded border px-1.5 py-0.5 text-[9px] uppercase ${
-                      item.source === "manual"
-                        ? "border-white/15 text-[#8C8C90]"
-                        : "border-[#C81E3A]/40 text-[#E62846]"
-                    }`}
-                  >
-                    {item.source === "svj_native"
-                      ? "Tracked"
-                      : item.source === "strength_log"
-                        ? "Strength log"
-                        : "Manual"}
-                  </span>
-                </div>
-              </button>
-            </li>
-          ))}
+                    <span className="shrink-0 font-mono text-[10px] text-svj-secondary tabular-nums">
+                      {formatActivityDate(item.startedAt)}
+                      {startedAt ? ` · ${startedAt}` : ""}
+                    </span>
+                  </div>
+                  {/* Only metrics the stored row actually carries — no invented
+                      pace, HR or elevation. */}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] text-svj-secondary tabular-nums">
+                    <span>{formatDurationLabel(item.durationSeconds)}</span>
+                    {item.distanceMeters != null && item.distanceMeters > 0 && (
+                      <span>· {(item.distanceMeters / 1000).toFixed(2)} km</span>
+                    )}
+                    {item.stepCount > 0 && <span>· {item.stepCount.toLocaleString()} steps</span>}
+                    {item.caloriesEstimate != null && item.caloriesEstimate > 0 && (
+                      <span>· {Math.round(item.caloriesEstimate)} kcal</span>
+                    )}
+                    {(summary?.exerciseCount ?? 0) > 0 && (
+                      <span>
+                        · {summary!.exerciseCount}{" "}
+                        {summary!.exerciseCount === 1 ? "exercise" : "exercises"} ·{" "}
+                        {summary!.setCount} {summary!.setCount === 1 ? "set" : "sets"}
+                      </span>
+                    )}
+                    {(summary?.volumeKg ?? 0) > 0 && (
+                      <span>· {formatVolume(summary!.volumeKg)} volume</span>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <SVJStatusPill
+                      tone={item.source === "manual" ? "neutral" : "crimson"}
+                      className="text-[9px]"
+                    >
+                      {item.source === "svj_native"
+                        ? "Tracked"
+                        : item.source === "strength_log"
+                          ? "Strength log"
+                          : "Manual"}
+                    </SVJStatusPill>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

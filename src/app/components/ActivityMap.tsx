@@ -1,6 +1,8 @@
-import React, { useMemo, useRef, useState } from "react";
-import { Crosshair, Maximize2, MapPin, Minimize2, Navigation } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Crosshair, Maximize2, MapPin, Minimize2, Minus, Navigation, Plus } from "lucide-react";
 import type { TrackPoint } from "../lib/gpsActivity";
+import { useElementWidth } from "../hooks/useElementWidth";
+import { BRAND_COLORS, STATUS_COLORS } from "../lib/designTokens";
 
 /**
  * SVJ route map.
@@ -246,7 +248,6 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   emptyMessage = "No route recorded",
 }) => {
   const [fullscreen, setFullscreen] = useState(false);
-  const width = 400;
   const viewportHeight = fullscreen ? 620 : height;
 
   // ── Touch interaction: pinch zoom, drag pan, recenter ──────────────────
@@ -256,7 +257,11 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const [userZoom, setUserZoom] = useState<number | null>(null);
   const [userPan, setUserPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [followGps, setFollowGps] = useState(true);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  // The tile layer and the route geometry must share ONE projected width, so
+  // the container is measured instead of assuming a fixed canvas. 400px is the
+  // first-paint fallback (also the value the pure viewport helpers are tested
+  // against) until the real width is known.
+  const { ref: containerRef, width } = useElementWidth<HTMLDivElement>(400, fullscreen);
   const gesture = useRef<{
     mode: "none" | "pan" | "pinch";
     lastX: number;
@@ -342,7 +347,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   );
   const fitViewport = useMemo(
     () => createTileViewport(mapPoints, width, viewportHeight),
-    [mapPoints, viewportHeight],
+    [mapPoints, width, viewportHeight],
   );
 
   // When the user has zoomed or panned, recompute the viewport at their zoom,
@@ -360,7 +365,24 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       userPan.x,
       userPan.y,
     );
-  }, [mapPoints, fitViewport, userZoom, userPan, viewportHeight]);
+  }, [fitViewport, userZoom, userPan, width, viewportHeight]);
+
+  // Fullscreen is a modal surface: Escape must close it for keyboard users.
+  useEffect(() => {
+    if (!fullscreen || typeof document === "undefined") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFullscreen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [fullscreen]);
+
+  /** Step zoom for pointer/keyboard users — pinch stays available on touch. */
+  const zoomBy = (delta: number) => {
+    const base = userZoom ?? fitViewport.zoom;
+    setUserZoom(Math.min(19, Math.max(3, base + delta)));
+    setFollowGps(false);
+  };
 
   const projected = useMemo(
     () => points.map((point) => mapViewport.project(point.lat, point.lng)),
@@ -405,22 +427,11 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       <svg
         viewBox={`0 0 ${width} ${viewportHeight}`}
         preserveAspectRatio="xMidYMid meet"
-        className="absolute inset-0 w-full"
-        style={{ height: viewportHeight }}
+        className="absolute inset-0 h-full w-full"
         role="img"
         aria-label="SVJ recorded route"
         data-testid="activity-map"
       >
-        <defs>
-          <linearGradient id="svj-route-glow" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#E62846" />
-            <stop offset="100%" stopColor="#FF6B4A" />
-          </linearGradient>
-          <filter id="svj-route-blur" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="4" />
-          </filter>
-        </defs>
-
         {!tileProvider.urlTemplate && (
           <>
             {Array.from({ length: 7 }, (_, i) => (
@@ -460,23 +471,25 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           />
         )}
 
+        {/* Route casing + core: depth from a darker outline, never from a
+            blur filter (filters are expensive to repaint on every GPS tick). */}
         <path
           d={path}
           fill="none"
-          stroke="#E62846"
-          strokeWidth={7}
+          stroke={BRAND_COLORS.bg}
+          strokeWidth={6}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity={0.28}
-          filter="url(#svj-route-blur)"
+          opacity={0.55}
         />
         <path
           d={path}
           fill="none"
-          stroke="url(#svj-route-glow)"
+          stroke={BRAND_COLORS.crimson}
           strokeWidth={3}
           strokeLinecap="round"
           strokeLinejoin="round"
+          data-testid="map-route"
         />
 
         {showStartFinish && start && (
@@ -485,17 +498,24 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
               cx={start.x}
               cy={start.y}
               r={6}
-              fill="#0B0B0C"
-              stroke="#22C55E"
+              fill={BRAND_COLORS.bg}
+              stroke={STATUS_COLORS.positive}
               strokeWidth={2.5}
             />
-            <circle cx={start.x} cy={start.y} r={2} fill="#22C55E" />
+            <circle cx={start.x} cy={start.y} r={2} fill={STATUS_COLORS.positive} />
           </g>
         )}
         {showStartFinish && end && (
           <g data-testid="map-finish">
-            <circle cx={end.x} cy={end.y} r={6} fill="#0B0B0C" stroke="#E62846" strokeWidth={2.5} />
-            <circle cx={end.x} cy={end.y} r={2} fill="#E62846" />
+            <circle
+              cx={end.x}
+              cy={end.y}
+              r={6}
+              fill={BRAND_COLORS.bg}
+              stroke={BRAND_COLORS.crimson}
+              strokeWidth={2.5}
+            />
+            <circle cx={end.x} cy={end.y} r={2} fill={BRAND_COLORS.crimson} />
           </g>
         )}
         {showCurrentPosition && end && (
@@ -504,7 +524,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
             cy={end.y}
             r={11}
             fill="none"
-            stroke="#E62846"
+            stroke={BRAND_COLORS.crimson}
             strokeWidth={1}
             opacity={0.5}
           >
@@ -535,7 +555,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const chrome = (
     <>
       <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/60 px-2 py-1 backdrop-blur">
-        <Navigation className="h-3 w-3 text-[#E62846]" />
+        <Navigation className="h-3 w-3 text-svj-crimson" />
         <span className="text-[9px] font-mono uppercase tracking-widest text-white">SVJ Route</span>
       </div>
       <button
@@ -547,17 +567,37 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       >
         {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
-      {!followGps && (
+      <div className="absolute right-3 top-14 flex flex-col gap-1.5">
         <button
           type="button"
-          onClick={recenter}
-          aria-label="Recenter map on your position"
-          data-testid="map-recenter"
-          className="absolute bottom-8 right-3 rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+          onClick={() => zoomBy(1)}
+          aria-label="Zoom map in"
+          data-testid="map-zoom-in"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/60 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
         >
-          <Crosshair className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </button>
-      )}
+        <button
+          type="button"
+          onClick={() => zoomBy(-1)}
+          aria-label="Zoom map out"
+          data-testid="map-zoom-out"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/60 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        {!followGps && (
+          <button
+            type="button"
+            onClick={recenter}
+            aria-label="Recenter map on your position"
+            data-testid="map-recenter"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-svj-crimson/40 bg-black/60 text-svj-crimson backdrop-blur transition-colors hover:text-white"
+          >
+            <Crosshair className="h-4 w-4" />
+          </button>
+        )}
+      </div>
       {tileProvider.attribution && (
         <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {tileProvider.attribution}
@@ -569,10 +609,13 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   if (fullscreen) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 p-3 backdrop-blur"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 p-3 backdrop-blur svj-safe-bottom"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Fullscreen route map"
         data-testid="map-fullscreen"
       >
-        <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-[#0B0B0C]">
+        <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-svj-crimson/30 bg-svj-bg">
           {body}
           {chrome}
         </div>
@@ -582,8 +625,8 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-white/8 bg-[#08080A] ${
-        variant === "hero" ? "border-[#C81E3A]/25" : ""
+      className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-svj-bg ${
+        variant === "hero" ? "border-svj-crimson/25" : ""
       } ${className ?? ""}`}
       data-testid="activity-map-frame"
     >

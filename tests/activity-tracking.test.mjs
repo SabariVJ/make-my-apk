@@ -269,7 +269,7 @@ before(async () => {
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
             "@tanstack/react-start": `export const useServerFn=fn=>fn;`,
             "@/integrations/supabase/client": `export const supabase={rpc:(...a)=>globalThis.__svjTracking.supabase.rpc(...a)}; export const hasSupabaseConfig=()=>globalThis.__svjTracking.supabase != null;`,
-            "motion/react": `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,...rest}=props;return React.createElement(tag,rest,children)}});`,
+            "motion/react": `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,whileTap,layoutId,...rest}=props;return React.createElement(tag,rest,children)}});export const useReducedMotion=()=>true;export const AnimatePresence=({children})=>children;`,
             // Chart primitives render as null in this lightweight harness. The
             // stub must still name every export the real chart consumers use
             // (the activity screens and the GPS detail charts).

@@ -124,8 +124,9 @@ test("training session reminders schedule one entry per scheduled plan day", () 
     },
     trainingOn,
   );
-  const reminders = plan.filter((item) => item.id === 108);
+  const reminders = plan.filter((item) => item.title === "Training session today");
   assert.equal(reminders.length, 2, "one reminder per DISTINCT scheduled day");
+  assert.equal(new Set(reminders.map((item) => item.id)).size, 2, "each plan day has a unique native alarm id");
   assert.equal(reminders[0].title, "Training session today");
   assert.match(reminders[0].body, /Upper A is scheduled for today/);
   assert.match(reminders[1].body, /Your scheduled training session is today/);
@@ -147,7 +148,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...trainingOn, trainingSession: false },
   );
   assert.equal(
-    byPreference.some((item) => item.id === 108),
+    byPreference.some((item) => item.title === "Training session today"),
     false,
     "the preference can turn session reminders off",
   );
@@ -157,7 +158,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...trainingOn, trainingSession: true },
   );
   assert.equal(
-    withoutPlan.some((item) => item.id === 108),
+    withoutPlan.some((item) => item.title === "Training session today"),
     false,
     "no plan loaded → no session reminders",
   );
@@ -166,7 +167,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...base(), trainingPlanDays: day },
     { ...trainingOn, trainingTime: "23:30" },
   );
-  const clamped = quietPreference.find((item) => item.id === 108);
+  const clamped = quietPreference.find((item) => item.title === "Training session today");
   assert.ok(clamped, "a quiet-hours preference still delivers — outside quiet hours");
   const at = new Date(clamped.triggerAt);
   assert.equal(at.getHours(), 7, "23:30 is clamped out of the 22:00–07:00 quiet window");

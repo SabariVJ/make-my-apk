@@ -30,15 +30,9 @@ const RESTRICTED_NAV_ITEMS = [
   { id: "signout", label: "Sign Out" },
 ];
 
-/**
- * Mirrors the filtering logic in UtilityNav.visibleUtilityItems().
- * On Android: only hide Leaderboard. On web: show everything.
- */
-function filterNavItems(items, isAndroid) {
-  return items.filter((item) => {
-    if (isAndroid && item.id === "leaderboard") return false;
-    return true;
-  });
+/** Mirrors UtilityNav.visibleUtilityItems(): all utility destinations ship everywhere. */
+function filterNavItems(items, _isAndroid) {
+  return items;
 }
 
 describe("Navigation — Android tab visibility", () => {
@@ -61,9 +55,9 @@ describe("Navigation — Android tab visibility", () => {
     assert.ok(ids.includes("profile"), "Profile must stay reachable on Android");
   });
 
-  it("hides Leaderboard on Android", () => {
+  it("shows Leaderboard on Android", () => {
     const ids = filterNavItems(UTILITY_NAV_ITEMS, true).map((t) => t.id);
-    assert.ok(!ids.includes("leaderboard"), "Leaderboard must be hidden on Android");
+    assert.ok(ids.includes("leaderboard"), "Leaderboard must stay reachable on Android");
   });
 
   it("shows every utility destination on web", () => {
@@ -129,34 +123,11 @@ describe("AppContent — handleTabChange Plus behavior", () => {
   });
 });
 
-describe("AppContent — Android tab reset guard", () => {
-  it("resets leaderboard tab on Android but not plus or community", () => {
-    const isAndroid = true;
-    let tab = "leaderboard";
-    const setActiveTab = (t) => {
-      tab = t;
-    };
-
-    // Simulate the useEffect guard
-    if (isAndroid && tab === "leaderboard") {
-      setActiveTab("challenges");
-    }
-
-    assert.equal(tab, "challenges", "Leaderboard must reset to Challenges on Android");
-
-    // Plus should NOT reset
-    tab = "plus";
-    if (isAndroid && tab === "leaderboard") {
-      setActiveTab("challenges");
-    }
-    assert.equal(tab, "plus", "Plus tab must NOT be reset on Android");
-
-    // Community should NOT reset
-    tab = "community";
-    if (isAndroid && tab === "leaderboard") {
-      setActiveTab("challenges");
-    }
-    assert.equal(tab, "community", "Community tab must NOT be reset on Android");
+describe("AppContent — Android utility navigation", () => {
+  it("does not carry a leaderboard reset guard", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const app = await readFile(new URL("../src/app/App.tsx", import.meta.url), "utf8");
+    assert.doesNotMatch(app, /activeTab === "leaderboard"[^\n]*setActiveTab\("challenges"\)/);
   });
 });
 

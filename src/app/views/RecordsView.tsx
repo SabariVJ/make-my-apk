@@ -92,7 +92,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
     }
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, []);
+  }, [cells.length]);
   const fitViewport = useMemo(
     () => createTileViewport(mapPoints, width, height),
     [mapPoints, height],

@@ -23,10 +23,10 @@ import {
   GPS_ACTIVITY_LABELS,
   GPS_ACTIVITY_TYPES,
   GPS_QUALITY_LABELS,
+  currentPaceSecondsPerKm,
   formatClock,
   formatDistance,
   formatPace,
-  haversineMeters,
   type GpsActivityType,
   type TrackPoint,
 } from "../lib/gpsActivity";
@@ -43,55 +43,6 @@ const QUALITY_STYLES: Record<string, string> = {
   good: "border-sky-500/40 bg-sky-500/10 text-sky-300",
   excellent: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
 };
-
-/**
- * Current pace from the most recent stretch of accepted points, so the live
- * readout reflects what the athlete is doing now rather than the whole
- * average. Pure and local; the saved workout's pace is computed server-side.
- *
- * Stabilised against early-session GPS noise: until the window contains both
- * enough elapsed time AND enough plausible displacement, the readout stays
- * "—" instead of extrapolating a pace like 2:34/km from a 7-second,
- * 49-metre GPS jump. Points with poor accuracy are excluded entirely.
- */
-export function currentPaceSecondsPerKm(
-  points: readonly TrackPoint[],
-  windowSeconds = 30,
-  options: {
-    minWindowSeconds?: number;
-    minDistanceMeters?: number;
-    maxAccuracyMeters?: number;
-  } = {},
-): number | null {
-  const minWindowSeconds = options.minWindowSeconds ?? 20;
-  const minDistanceMeters = options.minDistanceMeters ?? 40;
-  const maxAccuracyMeters = options.maxAccuracyMeters ?? 30;
-  if (points.length < 2) return null;
-  const last = points[points.length - 1]!;
-  const cutoff = last.t - windowSeconds * 1000;
-  let startIndex = points.length - 1;
-  while (startIndex > 0 && points[startIndex - 1]!.t >= cutoff) startIndex -= 1;
-  const first = points[startIndex]!;
-  if (first === last) return null;
-  const seconds = (last.t - first.t) / 1000;
-  if (seconds < minWindowSeconds) return null;
-  let distance = 0;
-  for (let i = startIndex + 1; i < points.length; i += 1) {
-    const a = points[i - 1]!;
-    const b = points[i]!;
-    if (a.moving === false || b.moving === false) continue;
-    // Skip segments anchored to a low-accuracy fix: a ±25 m error over a
-    // short span fabricates either a sprint or a standstill.
-    if (
-      (a.accuracy != null && a.accuracy > maxAccuracyMeters) ||
-      (b.accuracy != null && b.accuracy > maxAccuracyMeters)
-    )
-      continue;
-    distance += haversineMeters(a.lat, a.lng, b.lat, b.lng);
-  }
-  if (distance < minDistanceMeters || seconds <= 0) return null;
-  return Math.round(seconds / (distance / 1000));
-}
 
 const Metric: React.FC<{
   label: string;

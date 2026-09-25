@@ -380,7 +380,19 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   // pan in world pixels at the new zoom.
   const mapViewport = useMemo(() => {
     const zoom = userZoom ?? fitViewport.zoom;
-    if (followGps && userZoom == null && userPan.x === 0 && userPan.y === 0) return fitViewport;
+    if (followGps && userZoom == null && userPan.x === 0 && userPan.y === 0) {
+      const latest = points[points.length - 1];
+      if (showCurrentPosition && latest) {
+        return createTileViewportAtZoom(
+          latest.lat,
+          latest.lng,
+          Math.max(15, fitViewport.zoom),
+          width,
+          viewportHeight,
+        );
+      }
+      return fitViewport;
+    }
     const center =
       !followGps && manualCenter
         ? manualCenter
@@ -394,7 +406,17 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       userPan.x,
       userPan.y,
     );
-  }, [fitViewport, followGps, manualCenter, userZoom, userPan, viewportHeight]);
+  }, [
+    fitViewport,
+    followGps,
+    manualCenter,
+    points,
+    showCurrentPosition,
+    userZoom,
+    userPan,
+    viewportHeight,
+    width,
+  ]);
 
   const changeZoom = (delta: number) => {
     setManualCenter(

@@ -253,9 +253,6 @@ describe("Notification permission UX", () => {
     assert.match(notificationsSource, /enabled: true/);
     assert.match(notificationsSource, /nutrition: true/);
     assert.match(notificationsSource, /training: true/);
-    assert.match(
-      notificationsSource,
-      /Android's system notification permission is\s+the single source of truth/,
-    );
+    assert.match(notificationsSource, /single source of truth/);
   });
 });

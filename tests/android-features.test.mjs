@@ -15,6 +15,9 @@ const manifestSource = await read("android/app/src/main/AndroidManifest.xml");
 const challengesViewSource = await read("src/app/views/ChallengesView.tsx");
 const profileViewSource = await read("src/app/views/ProfileView.tsx");
 const onboardingSource = await read("src/app/components/FirstTimeOnboardingModal.tsx");
+const notificationPreferencesSource = await read(
+  "src/app/components/NotificationPreferencesCard.tsx",
+);
 const notificationsSource = await read("src/app/lib/notifications.ts");
 
 // ─── Navigation filtering logic ──────────────────────────────────────────────
@@ -238,7 +241,12 @@ describe("Notification permission UX", () => {
   it("requests notification permission only from first-time onboarding", () => {
     assert.match(onboardingSource, /initializeNotificationsAtSignup/);
     assert.match(notificationsSource, /PERMISSION_PROMPTED_PREFIX/);
-    assert.match(notificationsSource, /Mark first so an interrupted permission flow cannot become a repeat prompt/);
+    assert.match(
+      notificationsSource,
+      /Mark first so an interrupted permission flow cannot become a repeat prompt/,
+    );
+    assert.doesNotMatch(notificationPreferencesSource, /requestNotificationPermission/);
+    assert.doesNotMatch(notificationPreferencesSource, /type="checkbox"/);
   });
 
   it("keeps planner categories enabled while Android system permission is the delivery switch", () => {

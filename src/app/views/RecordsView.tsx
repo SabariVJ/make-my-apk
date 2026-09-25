@@ -73,8 +73,26 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
   cells,
   height = 260,
 }) => {
-  const width = 400;
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(400);
   const mapPoints = useMemo(() => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })), [cells]);
+
+  useEffect(() => {
+    const node = surfaceRef.current;
+    if (!node) return;
+    const update = () => {
+      const measured = Math.round(node.getBoundingClientRect().width);
+      if (measured > 0) setWidth(measured);
+    };
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(update);
+      observer.observe(node);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   const fitViewport = useMemo(
     () => createTileViewport(mapPoints, width, height),
     [mapPoints, height],
@@ -137,6 +155,7 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
 
   return (
     <div
+      ref={surfaceRef}
       className="relative touch-none overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
       style={{ height }}
       data-testid="heatmap"

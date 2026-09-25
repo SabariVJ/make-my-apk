@@ -195,7 +195,7 @@ test("training session reminders schedule one entry per scheduled plan day", () 
     assert.equal(at.getHours(), 17);
     assert.equal(at.getMinutes(), 30, "the preferred training time is honored");
     assert.equal(reminder.channel, "coach");
-    assert.equal(reminder.target, "activity");
+    assert.equal(reminder.target, "workouts");
   }
   // A reminder is only a reminder: it never claims work was performed.
   assert.doesNotMatch(reminders.map((r) => r.body).join(" "), /completed|done|logged/i);

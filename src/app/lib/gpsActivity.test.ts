@@ -6,6 +6,7 @@ import {
   classifyGpsQuality,
   computeSplits,
   createAutoPause,
+  currentPaceSecondsPerKm,
   decodePolyline,
   encodePolyline,
   formatClock,
@@ -286,6 +287,42 @@ describe("summarizeTrack", () => {
     const summary = summarizeTrack(points);
     assert.equal(summary.avgHeartRate, 135);
     assert.equal(summary.maxHeartRate, 150);
+  });
+});
+
+describe("currentPaceSecondsPerKm", () => {
+  it("counts legitimate out-and-back movement instead of cancelling direction", () => {
+    const points: TrackPoint[] = [
+      { lat: 0, lng: 0, t: 0, moving: true, accuracy: 5 },
+      { lat: 0.00045, lng: 0, t: 10_000, moving: true, accuracy: 5 },
+      { lat: 0.0009, lng: 0, t: 20_000, moving: true, accuracy: 5 },
+      { lat: 0.00045, lng: 0, t: 30_000, moving: true, accuracy: 5 },
+      { lat: 0, lng: 0, t: 40_000, moving: true, accuracy: 5 },
+    ];
+    const pace = currentPaceSecondsPerKm(points, 45, {
+      minWindowSeconds: 20,
+      minDistanceMeters: 40,
+    });
+    assert.ok(pace != null);
+    assert.ok(pace! > 150 && pace! < 260, `expected realistic out-and-back pace, got ${pace}`);
+  });
+
+  it("does not dilute current pace with paused or poor-accuracy intervals", () => {
+    const points: TrackPoint[] = [
+      { lat: 0, lng: 0, t: 0, moving: true, accuracy: 5 },
+      { lat: 0.00045, lng: 0, t: 10_000, moving: true, accuracy: 5 },
+      { lat: 0.00045, lng: 0, t: 20_000, moving: false, accuracy: 5 },
+      { lat: 0.0009, lng: 0, t: 30_000, moving: true, accuracy: 80 },
+      { lat: 0, lng: 0, t: 40_000, moving: true, accuracy: 5 },
+      { lat: -0.00045, lng: 0, t: 50_000, moving: true, accuracy: 5 },
+    ];
+    const pace = currentPaceSecondsPerKm(points, 60, {
+      minWindowSeconds: 20,
+      minDistanceMeters: 40,
+      maxAccuracyMeters: 30,
+    });
+    assert.ok(pace != null);
+    assert.ok(pace! < 300, `bad/paused intervals should not make live pace falsely slow: ${pace}`);
   });
 });
 

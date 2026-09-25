@@ -111,11 +111,13 @@ test("Activity V2 maps expose real user-controlled zoom, pan and recenter", () =
   assert.match(recordsView, /Reset heatmap view/);
   assert.match(recordsView, /onPointerMove/);
   assert.match(recordsView, /createTileViewportAtZoom/);
+  assert.match(recordsView, /ResizeObserver/);
 
   assert.match(activityMap, /data-testid="map-zoom-in"/);
   assert.match(activityMap, /data-testid="map-zoom-out"/);
   assert.match(activityMap, /data-testid="map-recenter"/);
   assert.match(activityMap, /manualCenter/);
+  assert.match(activityMap, /ResizeObserver/);
   assert.match(activityMap, /onPointerMove/);
   assert.match(activityMap, /setFollowGps\(false\)/);
 });

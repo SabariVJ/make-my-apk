@@ -59,8 +59,11 @@ const TONE_STYLES: Record<
 
 /**
  * One branded blocking state for the whole app: 404, crash, offline, session
- * expiry. Obsidian shell, charcoal card, Anton headings, Inter body, crimson
- * primary action — the same visual language as TrialExpiredScreen.
+ * expiry. Obsidian shell, lit charcoal card, Inter throughout, crimson primary
+ * action — the same visual language as TrialExpiredScreen.
+ *
+ * The title is sentence case on purpose: a blocking state is not a badge, and
+ * caps stopped carrying meaning once it was applied to every heading in the app.
  */
 export const StatusScreen: React.FC<StatusScreenProps> = ({
   icon: Icon,
@@ -86,7 +89,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 420, damping: 34 }}
-        className={`w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl ${styles.shadow} space-y-4 text-center ${className}`}
+        className={`svj-radius-card svj-lit-top svj-elev-3 w-full max-w-md border border-white/[0.06] bg-[#17171A] p-5 text-center space-y-4 ${styles.shadow} ${className}`}
       >
         <div className="space-y-1">
           <div
@@ -99,8 +102,12 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
               {eyebrow}
             </p>
           )}
-          <h1 className="font-anton text-xl uppercase tracking-wider text-white pt-1">{title}</h1>
-          <p className="text-xs text-[#8C8C90] leading-relaxed max-w-sm mx-auto">{message}</p>
+          <h1 className="pt-1 font-inter text-xl font-semibold tracking-tight text-[#F4F2ED]">
+            {title}
+          </h1>
+          <p className="mx-auto max-w-sm text-xs font-inter leading-relaxed text-[#8C8C90]">
+            {message}
+          </p>
         </div>
 
         {(primaryAction || secondaryAction) && (
@@ -110,7 +117,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
                 type="button"
                 whileTap={{ scale: 0.98 }}
                 onClick={primaryAction.onClick}
-                className={`w-full py-3 rounded-xl text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-colors ${styles.button}`}
+                className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-3 font-inter text-sm font-semibold text-white shadow-lg transition-colors ${styles.button}`}
               >
                 {primaryAction.icon && <primaryAction.icon className="w-4 h-4" />}
                 <span>{primaryAction.label}</span>
@@ -120,7 +127,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
               <button
                 type="button"
                 onClick={secondaryAction.onClick}
-                className="w-full py-3 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white hover:border-white/25 transition-colors font-mono text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/12 py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:border-white/25 hover:text-white"
               >
                 {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
                 <span>{secondaryAction.label}</span>

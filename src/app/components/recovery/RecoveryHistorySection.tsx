@@ -20,7 +20,8 @@ import {
 
 const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-3";
 const HEADING = "font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]";
-const SECTION_TITLE = "text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]";
+const SECTION_TITLE =
+  "font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]";
 
 const HISTORY_LIMIT = 35;
 

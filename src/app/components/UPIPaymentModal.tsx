@@ -89,13 +89,15 @@ export const UPIPaymentModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl p-4 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90vh] w-full max-w-md overflow-hidden overflow-y-auto border border-white/[0.06] bg-[#17171A] p-5 text-[#F4F2ED]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+          <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-4">
             <div className="flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-[#C81E3A]" />
-              <h2 className="font-anton text-xl tracking-wide uppercase text-white">UPI Payment</h2>
+              <Smartphone className="h-5 w-5 text-[#C81E3A]" />
+              <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                SVJ Plus payment
+              </h2>
             </div>
             <button
               onClick={() => setIsUPIModalOpen(false)}
@@ -112,31 +114,31 @@ export const UPIPaymentModal: React.FC = () => {
                 setPaymentTab("upi");
                 setShowQR(false);
               }}
-              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl py-2.5 font-inter text-xs font-semibold transition-colors ${
                 paymentTab === "upi"
-                  ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/20"
-                  : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
+                  ? "bg-[#C81E3A] text-white"
+                  : "border border-white/[0.08] bg-[#08080A] text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5" />
-              UPI Payment
+              <Smartphone className="h-3.5 w-3.5" />
+              UPI
             </button>
             <button
               onClick={() => setPaymentTab("code")}
-              className={`flex-1 py-2.5 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl py-2.5 font-inter text-xs font-semibold transition-colors ${
                 paymentTab === "code"
-                  ? "bg-gold text-black shadow-lg shadow-gold/20"
-                  : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
+                  ? "bg-gold text-black"
+                  : "border border-white/[0.08] bg-[#08080A] text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
-              <KeyRound className="w-3.5 h-3.5" />
-              Redeem Code
+              <KeyRound className="h-3.5 w-3.5" />
+              Redeem code
             </button>
           </div>
 
           {paymentTab === "code" ? (
             <div className="space-y-4 py-2">
-              <p className="text-xs text-[#8C8C90] font-inter text-center">
+              <p className="text-center font-inter text-xs text-[#8C8C90]">
                 Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
               </p>
               <RedeemPlusCodeForm
@@ -157,27 +159,27 @@ export const UPIPaymentModal: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="font-anton text-xl text-white uppercase tracking-wide">
-                  Pay via UPI or GPay?
+                <h3 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                  Pay with UPI?
                 </h3>
-                <p className="text-xs text-[#8C8C90] font-inter mt-1 max-w-xs mx-auto leading-relaxed">
-                  Scan QR code using GPay, PhonePe, Paytm, or BHIM to complete payment. SVJ Plus is
-                  activated only after manual verification.
+                <p className="mx-auto mt-1 max-w-xs font-inter text-xs leading-relaxed text-[#8C8C90]">
+                  Scan the code with GPay, PhonePe, Paytm or BHIM. SVJ Plus is activated only after
+                  the payment is manually verified.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => setIsUPIModalOpen(false)}
-                  className="py-3 rounded-2xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-[#8C8C90] font-mono text-xs cursor-pointer"
+                  className="cursor-pointer rounded-xl border border-white/[0.08] bg-[#08080A] py-3 font-inter text-xs font-semibold text-[#8C8C90] hover:text-[#F4F2ED]"
                 >
-                  No, thanks
+                  Not now
                 </button>
                 <button
                   onClick={() => setShowQR(true)}
-                  className="py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase text-xs cursor-pointer shadow-lg shadow-[#C81E3A]/20"
+                  className="cursor-pointer rounded-xl bg-[#C81E3A] py-3 font-inter text-xs font-semibold text-white shadow-lg shadow-[#C81E3A]/20 hover:bg-[#A0182E]"
                 >
-                  Yes, show QR
+                  Show the QR code
                 </button>
               </div>
             </div>
@@ -201,19 +203,19 @@ export const UPIPaymentModal: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <div className="text-[11px] text-[#8C8C90] font-inter">
-                  Scan with GPay, PhonePe, Paytm or any UPI App
+                <div className="font-inter text-[11px] text-[#8C8C90]">
+                  Scan with GPay, PhonePe, Paytm or any UPI app
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-left text-xs text-zinc-300 space-y-1">
-                <div className="flex items-center gap-2 text-emerald-400 font-mono font-semibold">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Manual Verification Required</span>
+              <div className="svj-radius-row space-y-1 border border-white/[0.05] bg-[#08080A] p-3 text-left text-xs text-zinc-300">
+                <div className="flex items-center gap-2 font-inter font-semibold text-emerald-400">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Activated by hand, never automatically</span>
                 </div>
-                <p className="text-[11px] text-[#8C8C90] leading-relaxed">
-                  After paying, contact support with your UPI transaction reference. SVJ Plus is
-                  activated only after the payment is manually verified.
+                <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+                  After paying, send support your UPI transaction reference. SVJ Plus is activated
+                  only after the payment is manually verified.
                 </p>
               </div>
 
@@ -223,7 +225,7 @@ export const UPIPaymentModal: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                   disabled={isProcessing}
                   onClick={handleSimulatePayment}
-                  className="w-full py-3.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/30 cursor-pointer disabled:opacity-50"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3.5 font-inter text-sm font-semibold text-white shadow-lg shadow-[#C81E3A]/30 hover:bg-[#A0182E] disabled:opacity-50"
                 >
                   {isProcessing ? (
                     <span>Preparing contact options...</span>
@@ -237,46 +239,46 @@ export const UPIPaymentModal: React.FC = () => {
               </div>
 
               {showContactFallback && (
-                <div className="mt-3 p-3 rounded-2xl bg-[#0B0B0C] border border-white/10 text-left space-y-2.5">
-                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                <div className="svj-radius-row mt-3 space-y-2.5 border border-white/[0.06] bg-[#08080A] p-3 text-left">
+                  <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
                     Send us your payment details to activate SVJ Plus:
                   </p>
                   <a
                     href={isNative ? supportUrl : appUrl}
-                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 font-inter text-xs font-semibold text-white transition-colors hover:bg-emerald-500"
                   >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                    Open WhatsApp app
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Open WhatsApp
                   </a>
                   <a
                     href={webUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="flex w-full items-center justify-center rounded-xl border border-white/12 py-2.5 font-inter text-xs text-[#F4F2ED] transition-colors hover:bg-white/5"
                   >
                     Open in browser instead
                   </a>
                   <button
                     onClick={handleCopyMessage}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors"
+                    className="w-full cursor-pointer rounded-xl border border-white/12 py-2.5 font-inter text-xs text-[#F4F2ED] transition-colors hover:bg-white/5"
                   >
                     {copied ? "Message copied" : "Copy verification message"}
                   </button>
                   <button
                     onClick={handleCopyNumber}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-white font-mono text-xs hover:bg-white/5 cursor-pointer transition-colors select-text"
+                    className="w-full cursor-pointer select-text rounded-xl border border-white/12 py-2.5 font-inter text-xs text-[#F4F2ED] transition-colors hover:bg-white/5"
                   >
                     {numberCopied ? "Number copied" : `Copy number ${formatWhatsAppNumber()}`}
                   </button>
                   <a
                     href={mailtoUrl}
-                    className="w-full py-2.5 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs flex items-center justify-center hover:bg-white/5 transition-colors"
+                    className="flex w-full items-center justify-center rounded-xl border border-white/12 py-2.5 font-inter text-xs text-[#8C8C90] transition-colors hover:bg-white/5 hover:text-[#F4F2ED]"
                   >
                     Email us instead
                   </a>
-                  <p className="text-[11px] text-[#8C8C90] leading-relaxed">
+                  <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
                     If WhatsApp doesn&apos;t open, message{" "}
-                    <span className="font-mono text-white select-all">
+                    <span className="select-all font-mono text-[#F4F2ED]">
                       {formatWhatsAppNumber()}
                     </span>{" "}
                     from your phone with the copied text.

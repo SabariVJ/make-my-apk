@@ -89,7 +89,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
             {/* Name & Handles */}
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <h2 className="font-anton text-2xl tracking-wide uppercase text-white">
+                <h2 className="font-inter text-xl font-semibold tracking-tight text-[#F4F2ED]">
                   {member.username}
                 </h2>
                 {member.isVerified && (

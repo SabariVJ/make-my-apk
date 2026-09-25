@@ -9,7 +9,7 @@ import React from "react";
 import { Activity, HeartPulse, Sparkles, Zap } from "lucide-react";
 import { readinessEmphasis, todaysFocus, type ReadinessResult } from "../../lib/recoveryInsights";
 
-const SHELL = "rounded-2xl border p-4";
+const SHELL = "svj-radius-card svj-lit-top border p-4";
 
 const STYLES: Record<
   ReturnType<typeof readinessEmphasis>,
@@ -59,14 +59,14 @@ export const PlanRecoveryCard: React.FC<{
       className={style.shell}
     >
       <p
-        className={`flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest ${style.eyebrow}`}
+        className={`flex items-center gap-1.5 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] ${style.eyebrow}`}
       >
         <Icon aria-hidden className="h-3.5 w-3.5" />
         Recovery check
       </p>
       <h3
         id="plan-recovery-check-title"
-        className="mt-1 font-anton text-sm uppercase tracking-wide text-white"
+        className="mt-1 font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]"
       >
         {focus.headline}
       </h3>

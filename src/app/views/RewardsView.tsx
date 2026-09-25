@@ -139,18 +139,18 @@ export const RewardsView: React.FC = () => {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="relative rounded-2xl bg-[#17171A] border border-white/10 p-4 overflow-hidden shadow-2xl">
+      <div className="svj-radius-card svj-lit-top svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-5">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-[#8C8C90] uppercase tracking-wider mb-1">
+            <div className="mb-1 flex items-center gap-2 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]">
               <Gift className="w-3.5 h-3.5 text-[#C81E3A]" />
               <span>Rewards Vault</span>
               <span>•</span>
               <span className="text-[#C81E3A] font-bold">Earned Honor Perks</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-inter text-3xl font-semibold tracking-tight text-[#F4F2ED] sm:text-4xl">
               The SVJ Vault
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter mt-1">
@@ -159,9 +159,9 @@ export const RewardsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/10 text-center shrink-0">
-            <div className="text-[10px] font-mono text-[#8C8C90] uppercase">Available Balance</div>
-            <div className="text-2xl font-anton text-[#C81E3A]">
+          <div className="shrink-0 rounded-xl border border-white/[0.08] bg-[#08080A] p-3 text-center">
+            <div className="font-inter text-[10px] text-[#8C8C90]">Available Balance</div>
+            <div className="font-mono text-2xl font-bold text-[#E62846]">
               {user.totalXP.toLocaleString()} XP
             </div>
             <div className="text-[10px] font-mono text-emerald-400">Ready to Redeem</div>
@@ -170,14 +170,14 @@ export const RewardsView: React.FC = () => {
       </div>
 
       {/* Weekly Rotation Timer Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#17171A] via-[#1F1216] to-[#17171A] border border-[#C81E3A]/30 p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="svj-radius-card flex flex-col items-center justify-between gap-4 border border-[#C81E3A]/30 bg-gradient-to-r from-[#17171A] via-[#1F1216] to-[#17171A] p-4 sm:flex-row">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#C81E3A]/20 border border-[#C81E3A]/50 flex items-center justify-center text-[#C81E3A] shrink-0 animate-pulse">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#E62846]">
             <Clock className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-anton text-sm text-white uppercase tracking-wide">
+              <span className="font-inter text-sm font-semibold text-[#F4F2ED]">
                 Weekly Vault Rotation (Season 14)
               </span>
               <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-[9px] font-mono font-bold border border-gold/30 flex items-center gap-1">
@@ -264,7 +264,7 @@ export const RewardsView: React.FC = () => {
             <motion.div
               key={item.id}
               whileHover={{ y: -2 }}
-              className="rounded-2xl bg-[#17171A] border border-white/10 overflow-hidden flex flex-col justify-between shadow-xl"
+              className="svj-radius-card svj-lit-top flex flex-col justify-between overflow-hidden border border-white/[0.06] bg-[#17171A]"
             >
               <div>
                 {/* Image & Badges */}
@@ -286,7 +286,7 @@ export const RewardsView: React.FC = () => {
                   </div>
 
                   {item.isPremiumOnly && (
-                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-gold text-black font-anton text-[9px] uppercase tracking-wider">
+                    <div className="absolute top-3 right-3 rounded-full bg-gold px-2 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.08em] text-black">
                       SVJ PLUS EXCLUSIVE
                     </div>
                   )}
@@ -294,7 +294,9 @@ export const RewardsView: React.FC = () => {
 
                 {/* Details */}
                 <div className="p-4 space-y-2">
-                  <h3 className="font-anton text-lg text-white uppercase">{item.title}</h3>
+                  <h3 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                    {item.title}
+                  </h3>
                   <p className="text-xs text-[#8C8C90] font-inter leading-relaxed">
                     {item.description}
                   </p>
@@ -347,7 +349,7 @@ export const RewardsView: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => redeemReward(item.id)}
-                    className={`px-4 py-2 rounded-lg text-xs font-anton tracking-wider uppercase flex items-center gap-1.5 cursor-pointer transition-all ${
+                    className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-2 font-inter text-xs font-semibold transition-colors ${
                       canAfford
                         ? "bg-[#C81E3A] hover:bg-[#A0182E] text-white shadow-lg shadow-[#C81E3A]/20"
                         : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -371,7 +373,7 @@ export const RewardsView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+              className="svj-radius-card svj-lit-top svj-elev-3 relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden border border-white/[0.06] bg-[#17171A] p-5"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -384,7 +386,7 @@ export const RewardsView: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <h2 className="font-anton text-lg text-white uppercase tracking-wide">
+                    <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
                       {activeModalReward.title}
                     </h2>
                     <p className="text-[10px] font-mono text-[#8C8C90]">
@@ -443,7 +445,7 @@ export const RewardsView: React.FC = () => {
                     {activeModalReward.code && (
                       <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
                         <div>
-                          <div className="text-[10px] font-mono text-[#8C8C90] uppercase">
+                          <div className="font-inter text-[10px] text-[#8C8C90]">
                             Voucher Redemption Code
                           </div>
                           <div className="text-lg font-mono font-bold text-white">
@@ -493,7 +495,7 @@ export const RewardsView: React.FC = () => {
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-anton text-lg text-white uppercase tracking-wide">
+                    <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
                       Upcoming Week 15 Vault Drop
                     </h2>
                     <p className="text-[10px] font-mono text-gold">

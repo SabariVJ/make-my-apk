@@ -101,7 +101,7 @@ export const TrainGoals: React.FC = () => {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-[#C81E3A]" />
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
+          <span className="font-inter text-[13px] font-semibold tracking-tight text-[#F4F2ED]">
             My Goals
           </span>
         </div>
@@ -109,7 +109,7 @@ export const TrainGoals: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowCreate((v) => !v)}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-mono uppercase text-[#8C8C90] hover:text-white"
+            className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#08080A] px-2.5 py-1.5 font-inter text-[11px] font-semibold text-[#8C8C90] hover:text-[#F4F2ED]"
           >
             <Plus className="h-3 w-3" /> Create
           </button>
@@ -140,7 +140,7 @@ export const TrainGoals: React.FC = () => {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg border px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+            className={`flex-1 rounded-lg border px-2.5 py-1.5 font-inter text-[11px] font-semibold transition-colors ${
               tab === t
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90]"
@@ -152,9 +152,7 @@ export const TrainGoals: React.FC = () => {
       </div>
 
       {goals === null && (
-        <p className="py-6 text-center text-[11px] font-mono uppercase text-[#8C8C90]">
-          Loading goals…
-        </p>
+        <p className="py-6 text-center font-inter text-[11px] text-[#8C8C90]">Loading goals…</p>
       )}
 
       {error && (
@@ -163,7 +161,7 @@ export const TrainGoals: React.FC = () => {
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 font-inter text-[11px] font-semibold text-crimson"
           >
             Retry
           </button>
@@ -226,7 +224,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
           {goal.activityType ? ` · ${goal.activityType}` : ""}
         </span>
         <span
-          className={`rounded border px-1.5 py-0.5 text-[9px] font-mono uppercase ${
+          className={`rounded border px-1.5 py-0.5 font-inter text-[9px] font-semibold ${
             completed ? "border-emerald-500/40 text-emerald-400" : "border-white/15 text-[#8C8C90]"
           }`}
         >
@@ -247,7 +245,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
         <ProgressBar percent={percent} />
       </div>
       {completed && (
-        <p className="mt-2 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-emerald-400">
+        <p className="mt-2 flex items-center gap-1.5 font-inter text-[10px] font-semibold text-emerald-400">
           <CheckCircle2 className="h-3.5 w-3.5" /> GOAL COMPLETE
         </p>
       )}
@@ -256,7 +254,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+            className="font-inter text-[10px] font-semibold text-[#8C8C90] hover:text-[#F4F2ED]"
           >
             Edit target
           </button>
@@ -264,7 +262,7 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
             type="button"
             onClick={() => void cancel()}
             disabled={busy}
-            className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-crimson"
+            className="font-inter text-[10px] font-semibold text-[#8C8C90] hover:text-crimson"
           >
             Cancel goal
           </button>
@@ -283,14 +281,14 @@ const GoalCard: React.FC<{ goal: GoalDto; onChanged: () => void }> = ({ goal, on
             type="button"
             onClick={() => void saveEdit()}
             disabled={busy}
-            className="rounded-lg border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-2 py-1.5 text-[9px] font-mono uppercase text-white"
+            className="rounded-lg border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-2.5 py-1.5 font-inter text-[10px] font-semibold text-[#F4F2ED]"
           >
             Save
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-[9px] font-mono uppercase text-[#8C8C90]"
+            className="font-inter text-[10px] text-[#8C8C90]"
           >
             Cancel
           </button>
@@ -353,15 +351,13 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
       data-testid="create-goal-form"
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-white">
-          Create goal
-        </span>
+        <span className="font-inter text-[11px] font-semibold text-[#F4F2ED]">Create goal</span>
         <button type="button" onClick={onClose} aria-label="Close form">
           <X className="h-3.5 w-3.5 text-[#8C8C90]" />
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <label className="text-[9px] font-mono uppercase text-[#8C8C90]">
+        <label className="font-inter text-[10px] font-semibold text-[#8C8C90]">
           Metric
           <select
             value={metric}
@@ -375,7 +371,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
             ))}
           </select>
         </label>
-        <label className="text-[9px] font-mono uppercase text-[#8C8C90]">
+        <label className="font-inter text-[10px] font-semibold text-[#8C8C90]">
           Period
           <select
             value={periodType}
@@ -388,7 +384,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
         </label>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <label className="text-[9px] font-mono uppercase text-[#8C8C90]">
+        <label className="font-inter text-[10px] font-semibold text-[#8C8C90]">
           Target
           <input
             type="number"
@@ -398,7 +394,7 @@ const CreateGoalForm: React.FC<{ onClose: () => void; onCreated: () => void }> =
             className="mt-1 w-full rounded-lg border border-white/10 bg-[#17171A] px-2 py-2 text-xs text-white"
           />
         </label>
-        <label className="text-[9px] font-mono uppercase text-[#8C8C90]">
+        <label className="font-inter text-[10px] font-semibold text-[#8C8C90]">
           Activity type (optional)
           <select
             value={activityType}
@@ -471,7 +467,7 @@ export const TrainProgress: React.FC = () => {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-gold" />
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
+          <span className="font-inter text-[13px] font-semibold tracking-tight text-[#F4F2ED]">
             Personal Records
           </span>
         </div>
@@ -486,7 +482,7 @@ export const TrainProgress: React.FC = () => {
       </div>
 
       {records === null && (
-        <p className="flex items-center justify-center gap-2 py-6 text-[11px] font-mono uppercase text-[#8C8C90]">
+        <p className="flex items-center justify-center gap-2 py-6 font-inter text-[11px] text-[#8C8C90]">
           <Loader2 className="h-3 w-3 animate-spin" /> Loading records…
         </p>
       )}
@@ -497,7 +493,7 @@ export const TrainProgress: React.FC = () => {
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 font-inter text-[11px] font-semibold text-crimson"
           >
             Retry
           </button>
@@ -523,7 +519,7 @@ export const TrainProgress: React.FC = () => {
                         {formatRecordValue(record.recordType, record.value)}
                       </span>
                     ) : (
-                      <span className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+                      <span className="font-inter text-[10px] text-[#8C8C90]">
                         Complete more activities to set this record
                       </span>
                     )}
@@ -546,11 +542,11 @@ export const TrainProgress: React.FC = () => {
 
       {/* Strength records — derived from stored sets, never client-typed. */}
       <div className="mt-3" data-testid="train-strength-records">
-        <p className="mb-1.5 text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+        <p className="mb-1.5 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]">
           Strength Records
         </p>
         {strengthRecords !== null && strengthRecords.length === 0 && (
-          <p className="rounded-2xl border border-white/5 bg-black/40 p-3 text-center text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
+          <p className="rounded-xl border border-white/[0.05] bg-[#08080A] p-3 text-center font-inter text-[10px] text-[#8C8C90]">
             Complete a structured strength workout to set this record
           </p>
         )}
@@ -583,7 +579,7 @@ export const TrainProgress: React.FC = () => {
 
       {!error && records !== null && records.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1.5 text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+          <p className="mb-1.5 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]">
             Recent records
           </p>
           <ul className="space-y-1">
@@ -621,7 +617,7 @@ export const BackLink: React.FC<{ label: string; onClick: () => void }> = ({ lab
   <button
     type="button"
     onClick={onClick}
-    className="mb-3 flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+    className="mb-3 flex items-center gap-1 font-inter text-[11px] font-semibold text-[#8C8C90] hover:text-[#F4F2ED]"
   >
     <ChevronLeft className="h-3.5 w-3.5" /> {label}
   </button>

@@ -37,6 +37,8 @@ import { UserStats } from "../types";
 import { useFriends } from "../hooks/useFriends";
 import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
+import { SVJBadge } from "../components/ui-primitives/SVJBadge";
 import {
   SUPPORT_EMAIL,
   SUPPORT_SUBJECT,
@@ -106,7 +108,7 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24">
       {/* Profile Header */}
-      <div className="relative rounded-2xl bg-[#17171A] border border-white/10 p-4 overflow-hidden shadow-2xl">
+      <div className="svj-radius-card svj-lit-top svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-5">
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div
@@ -127,20 +129,22 @@ export const ProfileView: React.FC = () => {
               </div>
             </div>
             <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
+              <div className="flex items-center justify-center gap-2 sm:justify-start">
+                <h1 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED] sm:text-3xl">
                   {user.name}
                 </h1>
                 {user.verifiedIcon && (
-                  <Shield className="w-5 h-5 text-[#C81E3A] fill-[#C81E3A]/20" />
+                  <Shield className="h-5 w-5 fill-[#C81E3A]/20 text-[#C81E3A]" />
                 )}
-                {user.isPremium && <Crown className="w-5 h-5 text-gold fill-gold/20" />}
+                {user.isPremium && <Crown className="h-5 w-5 fill-gold/20 text-gold" />}
               </div>
-              <p className="text-xs font-mono text-[#8C8C90]">
-                @{user.username} •{" "}
-                <span className="text-[#C81E3A] font-bold">{user.tier} Tier</span>
-              </p>
-              <p className="text-xs text-[#F4F2ED]/80 font-inter mt-1.5 italic">"{user.bio}"</p>
+              {/* Separate lines and a real badge instead of one middle-dotted
+                  meta string: the handle is identity, the tier is a status. */}
+              <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <span className="font-inter text-xs text-[#8C8C90]">@{user.username}</span>
+                <SVJBadge variant="crimson">{user.tier} tier</SVJBadge>
+              </div>
+              <p className="mt-1.5 font-inter text-xs italic text-[#F4F2ED]/80">{user.bio}</p>
 
               {/* Linked Gmail pill */}
               <div className="mt-2.5 flex items-center gap-2">
@@ -166,10 +170,10 @@ export const ProfileView: React.FC = () => {
 
           <button
             onClick={() => setIsEditProfileOpen(true)}
-            className="px-4 py-2 rounded-lg bg-[#0B0B0C] hover:bg-white/10 border border-white/10 text-white text-xs font-mono font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-[#08080A] px-4 py-2 font-inter text-xs font-semibold text-white transition-colors hover:bg-white/[0.06]"
           >
-            <Edit3 className="w-3.5 h-3.5 text-[#C81E3A]" />
-            <span>Edit Profile</span>
+            <Edit3 className="h-3.5 w-3.5 text-[#C81E3A]" />
+            <span>Edit profile</span>
           </button>
         </div>
       </div>
@@ -182,13 +186,16 @@ export const ProfileView: React.FC = () => {
 
       {/* Friends List — hidden on Android Play release */}
       {!isAndroid && friends.length > 0 && (
-        <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-anton text-lg text-white uppercase tracking-wide flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#C81E3A]" /> Friends
-            </h2>
-            <span className="text-[10px] font-mono text-[#8C8C90]">{friends.length} connected</span>
-          </div>
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
+          <SVJSectionHeader
+            title="Friends"
+            icon={Users}
+            trailing={
+              <span className="font-inter text-[10px] text-[#8C8C90]">
+                {friends.length} connected
+              </span>
+            }
+          />
 
           {friendsLoading ? (
             <Loader2 className="w-4 h-4 animate-spin text-[#C81E3A]" />
@@ -201,15 +208,15 @@ export const ProfileView: React.FC = () => {
               {friends.map((f) => (
                 <div
                   key={f.friendship_id}
-                  className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 flex items-center gap-3"
+                  className="svj-radius-row flex items-center gap-3 border border-white/[0.05] bg-[#08080A] p-3"
                 >
                   <AvatarImage
                     src={f.avatar_url}
                     name={f.username ?? f.display_name}
-                    className="w-10 h-10 rounded-full object-cover border border-white/10"
+                    className="h-10 w-10 rounded-full border border-white/10 object-cover"
                   />
                   <div className="min-w-0">
-                    <p className="font-anton text-sm text-white uppercase truncate">
+                    <p className="truncate font-inter text-sm font-semibold text-white">
                       @{f.username ?? f.display_name ?? "Voyager"}
                     </p>
                     <div className="flex items-center gap-3 text-[10px] font-mono mt-0.5">
@@ -232,102 +239,92 @@ export const ProfileView: React.FC = () => {
             that lived beside it were removed with their tabs. */
         <div className="space-y-4">
           {/* 6 Dynamic Character Stat Attributes Hexagon Radar */}
-          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4 shadow-2xl overflow-hidden relative">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <div className="flex items-center gap-2">
-                <span className="text-white font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-gold" />
-                  Character Attribute Hexagon
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
-                  DYNAMIC OVR
-                </span>
-              </div>
-              <span className="text-[#C81E3A] font-bold">
-                LEVEL {user.level || 1}
-                {!isAndroid && <> ({user.leagueRank || "APPRENTICE I"})</>}
-              </span>
-            </div>
+          <div className="svj-radius-card svj-lit-top relative space-y-4 overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
+            <SVJSectionHeader
+              title="Character attributes"
+              icon={Sparkles}
+              trailing={
+                <div className="flex items-center gap-2">
+                  {!isAndroid && (
+                    <span className="font-inter text-[11px] text-[#8C8C90]">
+                      {user.leagueRank || "Apprentice I"}
+                    </span>
+                  )}
+                  <SVJBadge variant="emerald">Level {user.level || 1}</SVJBadge>
+                </div>
+              }
+            />
 
-            <p className="text-xs font-mono text-[#8C8C90]">
-              Your attribute polygon dynamically expands as you complete daily challenges, habits,
-              and community goals.
+            <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
+              Every attribute grows from work you actually complete — challenges, habits and
+              community goals.
             </p>
 
             {/* Radar Chart Component */}
             <HexagonRadarChart
-              stats={
-                user.stats || {
-                  physical: 93,
-                  mental: 91,
-                  social: 87,
-                  intellect: 84,
-                  discipline: 93,
-                  ambition: 95,
-                }
-              }
+              /* Real Character Matrix values only — the previous fallback drew
+                 an invented 93/91/87 polygon for accounts with no stats yet. */
+              stats={user.stats}
               level={user.level}
             />
           </div>
 
           {/* Key Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Current Streak
-              </div>
-              <div className="text-xl font-mono font-bold text-gold">
-                🔥 {user.currentStreak} Days
-              </div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                Best: {user.bestStreak} Days
-              </div>
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3.5">
+              <p className="mb-1 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+                Streak
+              </p>
+              <p className="font-mono text-xl font-bold text-gold">{user.currentStreak} days</p>
+              <p className="mt-0.5 font-inter text-[10px] text-[#8C8C90]">
+                Best {user.bestStreak} days
+              </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Habit Consistency
-              </div>
-              <div className="text-xl font-mono font-bold text-emerald-400">
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3.5">
+              <p className="mb-1 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+                Habit consistency
+              </p>
+              <p className="font-mono text-xl font-bold text-emerald-400">
                 {user.habitCompletionRate}%
-              </div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">Last 30 days</div>
+              </p>
+              <p className="mt-0.5 font-inter text-[10px] text-[#8C8C90]">Last 30 days</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">Weekly XP</div>
-              <div className="text-xl font-mono font-bold text-[#C81E3A]">+{user.weeklyXP}</div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                Monthly: +{user.monthlyXP}
-              </div>
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3.5">
+              <p className="mb-1 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+                Weekly XP
+              </p>
+              <p className="font-mono text-xl font-bold text-[#E62846]">+{user.weeklyXP}</p>
+              <p className="mt-0.5 font-inter text-[10px] text-[#8C8C90]">
+                Monthly +{user.monthlyXP}
+              </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#17171A] border border-white/5">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Total Completed
-              </div>
-              <div className="text-xl font-mono font-bold text-white">
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3.5">
+              <p className="mb-1 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+                Total completed
+              </p>
+              <p className="font-mono text-xl font-bold text-[#F4F2ED]">
                 {user.totalChallengesCompleted}
-              </div>
-              <div className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                {user.daysActive} Active Days
-              </div>
+              </p>
+              <p className="mt-0.5 font-inter text-[10px] text-[#8C8C90]">
+                {user.daysActive} active days
+              </p>
             </div>
           </div>
 
           {/* XP Weekly Bar Chart — real per-day XP for the current Mon–Sun week */}
-          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-                <h3 className="font-anton text-sm text-white uppercase tracking-wide">
-                  This Week's XP
-                </h3>
-              </div>
-              <span className="text-xs font-mono text-[#8C8C90]">
-                Avg {getWeekAverageXp(weekXp)} XP/day
-              </span>
-            </div>
+          <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4">
+            <SVJSectionHeader
+              title="This week's XP"
+              icon={BarChart3}
+              trailing={
+                <span className="font-inter text-xs text-[#8C8C90]">
+                  Avg {getWeekAverageXp(weekXp)} XP/day
+                </span>
+              }
+            />
 
             <div className="h-32 flex items-end justify-between gap-2 pt-4 px-1">
               {weekXp.map((item) => {
@@ -372,34 +369,36 @@ export const ProfileView: React.FC = () => {
           {!user.isPremium && (
             <div
               onClick={() => setIsPaywallOpen(true)}
-              className="p-4 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-gold/10 border border-[#C81E3A]/40 flex items-center justify-between cursor-pointer group"
+              className="svj-radius-card group flex cursor-pointer items-center justify-between border border-[#C81E3A]/35 bg-gradient-to-r from-[#C81E3A]/15 via-[#17171A] to-[#C9A227]/10 p-4"
             >
               <div className="flex items-center gap-3">
-                <Crown className="w-6 h-6 text-gold shrink-0" />
+                <Crown className="h-6 w-6 shrink-0 text-[#C9A227]" />
                 <div>
-                  <h3 className="font-anton text-sm text-white uppercase">Upgrade to SVJ Plus</h3>
-                  <p className="text-xs text-[#8C8C90]">
-                    Unlock animated aura frames, dark obsidian themes & VIP badge.
+                  <h3 className="font-inter text-sm font-semibold text-[#F4F2ED]">
+                    Upgrade to SVJ Plus
+                  </h3>
+                  <p className="font-inter text-xs text-[#8C8C90]">
+                    Unlock aura frames, obsidian themes and the VIP badge.
                   </p>
                 </div>
               </div>
-              <span className="px-3 py-1.5 rounded-lg bg-[#C81E3A] text-white text-xs font-anton tracking-wider uppercase group-hover:bg-[#A0182E] transition-colors">
-                7-Day Trial
+              <span className="shrink-0 rounded-lg bg-[#C81E3A] px-3 py-1.5 font-inter text-[11px] font-semibold text-white transition-colors group-hover:bg-[#A0182E]">
+                See plans
               </span>
             </div>
           )}
         </div>
       )}
       {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
-        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Progress</h3>
+      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
+        <SVJSectionHeader title="Your progress" />
         <button
           type="button"
           onClick={() => setShowTransformation(true)}
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C9A227]/30 bg-[#C9A227]/10 py-3 font-inter text-xs font-semibold text-[#C9A227] transition-colors hover:bg-[#C9A227]/20"
         >
-          <BarChart3 className="w-4 h-4" />
-          Transformation Report
+          <BarChart3 className="h-4 w-4" />
+          Open transformation report
         </button>
       </div>
       {/* Transformation Report overlay */}
@@ -416,15 +415,15 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
       {/* Account actions */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-3">
+      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
         {isAndroid && (
           <button
             type="button"
             onClick={() => void showPrivacyChoices()}
-            className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white"
           >
-            <Shield className="w-4 h-4" />
-            Privacy Choices
+            <Shield className="h-4 w-4" />
+            Privacy choices
           </button>
         )}
         <button
@@ -434,9 +433,9 @@ export const ProfileView: React.FC = () => {
             setShowLogoutDialog(true);
           }}
           disabled={signingOut}
-          className="w-full py-3 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 hover:bg-[#C81E3A]/20 text-[#F4F2ED] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 py-3 font-inter text-xs font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20 disabled:opacity-60"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="h-4 w-4" />
           Log out
         </button>
         <button
@@ -444,7 +443,7 @@ export const ProfileView: React.FC = () => {
           onClick={handleEmailSupport}
           disabled={supportState === "opening"}
           aria-busy={supportState === "opening"}
-          className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#8C8C90] hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white disabled:opacity-60"
         >
           {supportState === "opening" ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -464,7 +463,7 @@ export const ProfileView: React.FC = () => {
             <button
               type="button"
               onClick={handleCopySupportEmail}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 cursor-pointer"
+              className="cursor-pointer rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 font-inter text-[11px] font-semibold text-white hover:bg-white/[0.08]"
             >
               {copiedEmail ? "Email copied" : "Copy email"}
             </button>
@@ -473,15 +472,15 @@ export const ProfileView: React.FC = () => {
         <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
           Opens a draft addressed to SVJ Support. You choose what to paste and send.
         </p>
-        <div className="flex items-center justify-center gap-4 text-[10px] font-mono text-[#8C8C90]">
-          <a href="/delete-account" className="text-[#C81E3A] hover:text-[#A0182E]">
-            Delete Account
+        <div className="flex items-center justify-center gap-4 font-inter text-[10px] text-[#8C8C90]">
+          <a href="/delete-account" className="text-[#E62846] hover:text-[#A0182E]">
+            Delete account
           </a>
-          <span>•</span>
+          <span aria-hidden className="h-3 w-px bg-white/10" />
           <a href="/privacy" className="hover:text-white">
             Privacy
           </a>
-          <span>•</span>
+          <span aria-hidden className="h-3 w-px bg-white/10" />
           <a href="/terms" className="hover:text-white">
             Terms
           </a>
@@ -497,7 +496,7 @@ export const ProfileView: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="logout-dialog-title"
-            className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl"
+            className="svj-radius-card svj-lit-top svj-elev-3 w-full max-w-sm border border-white/[0.06] bg-[#17171A] p-5"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -506,7 +505,7 @@ export const ProfileView: React.FC = () => {
                 </div>
                 <h2
                   id="logout-dialog-title"
-                  className="font-anton text-lg uppercase tracking-wide text-white"
+                  className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]"
                 >
                   Log out of SVJ?
                 </h2>
@@ -540,7 +539,7 @@ export const ProfileView: React.FC = () => {
                 type="button"
                 onClick={() => setShowLogoutDialog(false)}
                 disabled={signingOut}
-                className="flex-1 rounded-2xl border border-white/10 bg-[#0B0B0C] py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+                className="flex-1 rounded-xl border border-white/[0.08] bg-[#08080A] py-2.5 font-inter text-xs font-semibold text-[#F4F2ED] transition-colors hover:bg-white/[0.06] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -548,7 +547,7 @@ export const ProfileView: React.FC = () => {
                 type="button"
                 onClick={() => void handleSignOut()}
                 disabled={signingOut}
-                className="flex-1 rounded-2xl bg-[#C81E3A] py-2.5 font-anton text-xs uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60 flex items-center justify-center gap-2"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-2.5 font-inter text-xs font-semibold text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60"
               >
                 {signingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {signingOut ? "Signing out…" : "Log out"}

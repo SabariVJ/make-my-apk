@@ -16,12 +16,12 @@ function PrivacyPage() {
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED]">
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-8">
         <div className="space-y-2">
-          <h1 className="font-anton text-3xl uppercase tracking-wider">Privacy Policy</h1>
+          <h1 className="font-inter text-3xl font-semibold tracking-tight">Privacy Policy</h1>
           <p className="text-xs font-mono text-[#8C8C90]">Last updated: September 2026</p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             1. Data We Collect
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -62,7 +62,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             2. How We Use Your Data
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -81,7 +81,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             3. Third-Party Services
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -131,7 +131,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             4. Data Retention
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -149,7 +149,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             5. Account Deletion
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -164,7 +164,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             6. Security
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -177,7 +177,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">7. Contact</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">7. Contact</h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For privacy-related questions or requests, contact us at{" "}

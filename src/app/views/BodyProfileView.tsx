@@ -354,7 +354,7 @@ export const BodyProfileView: React.FC = () => {
           <Scale className="w-3.5 h-3.5" />
           <span>Body & Nutrition</span>
         </div>
-        <h1 className="font-anton text-2xl text-white uppercase tracking-wide">
+        <h1 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED]">
           Your Body Profile
         </h1>
         <p className="text-xs text-[#8C8C90] font-inter">
@@ -363,8 +363,10 @@ export const BodyProfileView: React.FC = () => {
       </div>
 
       {/* Input form */}
-      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4">
-        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Details</h3>
+      <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4">
+        <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
+          Your details
+        </h3>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -379,7 +381,7 @@ export const BodyProfileView: React.FC = () => {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Sex</label>
+            <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">Sex</label>
             <div className="flex gap-1.5">
               {["male", "female", "other"].map((s) => (
                 <button
@@ -401,7 +403,9 @@ export const BodyProfileView: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Height (cm)</label>
+            <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+              Height (cm)
+            </label>
             <input
               type="number"
               value={height}
@@ -411,7 +415,9 @@ export const BodyProfileView: React.FC = () => {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Weight (kg)</label>
+            <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+              Weight (kg)
+            </label>
             <input
               type="number"
               value={weight}
@@ -423,7 +429,9 @@ export const BodyProfileView: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Activity Level</label>
+          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+            Activity Level
+          </label>
           <div className="grid grid-cols-3 gap-1.5">
             {[
               { id: "sedentary", label: "Sedentary" },
@@ -449,7 +457,7 @@ export const BodyProfileView: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">Body Goal</label>
+          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">Body Goal</label>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { id: "lose_fat", label: "Lose Fat" },
@@ -474,7 +482,7 @@ export const BodyProfileView: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
             Target Weight (kg, optional)
           </label>
           <input
@@ -490,7 +498,7 @@ export const BodyProfileView: React.FC = () => {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -515,13 +523,15 @@ export const BodyProfileView: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4"
+          className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4"
         >
-          <h3 className="font-anton text-sm text-white uppercase tracking-wide">Your Results</h3>
+          <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
+            Your results
+          </h3>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">BMI</div>
+              <div className="mb-1 font-inter text-[10px] text-[#8C8C90]">BMI</div>
               <div
                 className={`text-2xl font-mono font-bold ${bmiCategoryColor(profile.bmiCategory)}`}
               >
@@ -532,23 +542,21 @@ export const BodyProfileView: React.FC = () => {
               </div>
             </div>
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">BMR</div>
+              <div className="mb-1 font-inter text-[10px] text-[#8C8C90]">BMR</div>
               <div className="text-2xl font-mono font-bold text-[#C81E3A]">
                 {Math.round(profile.bmr || 0)}
               </div>
               <div className="text-[10px] font-mono text-[#8C8C90]">kcal/day</div>
             </div>
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">TDEE</div>
+              <div className="mb-1 font-inter text-[10px] text-[#8C8C90]">TDEE</div>
               <div className="text-2xl font-mono font-bold text-gold">
                 {Math.round(profile.tdee || 0)}
               </div>
               <div className="text-[10px] font-mono text-[#8C8C90]">kcal/day</div>
             </div>
             <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 text-center">
-              <div className="text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-                Daily Target
-              </div>
+              <div className="mb-1 font-inter text-[10px] text-[#8C8C90]">Daily Target</div>
               <div className="text-2xl font-mono font-bold text-emerald-400">
                 {Math.round(profile.dailyCalorieTarget || 0)}
               </div>
@@ -567,10 +575,12 @@ export const BodyProfileView: React.FC = () => {
       )}
 
       {/* Dietary preference + allergies — persisted server-side */}
-      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
-        <h3 className="font-anton text-sm text-white uppercase tracking-wide">Diet & Allergies</h3>
+      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
+        <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
+          Diet and allergies
+        </h3>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
             Dietary Preference
           </label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -599,7 +609,7 @@ export const BodyProfileView: React.FC = () => {
           </div>
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-[#8C8C90] uppercase">
+          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
             Allergies / Foods to Avoid
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -655,7 +665,7 @@ export const BodyProfileView: React.FC = () => {
               setSavingNutrition(false);
             }
           }}
-          className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-xs tracking-wider uppercase transition-colors cursor-pointer disabled:opacity-40"
+          className="w-full cursor-pointer rounded-xl bg-[#C81E3A] py-2.5 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-40"
         >
           {savingNutrition
             ? "Saving..."
@@ -670,10 +680,10 @@ export const BodyProfileView: React.FC = () => {
 
       {/* Food suggestions */}
       {foodSuggestions && (
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
           <div className="flex items-center gap-2">
             <Apple className="w-4 h-4 text-[#C81E3A]" />
-            <h3 className="font-anton text-sm text-white uppercase tracking-wide">
+            <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
               Suggested Foods
             </h3>
           </div>

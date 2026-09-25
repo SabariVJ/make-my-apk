@@ -232,7 +232,7 @@ function ScaleSlider({
             className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
               value === v
                 ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
-                : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                : "border border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:border-white/20"
             }`}
           >
             {v}
@@ -385,7 +385,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                 <step.icon className="w-3.5 h-3.5" />
                 <span>{step.title}</span>
               </div>
-              <h2 className="font-anton text-2xl text-white uppercase tracking-wide">
+              <h2 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED]">
                 {step.subtitle}
               </h2>
             </div>
@@ -469,7 +469,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                           answers.socialSelfDescription === desc
                             ? "bg-[#C81E3A] text-white"
-                            : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                            : "border border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:border-white/20"
                         }`}
                       >
                         {desc.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -681,7 +681,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
                           answers.fitnessDaysPerWeek === d
                             ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
-                            : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                            : "border border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:border-white/20"
                         }`}
                       >
                         {d}
@@ -721,7 +721,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         className={`flex-1 h-10 rounded-2xl font-mono text-xs font-bold transition-all cursor-pointer ${
                           answers.recoverySleepHours === h
                             ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
-                            : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                            : "border border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:border-white/20"
                         }`}
                       >
                         {h}h
@@ -771,7 +771,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
                         className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           answers.nutritionDietaryPreference === pref.id
                             ? "bg-[#C81E3A]/20 border-[#C81E3A] text-white"
-                            : "bg-[#17171A] border border-white/10 text-[#8C8C90] hover:border-white/20"
+                            : "border border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:border-white/20"
                         }`}
                       >
                         <span className="text-xs font-mono font-bold">{pref.label}</span>
@@ -829,7 +829,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             type="button"
             onClick={handleNext}
             disabled={!canProceed() || saving}
-            className="flex-1 py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -113,7 +113,7 @@ export function DeleteAccountPage() {
         <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
           <Trash2 className="w-8 h-8 text-emerald-400" />
         </div>
-        <h1 className="font-anton text-2xl uppercase tracking-wider">Account Deleted</h1>
+        <h1 className="font-inter text-2xl font-semibold tracking-tight">Account Deleted</h1>
         <p className="text-sm text-[#8C8C90] max-w-sm font-mono">
           Your account has been removed. Some data may persist briefly in automated backups before
           being purged.
@@ -146,7 +146,7 @@ export function DeleteAccountPage() {
           <div className="w-16 h-16 rounded-full bg-[#C81E3A]/20 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-8 h-8 text-[#C81E3A]" />
           </div>
-          <h1 className="font-anton text-2xl uppercase tracking-wider">Delete Account</h1>
+          <h1 className="font-inter text-2xl font-semibold tracking-tight">Delete Account</h1>
           <p className="text-xs text-[#8C8C90] font-mono leading-relaxed">
             This action is permanent. All your data, including profile, challenge progress, XP, and
             rewards will be removed.

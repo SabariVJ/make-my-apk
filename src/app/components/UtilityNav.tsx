@@ -59,7 +59,7 @@ export const UtilityRail: React.FC<{
             <Icon
               className={`h-5 w-5 ${active ? "stroke-[2.5px] text-[#C81E3A]" : "stroke-[1.8px]"}`}
             />
-            <span className="font-inter text-[9px] font-medium uppercase tracking-wider">
+            <span className="font-inter text-[10px] font-semibold uppercase tracking-[0.08em]">
               {item.label}
             </span>
           </button>

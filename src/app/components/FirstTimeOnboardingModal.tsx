@@ -88,7 +88,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Your SVJ Profile</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-inter text-3xl font-semibold tracking-tight text-[#F4F2ED] sm:text-4xl">
               Set Up Your Profile
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-sm mx-auto leading-relaxed">
@@ -223,7 +223,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] py-3.5 font-inter text-base font-semibold text-white shadow-xl shadow-[#C81E3A]/30 transition-colors hover:from-[#C81E3A] hover:to-[#A0182E]"
               >
                 <Trophy className="w-5 h-5" />
                 <span>Save Profile</span>

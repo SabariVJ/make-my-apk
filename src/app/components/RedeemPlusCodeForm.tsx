@@ -83,7 +83,7 @@ export const RedeemPlusCodeForm: React.FC<RedeemPlusCodeFormProps> = ({
           <KeyRound className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-anton text-gold uppercase tracking-wide">{heading}</div>
+          <div className="font-inter text-xs font-semibold text-gold">{heading}</div>
           <p className="text-[11px] text-[#8C8C90] font-inter mt-0.5">{description}</p>
 
           <div className="flex items-center gap-2 mt-3">

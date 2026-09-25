@@ -17,6 +17,7 @@ import {
   createTileViewportAtZoom,
   type MapBounds,
 } from "../components/ActivityMap";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import {
   HEATMAP_RANGES,
   HEATMAP_RANGE_LABELS,
@@ -250,8 +251,10 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
         </button>
       </div>
 
-      <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[8px] font-mono text-[#B8B8C0]">
-        Drag to pan · zoom {viewport.zoom}
+      <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 font-inter text-[9px] text-[#B8B8C0]">
+        <span>Drag to pan</span>
+        <span aria-hidden className="h-2.5 w-px bg-white/20" />
+        <span>Zoom {viewport.zoom}</span>
       </span>
 
       {SVJ_STREET_TILES.attribution && (
@@ -380,28 +383,29 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
       )}
 
       {loading && records.length === 0 && segments.length === 0 && (
-        <div className="flex items-center gap-2 rounded-2xl border border-white/5 bg-black/40 p-4 text-[11px] font-mono text-[#8C8C90]">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-[#08080A] p-4 font-inter text-[11px] text-[#8C8C90]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
 
       {section === "records" && (
-        <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-widest text-white">
-              Personal bests
-            </span>
-            <button
-              type="button"
-              onClick={() => void load()}
-              aria-label="Refresh records"
-              className="rounded-lg border border-white/10 bg-black/40 p-1.5 text-[#8C8C90] hover:text-white"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          </div>
+        <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-4">
+          <SVJSectionHeader
+            title="Personal bests"
+            className="mb-3"
+            trailing={
+              <button
+                type="button"
+                onClick={() => void load()}
+                aria-label="Refresh records"
+                className="rounded-lg border border-white/[0.08] bg-[#08080A] p-1.5 text-[#8C8C90] hover:text-[#F4F2ED]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+            }
+          />
           {records.length === 0 ? (
-            <p className="text-[11px] font-mono text-[#8C8C90]">
+            <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
               No GPS records yet. Record a run, walk or ride to set your first bests.
             </p>
           ) : (
@@ -409,20 +413,23 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               {records.map((record) => (
                 <div
                   key={record.recordType}
-                  className="rounded-2xl border border-white/5 bg-black/40 p-3"
+                  className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3"
                   data-testid="record-card"
                 >
-                  <div className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
+                  <div className="font-inter text-[10px] font-semibold text-[#8C8C90]">
                     {recordLabel(record.recordType)}
                   </div>
                   <div className="mt-1 font-mono text-base font-bold text-[#E62846]">
                     {formatRecordValue(record)}
                   </div>
-                  <div className="mt-0.5 text-[9px] font-mono text-[#8C8C90]">
+                  {/* Two facts, two lines — never one middle-dotted string. */}
+                  <div className="mt-1 font-inter text-[10px] text-[#8C8C90]">
                     {record.activityType}
-                    {record.achievedAt
-                      ? ` · ${new Date(record.achievedAt).toLocaleDateString()}`
-                      : ""}
+                    {record.achievedAt && (
+                      <span className="mt-0.5 block">
+                        {new Date(record.achievedAt).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -440,10 +447,10 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
                 type="button"
                 onClick={() => setRange(entry)}
                 data-testid={`heatmap-range-${entry}`}
-                className={`rounded-lg border px-2 py-1 text-[10px] font-mono uppercase ${
+                className={`rounded-lg border px-2.5 py-1.5 font-inter text-[11px] font-semibold transition-colors ${
                   range === entry
-                    ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
-                    : "border-white/10 bg-black/40 text-[#8C8C90]"
+                    ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
+                    : "border-white/[0.08] bg-[#08080A] text-[#8C8C90]"
                 }`}
               >
                 {HEATMAP_RANGE_LABELS[entry]}
@@ -454,10 +461,10 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
             <button
               type="button"
               onClick={() => setHeatType(null)}
-              className={`rounded-lg border px-2 py-1 text-[10px] font-mono uppercase ${
+              className={`rounded-lg border px-2.5 py-1.5 font-inter text-[11px] font-semibold transition-colors ${
                 heatType == null
-                  ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
-                  : "border-white/10 bg-black/40 text-[#8C8C90]"
+                  ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
+                  : "border-white/[0.08] bg-[#08080A] text-[#8C8C90]"
               }`}
             >
               All
@@ -468,10 +475,10 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
                 type="button"
                 onClick={() => setHeatType(type)}
                 data-testid={`heatmap-type-${type}`}
-                className={`rounded-lg border px-2 py-1 text-[10px] font-mono uppercase ${
+                className={`rounded-lg border px-2.5 py-1.5 font-inter text-[11px] font-semibold capitalize transition-colors ${
                   heatType === type
-                    ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
-                    : "border-white/10 bg-black/40 text-[#8C8C90]"
+                    ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
+                    : "border-white/[0.08] bg-[#08080A] text-[#8C8C90]"
                 }`}
               >
                 {type}
@@ -494,19 +501,21 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               data-testid="heatmap-error"
             >
               <Flame className="h-5 w-5 text-crimson" />
-              <p className="px-6 text-center text-[11px] font-mono text-crimson">{heatmapError}</p>
+              <p className="px-6 text-center font-inter text-[11px] leading-relaxed text-crimson">
+                {heatmapError}
+              </p>
               <button
                 type="button"
                 onClick={() => void loadHeatmap()}
                 data-testid="heatmap-retry"
-                className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-white"
+                className="rounded-lg border border-white/12 bg-[#08080A] px-3 py-1.5 font-inter text-[11px] font-semibold text-[#F4F2ED]"
               >
                 Retry
               </button>
             </div>
           )}
           {!heatmapLoading && !heatmapError && <HeatmapCanvas cells={cells} />}
-          <p className="text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+          <p className="font-inter text-[10px] leading-relaxed text-[#8C8C90]">
             Your heatmap is private and built only from workouts SVJ recorded on your own device. It
             is never shared with other members or used for ranking.
           </p>
@@ -526,17 +535,21 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
           {segments.map((segment) => (
             <div
               key={segment.id}
-              className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4"
+              className="svj-radius-card border border-white/[0.06] bg-[#17171A] p-4"
               data-testid="segment-card"
             >
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] font-mono font-bold text-white">
+                  <div className="truncate font-inter text-[13px] font-semibold text-[#F4F2ED]">
                     {segment.name}
                   </div>
-                  <div className="text-[10px] font-mono text-[#8C8C90]">
-                    {segment.activityType} · {segment.attemptCount} attempt
-                    {segment.attemptCount === 1 ? "" : "s"}
+                  {/* Type and attempt count are separate facts, not one dot-joined string. */}
+                  <div className="mt-0.5 flex items-center gap-2 font-inter text-[10px] text-[#8C8C90]">
+                    <span className="capitalize">{segment.activityType}</span>
+                    <span aria-hidden className="h-2.5 w-px bg-white/10" />
+                    <span>
+                      {segment.attemptCount} attempt{segment.attemptCount === 1 ? "" : "s"}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -551,20 +564,20 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
-                  <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Best</div>
+                <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-2.5">
+                  <div className="font-inter text-[10px] text-[#8C8C90]">Best</div>
                   <div className="font-mono text-sm font-bold text-[#E62846]">
                     {formatClock(segment.bestDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
-                  <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Latest</div>
-                  <div className="font-mono text-sm font-bold text-white">
+                <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-2.5">
+                  <div className="font-inter text-[10px] text-[#8C8C90]">Latest</div>
+                  <div className="font-mono text-sm font-bold text-[#F4F2ED]">
                     {formatClock(segment.lastDurationSeconds)}
                   </div>
                 </div>
-                <div className="rounded-full border border-white/5 bg-black/40 p-2.5">
-                  <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Change</div>
+                <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-2.5">
+                  <div className="font-inter text-[10px] text-[#8C8C90]">Change</div>
                   <div
                     className={`font-mono text-sm font-bold ${
                       (segment.improvementSeconds ?? 0) <= 0 ? "text-emerald-400" : "text-white"

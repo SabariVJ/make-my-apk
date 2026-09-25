@@ -72,8 +72,10 @@ test("the homepage shows a compact Activity card above the Character Hexagon Mat
   const hexagonIdx = challengesView.indexOf("Character Hexagon Matrix");
   assert.ok(cardIdx > -1 && hexagonIdx > -1);
   assert.ok(cardIdx < hexagonIdx, "activity card must render above the hexagon");
-  assert.match(activitySummary, /% OF STEP GOAL/);
-  assert.match(activitySummary, /KCAL/);
+  assert.match(activitySummary, /% of step goal/);
+  assert.match(activitySummary, /kcal/);
+  // Step-goal progress uses the one shared bar primitive instead of a bespoke div.
+  assert.match(activitySummary, /SVJProgress/);
 });
 
 test("step tracking is native-sensor based with a graceful web fallback", () => {

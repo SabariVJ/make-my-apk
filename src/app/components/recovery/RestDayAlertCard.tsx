@@ -42,15 +42,15 @@ export const RestDayAlertCard: React.FC<{
       role="status"
       aria-labelledby="recovery-rest-alert-title"
       data-testid="recovery-rest-alert"
-      className="mb-3 rounded-2xl border border-gold/40 bg-gradient-to-br from-[#2A1218] via-[#17171A] to-[#17171A] p-4"
+      className="svj-radius-card svj-lit-top mb-3 border border-gold/40 bg-gradient-to-br from-[#2A1218] via-[#17171A] to-[#17171A] p-4"
     >
-      <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-gold">
+      <p className="flex items-center gap-1.5 font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-gold">
         <ShieldAlert aria-hidden className="h-3.5 w-3.5" />
         Recovery priority
       </p>
       <h2
         id="recovery-rest-alert-title"
-        className="mt-1 font-anton text-lg uppercase tracking-wide text-[#F4F2ED]"
+        className="mt-1 font-inter text-base font-semibold tracking-tight text-[#F4F2ED]"
       >
         {alert.headline}
       </h2>

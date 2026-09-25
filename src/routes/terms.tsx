@@ -16,12 +16,12 @@ function TermsPage() {
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED]">
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-8">
         <div className="space-y-2">
-          <h1 className="font-anton text-3xl uppercase tracking-wider">Terms of Service</h1>
+          <h1 className="font-inter text-3xl font-semibold tracking-tight">Terms of Service</h1>
           <p className="text-xs font-mono text-[#8C8C90]">Last updated: September 2026</p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             1. Acceptance
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -33,7 +33,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">2. Account</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">2. Account</h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               You must be at least 18 years old to create an account. SVJ does not offer accounts to
@@ -44,7 +44,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             3. SVJ Plus Membership
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -66,7 +66,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             4. User Content
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -79,7 +79,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             5. Prohibited Conduct
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -94,7 +94,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             6. Termination
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -106,7 +106,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             7. Disclaimer
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -118,7 +118,7 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">8. Contact</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">8. Contact</h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For questions about these terms, contact us at{" "}

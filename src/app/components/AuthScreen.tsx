@@ -149,11 +149,11 @@ export const AuthScreen: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl space-y-5"
+        className="svj-radius-card svj-lit-top svj-elev-3 w-full max-w-md space-y-5 border border-white/[0.06] bg-[#17171A] p-5"
       >
         <div className="space-y-1 text-center">
-          <h1 className="font-anton text-2xl uppercase tracking-wider text-white">SVJ</h1>
-          <p className="text-xs font-mono text-[#8C8C90]">
+          <h1 className="font-anton text-2xl tracking-wider text-[#F4F2ED]">SVJ</h1>
+          <p className="font-inter text-xs text-[#8C8C90]">
             {mode === "signup"
               ? "Create your account — 7 days of full access, no charge"
               : "Sign in to continue your journey"}
@@ -164,7 +164,7 @@ export const AuthScreen: React.FC = () => {
           type="button"
           onClick={handleGoogle}
           disabled={busy}
-          className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white py-3 font-inter text-xs font-semibold text-black transition-colors hover:bg-slate-200 disabled:opacity-60"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -309,7 +309,7 @@ export const AuthScreen: React.FC = () => {
           <button
             type="submit"
             disabled={busy || (mode === "signup" && !ageConfirmed)}
-            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-60"
           >
             {busy ? (
               <Loader2 className="w-4 h-4 animate-spin" />

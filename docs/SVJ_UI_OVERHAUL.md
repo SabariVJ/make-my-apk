@@ -126,11 +126,55 @@ avatar monogram helpers (`avatarMonogram`, `avatarPalette`) live in
 - `prefersReducedMotion()` is now defensive about `window.matchMedia` being
   absent (test environments and old webviews).
 
+## Phase 11 — second pass: the surfaces the first pass missed
+
+After the token system landed, an audit of every `.tsx` under `src/app` showed a
+long tail of screens that had never been touched and still carried the original
+template chrome (Anton ALL-CAPS titles, `font-mono uppercase` micro-labels, one
+card shell for everything, middle-dot meta strings, `rounded-full` used as a
+container). Those are now on the system:
+
+- **Blocking / gate screens** — `StatusScreen` (404, crash, offline, session
+expiry) and `TrialExpiredScreen` lost their ALL-CAPS Anton titles and flat
+`#121214` card, and now use the shared card radius, lit top edge and elevation
+step. `tests/status-screen.test.ts` was updated to assert the new tokens instead
+of the old ones.
+- **Profile** — the bio/name/tier block was one middle-dotted meta string
+(`@handle • Tier Tier`); it is now identity on its own line with a real tier
+badge. Section headers use `SVJSectionHeader`, stat tiles are sunken data wells
+instead of four identical cards, and the Character Matrix no longer draws an
+**invented** `93/91/87/84/93/95` polygon for accounts with no stats — it renders
+`user.stats` only. The 🔥 emoji was removed from the streak tile.
+- **Modals** — `XPComparisonModal`, `EditProfileModal`, `UPIPaymentModal`,
+`AuthScreen`, `RewardsView`'s reward detail. Two real defects fell out of this:
+the "you" and "opponent" competitor boxes used `rounded-full` on a `p-4` block
+(rendering as ellipses), and the same pattern appeared on the segment stat tiles
+in `RecordsView`. Both are now the shared row radius. The rivalry progress bars
+use `SVJProgress`.
+- **Activity** — `ActivitySummaryCard` (shared progress primitive, sentence-case
+units), `ActivityHistory` (shared header + `SVJEmptyState` for "no activities",
+split meta strings, source badge) and `RecordsView` (personal-best cards, record
+values, heatmap filters, segment cards).
+- **Train / plan / body** — `TrainGoals`, `SvjPlanView`, `BodyProfileView`,
+`SixtyDayChallengeView`, `AssessmentView`, `RouteLibrary` and the two recovery
+cards (`RestDayAlertCard`, `PlanRecoveryCard`).
+
+The only test expectations changed were source-scanning assertions that pinned
+the *old* copy (`REQUEST SENT`, `Active Outperform Rivalry`, `% OF STEP GOAL`,
+`KCAL`, the old StatusScreen tokens, `No activity yet` / `No members to show
+yet`). Each was rewritten to assert the same behaviour with the new copy, and the
+Activity-summary test now also asserts the shared progress primitive is used
+rather than a bespoke bar.
+
 ## Not yet done
 
-- Train muscle-coverage **body-map silhouette** (Phase 5) is still the existing
-  list.
-- Activity **Devices** screen visual pass and the live-recorder stat-tile
-  hierarchy + map "center on the user" empty state.
-- Community activity-feed / member / friend cards are not yet unified into one
-  card language.
+- The long tail of modal/editor components that were not in this pass:
+  `MemberProfileModal`, `PaywallModal`, `RedeemPlusCodeForm`, `TaskEditorDialog`,
+  `TemplateBrowser`, `LegacyTemplateImportCard`, `FirstTimeOnboardingModal`,
+  `GoogleAuthModal`, `AvatarCropEditor`, `StrengthDetails`,
+  `StructuredStrengthCard`, `NativeBannerAd`.
+- The public legal routes (`src/routes/privacy.tsx`, `terms.tsx`,
+  `delete-account.tsx`) still use the old Anton ALL-CAPS page titles.
+- `HexagonRadarChart` still applies its own minimum-value floors (12/20/12/14/
+  10/15) when a stat is missing; those floors are a separate, deliberate
+  decision about the polygon's minimum drawable shape and were left alone.

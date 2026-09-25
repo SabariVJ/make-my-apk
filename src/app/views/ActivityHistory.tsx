@@ -16,6 +16,8 @@ import {
   Target,
 } from "lucide-react";
 import { GpsActivityDetail } from "./GpsActivityDetail";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SVJSelect } from "../components/ui-primitives/SVJSelect";
 import { SVJDatePicker } from "../components/ui-primitives/SVJDatePicker";
 import { todayDateValue } from "../components/ui-primitives/datePickerUtils";
@@ -270,34 +272,33 @@ export const ActivityHistory: React.FC = () => {
 
   return (
     <div
-      className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5"
+      className="svj-radius-card svj-lit-top mb-5 border border-white/[0.06] bg-[#17171A] p-4"
       data-testid="activity-history"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <HistoryIcon className="w-4 h-4 text-[#C81E3A]" />
-          <span className="text-xs font-mono uppercase tracking-widest text-white font-bold">
-            Activity History
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowManual((v) => !v)}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-mono uppercase text-[#8C8C90] hover:text-white"
-          >
-            <Plus className="w-3 h-3" /> Log
-          </button>
-          <button
-            type="button"
-            onClick={() => void load()}
-            aria-label="Refresh history"
-            className="rounded-lg border border-white/10 bg-black/40 p-1.5 text-[#8C8C90] hover:text-white"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+      <SVJSectionHeader
+        title="Activity history"
+        icon={HistoryIcon}
+        className="mb-3"
+        trailing={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowManual((v) => !v)}
+              className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#08080A] px-2.5 py-1.5 font-inter text-[11px] font-semibold text-[#8C8C90] hover:text-[#F4F2ED]"
+            >
+              <Plus className="h-3 w-3" /> Log
+            </button>
+            <button
+              type="button"
+              onClick={() => void load()}
+              aria-label="Refresh history"
+              className="rounded-lg border border-white/[0.08] bg-[#08080A] p-1.5 text-[#8C8C90] hover:text-[#F4F2ED]"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        }
+      />
 
       {showManual && activity && (
         <ManualActivityForm
@@ -316,18 +317,16 @@ export const ActivityHistory: React.FC = () => {
       )}
 
       {state === "loading" && (
-        <p className="py-6 text-center text-[11px] font-mono uppercase text-[#8C8C90]">
-          Loading history…
-        </p>
+        <p className="py-6 text-center font-inter text-[11px] text-[#8C8C90]">Loading history…</p>
       )}
 
       {state === "error" && (
-        <div className="rounded-2xl border border-crimson/30 bg-crimson/5 p-3 text-center">
-          <p className="text-[11px] font-mono text-crimson mb-2">{error}</p>
+        <div className="svj-radius-row border border-crimson/30 bg-crimson/[0.06] p-3 text-center">
+          <p className="mb-2 font-inter text-[11px] leading-relaxed text-crimson">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-crimson"
+            className="rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-1.5 font-inter text-[11px] font-semibold text-crimson"
           >
             Retry
           </button>
@@ -335,14 +334,12 @@ export const ActivityHistory: React.FC = () => {
       )}
 
       {state === "loaded" && items.length === 0 && (
-        <div className="py-8 text-center">
-          <p className="font-anton text-sm uppercase tracking-wider text-white">
-            NO ACTIVITIES YET
-          </p>
-          <p className="mt-1 text-[11px] font-mono text-[#8C8C90]">
-            Your completed workouts will appear here.
-          </p>
-        </div>
+        <SVJEmptyState
+          icon={HistoryIcon}
+          title="No activities yet"
+          description="Recorded walks, runs, rides and logged workouts appear here with their real distance, pace and effort."
+          compact
+        />
       )}
 
       {state === "loaded" && items.length > 0 && (
@@ -362,24 +359,26 @@ export const ActivityHistory: React.FC = () => {
                     {formatActivityDate(item.startedAt)}
                   </span>
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
+                {/* Real per-activity facts, separated — previously one string
+                    joined with middle dots. */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 font-inter text-[10px] text-[#8C8C90]">
                   <span>{formatDurationLabel(item.durationSeconds)}</span>
-                  {item.stepCount > 0 && <span>· {item.stepCount.toLocaleString()} steps</span>}
+                  {item.stepCount > 0 && <span>{item.stepCount.toLocaleString()} steps</span>}
                   {(summaryFor(item)?.exerciseCount ?? 0) > 0 && (
                     <span>
-                      · {summaryFor(item)!.exerciseCount}{" "}
-                      {summaryFor(item)!.exerciseCount === 1 ? "exercise" : "exercises"} ·{" "}
+                      {summaryFor(item)!.exerciseCount}{" "}
+                      {summaryFor(item)!.exerciseCount === 1 ? "exercise" : "exercises"},{" "}
                       {summaryFor(item)!.setCount}{" "}
                       {summaryFor(item)!.setCount === 1 ? "set" : "sets"}
                     </span>
                   )}
                   {(summaryFor(item)?.volumeKg ?? 0) > 0 && (
-                    <span>· {formatVolume(summaryFor(item)!.volumeKg)} volume</span>
+                    <span>{formatVolume(summaryFor(item)!.volumeKg)} volume</span>
                   )}
                   <span
-                    className={`rounded border px-1.5 py-0.5 text-[9px] uppercase ${
+                    className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${
                       item.source === "manual"
-                        ? "border-white/15 text-[#8C8C90]"
+                        ? "border-white/12 text-[#8C8C90]"
                         : "border-[#C81E3A]/40 text-[#E62846]"
                     }`}
                   >
@@ -440,17 +439,24 @@ const ActivityDetail: React.FC<{
       >
         <ChevronLeft className="w-3.5 h-3.5" /> Back to history
       </button>
-      <h3 className="font-anton text-xl uppercase tracking-wider text-white">
+      <h3 className="font-inter text-lg font-semibold tracking-tight text-[#F4F2ED]">
         {ACTIVITY_TYPE_LABELS[activity.activityType]}
       </h3>
-      <p className="mt-0.5 text-[10px] font-mono uppercase text-[#8C8C90]">
-        {formatActivityDate(activity.startedAt)} ·{" "}
-        {new Date(activity.startedAt).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-        {" – "}
-        {new Date(activity.endedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      {/* Date and time band as two labelled facts with a hairline between them. */}
+      <p className="mt-1 flex flex-wrap items-center gap-x-2 font-inter text-[11px] text-[#8C8C90]">
+        <span>{formatActivityDate(activity.startedAt)}</span>
+        <span aria-hidden className="h-2.5 w-px bg-white/12" />
+        <span>
+          {new Date(activity.startedAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+          {" – "}
+          {new Date(activity.endedAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
       </p>
       <dl className="mt-3 space-y-1.5 text-[11px] font-mono">
         <div className="flex justify-between">

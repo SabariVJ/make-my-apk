@@ -19,8 +19,8 @@ import {
   RefreshCw,
   TrendingDown,
   TrendingUp,
-  TriangleAlert,
 } from "lucide-react";
+import { SVJEmptyState } from "../ui-primitives/SVJEmptyState";
 import { listMyRecoveryHistory, type RecoveryHistoryPoint } from "../../lib/recovery";
 import {
   buildWeeklyRecoveryDigest,
@@ -32,7 +32,7 @@ import {
 import { useRecoveryInsights } from "../../hooks/useRecoveryInsights";
 
 const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4";
-const HEADING = "font-anton text-sm uppercase tracking-wide text-[#F4F2ED]";
+const HEADING = "font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]";
 const CAPTION = "text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]";
 const ROW =
   "flex items-start justify-between gap-3 rounded-xl border border-white/5 bg-black/30 px-3 py-2";
@@ -124,19 +124,23 @@ const RecoveryWeeklyDigest: React.FC = () => {
 
         {error ? (
           <div data-testid="recovery-weekly-error">
-            <p className="mt-3 flex items-start gap-2 text-xs font-inter text-[#8C8C90]">
-              <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              {error}
-            </p>
-            <button
-              type="button"
-              className={`${BUTTON} mt-3`}
-              data-testid="recovery-weekly-retry"
-              onClick={() => setAttempt((n) => n + 1)}
-            >
-              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-              Retry
-            </button>
+            <SVJEmptyState
+              variant="error"
+              compact
+              title="Your weekly summary didn't load"
+              description="The digest is built from your last 14 days of check-ins and readiness, so it needs a connection to your account. Nothing is guessed in the meantime."
+              action={
+                <button
+                  type="button"
+                  className={BUTTON}
+                  data-testid="recovery-weekly-retry"
+                  onClick={() => setAttempt((n) => n + 1)}
+                >
+                  <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              }
+            />
           </div>
         ) : history === null ? (
           <p

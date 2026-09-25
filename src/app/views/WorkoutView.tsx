@@ -488,11 +488,12 @@ export const WorkoutView: React.FC = () => {
 
             <div className="rounded-2xl bg-[#17171A] svj-border p-4 flex items-center justify-between">
               <div className="font-inter text-sm text-[#8C8C90]">
-                <span className="text-[#F4F2ED] font-semibold">{totals.sets}</span> sets ·{" "}
-                <span className="text-[#F4F2ED] font-semibold">
+                <span className="font-semibold text-[#F4F2ED]">{totals.sets}</span> working sets,
+                moving{" "}
+                <span className="font-semibold text-[#F4F2ED]">
                   {Math.round(totals.volume).toLocaleString()}
                 </span>{" "}
-                kg volume
+                kg
               </div>
               <div className="flex items-center gap-1.5 text-[#D4AF37] font-mono text-sm">
                 <Zap className="w-4 h-4" /> +{totals.xp} XP
@@ -566,9 +567,9 @@ export const WorkoutView: React.FC = () => {
               <div key={tpl.id} className="rounded-2xl bg-[#17171A] svj-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-anton uppercase text-lg text-[#F4F2ED]">{tpl.name}</h3>
-                    <p className="font-inter text-xs text-[#8C8C90] mt-1">
-                      {tpl.exercises.map((e) => e.name).join(" · ")}
+                    <h3 className="font-anton text-lg text-[#F4F2ED]">{tpl.name}</h3>
+                    <p className="mt-1 font-inter text-xs text-[#8C8C90]">
+                      {tpl.exercises.map((e) => e.name).join(", ")}
                     </p>
                   </div>
                   <button
@@ -638,13 +639,18 @@ export const WorkoutView: React.FC = () => {
                       key={session.id}
                       className="flex items-center justify-between gap-3 text-xs font-inter"
                     >
-                      <span className="text-[#F4F2ED]">
-                        Session {session.slotIndex + 1} ·{" "}
-                        {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString("en-US", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                      <span className="flex items-center gap-2 text-[#F4F2ED]">
+                        <span>Session {session.slotIndex + 1}</span>
+                        <span className="font-mono text-[11px] text-[#8C8C90]">
+                          {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString(
+                            "en-US",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
+                        </span>
                       </span>
                       <span className="font-mono text-[10px] uppercase tracking-wider text-[#D4AF37]">
                         Completed

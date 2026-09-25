@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useFriends, SearchRow } from "../hooks/useFriends";
 import { AvatarImage } from "./AvatarImage";
+import { SVJEmptyState } from "./ui-primitives/SVJEmptyState";
+import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
 import {
   getRivalries,
   acceptRivalry,
@@ -180,12 +182,14 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             {results.map((r) => (
               <div
                 key={r.id}
-                className="p-3 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-between gap-3"
+                className="svj-radius-row flex items-center justify-between gap-3 border border-white/[0.07] bg-[#17171A] p-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar src={r.avatar_url} name={label(r)} />
                   <div className="min-w-0">
-                    <p className="font-anton text-sm text-white uppercase truncate">@{label(r)}</p>
+                    <p className="truncate font-inter text-sm font-semibold text-white">
+                      @{label(r)}
+                    </p>
                     <StatLine xp={r.total_xp} streak={r.current_streak} />
                   </div>
                 </div>
@@ -264,42 +268,45 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
         <div className="space-y-4">
           {incomingRivalries.length > 0 && (
             <section className="space-y-2">
-              <h2 className="font-anton text-sm text-white uppercase tracking-wide flex items-center gap-2">
-                <Swords className="w-4 h-4 text-[#C81E3A]" /> Incoming Challenges
-                <span className="px-2 py-0.5 rounded-full bg-[#C81E3A] text-white text-[10px] font-mono">
-                  {incomingRivalries.length}
-                </span>
-              </h2>
+              <SVJSectionHeader
+                title="Incoming challenges"
+                icon={Swords}
+                trailing={
+                  <span className="rounded-full bg-[#C81E3A] px-2 py-0.5 font-mono text-[10px] text-white">
+                    {incomingRivalries.length}
+                  </span>
+                }
+              />
               {incomingRivalries.map((r) => (
                 <motion.div
                   key={r.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-2xl bg-[#17171A] border border-[#C81E3A]/30 flex items-center justify-between gap-3"
+                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-[#C81E3A]/25 bg-[#17171A] p-4"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
+                      className="h-11 w-11 shrink-0 rounded-2xl border border-white/10 object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="font-anton text-sm text-white uppercase truncate">
+                      <p className="truncate font-inter text-sm font-semibold text-white">
                         {r.opponentUsername || r.opponentDisplayName || "A member"} challenged you
                       </p>
-                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                        Outperform competition — accept to begin.
+                      <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90]">
+                        Accept to start keeping score.
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={() => void handleAcceptRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/30 disabled:opacity-50 cursor-pointer"
+                      className="cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-inter text-xs font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/25 disabled:opacity-50"
                     >
                       {rivalryBusy === r.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         "Accept"
                       )}
@@ -307,7 +314,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <button
                       onClick={() => void handleDeclineRivalry(r.id)}
                       disabled={rivalryBusy === r.id}
-                      className="px-3 py-1.5 rounded-lg bg-[#0B0B0C] border border-white/10 text-[#8C8C90] text-xs font-mono hover:text-white disabled:opacity-50 cursor-pointer"
+                      className="cursor-pointer rounded-xl border border-white/10 bg-[#0B0B0C] px-3 py-1.5 font-inter text-xs text-[#8C8C90] transition-colors hover:text-white disabled:opacity-50"
                     >
                       Decline
                     </button>
@@ -319,36 +326,34 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
           {outgoingRivalries.length > 0 && (
             <section className="space-y-2">
-              <h2 className="font-anton text-sm text-white uppercase tracking-wide">
-                Sent Challenges
-              </h2>
+              <SVJSectionHeader title="Sent challenges" />
               {outgoingRivalries.map((r) => (
                 <div
                   key={r.id}
-                  className="p-3 rounded-2xl bg-[#17171A]/60 border border-white/5 flex items-center justify-between gap-3"
+                  className="svj-radius-row flex items-center justify-between gap-3 border border-white/[0.06] bg-[#17171A]/60 p-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
+                      className="h-11 w-11 shrink-0 rounded-2xl border border-white/10 object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="font-anton text-sm text-white uppercase truncate">
-                        Outperform Request Sent
+                      <p className="truncate font-inter text-sm font-semibold text-white">
+                        Request sent
                       </p>
-                      <p className="text-[10px] font-mono text-[#8C8C90] flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" /> Waiting for{" "}
+                      <p className="mt-0.5 flex items-center gap-1 font-inter text-[11px] text-[#8C8C90]">
+                        <Clock aria-hidden className="h-3 w-3" /> Waiting for{" "}
                         {r.opponentUsername || r.opponentDisplayName
                           ? `@${r.opponentUsername || r.opponentDisplayName}`
-                          : "response"}
+                          : "a response"}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => void handleCancelRivalry(r.id)}
                     disabled={rivalryBusy === r.id}
-                    className="text-[10px] font-mono text-[#8C8C90] hover:text-white shrink-0 cursor-pointer"
+                    className="shrink-0 cursor-pointer font-inter text-[11px] text-[#8C8C90] hover:text-white"
                   >
                     Cancel
                   </button>
@@ -359,39 +364,41 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
           {activeRivalries.length > 0 && (
             <section className="space-y-2">
-              <h2 className="font-anton text-sm text-white uppercase tracking-wide">
-                Active Rivalries
-              </h2>
+              <SVJSectionHeader title="Active rivalries" />
               {activeRivalries.map((r) => (
                 <div
                   key={r.id}
-                  className="p-4 rounded-2xl bg-[#17171A] border border-emerald-500/30 flex items-center justify-between gap-3"
+                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-emerald-500/25 bg-[#17171A] p-4"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <AvatarImage
                       src={r.opponentAvatarUrl}
                       name={r.opponentUsername || r.opponentDisplayName}
-                      className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
+                      className="h-11 w-11 shrink-0 rounded-2xl border border-white/10 object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="font-anton text-sm text-emerald-400 uppercase">
-                        Vs @{r.opponentUsername || r.opponentDisplayName || "member"}
+                      <p className="truncate font-inter text-sm font-semibold text-emerald-400">
+                        vs @{r.opponentUsername || r.opponentDisplayName || "member"}
                       </p>
-                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                        Verified rivalry score: {r.myScore ?? 0} XP vs {r.opponentScore ?? 0} XP
+                      <p className="mt-0.5 font-mono text-[11px] text-[#F4F2ED]">
+                        {r.myScore ?? 0} XP
+                        <span className="text-[#8C8C90]"> vs </span>
+                        {r.opponentScore ?? 0} XP
                       </p>
-                      <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">
-                        {remainingRivalryTime(r.expiresAt)} • {r.myEvents ?? 0} vs{" "}
-                        {r.opponentEvents ?? 0} activities
+                      <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90]">
+                        {remainingRivalryTime(r.expiresAt)}
+                      </p>
+                      <p className="font-inter text-[11px] text-[#8C8C90]">
+                        {r.myEvents ?? 0} vs {r.opponentEvents ?? 0} verified activities
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedRivalry(r)}
-                    className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[10px] font-mono font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                    className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 font-inter text-[11px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/25"
                   >
-                    View Rivalry
+                    View rivalry
                   </button>
                 </div>
               ))}
@@ -401,10 +408,12 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
           {incomingRivalries.length === 0 &&
             outgoingRivalries.length === 0 &&
             activeRivalries.length === 0 && (
-              <p className="text-xs font-mono text-[#8C8C90] text-center py-4">
-                No rivalries yet. Find someone in the Members tab and tap OUTPERFORM to challenge
-                them!
-              </p>
+              <SVJEmptyState
+                icon={Swords}
+                compact
+                title="No rivalries yet"
+                description="Open the Members tab and tap Outperform on someone to start a verified head-to-head."
+              />
             )}
         </div>
       )}
@@ -413,9 +422,12 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
       {activeSection === "notifications" && (
         <div className="space-y-3">
           {notifications.length === 0 ? (
-            <p className="text-xs font-mono text-[#8C8C90] text-center py-4">
-              No notifications yet.
-            </p>
+            <SVJEmptyState
+              icon={Bell}
+              compact
+              title="No alerts yet"
+              description="Rivalry requests, acceptances and verified score changes land here."
+            />
           ) : (
             notifications.map((n) => (
               <motion.div
@@ -426,25 +438,35 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   if (!n.read) void handleMarkRead(n.id);
                 }}
                 whileTap={{ scale: 0.97 }}
-                className={`p-4 rounded-2xl border flex items-start gap-3 cursor-pointer transition-colors ${
-                  n.read ? "bg-[#17171A]/60 border-white/5" : "bg-[#17171A] border-[#C81E3A]/30"
+                className={`svj-radius-row flex cursor-pointer items-start gap-3 border p-4 transition-colors ${
+                  n.read ? "border-white/[0.06] bg-[#17171A]/60" : "border-[#C81E3A]/25 bg-[#17171A]"
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#0B0B0C] shrink-0">
-                  {n.type === "rivalry_request" && <Swords className="w-4 h-4 text-[#C81E3A]" />}
-                  {n.type === "rivalry_accepted" && <Check className="w-4 h-4 text-emerald-400" />}
-                  {n.type === "rivalry_declined" && <X className="w-4 h-4 text-crimson" />}
-                  {!n.type.startsWith("rivalry") && <Bell className="w-4 h-4 text-[#8C8C90]" />}
+                <div className="shrink-0 rounded-xl bg-[#0B0B0C] p-2">
+                  {n.type === "rivalry_request" && <Swords aria-hidden className="h-4 w-4 text-[#C81E3A]" />}
+                  {n.type === "rivalry_accepted" && (
+                    <Check aria-hidden className="h-4 w-4 text-emerald-400" />
+                  )}
+                  {n.type === "rivalry_declined" && <X aria-hidden className="h-4 w-4 text-[#E62846]" />}
+                  {!n.type.startsWith("rivalry") && (
+                    <Bell aria-hidden className="h-4 w-4 text-[#8C8C90]" />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-anton text-sm text-white uppercase truncate">{n.title}</p>
-                    {!n.read && <span className="w-2 h-2 rounded-full bg-[#C81E3A] shrink-0" />}
+                    <p className="truncate font-inter text-sm font-semibold text-white">
+                      {n.title}
+                    </p>
+                    {!n.read && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#C81E3A]" />
+                    )}
                   </div>
-                  <p className="text-[10px] font-mono text-[#8C8C90] mt-0.5">{n.body}</p>
+                  <p className="mt-0.5 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+                    {n.body}
+                  </p>
                   {n.fromUserName && (
-                    <p className="text-[10px] font-mono text-[#C81E3A] mt-0.5">
-                      From: @{n.fromUserName}
+                    <p className="mt-1 font-inter text-[11px] font-semibold text-[#E62846]">
+                      From @{n.fromUserName}
                     </p>
                   )}
                 </div>
@@ -458,28 +480,35 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
       {activeSection === "friends" && (
         <>
           <section className="space-y-2">
-            <h2 className="font-anton text-sm text-white uppercase tracking-wide flex items-center gap-2">
-              Friend Requests
-              {incoming.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-[#C81E3A] text-white text-[10px] font-mono">
-                  {incoming.length}
-                </span>
-              )}
-            </h2>
+            <SVJSectionHeader
+              title="Friend requests"
+              trailing={
+                incoming.length > 0 ? (
+                  <span className="rounded-full bg-[#C81E3A] px-2 py-0.5 font-mono text-[10px] text-white">
+                    {incoming.length}
+                  </span>
+                ) : undefined
+              }
+            />
             {incoming.length === 0 ? (
-              <p className="text-xs font-mono text-[#8C8C90]">No pending requests.</p>
+              <SVJEmptyState
+                icon={UserPlus}
+                compact
+                title="No requests waiting"
+                description="When another member asks to connect, their request appears here for you to accept or decline."
+              />
             ) : (
               incoming.map((r) => (
                 <motion.div
                   key={r.friendship_id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-between gap-3"
+                  className="svj-radius-row flex items-center justify-between gap-3 border border-white/[0.07] bg-[#17171A] p-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <Avatar src={r.avatar_url} name={label(r)} />
                     <div className="min-w-0">
-                      <p className="font-anton text-sm text-white uppercase truncate">
+                      <p className="truncate font-inter text-sm font-semibold text-white">
                         @{label(r)}
                       </p>
                       <StatLine xp={r.total_xp} streak={r.current_streak} />
@@ -510,21 +539,23 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             {outgoing.map((r) => (
               <div
                 key={r.friendship_id}
-                className="p-3 rounded-2xl bg-[#17171A]/60 border border-white/5 flex items-center justify-between gap-3"
+                className="svj-radius-row flex items-center justify-between gap-3 border border-white/[0.06] bg-[#17171A]/60 p-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar src={r.avatar_url} name={label(r)} />
                   <div className="min-w-0">
-                    <p className="font-anton text-sm text-white uppercase truncate">@{label(r)}</p>
-                    <p className="text-[10px] font-mono text-[#8C8C90] flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" /> Request sent
+                    <p className="truncate font-inter text-sm font-semibold text-white">
+                      @{label(r)}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 font-inter text-[11px] text-[#8C8C90]">
+                      <Clock aria-hidden className="h-3 w-3" /> Request sent
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => void removeFriend(r.friendship_id)}
                   disabled={busyId === r.friendship_id}
-                  className="text-[10px] font-mono text-[#8C8C90] hover:text-white shrink-0 cursor-pointer"
+                  className="shrink-0 cursor-pointer font-inter text-[11px] text-[#8C8C90] hover:text-white"
                 >
                   Cancel
                 </button>
@@ -533,28 +564,31 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
           </section>
 
           <section className="space-y-2">
-            <h2 className="font-anton text-sm text-white uppercase tracking-wide flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#C81E3A]" /> Friends Leaderboard
-            </h2>
+            <SVJSectionHeader title="Friends leaderboard" icon={Users} />
             {loading ? (
-              <p className="text-xs font-mono text-[#8C8C90]">Loading…</p>
-            ) : friends.length === 0 ? (
-              <p className="text-xs font-mono text-[#8C8C90]">
-                No friends yet — search above to send your first request.
+              <p className="flex items-center gap-2 px-1 font-inter text-xs text-[#8C8C90]">
+                <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> Loading your friends…
               </p>
+            ) : friends.length === 0 ? (
+              <SVJEmptyState
+                icon={Users}
+                compact
+                title="No friends added yet"
+                description="Search a member above and send your first request. Their XP and streak then rank next to yours."
+              />
             ) : (
               friends.map((f, i) => (
                 <div
                   key={f.friendship_id}
-                  className="p-3 rounded-2xl bg-[#17171A] border border-white/10 flex items-center justify-between gap-3"
+                  className="svj-radius-row flex items-center justify-between gap-3 border border-white/[0.07] bg-[#17171A] p-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-6 text-center font-mono text-xs text-[#8C8C90]">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="w-6 shrink-0 text-center font-anton text-sm text-[#8C8C90]">
                       #{i + 1}
                     </span>
                     <Avatar src={f.avatar_url} name={label(f)} />
                     <div className="min-w-0">
-                      <p className="font-anton text-sm text-white uppercase truncate">
+                      <p className="truncate font-inter text-sm font-semibold text-white">
                         @{label(f)}
                       </p>
                       <StatLine xp={f.total_xp} streak={f.current_streak} />
@@ -563,7 +597,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   <button
                     onClick={() => void removeFriend(f.friendship_id)}
                     disabled={busyId === f.friendship_id}
-                    className="text-[10px] font-mono text-[#8C8C90] hover:text-crimson shrink-0 cursor-pointer"
+                    className="shrink-0 cursor-pointer font-inter text-[11px] text-[#8C8C90] hover:text-[#E62846]"
                   >
                     Remove
                   </button>
@@ -579,10 +613,10 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
           <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">
-                  Active Outperform Rivalry
+                <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400">
+                  Active rivalry
                 </p>
-                <h3 className="mt-1 font-anton text-xl uppercase text-white">
+                <h3 className="mt-1 font-anton text-xl text-white">
                   You vs @
                   {selectedRivalry.opponentUsername ||
                     selectedRivalry.opponentDisplayName ||

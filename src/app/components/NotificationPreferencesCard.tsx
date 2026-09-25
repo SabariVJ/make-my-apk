@@ -12,6 +12,13 @@ import {
   type NotificationPreferences,
 } from "../lib/notifications";
 
+const GroupHeader: React.FC<{ title: string; hint: string }> = ({ title, hint }) => (
+  <div className="pb-1 pt-4 first:pt-0">
+    <h4 className="font-inter text-sm font-semibold text-[#F4F2ED]">{title}</h4>
+    <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">{hint}</p>
+  </div>
+);
+
 const ToggleRow: React.FC<{
   label: string;
   description: string;
@@ -93,7 +100,7 @@ export const NotificationPreferencesCard: React.FC = () => {
     <section className="rounded-2xl bg-[#17171A] border border-white/10 p-4 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-anton text-sm text-white uppercase tracking-wide flex items-center gap-2">
+          <h3 className="flex items-center gap-2 font-inter text-[15px] font-semibold text-white">
             <Bell className="h-4 w-4 text-[#C81E3A]" />
             Notifications
           </h3>
@@ -134,73 +141,94 @@ export const NotificationPreferencesCard: React.FC = () => {
         </p>
       )}
 
-      <div className="divide-y divide-white/5">
-        <ToggleRow
-          label="Morning plan"
-          description="A quick view of today's tasks."
-          checked={prefs.dailyPlan}
-          onChange={(value) => patch("dailyPlan", value)}
+      {/* Grouped so eleven identical rows stop reading as one undifferentiated
+          list. Same preferences, same persistence — only the presentation is
+          organised. */}
+      <div>
+        <GroupHeader title="Daily reminders" hint="What SVJ is allowed to ping you about today." />
+        <div className="divide-y divide-white/5 border-t border-white/5">
+          <ToggleRow
+            label="Morning plan"
+            description="A quick view of today's tasks."
+            checked={prefs.dailyPlan}
+            onChange={(value) => patch("dailyPlan", value)}
+          />
+          <ToggleRow
+            label="Evening coach"
+            description="Reminds you only when meaningful work is still left."
+            checked={prefs.eveningCoach}
+            onChange={(value) => patch("eveningCoach", value)}
+          />
+          <ToggleRow
+            label="Streak at risk"
+            description="Uses the evening coach to protect an active streak."
+            checked={prefs.streakRisk}
+            onChange={(value) => patch("streakRisk", value)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <GroupHeader
+          title="Progress & recovery"
+          hint="Nudges tied to your training, recovery and nutrition."
         />
-        <ToggleRow
-          label="Evening coach"
-          description="Reminds you only when meaningful work is still left."
-          checked={prefs.eveningCoach}
-          onChange={(value) => patch("eveningCoach", value)}
-        />
-        <ToggleRow
-          label="Streak at risk"
-          description="Uses the evening coach to protect an active streak."
-          checked={prefs.streakRisk}
-          onChange={(value) => patch("streakRisk", value)}
-        />
-        <ToggleRow
-          label="Earn Plus progress"
-          description="Includes qualifying-day progress when it is useful."
-          checked={prefs.earnPlus}
-          onChange={(value) => patch("earnPlus", value)}
-        />
-        <ToggleRow
-          label="Recovery"
-          description="Daily recovery check-in reminder."
-          checked={prefs.recovery}
-          onChange={(value) => patch("recovery", value)}
-        />
-        <ToggleRow
-          label="Nutrition"
-          description="Remind me when no meal has been logged."
-          checked={prefs.nutrition}
-          onChange={(value) => patch("nutrition", value)}
-        />
-        <ToggleRow
-          label="Training gap"
-          description="Nudge me after three days without a strength session."
-          checked={prefs.training}
-          onChange={(value) => patch("training", value)}
-        />
-        <ToggleRow
-          label="Training sessions"
-          description="Remind me on the days my plan schedules a session."
-          checked={prefs.trainingSession}
-          onChange={(value) => patch("trainingSession", value)}
-        />
-        <ToggleRow
-          label="Momentum"
-          description="Nudge me after two quiet days without progress."
-          checked={prefs.inactivity}
-          onChange={(value) => patch("inactivity", value)}
-        />
-        <ToggleRow
-          label="Membership"
-          description="Warn 7, 3 and 1 day before timed Plus ends."
-          checked={prefs.membership}
-          onChange={(value) => patch("membership", value)}
-        />
-        <ToggleRow
-          label="Weekly recap"
-          description="Sunday progress summary."
-          checked={prefs.weeklyRecap}
-          onChange={(value) => patch("weeklyRecap", value)}
-        />
+        <div className="divide-y divide-white/5 border-t border-white/5">
+          <ToggleRow
+            label="Recovery"
+            description="Daily recovery check-in reminder."
+            checked={prefs.recovery}
+            onChange={(value) => patch("recovery", value)}
+          />
+          <ToggleRow
+            label="Nutrition"
+            description="Remind me when no meal has been logged."
+            checked={prefs.nutrition}
+            onChange={(value) => patch("nutrition", value)}
+          />
+          <ToggleRow
+            label="Training gap"
+            description="Nudge me after three days without a strength session."
+            checked={prefs.training}
+            onChange={(value) => patch("training", value)}
+          />
+          <ToggleRow
+            label="Training sessions"
+            description="Remind me on the days my plan schedules a session."
+            checked={prefs.trainingSession}
+            onChange={(value) => patch("trainingSession", value)}
+          />
+          <ToggleRow
+            label="Momentum"
+            description="Nudge me after two quiet days without progress."
+            checked={prefs.inactivity}
+            onChange={(value) => patch("inactivity", value)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <GroupHeader title="Membership & recap" hint="Reward progress and your weekly summary." />
+        <div className="divide-y divide-white/5 border-t border-white/5">
+          <ToggleRow
+            label="Earn Plus progress"
+            description="Includes qualifying-day progress when it is useful."
+            checked={prefs.earnPlus}
+            onChange={(value) => patch("earnPlus", value)}
+          />
+          <ToggleRow
+            label="Membership"
+            description="Warn 7, 3 and 1 day before timed Plus ends."
+            checked={prefs.membership}
+            onChange={(value) => patch("membership", value)}
+          />
+          <ToggleRow
+            label="Weekly recap"
+            description="Sunday progress summary."
+            checked={prefs.weeklyRecap}
+            onChange={(value) => patch("weeklyRecap", value)}
+          />
+        </div>
       </div>
 
       {/* Dark in-app time dialog per slot — a native time field opens the

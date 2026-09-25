@@ -25,6 +25,8 @@ import {
 import { templateForSlot, SESSION_FAMILY_LABELS } from "../lib/trainingTemplates";
 import { SVJSelect } from "./ui-primitives/SVJSelect";
 import { SVJDatePicker } from "./ui-primitives/SVJDatePicker";
+import { SVJEmptyState } from "./ui-primitives/SVJEmptyState";
+import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
 import { svjStaggerContainer, svjStaggerItem, svjWhileTap } from "../lib/motion";
 import type { PlanSession } from "../lib/trainingPlan";
 import type { MuscleHistoryRow } from "../lib/trainingClient";
@@ -88,26 +90,32 @@ const MuscleHistoryPanel: React.FC<{ rows: MuscleHistoryRow[] }> = ({ rows }) =>
   if (visible.length === 0) {
     return (
       <div
-        className="rounded-2xl border border-white/5 bg-[#17171A] p-4"
+        className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
         data-testid="muscle-history"
       >
-        <p className="font-anton text-sm uppercase tracking-wide text-white">Muscle History</p>
-        <p className="mt-1 text-xs font-inter text-[#8C8C90]">
-          No logged training yet. Complete a structured session and your real muscle work appears
-          here — never from a scheduled plan.
-        </p>
+        <SVJSectionHeader title="Muscle history" icon={Dumbbell} />
+        <SVJEmptyState
+          compact
+          icon={Dumbbell}
+          title="No logged training yet"
+          description="Muscle history is built from the sets you actually complete in a structured session — never from a scheduled plan. Log one and each group fills in here."
+        />
       </div>
     );
   }
 
   return (
     <div
-      className="rounded-2xl border border-white/5 bg-[#17171A] p-4"
+      className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
       data-testid="muscle-history"
     >
-      <p className="font-anton text-sm uppercase tracking-wide text-white">Muscle History</p>
-      <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">
-        Direct and supporting work from completed sets (last 7 days).
+      <SVJSectionHeader
+        title="Muscle history"
+        icon={Dumbbell}
+        trailing={<span className="font-inter text-[10px] text-[#8C8C90]">Last 7 days</span>}
+      />
+      <p className="mt-1.5 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+        Direct and supporting work from the sets you actually completed.
       </p>
       <ul className="mt-3 space-y-2">
         {visible.map((row) => (
@@ -475,8 +483,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
     ? [...new Set(template.exercises.map((e) => e.muscle))]
         .slice(0, 5)
         .map((m) => MUSCLE_LABELS[m as MuscleGroup] ?? m)
-        .join(" · ")
-    : "";
+    : [];
 
   return (
     <div className="space-y-4">
@@ -491,13 +498,24 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
           <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
             <Dumbbell className="h-3.5 w-3.5" /> Next session
           </p>
-          <h2 className="mt-0.5 font-anton text-2xl uppercase leading-none text-white">
+          <h2 className="mt-0.5 font-anton text-2xl leading-none text-white">
             {todaySession.label}
           </h2>
-          <p className="mt-2 text-xs font-inter text-[#B8B8C0]">
-            {muscles}
-            {template ? ` · ~${template.estimatedMinutes} min` : ""}
-          </p>
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {muscles.map((muscle) => (
+              <span
+                key={muscle}
+                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-inter text-[10px] text-[#B8B8C0]"
+              >
+                {muscle}
+              </span>
+            ))}
+            {template && (
+              <span className="ml-0.5 inline-flex items-center gap-1 font-inter text-[11px] text-[#8C8C90]">
+                <Clock aria-hidden className="h-3 w-3" /> about {template.estimatedMinutes} min
+              </span>
+            )}
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-4">
             <button
@@ -623,7 +641,9 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
                 </div>
 
                 {editable && (
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2.5 flex items-center gap-2">
+                    {/* Move keeps its day but shifts it; marking a rest day is the
+                        quieter, reversible fallback — so it reads as secondary. */}
                     <button
                       type="button"
                       onClick={() =>
@@ -631,9 +651,13 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
                       }
                       aria-expanded={movingSlot === session.slotIndex}
                       aria-label={`Move ${session.label}`}
-                      className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white"
+                      className={`rounded-xl border px-2.5 py-1.5 font-inter text-[11px] font-medium transition-colors ${
+                        movingSlot === session.slotIndex
+                          ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
+                          : "border-white/12 bg-white/[0.03] text-[#B8B8C0] hover:text-white"
+                      }`}
                     >
-                      Move
+                      Move to another day
                     </button>
                     <button
                       type="button"
@@ -648,9 +672,9 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
                           setSessionError(result.error ?? "Couldn't skip that session.");
                       }}
                       aria-label={`Mark ${session.label} as a rest day`}
-                      className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white disabled:opacity-40"
+                      className="rounded-xl px-2 py-1.5 font-inter text-[11px] text-[#8C8C90] transition-colors hover:text-white disabled:opacity-40"
                     >
-                      {session.status === "skipped" ? "Rest day" : "Skip"}
+                      {session.status === "skipped" ? "Rest day kept" : "Mark as rest day"}
                     </button>
                   </div>
                 )}

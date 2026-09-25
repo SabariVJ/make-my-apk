@@ -6,7 +6,8 @@
 // TrainGoals keeps its activity metrics untouched. Form controls use the
 // shared SVJSelect primitive (no native <select> overlay on Android).
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Target, Trash2, TriangleAlert } from "lucide-react";
+import { Loader2, RefreshCw, Target, Trash2 } from "lucide-react";
+import { SVJEmptyState } from "../ui-primitives/SVJEmptyState";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 import {
   GOAL_METRIC_LABELS,
@@ -51,7 +52,7 @@ const callRpc = (
 };
 
 const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-3";
-const SECTION_TITLE = "text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]";
+const SECTION_TITLE = "text-[11px] font-inter font-semibold text-[#8C8C90]";
 const BUTTON =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#17171A] px-4 text-xs font-inter font-semibold text-[#F4F2ED] transition-colors hover:bg-black/40 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -167,6 +168,9 @@ const GoalCard: React.FC<{
 const RecoveryGoalsSection: React.FC = () => {
   const [goals, setGoals] = useState<GoalDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Distinguishes "the goal RPCs are missing on this backend" from a generic
+  // load failure, so the error surface can say which one actually happened.
+  const [deploymentIssue, setDeploymentIssue] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
 
@@ -184,11 +188,10 @@ const RecoveryGoalsSection: React.FC = () => {
     setGoals(result.ok ? result.goals : []);
     if (!result.ok) {
       const { meta } = sanitizeTrainingRpcError(result.error ?? "");
-      setError(
-        meta.deploymentProblem
-          ? "Recovery goals aren't available on this deployment yet."
-          : "Goals are unavailable right now.",
-      );
+      setDeploymentIssue(Boolean(meta.deploymentProblem));
+      setError("recovery-goals-load-failed");
+    } else {
+      setDeploymentIssue(false);
     }
     setLoading(false);
   }, []);
@@ -274,7 +277,7 @@ const RecoveryGoalsSection: React.FC = () => {
         data-testid="recovery-section-goals"
         className={CARD}
       >
-        <h2 className="font-anton text-sm uppercase tracking-wide text-[#F4F2ED]">
+        <h2 className="font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]">
           Recovery goals
         </h2>
         <p
@@ -296,7 +299,7 @@ const RecoveryGoalsSection: React.FC = () => {
       data-testid="recovery-section-goals"
     >
       <div className={CARD}>
-        <h2 className="font-anton text-sm uppercase tracking-wide text-[#F4F2ED]">
+        <h2 className="font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]">
           Recovery goals
         </h2>
         <p className="mt-1 text-[11px] font-inter text-[#8C8C90]">
@@ -306,19 +309,31 @@ const RecoveryGoalsSection: React.FC = () => {
 
         {error ? (
           <div data-testid="recovery-goals-error">
-            <p className="mt-3 flex items-start gap-2 text-xs font-inter text-[#8C8C90]">
-              <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              {error}
-            </p>
-            <button
-              type="button"
-              className={`${BUTTON} mt-3`}
-              data-testid="recovery-goals-retry"
-              onClick={() => setAttempt((n) => n + 1)}
-            >
-              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-              Try again
-            </button>
+            <SVJEmptyState
+              variant="error"
+              compact
+              title={
+                deploymentIssue
+                  ? "Recovery goals aren't available on this deployment yet"
+                  : "Your recovery goals didn't load"
+              }
+              description={
+                deploymentIssue
+                  ? "The goal functions haven't been applied to this backend yet. Your check-ins and readiness are unaffected."
+                  : "Goals are measured on the server from your own check-ins and activity, so they need a connection to your account."
+              }
+              action={
+                <button
+                  type="button"
+                  className={BUTTON}
+                  data-testid="recovery-goals-retry"
+                  onClick={() => setAttempt((n) => n + 1)}
+                >
+                  <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+                  Try again
+                </button>
+              }
+            />
           </div>
         ) : (
           <>

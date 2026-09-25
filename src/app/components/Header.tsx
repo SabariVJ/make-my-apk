@@ -35,19 +35,26 @@ export const Header: React.FC<{
               </div>
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-anton tracking-wider text-base text-[#F4F2ED]">SVJ</span>
               {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
-              {user.isFounder && (
-                <span className="px-1.5 py-0.2 rounded-full bg-gold/20 text-gold border border-gold/30 text-[9px] font-mono font-bold flex items-center gap-0.5">
-                  <Crown className="w-2.5 h-2.5" /> FOUNDER
-                </span>
-              )}
             </div>
-            <p className="text-[10px] text-[#8C8C90] font-inter tracking-wide uppercase">
-              {user.isFounder ? "FOUNDER" : `${user.tier} Tier`} · #{user.memberId}
-            </p>
+            {/* Tier and member ID are two separate elements with their own
+                weight — no middle-dot concatenated meta string. */}
+            <div className="mt-0.5 flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-[1px] text-[9px] font-inter font-semibold tracking-wide ${
+                  user.isFounder
+                    ? "border-[#C9A227]/35 bg-[#C9A227]/12 text-[#C9A227]"
+                    : "border-white/10 bg-white/[0.04] text-[#8C8C90]"
+                }`}
+              >
+                {user.isFounder && <Crown className="w-2.5 h-2.5" aria-hidden />}
+                {user.isFounder ? "Founder" : `${user.tier} Tier`}
+              </span>
+              <span className="truncate font-mono text-[10px] text-[#5C5C60]">{user.memberId}</span>
+            </div>
           </div>
         </div>
 
@@ -137,7 +144,7 @@ export const Header: React.FC<{
           {user.isPremium && (
             <div className="hidden sm:flex items-center gap-1 px-3 py-1 rounded-full bg-[#d4af37]/10 text-[#d4af37] text-[11px] font-inter font-medium">
               <Crown className="w-3 h-3" />
-              <span>{user.isFounder ? "FOUNDER" : "VIP ACTIVE"}</span>
+              <span>{user.isFounder ? "Founder" : "Plus active"}</span>
             </div>
           )}
 

@@ -582,10 +582,14 @@ export const TrainStrength: React.FC<{
                     <p className="text-xs font-mono font-bold uppercase tracking-wider text-white">
                       {draft.name}
                     </p>
-                    <p className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-                      {MUSCLE_LABELS[draft.primaryMuscle]} ·{" "}
-                      {EXERCISE_TYPE_LABELS[draft.exerciseType]}
-                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-inter text-[10px] text-[#8C8C90]">
+                        {MUSCLE_LABELS[draft.primaryMuscle]}
+                      </span>
+                      <span className="font-inter text-[10px] text-[#8C8C90]">
+                        {EXERCISE_TYPE_LABELS[draft.exerciseType]}
+                      </span>
+                    </div>
                     {targetByExerciseId.get(draft.exerciseId) && (
                       <p
                         data-testid="strength-target"
@@ -1171,9 +1175,13 @@ const ExercisePicker: React.FC<{
                 className="flex w-full items-center justify-between rounded-lg border border-white/5 bg-black/40 px-2.5 py-2 text-left hover:border-[#C81E3A]/40"
               >
                 <span className="text-[11px] font-mono text-white">{option.name}</span>
-                <span className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+                <span className="flex items-center gap-1.5 font-inter text-[10px] text-[#8C8C90]">
                   {MUSCLE_LABELS[option.primaryMuscle]}
-                  {option.isCustom ? " · custom" : ""}
+                  {option.isCustom && (
+                    <span className="rounded-full border border-[#C9A227]/30 bg-[#C9A227]/10 px-1.5 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.1em] text-[#C9A227]">
+                      Custom
+                    </span>
+                  )}
                 </span>
               </button>
             </li>

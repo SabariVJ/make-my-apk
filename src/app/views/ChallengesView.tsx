@@ -20,11 +20,15 @@ import {
   Pencil,
   ClipboardCheck,
   Loader2,
+  Footprints,
 } from "lucide-react";
+import { challengeCategoryColor } from "../lib/attributeColors";
 import { useSVJ } from "../context/SVJContext";
 import { useActivityOptional } from "../context/ActivityContext";
 import { TaskEditorDialog } from "../components/TaskEditorDialog";
 import { EarnPlusCard } from "../components/EarnPlusCard";
+import { SVJScoreRing } from "../components/ui-primitives/SVJScoreRing";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SixtyDayProgramCard } from "../components/SixtyDayProgramCard";
 import { ActivitySummaryCard } from "../components/ActivitySummaryCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
@@ -416,102 +420,114 @@ export const ChallengesView: React.FC<{
           </button>
         </div>
       )}
-      {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} />}
-      {/* 60-Day Transformation — the program now lives here, not in the bottom nav.
-          Progress is the server's own ChallengeState; the CTA opens the
-          existing 60-Day route. */}
-      {onOpenSixtyDay && !sixtyDayQuery.isError && (
-        <SixtyDayProgramCard
-          state={sixtyDayQuery.data ?? null}
-          loading={sixtyDayQuery.isLoading}
-          onOpen={onOpenSixtyDay}
+      {/* Today's Mission — the ONE hero on this screen. The stat trio, the XP
+          progress bar and the step counter used to each be their own
+          equally-weighted block here; the daily XP goal now lives in the shared
+          ScoreRing, and the secondary figures sit beside it. */}
+      <section className="svj-radius-card svj-elev-3 svj-lit-top relative overflow-hidden border border-[#C81E3A]/20 bg-gradient-to-br from-[#1E1114] via-[#141416] to-[#141416] p-5">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-[#C81E3A] opacity-[0.14] blur-3xl"
         />
-      )}
-
-      {/* Today's Mission Banner */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-inter text-[#8C8C90] uppercase tracking-wider mb-1">
-              <span>Today&apos;s Mission</span>
+        <div className="relative">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E62846]">
+                Today&apos;s mission
+              </p>
+              <h1 className="mt-1.5 font-anton text-3xl leading-none tracking-wide text-white sm:text-4xl">
+                Forge your day
+              </h1>
             </div>
-            <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
-              Forge Your Day
-            </h1>
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#C9A227]/25 bg-[#C9A227]/10 px-2.5 py-1.5 text-[11px] font-inter font-semibold text-[#C9A227]">
+              <Flame aria-hidden className="h-3.5 w-3.5" />
+              {user.currentStreak}d streak
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-2xl bg-[#0b0b0c] border border-white/[0.04] text-xs font-inter flex items-center gap-1.5 text-gold">
-              <Flame className="w-4 h-4 fill-gold/20" />
-              <span>{user.currentStreak}d streak</span>
+          <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
+            <SVJScoreRing
+              value={totalTodayXp}
+              max={500}
+              label="Daily XP"
+              tone="crimson"
+              size={152}
+              sublabel={`${totalTodayXp} of 500 XP earned today`}
+            />
+            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-1">
+              <div className="svj-stat p-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
+                  <Zap aria-hidden className="h-3.5 w-3.5 text-[#C81E3A]" />
+                  XP today
+                </div>
+                <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
+              </div>
+              <div className="svj-stat p-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
+                  <Target aria-hidden className="h-3.5 w-3.5 text-emerald-400" />
+                  Tasks done
+                </div>
+                <div className="font-mono text-xl font-bold text-white">
+                  {completedCount}{" "}
+                  <span className="text-xs font-normal text-[#8C8C90]">/ {totalCount}</span>
+                </div>
+              </div>
+              {!isAndroid && (
+                <div className="svj-stat p-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
+                    <Sparkles aria-hidden className="h-3.5 w-3.5 text-[#C9A227]" />
+                    Global rank
+                  </div>
+                  <div className="font-mono text-xl font-bold text-[#C9A227]">#{userRank}</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Progress Metrics — connected stat strip */}
-        <div className={`grid gap-2 mb-5 ${isAndroid ? "grid-cols-2" : "grid-cols-3"}`}>
-          <div className="svj-stat p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-              <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
-              XP Today
-            </div>
-            <div className="font-mono text-xl font-bold text-[#C81E3A]">+{totalTodayXp}</div>
-          </div>
-
-          <div className="svj-stat p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-              <Target className="w-3.5 h-3.5 text-emerald-400" />
-              Completed
-            </div>
-            <div className="font-mono text-xl font-bold text-white">
-              {completedCount}{" "}
-              <span className="text-xs text-[#8C8C90] font-normal">/ {totalCount}</span>
-            </div>
-          </div>
-
-          {!isAndroid && (
-            <div className="svj-stat p-3">
-              <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-gold" />
-                Global Rank
-              </div>
-              <div className="font-mono text-xl font-bold text-gold">#{userRank}</div>
-            </div>
+      {/* Programs — demoted from two full hero cards to compact status chips.
+          Each chip opens the exact destination it always did. */}
+      <section className="space-y-3">
+        <SVJSectionHeader title="Your programs" eyebrow="Long-running" />
+        <div className="space-y-2">
+          {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} compact />}
+          {onOpenSixtyDay && !sixtyDayQuery.isError && (
+            <SixtyDayProgramCard
+              state={sixtyDayQuery.data ?? null}
+              loading={sixtyDayQuery.isLoading}
+              onOpen={onOpenSixtyDay}
+              compact
+            />
           )}
         </div>
+      </section>
 
-        {/* Progress Bar */}
-        <div className="space-y-1.5 mb-5">
-          <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
-            <span>Daily XP Goal</span>
-            <span>{totalTodayXp} / 500 XP</span>
-          </div>
-          <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round((totalTodayXp / 500) * 100))}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
-            />
-          </div>
-        </div>
+      {/* Today's movement — compact live step/calorie summary. */}
+      {onOpenActivity && (
+        <section className="space-y-3">
+          <SVJSectionHeader title="Today's movement" icon={Footprints} />
+          <ActivitySummaryCard onOpen={onOpenActivity} />
+        </section>
+      )}
 
-        {/* Compact live Activity card — automatic step counter summary */}
-        {onOpenActivity && <ActivitySummaryCard onOpen={onOpenActivity} />}
-
+      <section className="space-y-3">
         {/* Character Hexagon Matrix */}
-        <div className="border-t border-white/[0.06] pt-4 space-y-3">
+        <div>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-gold" />
-                Character Matrix — Level {user.level || 1}
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-[#C81E3A]/10 text-[#C81E3A] text-[10px] font-inter font-semibold uppercase">
+            <div className="flex flex-wrap items-center gap-2">
+              <SVJSectionHeader
+                title={`Character Matrix — Level ${user.level || 1}`}
+                icon={Sparkles}
+                className="min-w-0"
+              />
+              <span className="rounded-full border border-[#C9A227]/30 bg-[#C9A227]/10 px-2 py-0.5 font-anton text-[10px] uppercase tracking-wide text-[#C9A227]">
                 {user.leagueRank || "APPRENTICE I"}
               </span>
             </div>
-            <span className="text-[11px] font-inter text-[#8C8C90]">Complete tasks to grow</span>
+            <span className="hidden text-[11px] font-inter text-[#8C8C90] sm:inline">
+              Complete tasks to grow
+            </span>
           </div>
 
           <HexagonRadarChart
@@ -533,7 +549,11 @@ export const ChallengesView: React.FC<{
             }}
           />
         </div>
-      </div>
+      </section>
+
+      {/* Task filters + the challenge list — the screen's actual "what do I do
+          today" content. */}
+      <SVJSectionHeader title="Today's tasks" trailing={undefined} />
 
       {/* Categories & Custom Task Button */}
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -694,7 +714,12 @@ export const ChallengesView: React.FC<{
                   )}
 
                   <div className="flex items-center gap-3 text-[11px] font-inter text-[#8C8C90] mt-2">
-                    <span className="text-[#C81E3A] font-medium">{challenge.category}</span>
+                    <span
+                      className="font-medium"
+                      style={{ color: challengeCategoryColor(challenge.category) }}
+                    >
+                      {challenge.category}
+                    </span>
                     <span>·</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />

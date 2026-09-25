@@ -34,6 +34,7 @@ import {
   type ServerHistoryDay,
 } from "../lib/recoveryInsights";
 import { useTrainRecoveryPublisher } from "../lib/readinessShared";
+import { SVJScoreRing } from "../components/ui-primitives/SVJScoreRing";
 
 const LOAD_LABELS: Record<string, string> = {
   low: "Low",
@@ -44,44 +45,6 @@ const LOAD_LABELS: Record<string, string> = {
 
 const SCORE_COLOR = (score: number) =>
   score >= 78 ? "#34d399" : score >= 60 ? "#eab308" : score >= 40 ? "#fb923c" : "#f87171";
-
-function ScoreRing({ score }: { score: number }) {
-  const color = SCORE_COLOR(score);
-  const radius = 44;
-  const c = 2 * Math.PI * radius;
-  return (
-    <div className="relative h-28 w-28 shrink-0">
-      <svg width={112} height={112} className="-rotate-90">
-        <circle
-          cx={56}
-          cy={56}
-          r={radius}
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={9}
-          fill="none"
-        />
-        <circle
-          cx={56}
-          cy={56}
-          r={radius}
-          stroke={color}
-          strokeWidth={9}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - score / 100)}
-          style={{ filter: `drop-shadow(0 0 6px ${color}55)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-anton text-3xl" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">/ 100</span>
-      </div>
-    </div>
-  );
-}
 
 const ScaleInput: React.FC<{
   label: string;
@@ -389,7 +352,14 @@ export const TrainRecovery: React.FC = () => {
             {/* One readiness number: the same combined reading that drives the
                 advice, the low-readiness flag and the recorded history, so real
                 completed tasks genuinely move the headline score. */}
-            <ScoreRing score={today.score} />
+            <SVJScoreRing
+              value={today.score}
+              max={100}
+              label="Readiness"
+              tone={today.score >= 78 ? "physical" : today.score >= 60 ? "mental" : "crimson"}
+              size={132}
+              thickness={10}
+            />
             <div className="min-w-0 flex-1 space-y-1.5">
               <div>
                 <p className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
@@ -409,9 +379,9 @@ export const TrainRecovery: React.FC = () => {
                 </p>
                 <p className="text-sm font-mono font-bold text-white">
                   {LOAD_LABELS[today.band] ?? today.band}
-                  <span className="ml-1.5 text-[9px] uppercase text-[#8C8C90]">
-                    {Math.round(today.components.totalLoadPoints)} pts · 7 days
-                  </span>
+                </p>
+                <p className="text-[10px] font-inter text-[#8C8C90]">
+                  {Math.round(today.components.totalLoadPoints)} load points over the last 7 days
                 </p>
               </div>
               <div>
@@ -582,13 +552,15 @@ export const TrainRecovery: React.FC = () => {
             <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">{window.note}</p>
           </div>
 
-          {/* Personal best sleep — the user's OWN sleep vs next-day outcome */}
+          {/* Personal best sleep — the user's OWN sleep vs next-day outcome.
+              Editorial treatment: a light hairline surface with a left accent
+              rule, deliberately quieter than the data-heavy check-in form. */}
           <div
-            className="mb-3 rounded-2xl border border-white/5 bg-black/30 p-3"
+            className="mb-3 rounded-xl border-l-2 border-l-emerald-400/50 bg-white/[0.02] px-3.5 py-3"
             data-testid="recovery-best-sleep"
           >
-            <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
-              <TrendingUp className="h-3 w-3 text-emerald-400" /> Your best sleep
+            <p className="mb-1.5 text-[11px] font-inter font-semibold text-[#F4F2ED]">
+              Your best sleep window
             </p>
             {sleep.insufficientData ? (
               <p className="text-[11px] font-mono text-[#8C8C90]">
@@ -597,10 +569,10 @@ export const TrainRecovery: React.FC = () => {
               </p>
             ) : (
               <>
-                <p className="font-anton text-xl uppercase text-emerald-400">
+                <p className="font-anton text-xl tracking-wide text-emerald-400">
                   {sleep.bestRangeLabel}
                 </p>
-                <p className="mt-0.5 text-xs font-mono text-[#8C8C90]">
+                <p className="mt-0.5 text-xs font-inter text-[#8C8C90]">
                   Best next-day energy ({sleep.best?.avgNextEnergy?.toFixed(1) ?? "—"}/5) across
                   your last {sleep.pairedDays} logged nights.
                 </p>
@@ -633,11 +605,11 @@ export const TrainRecovery: React.FC = () => {
 
           {/* 7-day readiness + sleep trend */}
           <div
-            className="rounded-2xl border border-white/5 bg-black/30 p-3"
+            className="rounded-xl border-l-2 border-l-[#C81E3A]/45 bg-white/[0.02] px-3.5 py-3"
             data-testid="recovery-7day-trend"
           >
-            <p className="mb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
-              7-day readiness &amp; sleep
+            <p className="mb-2 text-[11px] font-inter font-semibold text-[#F4F2ED]">
+              7-day readiness and sleep
             </p>
             <div className="flex items-end gap-2" style={{ height: 56 }}>
               {trend.map((point) => (
@@ -659,25 +631,24 @@ export const TrainRecovery: React.FC = () => {
                       }}
                     />
                   </div>
-                  <span className="text-[9px] font-mono uppercase text-[#8C8C90]">
-                    {point.label}
-                  </span>
+                  <span className="text-[9px] font-inter text-[#8C8C90]">{point.label}</span>
                   <span className="text-[9px] font-mono text-gold">
                     {point.sleepHours !== null ? `${point.sleepHours}h` : "·"}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-1.5 text-[9px] font-mono text-[#8C8C90]">
-              Bars: readiness score · gold: hours slept ({history.length} server days recorded)
+            <p className="mt-1.5 text-[10px] font-inter text-[#8C8C90]">
+              Bars show readiness score, the gold number is hours slept ({history.length} server
+              days recorded).
             </p>
             {historyError && (
               <p
                 role="status"
                 data-testid="recovery-history-note"
-                className="mt-1.5 text-[9px] font-mono text-gold"
+                className="mt-1.5 text-[10px] font-inter text-[#C9A227]"
               >
-                Server history is unavailable right now — showing only the days this device
+                Your server history couldn&apos;t be reached — showing only the days this device
                 recorded. Nothing is invented.
               </p>
             )}

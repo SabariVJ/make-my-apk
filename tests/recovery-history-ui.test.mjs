@@ -302,7 +302,9 @@ describe("Recovery → History heatmap", () => {
       render(React.createElement(app.RecoveryHistorySection));
     });
     await waitFor(() => assert.ok(screen.getByTestId("recovery-history-error")));
-    assert.match(document.body.textContent, /Recovery history is unavailable right now/);
+    // Same invariant as before: a failed history load shows a retryable error
+    // carrying copy specific to what is missing (not a generic message).
+    assert.match(document.body.textContent, /Your check-in history didn't load/);
     assert.doesNotMatch(document.body.textContent, /Could not find the function/);
     const retry = screen.getByTestId("recovery-history-retry");
     // Recovery works again after a successful retry.

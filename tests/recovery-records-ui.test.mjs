@@ -360,7 +360,7 @@ describe("the four derived records", () => {
   it("never awards or claims points, ranks or competition language", async () => {
     await renderSection();
     const text = document.body.textContent ?? "";
-    assert.match(text, /no points, badges or streaks are granted/);
+    assert.match(text,      /grants no points, badges or streaks/i);
     assert.match(text, /not a ranking against other members/);
     for (const banned of [
       "Elite",
@@ -503,7 +503,9 @@ describe("loading, error and retry", () => {
     };
     await renderSection();
     const error = screen.getByTestId("recovery-records-error");
-    assert.match(error.textContent, /Recovery records are unavailable right now\./);
+    // Same invariant as before: a failed records load shows a retryable error
+    // with copy specific to what is missing (not a generic message).
+    assert.match(error.textContent, /Your records didn't load/);
     // Raw server text never reaches the user.
     for (const leak of ["PGRST", "Could not find the function", "schema cache", "public."]) {
       assert.equal(document.body.textContent.includes(leak), false, `${leak} must not leak`);

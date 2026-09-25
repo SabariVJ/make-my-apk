@@ -21,6 +21,9 @@ import { RecordsView } from "./RecordsView";
 import { ConnectedDevicesView } from "./ConnectedDevicesView";
 import { WorkoutRecorder } from "./WorkoutRecorder";
 import type { SavedRoute } from "../lib/activityPlatform";
+import { SVJScoreRing } from "../components/ui-primitives/SVJScoreRing";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -49,49 +52,9 @@ const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, cl
   );
 };
 
-/** Circular progress ring with neon sweep. */
-const ProgressRing: React.FC<{
-  percent: number;
-  size?: number;
-  stroke?: number;
-  color?: string;
-  children: React.ReactNode;
-}> = ({ percent, size = 190, stroke = 12, color = "#E62846", children }) => {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - Math.min(100, Math.max(0, percent)) / 100);
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={stroke}
-          fill="none"
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-          style={{ filter: `drop-shadow(0 0 8px ${color}66)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        {children}
-      </div>
-    </div>
-  );
-};
+// The bespoke step/calorie ring was removed: every "value out of a maximum"
+// on this screen now renders the shared SVJScoreRing, so the steps ring, the
+// active-kcal goal and the Recovery readiness ring can never drift apart.
 
 /**
  * Period summaries only.
@@ -114,14 +77,9 @@ const HistoryPanel: React.FC<{
 }> = ({ title, summary }) => (
   <div
     data-testid="activity-period-summary"
-    className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-3"
+    className="svj-radius-card svj-elev-1 svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 mb-3"
   >
-    <div className="flex items-center gap-2 mb-2.5">
-      <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-      <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-        {title}
-      </span>
-    </div>
+    <SVJSectionHeader title={title} icon={BarChart3} className="mb-3" />
     <div className="grid grid-cols-3 gap-2">
       <div className="svj-stat p-2.5 text-center">
         <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg Steps</div>
@@ -346,26 +304,20 @@ const ActivityViewContent: React.FC<{
       {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
         <>
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
-            <div className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
-              Today&apos;s Activity
-            </div>
+          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+            <SVJSectionHeader title="Today's activity" icon={Footprints} className="mb-1" />
             <div className="flex flex-col items-center">
-              <ProgressRing percent={stepPercent}>
-                <Footprints className="w-5 h-5 text-[#E62846] mb-1" />
-                <LiveNumber
-                  value={todaySteps}
-                  className="font-mono text-4xl font-bold text-white"
-                />
-                <div className="text-[10px] font-mono text-[#8C8C90] mt-1">
-                  of {stepGoal.toLocaleString()} steps · {stepPercent}%
-                </div>
-                <div className="text-[10px] font-mono text-[#E62846] mt-0.5">
-                  {remainingSteps > 0
-                    ? `${remainingSteps.toLocaleString()} to go`
-                    : "Goal complete"}
-                </div>
-              </ProgressRing>
+              <SVJScoreRing
+                value={todaySteps}
+                max={stepGoal}
+                display={todaySteps.toLocaleString()}
+                label="Steps"
+                sublabel={
+                  remainingSteps > 0
+                    ? `of ${stepGoal.toLocaleString()} steps (${stepPercent}%) — ${remainingSteps.toLocaleString()} to go`
+                    : `of ${stepGoal.toLocaleString()} steps — daily goal complete`
+                }
+              />
               {stepSource === "accelerometer" && (
                 <div className="mt-2 rounded-lg border border-gold/25 bg-gold/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-gold">
                   Estimated steps — accelerometer motion detection
@@ -390,49 +342,45 @@ const ActivityViewContent: React.FC<{
           </div>
 
           {/* Calories */}
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-gold" />
-                <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-                  Calories Burned
-                </span>
-              </div>
-              <span className="text-[10px] font-inter text-[#8C8C90]">Estimate</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="svj-stat p-3">
-                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Active Calories</div>
-                <LiveNumber value={activeKcal} className="font-mono text-2xl font-bold text-gold" />
-                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
-                  KCAL · from movement
+          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+            <SVJSectionHeader
+              title="Calories burned"
+              icon={Flame}
+              trailing={<span className="text-[10px] font-inter text-[#8C8C90]">Estimate</span>}
+              className="mb-1"
+            />
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-8">
+              <SVJScoreRing
+                value={activeKcal}
+                max={kcalGoal}
+                display={activeKcal.toLocaleString()}
+                label="Active kcal"
+                tone="premium"
+                size={148}
+                sublabel={`of ${kcalGoal.toLocaleString()} active kcal goal (${kcalPercent}%)`}
+              />
+              <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-1">
+                <div className="svj-stat p-3">
+                  <div className="text-[11px] font-inter text-[#8C8C90]">Active Calories</div>
+                  <LiveNumber
+                    value={activeKcal}
+                    className="font-mono text-xl font-bold text-[#C9A227]"
+                  />
+                  <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">From movement</div>
+                </div>
+                <div className="svj-stat p-3">
+                  <div className="text-[11px] font-inter text-[#8C8C90]">Total Calories</div>
+                  <LiveNumber
+                    value={totalKcal}
+                    className="font-mono text-xl font-bold text-white"
+                  />
+                  <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
+                    Including resting burn
+                  </div>
                 </div>
               </div>
-              <div className="svj-stat p-3">
-                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Total Calories</div>
-                <LiveNumber value={totalKcal} className="font-mono text-2xl font-bold text-white" />
-                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
-                  KCAL · incl. resting burn
-                </div>
-              </div>
             </div>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
-                <span>Active Calorie Goal</span>
-                <span>
-                  {activeKcal.toLocaleString()} / {kcalGoal.toLocaleString()} KCAL
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${kcalPercent}%` }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-gold to-gold"
-                />
-              </div>
-            </div>
-            <p className="mt-3 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
+            <p className="mt-4 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
               Estimates from steps, distance and your body profile — not medical measurements.
             </p>
           </div>
@@ -453,48 +401,46 @@ const ActivityViewContent: React.FC<{
         </>
       )}
 
-      {/* How XP works */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-gold" />
-          <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-            Step XP
-          </span>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { steps: 2500, xp: 40 },
-            { steps: 5000, xp: 60 },
-            { steps: 7500, xp: 80 },
-            { steps: 10000, xp: 120 },
-          ].map((m) => {
-            const reached = milestoneSteps >= m.steps;
-            return (
-              <div
-                key={m.steps}
-                className={`rounded-lg p-2 text-center ${
-                  reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
-                }`}
-              >
+      {/* How XP works — rendered ONCE, on Overview only. It previously repeated
+          verbatim on every Activity sub-tab. */}
+      {section === "activity" && (
+        <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+          <SVJSectionHeader title="Step XP milestones" icon={Trophy} className="mb-3" />
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { steps: 2500, xp: 40 },
+              { steps: 5000, xp: 60 },
+              { steps: 7500, xp: 80 },
+              { steps: 10000, xp: 120 },
+            ].map((m) => {
+              const reached = milestoneSteps >= m.steps;
+              return (
                 <div
-                  className={`font-mono text-sm font-bold ${reached ? "text-[#C81E3A]" : "text-[#8C8C90]"}`}
+                  key={m.steps}
+                  className={`rounded-lg p-2 text-center ${
+                    reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
+                  }`}
                 >
-                  {(m.steps / 1000).toFixed(1)}K
+                  <div
+                    className={`font-mono text-sm font-bold ${reached ? "text-[#C81E3A]" : "text-[#8C8C90]"}`}
+                  >
+                    {(m.steps / 1000).toFixed(1)}K
+                  </div>
+                  <div
+                    className={`text-[10px] font-inter ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
+                  >
+                    +{m.xp} XP
+                  </div>
                 </div>
-                <div
-                  className={`text-[10px] font-inter ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
-                >
-                  +{m.xp} XP
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-[10px] font-inter text-[#8C8C90]">
+            <TrendingUp className="w-3 h-3" />
+            XP is granted once per milestone per day and counts toward your streak.
+          </div>
         </div>
-        <div className="mt-3 flex items-center gap-1.5 text-[10px] font-inter text-[#8C8C90]">
-          <TrendingUp className="w-3 h-3" />
-          XP is granted once per milestone per day and counts toward your streak.
-        </div>
-      </div>
+      )}
 
       {/* Developer diagnostics — only render when the explicit opt-in or a dev/test bundle enables them. */}
       {showDiagnostics && debugInfo && (
@@ -510,7 +456,9 @@ const ActivityViewContent: React.FC<{
             </span>
           </div>
           <ul className="space-y-1 text-[10px] font-mono leading-relaxed">
-            <li className="text-[#8C8C90]">Platform: android · status: {trackingStatus}</li>
+            <li className="text-[#8C8C90]">
+              Platform android, tracking status {trackingStatus}
+            </li>
             <li className="text-[#8C8C90]">
               Plugin registered:{" "}
               {debugInfo.pluginAvailable == null

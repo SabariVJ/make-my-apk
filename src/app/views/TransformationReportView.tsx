@@ -22,6 +22,9 @@ import { useSVJ } from "../context/SVJContext";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getUserStats, type UserStatsData } from "@/lib/personalization.functions";
+import { ATTRIBUTE_COLORS } from "../lib/attributeColors";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
+import { SVJTimelineStep } from "../components/ui-primitives/SVJTimelineStep";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -47,15 +50,68 @@ interface StatChange {
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+/*
+ * Assessment attributes mapped onto the Character Matrix palette, so a bar
+ * here uses the same hue as the matching point on the hexagon instead of one
+ * flat crimson fill for all eight.
+ */
 const STAT_CONFIG = [
-  { key: "fitness", label: "Fitness", icon: Dumbbell, color: "text-gold" },
-  { key: "discipline", label: "Discipline", icon: Shield, color: "text-blue-400" },
-  { key: "focus", label: "Focus", icon: Brain, color: "text-purple-400" },
-  { key: "confidence", label: "Confidence", icon: Zap, color: "text-gold" },
-  { key: "social", label: "Social", icon: Users, color: "text-teal-400" },
-  { key: "nutrition", label: "Nutrition", icon: Apple, color: "text-green-400" },
-  { key: "recovery", label: "Recovery", icon: Clock, color: "text-sky-400" },
-  { key: "consistency", label: "Consistency", icon: Calendar, color: "text-rose-400" },
+  {
+    key: "fitness",
+    label: "Fitness",
+    icon: Dumbbell,
+    color: "text-emerald-400",
+    hue: ATTRIBUTE_COLORS.physical,
+  },
+  {
+    key: "discipline",
+    label: "Discipline",
+    icon: Shield,
+    color: "text-rose-400",
+    hue: ATTRIBUTE_COLORS.discipline,
+  },
+  {
+    key: "focus",
+    label: "Focus",
+    icon: Brain,
+    color: "text-yellow-400",
+    hue: ATTRIBUTE_COLORS.mental,
+  },
+  {
+    key: "confidence",
+    label: "Confidence",
+    icon: Zap,
+    color: "text-purple-400",
+    hue: ATTRIBUTE_COLORS.ambition,
+  },
+  {
+    key: "social",
+    label: "Social",
+    icon: Users,
+    color: "text-blue-400",
+    hue: ATTRIBUTE_COLORS.social,
+  },
+  {
+    key: "nutrition",
+    label: "Nutrition",
+    icon: Apple,
+    color: "text-amber-400",
+    hue: ATTRIBUTE_COLORS.intellect,
+  },
+  {
+    key: "recovery",
+    label: "Recovery",
+    icon: Clock,
+    color: "text-emerald-400",
+    hue: ATTRIBUTE_COLORS.physical,
+  },
+  {
+    key: "consistency",
+    label: "Consistency",
+    icon: Calendar,
+    color: "text-blue-400",
+    hue: ATTRIBUTE_COLORS.social,
+  },
 ];
 
 function getDeltaColor(delta: number): string {
@@ -79,57 +135,49 @@ function MilestoneTimeline({
   milestones: MilestoneSnapshot[];
   currentStats: Record<string, number>;
 }) {
+  const lastIndex = milestones.length - 1;
   return (
-    <div className="relative pl-6 space-y-4">
-      <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#C81E3A] via-[#C81E3A]/50 to-transparent" />
-
+    <ol className="relative">
       {milestones.map((milestone, i) => (
-        <motion.div
+        <SVJTimelineStep
           key={milestone.day}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.1 }}
-          className="relative"
+          marker={String(milestone.day)}
+          title={`Day ${milestone.day}`}
+          meta={milestone.label}
+          status={i === lastIndex ? "current" : "done"}
+          last={i === lastIndex}
         >
-          <div className="absolute -left-[18px] top-1 w-4 h-4 rounded-full bg-[#C81E3A] border-2 border-[#17171A] z-10" />
-          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-anton text-xs uppercase tracking-wider text-[#C81E3A]">
-                Day {milestone.day} Milestone
-              </span>
-              <span className="text-[10px] font-mono text-[#8C8C90]">{milestone.label}</span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {Object.entries(milestone.stats)
-                .slice(0, 4)
-                .map(([key, val]) => {
-                  const config = STAT_CONFIG.find((s) => s.key === key);
-                  if (!config) return null;
-                  const current = currentStats[key] ?? val;
-                  const delta = current - val;
-                  const DeltaIcon = getDeltaIcon(delta);
-                  return (
-                    <div key={key} className="text-center">
-                      <div className="text-[10px] font-mono text-[#8C8C90]">{config.label}</div>
-                      <div className="font-mono text-sm font-bold text-white">{val}</div>
-                      {delta !== 0 && (
-                        <div
-                          className={`flex items-center justify-center gap-0.5 text-[9px] font-mono ${getDeltaColor(delta)}`}
-                        >
-                          <DeltaIcon className="w-2.5 h-2.5" />
-                          {delta > 0 ? "+" : ""}
-                          {delta}
-                        </div>
-                      )}
+          <div className="grid grid-cols-4 gap-2 rounded-xl border border-white/[0.06] bg-[#0B0B0C] p-3">
+            {Object.entries(milestone.stats)
+              .slice(0, 4)
+              .map(([key, val]) => {
+                const config = STAT_CONFIG.find((s) => s.key === key);
+                if (!config) return null;
+                const current = currentStats[key] ?? val;
+                const delta = current - val;
+                const DeltaIcon = getDeltaIcon(delta);
+                return (
+                  <div key={key} className="text-center">
+                    <div className="text-[10px] font-inter text-[#8C8C90]">{config.label}</div>
+                    <div className="font-mono text-sm font-bold" style={{ color: config.hue }}>
+                      {val}
                     </div>
-                  );
-                })}
-            </div>
+                    {delta !== 0 && (
+                      <div
+                        className={`flex items-center justify-center gap-0.5 font-mono text-[9px] ${getDeltaColor(delta)}`}
+                      >
+                        <DeltaIcon className="h-2.5 w-2.5" />
+                        {delta > 0 ? "+" : ""}
+                        {delta}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
-        </motion.div>
+        </SVJTimelineStep>
       ))}
-    </div>
+    </ol>
   );
 }
 
@@ -287,18 +335,22 @@ export const TransformationReportView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Header */}
-      <div className="relative rounded-2xl bg-[#17171A] border border-white/10 p-4 overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/10 blur-3xl rounded-full pointer-events-none" />
+      {/* Header — the app's victory-lap moment, so it gets the premium accent
+          and more weight than a standard data screen. */}
+      <div className="svj-radius-card svj-elev-3 relative overflow-hidden border border-[#C9A227]/25 bg-gradient-to-br from-[#201A0C] via-[#141416] to-[#141416] p-5">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[#C9A227] opacity-[0.16] blur-3xl"
+        />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-[10px] font-mono text-[#C81E3A] uppercase tracking-widest mb-1">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>TRANSFORMATION REPORT</span>
-          </div>
-          <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
+          <p className="flex items-center gap-2 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C9A227]">
+            <Trophy aria-hidden className="h-3.5 w-3.5" />
+            Transformation report
+          </p>
+          <h1 className="mt-1.5 font-anton text-3xl leading-none tracking-wide text-white sm:text-4xl">
             Day 1 → Day {daysSinceJoin}
           </h1>
-          <p className="text-xs font-mono text-[#8C8C90] mt-1">
+          <p className="mt-2 text-xs font-inter text-[#A9A9AE]">
             Your journey so far. Every number is real.
           </p>
         </div>
@@ -307,24 +359,24 @@ export const TransformationReportView: React.FC = () => {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-            <Flame className="w-3.5 h-3.5 text-[#C81E3A]" />
-            Total Challenges
+          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+            <Flame className="h-3.5 w-3.5 text-[#C81E3A]" />
+            Total challenges
           </div>
           <div className="font-mono text-xl font-bold text-white">
             {user.totalChallengesCompleted}
           </div>
         </div>
         <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-            <Target className="w-3.5 h-3.5 text-emerald-400" />
-            Longest Streak
+          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+            <Target className="h-3.5 w-3.5 text-emerald-400" />
+            Longest streak
           </div>
           <div className="font-mono text-xl font-bold text-white">{user.bestStreak} days</div>
         </div>
         <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-            <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
+          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+            <Zap className="h-3.5 w-3.5 text-[#C81E3A]" />
             Lifetime XP
           </div>
           <div className="font-mono text-xl font-bold text-[#C81E3A]">
@@ -332,9 +384,9 @@ export const TransformationReportView: React.FC = () => {
           </div>
         </div>
         <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-gold" />
-            Stats Improved
+          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+            <Sparkles className="h-3.5 w-3.5 text-[#C9A227]" />
+            Stats improved
           </div>
           <div className="font-mono text-xl font-bold text-white">
             {positiveChanges} / {statChanges.length}
@@ -342,17 +394,14 @@ export const TransformationReportView: React.FC = () => {
         </div>
       </div>
 
-      {/* Stat Changes Bar */}
-      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-          <h3 className="font-anton text-sm uppercase tracking-wider text-white">
-            Attribute Changes
-          </h3>
-        </div>
+      {/* Stat Changes Bar — each bar carries its attribute hue (the same colour
+          as the matching Character Matrix point) rather than one flat fill. */}
+      <div className="svj-radius-card svj-elev-1 border border-white/10 bg-[#17171A] p-4 space-y-3">
+        <SVJSectionHeader title="Attribute changes" icon={BarChart3} className="mb-1" />
 
         {statChanges.map((change, i) => {
           const Icon = change.icon;
+          const hue = STAT_CONFIG.find((s) => s.label === change.label)?.hue ?? "#C81E3A";
           return (
             <motion.div
               key={change.label}
@@ -361,26 +410,28 @@ export const TransformationReportView: React.FC = () => {
               transition={{ delay: i * 0.05 }}
               className="flex items-center gap-3"
             >
-              <Icon className={`w-4 h-4 ${change.color} shrink-0`} />
-              <span className="text-xs font-mono text-[#8C8C90] w-20 shrink-0">{change.label}</span>
+              <span className="shrink-0" style={{ color: hue }}>
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="w-20 shrink-0 text-xs font-inter text-[#8C8C90]">
+                {change.label}
+              </span>
               <div className="flex-1 h-2 rounded-full bg-black/40 overflow-hidden relative">
                 {/* Baseline marker */}
                 <div
                   className="absolute h-full w-0.5 bg-[#8C8C90]/50 z-10"
                   style={{ left: `${change.from}%` }}
                 />
-                {/* Current bar */}
+                {/* Current bar — attribute hue, dimmed when the delta is negative. */}
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${change.to}%` }}
                   transition={{ delay: i * 0.05 + 0.2, duration: 0.6 }}
-                  className={`h-full rounded-full bg-gradient-to-r ${
-                    change.delta > 0
-                      ? "from-emerald-600 to-emerald-400"
-                      : change.delta < 0
-                        ? "from-rose-600 to-rose-400"
-                        : "from-[#8C8C90] to-[#8C8C90]"
-                  }`}
+                  className="h-full rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${hue}66 0%, ${hue} 100%)`,
+                    opacity: change.delta < 0 ? 0.55 : 1,
+                  }}
                 />
               </div>
               <div className="flex items-center gap-2 w-24 shrink-0 justify-end">
@@ -401,31 +452,28 @@ export const TransformationReportView: React.FC = () => {
         })}
       </div>
 
-      {/* Milestone Timeline */}
+      {/* Milestone Timeline — the one place in the app where a genuine ordered
+          sequence earns the TimelineStep treatment. */}
       {milestones.length > 1 && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-4 h-4 text-[#C81E3A]" />
-            <h3 className="font-anton text-sm uppercase tracking-wider text-white">
-              Milestone History
-            </h3>
-          </div>
+        <div className="space-y-3">
+          <SVJSectionHeader title="Milestone history" icon={Calendar} />
           <MilestoneTimeline milestones={milestones} currentStats={currentStats} />
         </div>
       )}
 
-      {/* Insights */}
-      <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-3">
-        <h3 className="font-anton text-sm uppercase tracking-wider text-white">Insights</h3>
+      {/* Insights — one consistent colour system per insight type:
+          positive (emerald) / needs attention (premium amber) / neutral (surface). */}
+      <div className="svj-radius-card svj-elev-1 border border-white/10 bg-[#17171A] p-4 space-y-3">
+        <SVJSectionHeader title="Insights" icon={Sparkles} className="mb-1" />
 
         {mostImproved && mostImproved.delta > 0 && (
-          <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-950/30 border border-emerald-800/30">
-            <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-3">
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
             <div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">
-                Most Improved: {mostImproved.label}
+              <span className="text-xs font-inter font-semibold text-emerald-300">
+                Most improved — {mostImproved.label}
               </span>
-              <p className="text-[11px] text-[#B8B8C0] mt-0.5">
+              <p className="mt-0.5 text-[11px] font-inter text-[#B8B8C0]">
                 +{mostImproved.delta} points since your assessment baseline.
               </p>
             </div>
@@ -433,13 +481,13 @@ export const TransformationReportView: React.FC = () => {
         )}
 
         {needsAttention && needsAttention.delta <= 0 && (
-          <div className="flex items-start gap-3 p-3 rounded-2xl bg-gold/30 border border-gold/30">
-            <Target className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-2xl border border-[#C9A227]/25 bg-[#C9A227]/10 p-3">
+            <Target className="mt-0.5 h-4 w-4 shrink-0 text-[#C9A227]" />
             <div>
-              <span className="text-xs font-mono text-gold font-bold">
-                Needs Attention: {needsAttention.label}
+              <span className="text-xs font-inter font-semibold text-[#C9A227]">
+                Needs attention — {needsAttention.label}
               </span>
-              <p className="text-[11px] text-[#B8B8C0] mt-0.5">
+              <p className="mt-0.5 text-[11px] font-inter text-[#B8B8C0]">
                 This area hasn't improved yet. Try including more{" "}
                 {needsAttention.label.toLowerCase()}-focused challenges.
               </p>
@@ -447,13 +495,13 @@ export const TransformationReportView: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-start gap-3 p-3 rounded-2xl bg-[#0B0B0C] border border-white/5">
-          <Sparkles className="w-4 h-4 text-[#C81E3A] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-[#0B0B0C] p-3">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#C81E3A]" />
           <div>
-            <span className="text-xs font-mono text-[#C81E3A] font-bold">
-              Total Attribute Growth
+            <span className="text-xs font-inter font-semibold text-[#C81E3A]">
+              Total attribute growth
             </span>
-            <p className="text-[11px] text-[#B8B8C0] mt-0.5">
+            <p className="mt-0.5 text-[11px] font-inter text-[#B8B8C0]">
               {totalImprovement > 0
                 ? `Across all 8 attributes, you've gained a combined ${totalImprovement} points since starting SVJ.`
                 : "Complete your SVJ Assessment to establish a baseline and start measuring your growth."}

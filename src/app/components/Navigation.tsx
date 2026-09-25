@@ -140,8 +140,14 @@ export const Navigation: React.FC<NavigationProps> = ({
                     isActive ? "text-[#C81E3A] stroke-[2.5px]" : "text-[#8C8C90] stroke-[1.8px]"
                   }`}
                 />
+                {/* A static accent dot, not a perpetual ping — the app has one
+                    deliberate motion moment (the level-up sequence) and this
+                    is not it. */}
                 {item.highlight && (
-                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-[#C81E3A] animate-ping" />
+                  <span
+                    aria-hidden
+                    className="absolute -right-1.5 -top-1 h-2 w-2 rounded-full bg-[#C81E3A] ring-2 ring-[#0B0B0C]"
+                  />
                 )}
               </div>
 

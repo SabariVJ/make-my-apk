@@ -12,7 +12,8 @@
 //   - a failed read is a retryable error, never a fabricated record,
 //   - no ranking, percentile or comparison against other members.
 import React, { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, TriangleAlert, Trophy } from "lucide-react";
+import { Loader2, RefreshCw, Trophy } from "lucide-react";
+import { SVJEmptyState } from "../ui-primitives/SVJEmptyState";
 import { listMyRecoveryRecords } from "../../lib/recovery";
 import {
   RECOVERY_RECORD_LABELS,
@@ -28,8 +29,8 @@ import {
 import { LOW_READINESS_THRESHOLD } from "../../lib/recoveryInsights";
 
 const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4";
-const HEADING = "font-anton text-sm uppercase tracking-wide text-[#F4F2ED]";
-const CAPTION = "text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]";
+const HEADING = "font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]";
+const CAPTION = "text-[10px] font-inter text-[#8C8C90]";
 const BUTTON =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#17171A] px-4 text-xs font-inter font-semibold text-[#F4F2ED] transition-colors hover:bg-black/40 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A]";
 
@@ -165,19 +166,23 @@ const RecoveryRecordsSection: React.FC = () => {
 
         {error ? (
           <div data-testid="recovery-records-error">
-            <p className="mt-3 flex items-start gap-2 text-xs font-inter text-[#8C8C90]">
-              <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              {error}
-            </p>
-            <button
-              type="button"
-              className={`${BUTTON} mt-3`}
-              data-testid="recovery-records-retry"
-              onClick={() => setAttempt((n) => n + 1)}
-            >
-              <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-              Retry
-            </button>
+            <SVJEmptyState
+              variant="error"
+              compact
+              title="Your records didn't load"
+              description="Recovery records are derived on the server from your own saved check-ins, so they can't be calculated without a connection."
+              action={
+                <button
+                  type="button"
+                  className={BUTTON}
+                  data-testid="recovery-records-retry"
+                  onClick={() => setAttempt((n) => n + 1)}
+                >
+                  <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              }
+            />
           </div>
         ) : records === null ? (
           <p
@@ -201,8 +206,8 @@ const RecoveryRecordsSection: React.FC = () => {
         )}
 
         {!error && records !== null && (
-          <p className="mt-3 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
-            Server-derived · no points, badges or streaks are granted for a record
+          <p className="mt-3 text-[10px] font-inter text-[#8C8C90]">
+            Server-derived. This screen grants no points, badges or streaks.
           </p>
         )}
       </div>

@@ -50,26 +50,23 @@ const QUALITY_STYLES: Record<string, string> = {
 const Metric: React.FC<{
   label: string;
   value: string;
-  hint?: string;
-  accent?: boolean;
+  hint?: React.ReactNode;
   icon?: React.ReactNode;
-}> = ({ label, value, hint, accent, icon }) => (
-  <div
-    className={`rounded-2xl border p-3 ${
-      accent ? "border-[#C81E3A]/30 bg-[#C81E3A]/8" : "border-white/5 bg-black/40"
-    }`}
-  >
+}> = ({ label, value, hint, icon }) => (
+  <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-3">
     <div className="mb-1 flex items-center gap-1.5">
       {icon}
-      <span className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">{label}</span>
+      <span className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+        {label}
+      </span>
     </div>
     <div
-      className={`font-mono text-xl font-bold ${accent ? "text-[#E62846]" : "text-white"}`}
+      className="font-mono text-lg font-bold text-[#F4F2ED]"
       data-testid={`metric-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
     >
       {value}
     </div>
-    {hint && <div className="mt-0.5 text-[9px] font-mono text-[#8C8C90]">{hint}</div>}
+    {hint && <div className="mt-1 font-inter text-[10px] leading-snug text-[#8C8C90]">{hint}</div>}
   </div>
 );
 
@@ -250,10 +247,41 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         </div>
       )}
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Metric label="Elapsed" value={formatClock(session?.durationSeconds ?? 0)} accent />
-        <Metric label="Distance" value={formatDistance(summary?.distanceMeters ?? 0, splitUnit)} />
+      {/*
+       * Metrics — Elapsed is the one number a runner glances at mid-run, so it
+       * gets a hero tile. The rest are genuinely secondary and stay in a quiet
+       * grid instead of seven boxes competing at the same weight.
+       */}
+      <div className="svj-radius-card svj-elev-1 svj-lit-top border border-white/[0.06] bg-[#17171A] px-4 py-3.5">
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8C8C90]">
+              Elapsed
+            </p>
+            <p
+              className={`mt-1 font-anton text-[42px] leading-none tracking-tight ${
+                state === "paused" ? "text-gold" : "text-[#F4F2ED]"
+              }`}
+              data-testid="metric-elapsed"
+            >
+              {formatClock(session?.durationSeconds ?? 0)}
+            </p>
+          </div>
+          <div className="min-w-0 text-right">
+            <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8C8C90]">
+              Distance
+            </p>
+            <p
+              className="mt-1 font-mono text-2xl font-bold leading-none text-[#F4F2ED]"
+              data-testid="metric-distance"
+            >
+              {formatDistance(summary?.distanceMeters ?? 0, splitUnit)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
         <Metric
           label={activityType === "cycling" ? "Current speed" : "Current pace"}
           value={
@@ -269,6 +297,11 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
               ? formatSpeed(summary?.avgSpeedMps, splitUnit)
               : formatPace(summary?.avgPaceSecondsPerKm, splitUnit)
           }
+        />
+        <Metric
+          label="Moving time"
+          value={formatClock(summary?.movingSeconds ?? 0)}
+          hint={session?.autoPaused ? "Auto-paused" : undefined}
         />
         <Metric
           label="Elevation"
@@ -305,34 +338,42 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           }
           icon={<Heart className="h-3 w-3 text-[#E62846]" />}
           hint={
-            liveHeartRate
-              ? `${liveHeartRate.deviceName ?? (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")} · ${
-                  liveHeartRate.status === "reconnecting" ? "reconnecting" : "live"
-                }`
-              : summary?.maxHeartRate != null
-                ? `avg ${summary.avgHeartRate ?? "—"} · max ${summary.maxHeartRate} bpm`
-                : "No sensor connected"
+            liveHeartRate ? (
+              <span className="block">
+                {liveHeartRate.deviceName ??
+                  (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")}
+                <span
+                  className={`mt-0.5 block font-semibold ${
+                    liveHeartRate.status === "reconnecting" ? "text-gold" : "text-emerald-400"
+                  }`}
+                >
+                  {liveHeartRate.status === "reconnecting" ? "Reconnecting" : "Live now"}
+                </span>
+              </span>
+            ) : summary?.maxHeartRate != null ? (
+              `Average ${summary.avgHeartRate ?? "—"}, peak ${summary.maxHeartRate} bpm`
+            ) : (
+              "No sensor connected"
+            )
           }
-        />
-        <Metric
-          label="Moving time"
-          value={formatClock(summary?.movingSeconds ?? 0)}
-          hint={session?.autoPaused ? "Auto-paused" : undefined}
         />
       </div>
 
       {plannedRoute && (
-        <div className="flex items-center gap-2 rounded-full border border-[#C81E3A]/25 bg-[#C81E3A]/8 px-3 py-2">
-          <span className="flex-1 text-[10px] font-mono text-white">
-            Following route: <span className="text-[#E62846]">{plannedRoute.name}</span> ·{" "}
-            {plannedRouteSummary(plannedRoute)}
+        <div className="svj-radius-row flex items-center gap-2 border border-[#C81E3A]/25 bg-[#C81E3A]/[0.08] px-3 py-2.5">
+          <Link2 aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#E62846]" />
+          <span className="min-w-0 flex-1 font-inter text-[11px] text-white">
+            Following <span className="font-semibold text-[#E62846]">{plannedRoute.name}</span>
+            <span className="mt-0.5 block text-[10px] text-[#8C8C90]">
+              {plannedRouteSummary(plannedRoute)}
+            </span>
           </span>
           {onClearPlannedRoute && (
             <button
               type="button"
               onClick={onClearPlannedRoute}
               data-testid="clear-planned-route"
-              className="text-[10px] font-mono uppercase text-[#8C8C90] hover:text-white"
+              className="shrink-0 text-[11px] font-inter font-semibold text-[#8C8C90] hover:text-white"
             >
               Clear
             </button>
@@ -349,8 +390,8 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         showCurrentPosition={state === "recording" && points.length > 1}
         emptyMessage={
           active
-            ? "Searching for GPS — head outdoors for a fix."
-            : "Start recording to draw your SVJ route."
+            ? "Searching for GPS — the map frames your position the moment a fix lands, then draws as you move."
+            : "Start recording and this map centres on you, then draws your route as you move."
         }
       />
 

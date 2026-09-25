@@ -437,6 +437,14 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const start = projected[0];
   const end = projected[projected.length - 1];
 
+  /**
+   * Nothing to frame yet. Previously this fell back to a whole-country tile
+   * grid centred on a made-up point, so the very first thing a runner saw was
+   * a map of India. With no track and no guide there is no honest viewport, so
+   * the surface becomes a designed "ready to draw" panel instead.
+   */
+  const hasFraming = mapPoints.length > 0;
+
   const guidePath = useMemo(() => {
     if (!guidePoints || guidePoints.length < 2) return "";
     return buildPath(guidePoints.map((point) => mapViewport.project(point.lat, point.lng)));
@@ -477,7 +485,8 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       }}
       data-testid="activity-map-surface"
     >
-      {tileProvider.urlTemplate &&
+      {hasFraming &&
+        tileProvider.urlTemplate &&
         mapViewport.tiles.map((tile) => (
           <img
             key={`${tile.z}/${tile.x}/${tile.y}`}
@@ -608,13 +617,29 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           </circle>
         )}
       </svg>
-      {projected.length < 2 && (
+      {!hasFraming && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0B0B0C] px-6 text-center"
+          data-testid="activity-map-empty"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/10">
+            <Crosshair aria-hidden className="h-5 w-5 text-[#E62846]" />
+          </span>
+          <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
+            Your route starts at your position
+          </p>
+          <p className="max-w-[250px] font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+            {emptyMessage}
+          </p>
+        </div>
+      )}
+      {hasFraming && projected.length < 2 && (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/20 text-center"
           data-testid="activity-map-empty"
         >
-          <MapPin className="h-5 w-5 text-white/80" />
-          <p className="rounded-2xl bg-black/65 px-3 py-1.5 text-[11px] font-mono text-white/80">
+          <MapPin aria-hidden className="h-5 w-5 text-white/80" />
+          <p className="rounded-2xl bg-black/65 px-3 py-1.5 font-inter text-[11px] text-white/80">
             {emptyMessage}
           </p>
         </div>
@@ -626,7 +651,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
     <>
       <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/60 px-2 py-1 backdrop-blur">
         <Navigation className="h-3 w-3 text-[#E62846]" />
-        <span className="text-[9px] font-mono uppercase tracking-widest text-white">SVJ Route</span>
+        <span className="font-inter text-[10px] font-semibold text-white">Route map</span>
       </div>
       <button
         type="button"

@@ -288,9 +288,10 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           />
         ) : (
           <Metric
-            label="Steps"
-            value={(session?.steps ?? 0).toLocaleString()}
+            label="Max speed"
+            value={formatSpeed(summary?.maxSpeedMps, splitUnit)}
             icon={<Footprints className="h-3 w-3 text-[#8C8C90]" />}
+            hint="From accepted GPS segments"
           />
         )}
         <Metric

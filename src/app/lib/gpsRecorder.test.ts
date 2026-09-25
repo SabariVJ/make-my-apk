@@ -211,6 +211,28 @@ describe("auto pause", () => {
     const last = h.recorder.current?.points.at(-1);
     assert.equal(last?.moving, false);
   });
+
+  it("auto-resumes after sustained real movement", async () => {
+    const h = harness({ autoPauseEnabled: true });
+    await h.recorder.start("walking");
+
+    for (let i = 0; i < 15; i += 1) {
+      h.setNow(T0 + i * 1000);
+      h.emit({ lat: 0, lng: 0 });
+    }
+    assert.equal(h.recorder.current?.autoPaused, true);
+
+    // ~1.1 m each second is above the 1.0 m/s resume threshold. The detector
+    // must see raw displacement even though the last paused points are marked
+    // moving=false.
+    for (let i = 1; i <= 5; i += 1) {
+      h.setNow(T0 + (14 + i) * 1000);
+      h.emit({ lat: i * 0.00001, lng: 0 });
+    }
+
+    assert.equal(h.recorder.current?.autoPaused, false);
+    assert.equal(h.recorder.current?.points.at(-1)?.moving, true);
+  });
 });
 
 describe("offline recovery", () => {

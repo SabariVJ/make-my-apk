@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
-import { Crosshair, Maximize2, MapPin, Minimize2, Navigation } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Crosshair, Maximize2, MapPin, Minimize2, Navigation, ZoomIn, ZoomOut } from "lucide-react";
 import type { TrackPoint } from "../lib/gpsActivity";
 
 /**
@@ -246,7 +246,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   emptyMessage = "No route recorded",
 }) => {
   const [fullscreen, setFullscreen] = useState(false);
-  const width = 400;
+  const [viewportWidth, setViewportWidth] = useState(400);
   const viewportHeight = fullscreen ? 620 : height;
 
   // ── Touch interaction: pinch zoom, drag pan, recenter ──────────────────
@@ -256,7 +256,27 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const [userZoom, setUserZoom] = useState<number | null>(null);
   const [userPan, setUserPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [followGps, setFollowGps] = useState(true);
+  const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const width = viewportWidth;
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const update = () => {
+      const measured = Math.round(node.getBoundingClientRect().width);
+      if (measured > 0) setViewportWidth(measured);
+    };
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(update);
+      observer.observe(node);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [fullscreen]);
+  const mouseDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const gesture = useRef<{
     mode: "none" | "pan" | "pinch";
     lastX: number;
@@ -302,7 +322,13 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       const distance = pinchDistance(event.touches);
       if (distance != null && gesture.current.startDistance > 0) {
         const scale = distance / gesture.current.startDistance;
-        const next = Math.min(19, Math.max(3, gesture.current.startZoom + Math.log2(scale)));
+        const next = Math.min(
+          19,
+          Math.max(3, Math.round(gesture.current.startZoom + Math.log2(scale))),
+        );
+        setManualCenter(
+          (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+        );
         setUserZoom(next);
         setFollowGps(false);
       }
@@ -312,6 +338,9 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       const dy = touch.clientY - gesture.current.lastY;
       gesture.current.lastX = touch.clientX;
       gesture.current.lastY = touch.clientY;
+      setManualCenter(
+        (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+      );
       setUserPan((previous) => ({ x: previous.x + dx, y: previous.y + dy }));
       setFollowGps(false);
     }
@@ -324,6 +353,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const recenter = () => {
     setUserZoom(null);
     setUserPan({ x: 0, y: 0 });
+    setManualCenter(null);
     setFollowGps(true);
   };
 
@@ -350,17 +380,53 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   // pan in world pixels at the new zoom.
   const mapViewport = useMemo(() => {
     const zoom = userZoom ?? fitViewport.zoom;
-    if (userZoom == null && userPan.x === 0 && userPan.y === 0) return fitViewport;
+    if (followGps && userZoom == null && userPan.x === 0 && userPan.y === 0) {
+      const latest = points[points.length - 1];
+      if (showCurrentPosition && latest) {
+        return createTileViewportAtZoom(
+          latest.lat,
+          latest.lng,
+          Math.max(15, fitViewport.zoom),
+          width,
+          viewportHeight,
+        );
+      }
+      return fitViewport;
+    }
+    const center =
+      !followGps && manualCenter
+        ? manualCenter
+        : { lat: fitViewport.centerLat, lng: fitViewport.centerLng };
     return createTileViewportAtZoom(
-      fitViewport.centerLat,
-      fitViewport.centerLng,
+      center.lat,
+      center.lng,
       zoom,
       width,
       viewportHeight,
       userPan.x,
       userPan.y,
     );
-  }, [mapPoints, fitViewport, userZoom, userPan, viewportHeight]);
+  }, [
+    fitViewport,
+    followGps,
+    manualCenter,
+    points,
+    showCurrentPosition,
+    userZoom,
+    userPan,
+    viewportHeight,
+    width,
+  ]);
+
+  const changeZoom = (delta: number) => {
+    setManualCenter(
+      (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+    );
+    setUserZoom((current) =>
+      Math.min(19, Math.max(3, Math.round(current ?? mapViewport.zoom) + delta)),
+    );
+    setFollowGps(false);
+  };
 
   const projected = useMemo(
     () => points.map((point) => mapViewport.project(point.lat, point.lng)),
@@ -370,6 +436,14 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const path = useMemo(() => buildPath(projected), [projected]);
   const start = projected[0];
   const end = projected[projected.length - 1];
+
+  /**
+   * Nothing to frame yet. Previously this fell back to a whole-country tile
+   * grid centred on a made-up point, so the very first thing a runner saw was
+   * a map of India. With no track and no guide there is no honest viewport, so
+   * the surface becomes a designed "ready to draw" panel instead.
+   */
+  const hasFraming = mapPoints.length > 0;
 
   const guidePath = useMemo(() => {
     if (!guidePoints || guidePoints.length < 2) return "";
@@ -385,9 +459,34 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
+      onPointerDown={(event) => {
+        if (event.pointerType !== "mouse") return;
+        mouseDrag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const drag = mouseDrag.current;
+        if (event.pointerType !== "mouse" || !drag || drag.pointerId !== event.pointerId) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        drag.x = event.clientX;
+        drag.y = event.clientY;
+        setManualCenter(
+          (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+        );
+        setUserPan((previous) => ({ x: previous.x + dx, y: previous.y + dy }));
+        setFollowGps(false);
+      }}
+      onPointerUp={(event) => {
+        if (mouseDrag.current?.pointerId === event.pointerId) mouseDrag.current = null;
+      }}
+      onPointerCancel={() => {
+        mouseDrag.current = null;
+      }}
       data-testid="activity-map-surface"
     >
-      {tileProvider.urlTemplate &&
+      {hasFraming &&
+        tileProvider.urlTemplate &&
         mapViewport.tiles.map((tile) => (
           <img
             key={`${tile.z}/${tile.x}/${tile.y}`}
@@ -518,13 +617,29 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
           </circle>
         )}
       </svg>
-      {projected.length < 2 && (
+      {!hasFraming && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0B0B0C] px-6 text-center"
+          data-testid="activity-map-empty"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#C81E3A]/25 bg-[#C81E3A]/10">
+            <Crosshair aria-hidden className="h-5 w-5 text-[#E62846]" />
+          </span>
+          <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
+            Your route starts at your position
+          </p>
+          <p className="max-w-[250px] font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+            {emptyMessage}
+          </p>
+        </div>
+      )}
+      {hasFraming && projected.length < 2 && (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/20 text-center"
           data-testid="activity-map-empty"
         >
-          <MapPin className="h-5 w-5 text-white/80" />
-          <p className="rounded-2xl bg-black/65 px-3 py-1.5 text-[11px] font-mono text-white/80">
+          <MapPin aria-hidden className="h-5 w-5 text-white/80" />
+          <p className="rounded-2xl bg-black/65 px-3 py-1.5 font-inter text-[11px] text-white/80">
             {emptyMessage}
           </p>
         </div>
@@ -536,7 +651,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
     <>
       <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/60 px-2 py-1 backdrop-blur">
         <Navigation className="h-3 w-3 text-[#E62846]" />
-        <span className="text-[9px] font-mono uppercase tracking-widest text-white">SVJ Route</span>
+        <span className="font-inter text-[10px] font-semibold text-white">Route map</span>
       </div>
       <button
         type="button"
@@ -547,6 +662,26 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       >
         {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
+      <div className="absolute right-3 top-12 flex flex-col gap-1" aria-label="Map zoom controls">
+        <button
+          type="button"
+          onClick={() => changeZoom(1)}
+          aria-label="Zoom map in"
+          data-testid="map-zoom-in"
+          className="rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => changeZoom(-1)}
+          aria-label="Zoom map out"
+          data-testid="map-zoom-out"
+          className="rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </button>
+      </div>
       {!followGps && (
         <button
           type="button"

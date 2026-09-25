@@ -1,11 +1,58 @@
 import React from "react";
-import { ArrowUpRight, Flame, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Flame, ShieldCheck } from "lucide-react";
 import { useEngagement } from "../context/EngagementContext";
 import { isActiveEngagement } from "@/lib/engagement";
 
-export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
+export function EarnPlusCard({
+  onOpen,
+  /**
+   * Compact status chip. The Challenges home uses this so the hero card stops
+   * competing with today's actual tasks for the same scroll; the full card is
+   * still used on the dedicated Earn Plus destination.
+   */
+  compact = false,
+}: {
+  onOpen: () => void;
+  compact?: boolean;
+}) {
   const { state, loading, error } = useEngagement();
   const active = isActiveEngagement(state) ? state : undefined;
+
+  if (compact) {
+    const summary = active?.account.lifetimeAccess
+      ? "Lifetime access active"
+      : active
+        ? `${active.wallet.qualifyingDays} of ${active.policy.requiredQualifyingDays} qualifying days`
+        : loading
+          ? "Checking your reward status…"
+          : (error ?? "A separate reward balance for daily missions");
+
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label="Open Earn Plus"
+        className="flex w-full items-center gap-3 rounded-xl border border-[#C81E3A]/20 bg-[#17171A] px-3.5 py-3 text-left transition-colors hover:border-[#C81E3A]/40 svj-press"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C81E3A]/30 bg-[#C81E3A]/12 text-[#E62846]">
+          <ShieldCheck aria-hidden className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-inter font-semibold text-[#F4F2ED]">
+            Earn Plus
+          </span>
+          <span className="block truncate text-[11px] font-inter text-[#8C8C90]">{summary}</span>
+        </span>
+        {active && (
+          <span className="shrink-0 font-mono text-[11px] font-semibold text-[#E62846]">
+            {active.wallet.rewardXp.toLocaleString()} XP
+          </span>
+        )}
+        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-[#5C5C60]" />
+      </button>
+    );
+  }
+
   return (
     <section
       aria-label="Earn Plus"
@@ -16,7 +63,7 @@ export function EarnPlusCard({ onOpen }: { onOpen: () => void }) {
           <p className="mb-2 flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
             <ShieldCheck className="h-3.5 w-3.5" /> Server-validated rewards
           </p>
-          <h2 className="font-anton text-2xl uppercase text-white">Earn Plus</h2>
+          <h2 className="font-anton text-2xl tracking-wide text-white">Earn Plus</h2>
           <p className="mt-1 max-w-md text-xs font-inter leading-relaxed text-[#B8B8C0]">
             {active?.account.lifetimeAccess
               ? "Lifetime access already active. Your membership stays untouched."

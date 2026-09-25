@@ -19,6 +19,10 @@ export const AuthScreen: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // Age attestation. SVJ has no parental-consent architecture, so account
+  // creation is gated to a self-declared 18+. This is a declaration, not
+  // identity verification — it must not be described as verification anywhere.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // ── Resend confirmation cooldown ────────────────────────────────────────
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -64,6 +68,11 @@ export const AuthScreen: React.FC = () => {
     e.preventDefault();
     setError("");
     setNotice("");
+    // Age gate runs before any personal data is collected for the account.
+    if (mode === "signup" && !ageConfirmed) {
+      setError("Please confirm you are 18 or older to create an SVJ account.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signup") {
@@ -108,6 +117,11 @@ export const AuthScreen: React.FC = () => {
   const handleGoogle = async () => {
     setError("");
     setNotice("");
+    // Google sign-up must not bypass the age gate enforced on the form.
+    if (mode === "signup" && !ageConfirmed) {
+      setError("Please confirm you are 18 or older to create an SVJ account.");
+      return;
+    }
     setBusy(true);
     const outcome = await signInWithGoogle();
     if (outcome.status === "redirecting") return;
@@ -131,17 +145,17 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter flex items-center justify-center p-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#0B0B0C] p-4 font-inter text-[#F4F2ED]">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl space-y-5"
+        className="svj-radius-card svj-lit-top svj-elev-3 w-full max-w-md space-y-5 border border-white/[0.06] bg-[#17171A] p-5"
       >
         <div className="space-y-1 text-center">
-          <h1 className="font-anton text-2xl uppercase tracking-wider text-white">SVJ</h1>
-          <p className="text-xs font-mono text-[#8C8C90]">
+          <h1 className="font-anton text-2xl tracking-wider text-[#F4F2ED]">SVJ</h1>
+          <p className="font-inter text-xs text-[#8C8C90]">
             {mode === "signup"
-              ? "Create your account — 7 days free"
+              ? "Create your account — 7 days of full access, no charge"
               : "Sign in to continue your journey"}
           </p>
         </div>
@@ -150,7 +164,7 @@ export const AuthScreen: React.FC = () => {
           type="button"
           onClick={handleGoogle}
           disabled={busy}
-          className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white py-3 font-inter text-xs font-semibold text-black transition-colors hover:bg-slate-200 disabled:opacity-60"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -266,18 +280,51 @@ export const AuthScreen: React.FC = () => {
             </div>
           )}
 
+          {mode === "signup" && (
+            <label
+              htmlFor="svj-age-attestation"
+              className="flex cursor-pointer items-start gap-2 rounded-2xl border border-white/10 bg-white/5 p-3"
+            >
+              <input
+                id="svj-age-attestation"
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(event) => setAgeConfirmed(event.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#C81E3A]"
+              />
+              <span className="text-[11px] font-mono leading-relaxed text-[#B8B8C0]">
+                I confirm I am 18 or older and I accept the{" "}
+                <a href="/terms" className="text-[#C81E3A] underline underline-offset-2">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" className="text-[#C81E3A] underline underline-offset-2">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+          )}
+
           <button
             type="submit"
-            disabled={busy}
-            className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            disabled={busy || (mode === "signup" && !ageConfirmed)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-60"
           >
             {busy ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <ShieldCheck className="w-4 h-4" />
             )}
-            {mode === "signup" ? "Start 7-Day Free Trial" : "Sign In"}
+            {mode === "signup" ? "Create Account" : "Sign In"}
           </button>
+
+          {mode === "signup" && (
+            <p className="text-center text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+              New accounts get 7 days of full SVJ access. No payment details are requested and
+              nothing is charged automatically.
+            </p>
+          )}
         </form>
 
         <button

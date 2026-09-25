@@ -107,7 +107,7 @@ describe("App routing", () => {
     assert.match(app, /import \{ RecoveryView \} from "\.\/components\/RecoveryView"/);
     assert.match(
       app,
-      /\{activeTab === "recovery" && <RecoveryView \/>\}/,
+      /\{activeTab === "recovery" && \(\s*<RecoveryView [\s\S]*?\/>\s*\)\}/,
       "the founder Recovery tab must render the Recovery shell",
     );
   });

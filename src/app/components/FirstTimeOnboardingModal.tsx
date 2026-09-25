@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Sparkles, MapPin, Check, Shield, Flame, Target, Trophy } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { initializeNotificationsAtSignup } from "../lib/notifications";
 
 const PRESET_AVATARS = [
   {
@@ -52,21 +53,33 @@ export const FirstTimeOnboardingModal: React.FC = () => {
   const [location, setLocation] = useState("New York, USA");
   const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
   const [selectedGoal, setSelectedGoal] = useState(FOCUS_GOALS[0]);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isFirstTimeOnboardingOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
     const finalName = name.trim() || "Initiate Member";
     const finalUsername = (username.trim() || "voyager_svj").toLowerCase().replace(/\s+/g, "_");
 
-    completeOnboarding({
-      name: finalName,
-      username: finalUsername,
-      bio: `${selectedGoal} • ${bio.trim() || "Daily discipline over motivation."}`,
-      location: location.trim() || "Earth",
-      avatar: selectedAvatar,
-    });
+    setSubmitting(true);
+    try {
+      // Android asks once, here, during first-time account setup. SVJ never
+      // requests notification permission again inside the app after this.
+      await initializeNotificationsAtSignup(user.id);
+
+      completeOnboarding({
+        name: finalName,
+        username: finalUsername,
+        bio: `${selectedGoal} • ${bio.trim() || "Daily discipline over motivation."}`,
+        location: location.trim() || "Earth",
+        avatar: selectedAvatar,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -76,7 +89,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
+          className="relative my-auto max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border-2 border-[#C81E3A]/50 bg-[#17171A] p-4 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 sm:p-5"
         >
           {/* Ambient Lighting */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/20 blur-3xl rounded-full pointer-events-none" />
@@ -88,7 +101,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Your SVJ Profile</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-inter text-3xl font-semibold tracking-tight text-[#F4F2ED] sm:text-4xl">
               Set Up Your Profile
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter max-w-sm mx-auto leading-relaxed">
@@ -223,10 +236,11 @@ export const FirstTimeOnboardingModal: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] hover:from-[#C81E3A] hover:to-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-xl shadow-[#C81E3A]/30 transition-all cursor-pointer transform hover:scale-[1.01]"
+                disabled={submitting}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] py-3.5 font-inter text-base font-semibold text-white shadow-xl shadow-[#C81E3A]/30 transition-colors hover:from-[#C81E3A] hover:to-[#A0182E] disabled:cursor-wait disabled:opacity-60"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Save Profile</span>
+                <span>{submitting ? "Finishing setup…" : "Save Profile"}</span>
               </button>
             </div>
           </form>

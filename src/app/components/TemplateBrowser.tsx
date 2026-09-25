@@ -15,6 +15,8 @@ import { effectiveWeeklySessions, type TrainingProfile } from "../lib/trainingPr
 import { svjWhileTap } from "../lib/motion";
 import type { OwnedTemplate, TemplateLibraryEntry } from "../lib/trainingClient";
 import { LegacyTemplateImportCard } from "./LegacyTemplateImportCard";
+import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
+import { SVJEmptyState } from "./ui-primitives/SVJEmptyState";
 
 export interface TemplateBrowserProps {
   profile: TrainingProfile;
@@ -95,29 +97,27 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
           this account and must never enter the published catalog. */}
       {ownedTemplates.length > 0 && (
         <section data-testid="imported-templates">
-          <p className="font-anton text-sm uppercase tracking-wide text-white">
-            Imported from this device
-          </p>
-          <div className="mt-2 space-y-2">
+          <SVJSectionHeader title="Imported from this device" />
+          <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
             {ownedTemplates.map((template) => (
               <article
                 key={template.id}
                 data-testid="imported-template-card"
-                className="rounded-2xl border border-[#D4AF37]/25 bg-[#17171A] p-4"
+                className="svj-radius-card svj-lit-top border border-[#C9A227]/25 bg-[#17171A] p-3.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-anton text-lg uppercase leading-none text-[#F4F2ED]">
+                    <h3 className="font-inter text-[15px] font-semibold leading-tight text-[#F4F2ED]">
                       {template.name}
                     </h3>
-                    <p className="mt-1 text-[11px] font-inter text-[#8C8C90]">
+                    <p className="mt-1 font-inter text-[11px] text-[#8C8C90]">
                       {template.exercises.length} exercise
-                      {template.exercises.length === 1 ? "" : "s"} · your original sets
+                      {template.exercises.length === 1 ? "" : "s"}, your original sets
                     </p>
                   </div>
                 </div>
                 {template.exercises.length > 0 && (
-                  <ul className="mt-3 space-y-1">
+                  <ul className="mt-2.5 space-y-1">
                     {template.exercises.slice(0, 6).map((exercise) => (
                       <li
                         key={`${template.id}-${exercise.exerciseId}`}
@@ -128,7 +128,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                           {exercise.sets.length > 0
                             ? exercise.sets
                                 .map((set) => `${set.reps} × ${set.weightKg} kg`)
-                                .join(" · ")
+                                .join(", ")
                             : "no stored sets"}
                         </span>
                       </li>
@@ -138,7 +138,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                 <button
                   type="button"
                   onClick={() => onStartOwned?.(template)}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2.5 text-[11px] font-inter font-semibold uppercase tracking-wider text-[#F4F2ED] hover:bg-[#C81E3A]/20"
+                  className="mt-2.5 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
                 >
                   <Play className="h-3.5 w-3.5" /> Start this workout
                 </button>
@@ -150,19 +150,19 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
 
       {recentlyUsed.length > 0 && (
         <section>
-          <p className="font-anton text-sm uppercase tracking-wide text-white">Recently used</p>
+          <SVJSectionHeader title="Recently used" />
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {recentlyUsed.map(({ entry, template }) => (
               <button
                 key={entry.templateId}
                 type="button"
                 onClick={() => template && onStartTemplate(template)}
-                className="shrink-0 rounded-xl border border-white/10 bg-[#17171A] px-3 py-2 text-left"
+                className="shrink-0 svj-radius-row border border-white/10 bg-[#17171A] px-3 py-2 text-left"
               >
-                <span className="block text-[11px] font-inter text-[#F4F2ED]">
+                <span className="block font-inter text-[11px] text-[#F4F2ED]">
                   {entry.customName ?? template?.name}
                 </span>
-                <span className="block text-[9px] font-mono text-[#8C8C90]">
+                <span className="block font-mono text-[10px] text-[#8C8C90]">
                   {entry.useCount}× completed
                 </span>
               </button>
@@ -172,23 +172,36 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
       )}
 
       {/* Filters */}
-      <div className="rounded-2xl border border-white/5 bg-[#17171A] p-3">
-        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0B0B0C] px-2">
-          <Search className="h-3.5 w-3.5 text-[#8C8C90]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search sessions or exercises"
-            placeholder="Search sessions or exercises"
-            className="w-full bg-transparent py-2 text-xs font-inter text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
-          />
+      <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-2.5">
+        {/* Search and the saved-only switch share a row as soon as there is
+            width, so the filter stack stays two compact rows on desktop. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-2 svj-radius-row border border-white/10 bg-[#08080A] px-2">
+            <Search className="h-3.5 w-3.5 shrink-0 text-[#8C8C90]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search sessions or exercises"
+              placeholder="Search sessions or exercises"
+              className="w-full bg-transparent py-2 text-xs font-inter text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
+            />
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-[11px] font-inter text-[#8C8C90]">
+            <input
+              type="checkbox"
+              checked={onlySaved}
+              onChange={(e) => setOnlySaved(e.target.checked)}
+              className="h-3.5 w-3.5 rounded-md accent-[#C81E3A]"
+            />
+            Saved only
+          </label>
         </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setFamily("all")}
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-inter uppercase tracking-wider ${
+            className={`rounded-full border px-2.5 py-1 font-inter text-[11px] font-medium ${
               family === "all"
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/30 text-[#8C8C90]"
@@ -201,7 +214,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               key={f}
               type="button"
               onClick={() => setFamily(f)}
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-inter uppercase tracking-wider ${
+              className={`rounded-full border px-2.5 py-1 font-inter text-[11px] font-medium ${
                 family === f
                   ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                   : "border-white/10 bg-black/30 text-[#8C8C90]"
@@ -216,7 +229,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
           <button
             type="button"
             onClick={() => setMuscle("all")}
-            className={`rounded-full border px-2.5 py-1 text-[10px] font-inter uppercase tracking-wider ${
+            className={`rounded-full border px-2.5 py-1 font-inter text-[11px] font-medium ${
               muscle === "all"
                 ? "border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#F4F2ED]"
                 : "border-white/10 bg-black/30 text-[#8C8C90]"
@@ -229,7 +242,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               key={m}
               type="button"
               onClick={() => setMuscle(m)}
-              className={`rounded-full border px-2.5 py-1 text-[10px] font-inter uppercase tracking-wider ${
+              className={`rounded-full border px-2.5 py-1 font-inter text-[11px] font-medium ${
                 muscle === m
                   ? "border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#F4F2ED]"
                   : "border-white/10 bg-black/30 text-[#8C8C90]"
@@ -239,20 +252,14 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
             </button>
           ))}
         </div>
-
-        <label className="mt-2 flex items-center gap-2 text-[11px] font-inter text-[#8C8C90]">
-          <input
-            type="checkbox"
-            checked={onlySaved}
-            onChange={(e) => setOnlySaved(e.target.checked)}
-            className="h-3.5 w-3.5 rounded-md accent-[#C81E3A]"
-          />
-          Saved only
-        </label>
       </div>
 
-      {/* Catalog */}
-      <div className="space-y-3">
+      {/* Catalog — a responsive grid so several readable templates are visible
+          per viewport instead of roughly one card per screenful. */}
+      <div
+        data-testid="template-grid"
+        className="grid items-start gap-3 lg:grid-cols-2 xl:grid-cols-3"
+      >
         {templates.map((template) => {
           const saved = savedTemplateIds.has(template.id);
           const muscles = [...new Set(template.exercises.map((e) => e.muscle))]
@@ -264,16 +271,16 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               key={template.id}
               whileTap={svjWhileTap}
               data-testid="template-card"
-              className="rounded-2xl border border-white/5 bg-[#17171A] p-4"
+              className="svj-radius-card svj-lit-top svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-anton text-lg uppercase leading-none text-[#F4F2ED]">
+                <div className="min-w-0">
+                  <h3 className="font-inter text-[15px] font-semibold leading-tight text-[#F4F2ED]">
                     {template.name}
                   </h3>
-                  <p className="mt-1 text-[11px] font-inter text-[#8C8C90]">{muscles}</p>
-                  <p className="mt-0.5 text-[10px] font-mono text-[#8C8C90]">
-                    ~{template.estimatedMinutes} min · {templateWorkSetCount(template)} work sets
+                  <p className="mt-1 font-inter text-[11px] text-[#8C8C90]">{muscles}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-[#8C8C90]">
+                    ~{template.estimatedMinutes} min, {templateWorkSetCount(template)} work sets
                   </p>
                 </div>
                 <button
@@ -286,24 +293,24 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                     setBusyId(template.id);
                     void onToggleSave(template.id).finally(() => setBusyId(null));
                   }}
-                  className={`rounded-lg border p-2 ${
+                  className={`svj-radius-row border p-2 ${
                     saved
-                      ? "border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]"
-                      : "border-white/10 bg-black/30 text-[#8C8C90]"
+                      ? "border-[#C9A227]/50 bg-[#C9A227]/10 text-[#C9A227]"
+                      : "border-white/10 bg-[#08080A] text-[#8C8C90]"
                   }`}
                 >
                   {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                 </button>
               </div>
 
-              <ul className="mt-3 space-y-1">
+              <ul className="mt-2.5 space-y-1">
                 {template.exercises.slice(0, 6).map((e) => (
                   <li
                     key={e.slug}
                     className="flex items-center justify-between text-[11px] font-inter"
                   >
                     <span className="text-[#F4F2ED]">{e.name}</span>
-                    <span className="font-mono text-[#8C8C90]">
+                    <span className="font-mono text-[11px] text-[#8C8C90]">
                       {e.durationSeconds !== null
                         ? `${e.workSets} × ${e.durationSeconds}s`
                         : `${e.workSets} × ${e.repMin}–${e.repMax}`}
@@ -315,7 +322,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               <button
                 type="button"
                 onClick={() => onStartTemplate(template)}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2.5 text-[11px] font-inter font-semibold uppercase tracking-wider text-[#F4F2ED] hover:bg-[#C81E3A]/20"
+                className="mt-2.5 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
               >
                 <Play className="h-3.5 w-3.5" /> Start this workout
               </button>
@@ -324,9 +331,10 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
         })}
 
         {templates.length === 0 && (
-          <p className="py-8 text-center text-xs font-inter text-[#8C8C90]">
-            No sessions match these filters. Try clearing the muscle or equipment filter.
-          </p>
+          <SVJEmptyState
+            title="No sessions match these filters"
+            description="Try clearing the muscle or equipment filter to see the full catalog."
+          />
         )}
       </div>
     </div>

@@ -91,7 +91,7 @@ describe("rivalry scoring semantics", () => {
   });
 
   test("rivalry dashboard shows opponent, scores, events and time remaining", () => {
-    assert.match(friendsPanel, /Active Outperform Rivalry/);
+    assert.match(friendsPanel, /Active rivalry/);
     assert.match(friendsPanel, /selectedRivalry\.opponentUsername/);
     assert.match(friendsPanel, /selectedRivalry\.myScore/);
     assert.match(friendsPanel, /selectedRivalry\.opponentScore/);
@@ -102,7 +102,7 @@ describe("rivalry scoring semantics", () => {
 describe("community UI state machine", () => {
   test("sender sees REQUEST SENT with @username — no infinite spinner", () => {
     assert.match(communityView, /outgoing_pending/);
-    assert.match(communityView, /REQUEST SENT/);
+    assert.match(communityView, /Request sent/);
     assert.match(comparisonModal, /Request sent — waiting for @\{member\.username\}/);
     // Sending state is always cleared in finally — no stuck spinner.
     assert.match(comparisonModal, /finally/);
@@ -112,10 +112,10 @@ describe("community UI state machine", () => {
   test("active rivalry hides the challenge CTA and offers View Rivalry", () => {
     assert.doesNotMatch(
       communityView,
-      /rivalryState === "active"[\s\S]{0,400}OUTPERFORM/,
-      "active rivalry must not re-offer OUTPERFORM",
+      /rivalryState === "active"[\s\S]{0,400}Outperform/,
+      "active rivalry must not re-offer Outperform",
     );
-    assert.match(communityView, /VIEW RIVALRY/);
+    assert.match(communityView, /View rivalry/);
     assert.match(comparisonModal, /"View Rivalry"/);
   });
 

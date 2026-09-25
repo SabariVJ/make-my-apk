@@ -124,24 +124,24 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bookmark className="h-4 w-4 text-[#E62846]" />
-          <span className="text-xs font-mono uppercase tracking-widest text-white">
-            Route Library
+          <span className="font-inter text-[13px] font-semibold tracking-tight text-[#F4F2ED]">
+            Route library
           </span>
         </div>
         <button
           type="button"
           onClick={() => void load()}
           aria-label="Refresh routes"
-          className="rounded-lg border border-white/10 bg-black/40 p-1.5 text-[#8C8C90] hover:text-white"
+          className="rounded-lg border border-white/[0.08] bg-[#08080A] p-1.5 text-[#8C8C90] hover:text-[#F4F2ED]"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-2xl border border-crimson/30 bg-crimson/5 p-3">
+        <div className="svj-radius-row flex items-start gap-2 border border-crimson/30 bg-crimson/[0.06] p-3">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-crimson" />
-          <p className="flex-1 text-[11px] font-mono text-crimson">{error}</p>
+          <p className="flex-1 font-inter text-[11px] leading-relaxed text-crimson">{error}</p>
         </div>
       )}
 
@@ -232,7 +232,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     type="button"
                     onClick={() => onStartRoute(route)}
                     data-testid="start-from-route"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#C81E3A]/50 bg-[#C81E3A]/15 px-3 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED]"
                   >
                     <Play className="h-3.5 w-3.5" />
                     Start workout
@@ -244,7 +244,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                     setEditing(route.id);
                     setDraftName(route.name);
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-white"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#08080A] px-3 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED]"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Rename
@@ -254,7 +254,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
                   disabled={busy}
                   onClick={() => void remove(route)}
                   data-testid="delete-route"
-                  className="flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C8C90] disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#08080A] px-3 py-2 font-inter text-[11px] font-semibold text-[#8C8C90] disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete

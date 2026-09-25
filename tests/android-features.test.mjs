@@ -1,6 +1,27 @@
 // Regression tests for Android Plus/Community tab restoration and payment safeguards.
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+const read = (rel) => readFile(new URL("../" + rel, import.meta.url), "utf8");
+const mainActivitySource = await read("android/app/src/main/java/app/lovable/svj/MainActivity.java");
+const notificationsPluginSource = await read(
+  "android/app/src/main/java/app/lovable/svj/VjNotificationsPlugin.java",
+);
+const notificationReceiverSource = await read(
+  "android/app/src/main/java/app/lovable/svj/VjNotificationReceiver.java",
+);
+const manifestSource = await read("android/app/src/main/AndroidManifest.xml");
+const challengesViewSource = await read("src/app/views/ChallengesView.tsx");
+const profileViewSource = await read("src/app/views/ProfileView.tsx");
+const onboardingSource = await read("src/app/components/FirstTimeOnboardingModal.tsx");
+const notificationPreferencesSource = await read(
+  "src/app/components/NotificationPreferencesCard.tsx",
+);
+const notificationCoordinatorSource = await read(
+  "src/app/components/NotificationCoordinator.tsx",
+);
+const notificationsSource = await read("src/app/lib/notifications.ts");
 
 // ─── Navigation filtering logic ──────────────────────────────────────────────
 // These tests validate the filtering predicate used by Navigation.tsx to decide
@@ -169,5 +190,75 @@ describe("Membership display — pricing", () => {
     assert.ok(yearlyPrice < monthlyPrice * 12, "Yearly must be cheaper than 12× monthly");
     assert.equal(yearlyPrice, 599, "Yearly price must be ₹599");
     assert.equal(monthlyPrice, 99, "Monthly price must be ₹99");
+  });
+});
+
+
+describe("Smart notifications — Android native bridge", () => {
+  it("registers the app-local notification plugin before Capacitor creates the bridge", () => {
+    const notificationIndex = mainActivitySource.indexOf(
+      "registerPlugin(VjNotificationsPlugin.class)",
+    );
+    const superIndex = mainActivitySource.indexOf("super.onCreate(savedInstanceState)");
+    assert.ok(notificationIndex > -1, "VjNotificationsPlugin must be registered");
+    assert.ok(notificationIndex < superIndex, "plugin registration must happen before super.onCreate");
+  });
+
+  it("requests Android 13 notification permission but does not require exact-alarm access", () => {
+    assert.match(manifestSource, /android\.permission\.POST_NOTIFICATIONS/);
+    assert.match(manifestSource, /android\.permission\.RECEIVE_BOOT_COMPLETED/);
+    assert.doesNotMatch(manifestSource, /SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM/);
+    assert.match(notificationsPluginSource, /requestPermissionForAlias\("notifications"/);
+    assert.match(notificationsPluginSource, /setAndAllowWhileIdle/);
+  });
+
+  it("persists schedules, restores them after system clock events and deep-links taps into SVJ", () => {
+    assert.match(notificationsPluginSource, /PREF_SCHEDULES/);
+    assert.match(notificationsPluginSource, /app\.lovable\.svj:\/\/notification\//);
+    assert.match(notificationReceiverSource, /BOOT_COMPLETED/);
+    assert.match(notificationReceiverSource, /TIMEZONE_CHANGED/);
+    assert.match(notificationReceiverSource, /restoreSchedules/);
+    assert.match(manifestSource, /\.VjNotificationReceiver/);
+  });
+
+  it("creates separate progress, coach and membership notification channels", () => {
+    assert.match(notificationsPluginSource, /svj_progress/);
+    assert.match(notificationsPluginSource, /svj_coach/);
+    assert.match(notificationsPluginSource, /svj_membership/);
+  });
+});
+
+
+describe("Challenge dashboard scope", () => {
+  it("does not render the Character Matrix inside Challenges", () => {
+    assert.doesNotMatch(challengesViewSource, /HexagonRadarChart/);
+    assert.doesNotMatch(challengesViewSource, /title=\{\`Character Matrix/);
+  });
+});
+
+describe("Notification permission UX", () => {
+  it("removes granular notification controls from Profile", () => {
+    assert.doesNotMatch(profileViewSource, /NotificationPreferencesCard/);
+  });
+
+  it("requests notification permission only from first-time onboarding", () => {
+    assert.match(onboardingSource, /initializeNotificationsAtSignup/);
+    assert.match(notificationsSource, /PERMISSION_PROMPTED_PREFIX/);
+    assert.match(
+      notificationsSource,
+      /Mark first so an interrupted permission flow cannot become a repeat prompt/,
+    );
+    assert.doesNotMatch(notificationPreferencesSource, /requestNotificationPermission/);
+    assert.doesNotMatch(notificationPreferencesSource, /type="checkbox"/);
+    assert.match(notificationCoordinatorSource, /appStateChange/);
+    assert.match(notificationCoordinatorSource, /notificationPermission\(\)/);
+    assert.doesNotMatch(notificationCoordinatorSource, /requestNotificationPermission/);
+  });
+
+  it("keeps planner categories enabled while Android system permission is the delivery switch", () => {
+    assert.match(notificationsSource, /enabled: true/);
+    assert.match(notificationsSource, /nutrition: true/);
+    assert.match(notificationsSource, /training: true/);
+    assert.match(notificationsSource, /single source of truth/);
   });
 });

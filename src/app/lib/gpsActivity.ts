@@ -605,6 +605,70 @@ export function summarizeTrack(
 
 // ── Display formatting ─────────────────────────────────────────────────────
 
+/**
+ * Current pace from a recent accepted-point window.
+ *
+ * Uses only valid moving segments in the denominator. This prevents a turn,
+ * auto-pause interval, or poor-accuracy fix from making live pace appear much
+ * slower when the athlete doubles back over the same route.
+ */
+export function currentPaceSecondsPerKm(
+  points: readonly TrackPoint[],
+  windowSeconds = 30,
+  options: {
+    minWindowSeconds?: number;
+    minDistanceMeters?: number;
+    maxAccuracyMeters?: number;
+  } = {},
+): number | null {
+  const minWindowSeconds = options.minWindowSeconds ?? 20;
+  const minDistanceMeters = options.minDistanceMeters ?? 40;
+  const maxAccuracyMeters = options.maxAccuracyMeters ?? 30;
+  if (points.length < 2) return null;
+
+  const last = points[points.length - 1]!;
+  const cutoff = last.t - windowSeconds * 1000;
+  let startIndex = points.length - 1;
+  while (startIndex > 0 && points[startIndex - 1]!.t >= cutoff) startIndex -= 1;
+
+  const first = points[startIndex]!;
+  if (first === last) return null;
+  const elapsedSeconds = (last.t - first.t) / 1000;
+  if (elapsedSeconds < minWindowSeconds) return null;
+
+  let distanceMeters = 0;
+  let movingSecondsInWindow = 0;
+
+  for (let i = startIndex + 1; i < points.length; i += 1) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    if (a.moving === false || b.moving === false) continue;
+    if (
+      (a.accuracy != null && a.accuracy > maxAccuracyMeters) ||
+      (b.accuracy != null && b.accuracy > maxAccuracyMeters)
+    ) {
+      continue;
+    }
+
+    const seconds = (b.t - a.t) / 1000;
+    if (!(seconds > 0)) continue;
+
+    distanceMeters += haversineMeters(a.lat, a.lng, b.lat, b.lng);
+    movingSecondsInWindow += seconds;
+  }
+
+  // Require enough real moving time as well as displacement so a single clean
+  // point after a long GPS gap cannot fabricate a current pace.
+  if (
+    distanceMeters < minDistanceMeters ||
+    movingSecondsInWindow < Math.min(minWindowSeconds, 10)
+  ) {
+    return null;
+  }
+
+  return Math.round(movingSecondsInWindow / (distanceMeters / 1000));
+}
+
 export function formatDistance(
   meters: number | null | undefined,
   unit: "km" | "mi" = "km",

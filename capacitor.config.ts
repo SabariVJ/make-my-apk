@@ -6,7 +6,9 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   server: {
     url: "https://savaje-com.lovable.app",
-    cleartext: true,
+    // SVJ is served exclusively over HTTPS. Leaving cleartext enabled would let
+    // a compromised network redirect or downgrade the hosted app connection.
+    cleartext: false,
   },
   android: {
     backgroundColor: "#0B0B0C",

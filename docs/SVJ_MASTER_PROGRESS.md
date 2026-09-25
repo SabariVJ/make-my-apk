@@ -1,5 +1,25 @@
 # SVJ Master Implementation — Phase Progress
 
+## App-wide Responsive Density / Viewport Pass (2026-09-25)
+
+**Status:** COMPLETE — presentation only. No migration, no RPC, schema, XP,
+tracking, training, recovery, nutrition, notification or membership change.
+
+**Scope:** one shared page container for every screen (desktop content box
+grown to ~1264px, rail gutter reserved exactly once, a single safe-area-aware
+bottom-navigation clearance), plus per-screen density and desktop-column
+composition across Train (all five tabs), Activity, Challenges, Recovery, Fuel,
+Plus, Profile, Community, Leaderboard, 60-Day, Transformation, Records/History
+and the modals.
+
+**Files changed:** 38 existing + `tests/responsive-density.test.mjs` (new).
+**Docs:** `docs/SVJ_UI_OVERHAUL.md` → Phase 13.
+**Regression cover:** `tests/responsive-density.test.mjs`, added to the
+`bun run test` file list so CI runs it.
+
+**Validation:** tests, `tsc --noEmit`, `eslint src/` (0 errors), Prettier
+(`src/**/*.{ts,tsx,css}` clean) and the production build all pass.
+
 ## Automated Training System (2026-09-21)
 
 **Status:** COMPLETE (continued 2026-09-23 from checkpoint `af0cea1`) —
@@ -13,6 +33,7 @@ failure surface + dark custom form selects) are implemented, wired and tested.
 **Starting SHA:** `6dca0bf` · **Branch:** `release/play-v1-compliance`
 
 **Files added**
+
 - `src/app/lib/trainingPolicy.ts`, `trainingProfile.ts`, `trainingTemplates.ts`,
   `trainingPlan.ts`, `trainingProgression.ts`, `trainingMuscleHistory.ts`, `trainingClient.ts`
 - `src/app/hooks/useTrainingPlan.ts`
@@ -22,6 +43,7 @@ failure surface + dark custom form selects) are implemented, wired and tested.
 - `docs/SVJ_AUTOMATED_TRAINING.md`
 
 **Files changed**
+
 - `src/app/views/WorkoutView.tsx` — Today is the default Train surface; Templates
   browses the reviewed catalog; the existing manual logger and history are preserved.
 - `src/app/views/TrainStrength.tsx` — optional `prescription` prop renders
@@ -52,7 +74,7 @@ see `docs/SVJ_MIGRATION_RECONCILIATION.md` (blocked on Supabase credentials).
 
 **Continuation 2026-09-23 (checkpoint `af0cea1`) — Android runtime repairs:**
 
-1. *Training profile RPC failure.* Root cause analysis: the client
+1. _Training profile RPC failure._ Root cause analysis: the client
    (`getTrainingProfile`) correctly calls `svj_get_my_training_profile()` with
    **no arguments**, and the migration defining it
    (`supabase/migrations/20260926000000_automated_training.sql:286`) exists in
@@ -74,19 +96,19 @@ see `docs/SVJ_MIGRATION_RECONCILIATION.md` (blocked on Supabase credentials).
      RPC contract so signature drift cannot silently regress again.
    - **Blocker remains:** applying the verified migration chain to production
      Supabase requires credentials not present in this environment.
-2. *Broken Android select/dropdown UI.* The native `<select>` controls for
+2. _Broken Android select/dropdown UI._ The native `<select>` controls for
    Sessions / week and Minutes available opened as large white native overlays
    on Android WebView/Capacitor. Replaced with one reusable, accessible dark
    primitive: `src/app/components/ui-primitives/SVJSelect.tsx` (button +
    listbox, no portal — stays inside the viewport, no page zoom, ≥44px touch
    targets, keyboard support incl. Home/End/Escape, `aria-haspopup`/`aria-
-   expanded`/`role=listbox`/`role=option`/`aria-selected`, selected state marked
+expanded`/`role=listbox`/`role=option`/`aria-selected`, selected state marked
    by an explicit check icon, not color alone). Valid choices retained
    (1–6 sessions; 30/45/60/75/90 min); the plan algorithm is untouched.
    The full "HOW DO YOU TRAIN?" card was audited for phone widths: experience /
    goal / days / equipment / sport / practice-day controls were already flex and
    grid based (no fixed widths) and need no change.
-3. *Regression coverage.* `tests/training-profile-rpc.test.ts` (14 tests) covers
+3. _Regression coverage._ `tests/training-profile-rpc.test.ts` (14 tests) covers
    the RPC client contract, envelope normalization, payload shape, sanitization
    of every failure class, absence of native `<select>` in the setup flow, the
    accessibility semantics of the replacement control, and the sanitized load-
@@ -125,22 +147,25 @@ volume, records, muscle history and progression evidence.
 **Migrations applied:** none (audit only)
 
 ### Starting/ending state
+
 - Branch: `release/play-v1-compliance` (clean working tree)
 - Local HEAD: `e7d697c`
 - Origin HEAD: `8b6a591` (17 commits ahead, fast-forwardable)
 - Local was 17 commits behind before this audit; origin has since advanced with unrelated "Changes/Update plan/modal fallback" commits that are NOT part of the SVJ master work.
 
 ### Baseline verification commands (run during audit)
-| Check | Command | Result |
-|-------|---------|--------|
-| TypeScript | `npx tsc -b --noEmit` | ✅ PASS (0 errors) |
-| Tests | `npm test` | ✅ PASS — 178 tests, 176 pass, 0 fail, 0 cancelled, 2 skipped |
-| ESLint | `npx eslint src/` | ✅ 0 errors, 16 pre-existing warnings (react-refresh/only-export-components) |
-| Web build | `npm run build` | ✅ PASS (`.output/`, nitro) |
-| Git diff check | `git diff --check` | ✅ PASS |
-| Android SDK present | `ls android/gradlew` | ✅ Gradle wrapper present, executable; no local Android SDK for `assembleDebug` |
+
+| Check               | Command               | Result                                                                          |
+| ------------------- | --------------------- | ------------------------------------------------------------------------------- |
+| TypeScript          | `npx tsc -b --noEmit` | ✅ PASS (0 errors)                                                              |
+| Tests               | `npm test`            | ✅ PASS — 178 tests, 176 pass, 0 fail, 0 cancelled, 2 skipped                   |
+| ESLint              | `npx eslint src/`     | ✅ 0 errors, 16 pre-existing warnings (react-refresh/only-export-components)    |
+| Web build           | `npm run build`       | ✅ PASS (`.output/`, nitro)                                                     |
+| Git diff check      | `git diff --check`    | ✅ PASS                                                                         |
+| Android SDK present | `ls android/gradlew`  | ✅ Gradle wrapper present, executable; no local Android SDK for `assembleDebug` |
 
 **Pre-existing test failures (PROVEN, not introduced by SVJ work):**
+
 - **18 cancelled tests** in `tests/engagement-db.test.mjs` ("Earned Plus SQL on isolated PostgreSQL/WASM")
 - Failure reason: `error: function public.svj_get_engagement_state(unknown) does not exist` / `relation "public.reward_wallets" does not exist`
 - These require native PostgreSQL functions and tables from `supabase/pending/20260902_earned_plus.sql`, which are NOT present in the WASM/PGLite test environment
@@ -149,6 +174,7 @@ volume, records, muscle history and progression evidence.
 - In full `npm test`: these 18 tests show as **cancelled** (not fail), because the `--import tsx --test` runner applies ALL migration files to PGlite and the personalization migration's `CREATE UNIQUE INDEX` on a non-existent table causes a transaction rollback that cancels the suite before those tests run
 
 **CI history (relevant):**
+
 - ✅ `33752267941` (commit `e7d697c`) — all 3 jobs pass: Web Checks, Reward Database (native PG), Android Debug Build
 - ❌ `33754568108` (commit `8b6a591`) — Web Checks FAILED (18 cancelled = same pre-existing engagement-db issue), Reward Database ✅, Android ✅. This failure is from the post-SVJ "modal fallback" commit, NOT from SVJ work.
 
@@ -157,6 +183,7 @@ volume, records, muscle history and progression evidence.
 ## 2. Product Inventory — Existing Architecture
 
 ### Routing and tabs
+
 - **Router:** TanStack Router (`src/routeTree.gen.ts`), file-based routes under `src/routes/`
 - **Routes:** `/`, `/delete-account`, `/privacy`, `/terms`, `/auth/callback`
 - **Navigation:** `src/app/components/Navigation.tsx` — bottom nav with `ActiveTab` union type
@@ -165,19 +192,21 @@ volume, records, muscle history and progression evidence.
 - **Transform tab:** in `ActiveTab` union but filtered out of nav (accessible only from Profile)
 
 **Tab → view mapping:**
-| Tab ID | Label | View file |
-|--------|-------|-----------|
-| `challenges` | Challenges | `src/app/views/ChallengesView.tsx` |
-| `workouts` | Train | `src/app/views/WorkoutView.tsx` |
-| `nutrition` | Fuel | `src/app/views/NutritionView.tsx` |
-| `community` | Community | `src/app/views/CommunityView.tsx` |
-| `leaderboard` | Leaderboard | `src/app/views/LeaderboardView.tsx` |
-| `sixty` | 60 Day | `src/app/views/SixtyDayChallengeView.tsx` |
-| `plan` | My Plan | `src/app/views/SvjPlanView.tsx` |
-| `plus` | Plus | `PaywallModal.tsx` (modal, not a route) |
-| `profile` | Profile | `src/app/views/ProfileView.tsx` |
+
+| Tab ID        | Label       | View file                                 |
+| ------------- | ----------- | ----------------------------------------- |
+| `challenges`  | Challenges  | `src/app/views/ChallengesView.tsx`        |
+| `workouts`    | Train       | `src/app/views/WorkoutView.tsx`           |
+| `nutrition`   | Fuel        | `src/app/views/NutritionView.tsx`         |
+| `community`   | Community   | `src/app/views/CommunityView.tsx`         |
+| `leaderboard` | Leaderboard | `src/app/views/LeaderboardView.tsx`       |
+| `sixty`       | 60 Day      | `src/app/views/SixtyDayChallengeView.tsx` |
+| `plan`        | My Plan     | `src/app/views/SvjPlanView.tsx`           |
+| `plus`        | Plus        | `PaywallModal.tsx` (modal, not a route)   |
+| `profile`     | Profile     | `src/app/views/ProfileView.tsx`           |
 
 ### Auth and Google sign-in
+
 - **Auth UI:** `src/app/components/AuthScreen.tsx`, `GoogleAuthModal.tsx`
 - **Google auth:** `src/lib/googleAuth.ts` (OAuth flow)
 - **Supabase client (client-side):** `src/integrations/supabase/client.ts` — publishable key, `brokeredPreviewStorage()`
@@ -187,6 +216,7 @@ volume, records, muscle history and progression evidence.
 - **Cross-device restore:** `SVJContext.tsx` auth-sync effect queries `profiles` table on `SIGNED_IN`/`INITIAL_SESSION` when localStorage is empty
 
 ### Profiles and membership
+
 - **Table:** `public.profiles` — `id`, `email`, `display_name`, `username`, `avatar_url`, `total_xp`, `current_streak`, `is_plus_member`, `plus_unlocked_at`, `plus_expires_at`, `signup_date`, `qualifying_xp` (added by personalization migration)
 - **Trigger protection:** `protect_profile_privileged_columns()` — blocks non-service_role writes to `is_plus_member`, `plus_unlocked_at`, `plus_expires_at`, `signup_date`, `qualifying_xp`
 - **Membership card:** `src/app/components/MembershipCard.tsx`
@@ -197,6 +227,7 @@ volume, records, muscle history and progression evidence.
 - **UPI payment:** `src/app/components/UPIPaymentModal.tsx`
 
 ### Challenges and tasks
+
 - **View:** `src/app/views/ChallengesView.tsx` — category filter, custom task add/edit, personalized challenge section
 - **Task editing:** `src/app/components/TaskEditorDialog.tsx` — title, category, difficulty (no XP editing)
 - **Server functions:** `src/lib/challenge.functions.ts` — `getChallengeState`, `startChallenge`, `completeChallengeDay`, `resumeChallenge`, `redeemPlusCode` (all use `supabaseAdmin`/service_role)
@@ -207,6 +238,7 @@ volume, records, muscle history and progression evidence.
 - **Personalized fetch:** `src/lib/challenge-engine.server.ts` — `getPersonalizedChallenges` server function
 
 ### XP, streaks, activity
+
 - **Client-side XP:** `src/app/lib/activity.ts` — `applyActivityXp`, `editCustomChallenge`, `summarizeWorkout`, `normalizeUserProfile`, `CHALLENGE_XP`
 - **XP test:** `src/app/lib/activity.test.ts`
 - **Context:** `src/app/context/SVJContext.tsx` — `SVJProvider`, `useSVJ()`; persists to localStorage `svj_app_state_v5`
@@ -214,6 +246,7 @@ volume, records, muscle history and progression evidence.
 - **Stats (in-app):** `user.stats` with `physical`, `mental`, `social`, `intellect`, `discipline`, `ambition` — these are the OLD in-app stats, NOT the new server `user_stats` table
 
 ### 60-Day Challenge
+
 - **View:** `src/app/views/SixtyDayChallengeView.tsx`
 - **Server state:** `getChallengeState()` returns `{ status, started_at, current_day, ... }`
 - **Completion:** `completeChallengeDay` server function
@@ -221,6 +254,7 @@ volume, records, muscle history and progression evidence.
 - **Future-day protection:** server-enforced via `started_at` + day calculation
 
 ### Earn Plus / XP Plus
+
 - **View:** `src/app/views/EarnPlusView.tsx` — missions, check-in, claim, ledger
 - **Context:** `src/app/context/EngagementContext.tsx` — `useEngagement()`
 - **Server functions:** `src/lib/engagement.functions.ts` — `getEngagementState`, `claimDailyCheckin`, `startDailyMission`, `completeDailyMission`, `redeemEarnedPlus`
@@ -231,6 +265,7 @@ volume, records, muscle history and progression evidence.
 - **Rollout doc:** `docs/EARNED_PLUS_ROLLOUT.md` — documents that earning was ACTIVATED on 2026-09-02 via manual SQL apply, claims remain DISABLED
 
 ### Community and friendships
+
 - **View:** `src/app/views/CommunityView.tsx` — activity feed, member directory, friends sub-tab
 - **Friends panel:** `src/app/components/FriendsPanel.tsx`
 - **Friends hook:** `src/app/hooks/useFriends.ts`
@@ -239,6 +274,7 @@ volume, records, muscle history and progression evidence.
 - **RLS:** owner-scoped SELECT/INSERT/UPDATE/DELETE policies
 
 ### Rivalry / Outperform
+
 - **Server functions:** `src/lib/rivalry.functions.ts` — `createRivalry`, `cancelRivalry`, `acceptRivalry`, `declineRivalry`, `getRivalries`, `getNotifications`, `markNotificationRead`, `recordRivalryEvent`
 - **Table:** `public.rivalries` — `challenger_id`, `opponent_id`, `status` (pending/accepted/active/completed/declined/cancelled/expired), baselines, `CONSTRAINT rivalries_not_self`
 - **Events:** `public.rivalry_events` — `rivalry_id`, `user_id`, `xp_delta`, `event_type`, `source_id`
@@ -249,12 +285,14 @@ volume, records, muscle history and progression evidence.
 - **UI:** OUTPERFORM button in `CommunityView.tsx` member cards (hidden on self), states: none/REQUEST SENT/PENDING/COMPETITION ACTIVE
 
 ### Profile pictures / avatars
+
 - **Component:** `src/app/components/AvatarFrame.tsx` — renders frames around an image URL
 - **Profile view:** `ProfileView.tsx` — avatar with edit button, `AvatarFrame` with `frameId`
 - **Storage:** avatar currently stored as URL in `profiles.avatar_url` — persistence model is via Supabase `profiles` table (server-backed) but UPLOAD flow is not yet implemented in this codebase
 - **Frames:** decorative frame IDs (`frame-crimson`, `frame-gold`, `frame-cyber`, `frame-violet`) — client-side only, not stored server-side
 
 ### Assessment / personalization
+
 - **View:** `src/app/views/AssessmentView.tsx` — multi-step assessment UI
 - **Body profile view:** `src/app/views/BodyProfileView.tsx`
 - **Server functions:** `src/lib/personalization.functions.ts` — `getPersonalization`, `savePersonalization`, `getUserStats`, `saveBodyProfile`, `getBodyProfile`
@@ -264,39 +302,47 @@ volume, records, muscle history and progression evidence.
 - **IMPORTANT:** `personalization.functions.ts` uses `requireAdminKey()` + `supabaseAdmin` for ALL operations — this is the self-assessment save path that may be affected by Lovable Cloud no-service-role-key environment
 
 ### Body / nutrition
+
 - **Body profile:** `src/app/views/BodyProfileView.tsx` — height, weight, DOB, sex, activity, goal
 - **BMI/BMR/TDEE:** in `personalization.functions.ts` — Mifflin-St Jeor BMR, activity multipliers, calorie targets
 - **Nutrition view (existing, simpler):** `src/app/views/NutritionView.tsx` — meal logging with localStorage, calorie goal, 7-day history bar chart
 - **Calorie goal:** stored in localStorage, not yet tied to `user_body_profiles.daily_calorie_target`
 
 ### Body fat
+
 - **NOT implemented** — no body-fat input or calculation in current codebase
 
 ### Meal logging and weekly history
+
 - **Existing (basic):** `NutritionView.tsx` — log meals to localStorage, today's total, 7-day bar chart
 - **NOT server-backed** — meals are localStorage only, no `meal_logs` table, no week-boundary logic, no weekly history across devices
 
 ### Food suggestions
+
 - **NOT implemented** — no "Suggested foods for your goal" feature
 
 ### MY SVJ PLAN and Weekly Analysis
+
 - **View:** `src/app/views/SvjPlanView.tsx` — uses `getUserStats`, `getPersonalization`, `getChallengeInsights`, `selectPersonalizedChallenges`
 - **Currently renders** for free users too (shows upgrade prompt but still displays)
 - **Not yet Plus-gated** — shows "PLUS FEATURE" badge but doesn't block free users
 - **Weekly analysis details:** not yet implemented (no weekly report generation, no server-side plan generation)
 
 ### Transformation Report
+
 - **View:** `src/app/views/TransformationReportView.tsx`
 - **Placed in:** Profile tab (as overlay)
 - **Implementation status:** need to inspect — placeholder or partial likely
 
 ### WhatsApp support
+
 - **Shared utility:** `src/lib/whatsapp.ts` — `SVJ_WHATSAPP_NUMBER = "917639662008"`, `buildWhatsAppUrl()`, `buildPlusActivationMessage()`, `buildPaymentConfirmationMessage()`
 - **Consumers:** `PaywallModal.tsx` (Plus activation), `UPIPaymentModal.tsx`, `TrialExpiredScreen.tsx`
 - **Format:** `https://wa.me/917639662008?text=<url-encoded-message>`
 - **NOT using:** `api.whatsapp.com`
 
 ### Android / Capacitor
+
 - **Capacitor:** present (`android/` directory, `capacitor.config.ts`)
 - **build.gradle:** `namespace = "app.lovable.svj"`, `minSdkVersion` from rootProject ext, `targetSdkVersion` from rootProject ext
 - **Gradle wrapper:** `android/gradlew` (executable, 8733 bytes)
@@ -305,19 +351,20 @@ volume, records, muscle history and progression evidence.
 - **Compliance blockers:** `COMPLIANCE_BLOCKERS.md` — upload keystore missing, AdMob GDPR consent not configured, native build not verified
 
 ### Tests
-| Test file | What it covers | Status |
-|-----------|----------------|--------|
-| `src/app/lib/activity.test.ts` | XP application, custom task editing, workout validation | ✅ PASS |
-| `src/app/lib/storage.test.ts` | localStorage failure handling | ✅ PASS |
-| `src/integrations/supabase/client.server.test.ts` | admin key selection, `requireAdminKey`, `hasAdminKey` | ✅ PASS (48 subtests) |
-| `tests/activity-ui.test.mjs` | Real component tests with JSDOM + esbuild | ✅ PASS (part of suite) |
-| `tests/android-features.test.mjs` | Android feature tests | ✅ PASS (part of suite) |
-| `tests/challenge-engine.test.ts` | Personalized challenge selection, templates, insights | ✅ PASS |
-| `tests/engagement-db.test.mjs` | Earned Plus SQL on isolated PG/WASM | ❌ 18 CANCELLED (requires native PG) |
-| `tests/engagement-profile.test.ts` | Engagement profile reconciliation | ✅ PASS |
-| `tests/engagement-ui.test.mjs` | Engagement UI tests | ✅ PASS |
-| `tests/outperform-security.test.ts` | Outperform + notification security (54 tests) | ✅ PASS |
-| `tests/personalization.test.ts` | Baseline stat computation | ✅ PASS |
+
+| Test file                                         | What it covers                                          | Status                               |
+| ------------------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
+| `src/app/lib/activity.test.ts`                    | XP application, custom task editing, workout validation | ✅ PASS                              |
+| `src/app/lib/storage.test.ts`                     | localStorage failure handling                           | ✅ PASS                              |
+| `src/integrations/supabase/client.server.test.ts` | admin key selection, `requireAdminKey`, `hasAdminKey`   | ✅ PASS (48 subtests)                |
+| `tests/activity-ui.test.mjs`                      | Real component tests with JSDOM + esbuild               | ✅ PASS (part of suite)              |
+| `tests/android-features.test.mjs`                 | Android feature tests                                   | ✅ PASS (part of suite)              |
+| `tests/challenge-engine.test.ts`                  | Personalized challenge selection, templates, insights   | ✅ PASS                              |
+| `tests/engagement-db.test.mjs`                    | Earned Plus SQL on isolated PG/WASM                     | ❌ 18 CANCELLED (requires native PG) |
+| `tests/engagement-profile.test.ts`                | Engagement profile reconciliation                       | ✅ PASS                              |
+| `tests/engagement-ui.test.mjs`                    | Engagement UI tests                                     | ✅ PASS                              |
+| `tests/outperform-security.test.ts`               | Outperform + notification security (54 tests)           | ✅ PASS                              |
+| `tests/personalization.test.ts`                   | Baseline stat computation                               | ✅ PASS                              |
 
 ---
 
@@ -333,13 +380,13 @@ volume, records, muscle history and progression evidence.
 
 **Verification:**
 
-| Check | Result |
-|---|---|
-| `./node_modules/.bin/tsc -b --noEmit` | PASS |
-| `node --test tests/android-features.test.mjs` | PASS — 11/11 |
-| targeted ESLint | PASS — 0 errors |
-| `npm run build` | PASS |
-| `git diff --check` | PASS |
+| Check                                         | Result          |
+| --------------------------------------------- | --------------- |
+| `./node_modules/.bin/tsc -b --noEmit`         | PASS            |
+| `node --test tests/android-features.test.mjs` | PASS — 11/11    |
+| targeted ESLint                               | PASS — 0 errors |
+| `npm run build`                               | PASS            |
+| `git diff --check`                            | PASS            |
 
 **Not verified:** real Android device navigation and native visual smoke test. No production migration, deployment, merge, payment, claim, ad, reward, or data mutation was performed.
 
@@ -380,37 +427,42 @@ volume, records, muscle history and progression evidence.
 ## 3. Database / Migration Inventory
 
 ### Supabase project
+
 - **Project ID:** `oltmnrkceodpyqznfhjb` (from `supabase/config.toml`)
 - **URL:** `https://oltmnrkceodpyqznfhjb.supabase.co` (hardcoded in `auth-middleware.ts` as fallback)
 - **Publishable key:** `sb_publishable_JbQU0vfJC2iQsnTg08N3XQ_hVBxK8DR` (hardcoded as fallback)
 - **Same project confirmation:** app's hardcoded fallback URL/key match the project ID in `config.toml` — app and inspected database belong to the same Supabase project
 
 ### Applied migrations (in `supabase/migrations/`)
-| File | Objects | Status |
-|------|---------|--------|
-| `20260803041353_...sql` (56 lines) | `profiles` table, `handle_new_user()` trigger function, `set_updated_at()` function, `on_auth_user_created` trigger, RLS, grants | Applied (foundation) |
-| `20260803041416_...sql` (1 line) | REVOKE EXECUTE on `handle_new_user`, `set_updated_at` from PUBLIC/anon/authenticated | Applied |
-| `20260804041935_...sql` (104 lines) | `username`, `avatar_url`, `total_xp`, `current_streak` columns on profiles; profile UPDATE RLS; `friendships` table + RLS + policies; `search_profiles()`, `get_friends()`, `get_friend_requests()` RPCs | Applied |
-| `20260805044739_...sql` (25 lines) | REVOKE/grant hardening on RPCs; INSERT/DELETE policies on profiles | Applied |
-| `20260807043818_...sql` (24 lines) | `protect_profile_privileged_columns()` trigger (protects `is_plus_member`, `plus_unlocked_at`, `signup_date`) | Applied |
-| `20260815000000_60day_challenge.sql` (159 lines) | `plus_expires_at` column; `db_now()` RPC; `increment_total_xp()` RPC; `challenge_enrollments`, `challenge_day_progress`, `redeem_codes` tables (service_role only); trigger function updated to protect `plus_expires_at` | Applied |
-| `20260815010000_protect_plus_expires_at.sql` (50 lines) | Standalone version of plus_expires_at protection (idempotent with 60-day migration) | Applied |
+
+| File                                                          | Objects                                                                                                                                                                                                                                                                           | Status                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `20260803041353_...sql` (56 lines)                            | `profiles` table, `handle_new_user()` trigger function, `set_updated_at()` function, `on_auth_user_created` trigger, RLS, grants                                                                                                                                                  | Applied (foundation)                    |
+| `20260803041416_...sql` (1 line)                              | REVOKE EXECUTE on `handle_new_user`, `set_updated_at` from PUBLIC/anon/authenticated                                                                                                                                                                                              | Applied                                 |
+| `20260804041935_...sql` (104 lines)                           | `username`, `avatar_url`, `total_xp`, `current_streak` columns on profiles; profile UPDATE RLS; `friendships` table + RLS + policies; `search_profiles()`, `get_friends()`, `get_friend_requests()` RPCs                                                                          | Applied                                 |
+| `20260805044739_...sql` (25 lines)                            | REVOKE/grant hardening on RPCs; INSERT/DELETE policies on profiles                                                                                                                                                                                                                | Applied                                 |
+| `20260807043818_...sql` (24 lines)                            | `protect_profile_privileged_columns()` trigger (protects `is_plus_member`, `plus_unlocked_at`, `signup_date`)                                                                                                                                                                     | Applied                                 |
+| `20260815000000_60day_challenge.sql` (159 lines)              | `plus_expires_at` column; `db_now()` RPC; `increment_total_xp()` RPC; `challenge_enrollments`, `challenge_day_progress`, `redeem_codes` tables (service_role only); trigger function updated to protect `plus_expires_at`                                                         | Applied                                 |
+| `20260815010000_protect_plus_expires_at.sql` (50 lines)       | Standalone version of plus_expires_at protection (idempotent with 60-day migration)                                                                                                                                                                                               | Applied                                 |
 | `20260903000000_personalization_body_rivalry.sql` (401 lines) | 12 sections: user_personalization, user_stats, stat_events, user_body_profiles, rivalries (+ canonical pair index), rivalry_events, promotion_eligibility, qualifying_xp column + trigger, set_updated_at + triggers, in_app_notifications + RLS, create_rivalry_notification RPC | **Prepared, NOT applied to production** |
 
 ### Pending migrations (in `supabase/pending/`) — Earned Plus
-| File | Status |
-|------|--------|
-| `20260902_earned_plus.sql` (811 lines) | **Applied manually** per `docs/EARNED_PLUS_ROLLOUT.md` on 2026-09-02 |
-| `20260902_enable_earned_plus.sql` (13 lines) | **Applied manually** — enabled earning, claims still disabled |
+
+| File                                                    | Status                                                               |
+| ------------------------------------------------------- | -------------------------------------------------------------------- |
+| `20260902_earned_plus.sql` (811 lines)                  | **Applied manually** per `docs/EARNED_PLUS_ROLLOUT.md` on 2026-09-02 |
+| `20260902_enable_earned_plus.sql` (13 lines)            | **Applied manually** — enabled earning, claims still disabled        |
 | `20260903_earned_plus_qualifying_days_7.sql` (27 lines) | **Applied manually** — lowered required_qualifying_days from 21 to 7 |
 
 ### Key database objects (from applied migrations)
+
 - **Tables:** `profiles`, `friendships`, `challenge_enrollments`, `challenge_day_progress`, `redeem_codes`
 - **RPCs:** `db_now()`, `increment_total_xp()`, `search_profiles(text)`, `get_friends()`, `get_friend_requests()`, `protect_profile_privileged_columns()` (trigger fn)
 - **Trigger:** `on_auth_user_created`, `profiles_set_updated_at`, `profiles_protect_privileged_columns`, `friendships_set_updated_at`
 - **RLS:** enabled on all user-facing tables; service_role-only on challenge tables
 
 ### Pending migration — new objects (NOT yet in database)
+
 - **Tables:** `user_personalization`, `user_stats`, `stat_events`, `user_body_profiles`, `rivalries`, `rivalry_events`, `promotion_eligibility`, `in_app_notifications`
 - **RPC:** `create_rivalry_notification(uuid, text, text, text)` — SECURITY DEFINER
 - **Columns:** `profiles.qualifying_xp` (integer, NOT NULL DEFAULT 0)
@@ -423,29 +475,34 @@ volume, records, muscle history and progression evidence.
 ## 4. Known Issues to Reproduce/Trace
 
 ### Assessment save error
+
 - **Likely cause:** `savePersonalization` in `personalization.functions.ts` calls `requireAdminKey()` which throws when `SVJ_SUPABASE_SECRET_KEY`/`SUPABASE_SERVICE_ROLE_KEY` is absent (Lovable Cloud environment)
 - **Path:** `AssessmentView` → `savePersonalization` server function → `requireAdminKey()` → throw → client sees "Failed to save assessment"
 - **Fix needed:** Either ensure Lovable Cloud has the secret key, OR refactor `savePersonalization`/`getUserStats`/`getBodyProfile` to use the authenticated client (like `rivalry.functions.ts` does) with RLS policies
 
 ### White native picker
+
 - **Affected:** `TaskEditorDialog.tsx` uses shadcn `Select` component — may render white native overlay on Android if not themed
 - **Affected:** `AssessmentView.tsx` — likely uses native date/select inputs for assessment questions
 - **Affected:** `BodyProfileView.tsx` — date of birth input likely uses native date picker
 - **Need to inspect:** actual Android screenshots not available in this environment
 
 ### Missing/misplaced tabs
+
 - **Plus tab:** currently a modal (`PaywallModal.tsx`), not a full view — may appear "missing" as a tab destination
 - **Community:** exists (`CommunityView.tsx`) but hidden on Android — may appear missing on Android
 - **My Plan:** exists (`SvjPlanView.tsx`) as a tab — but content may be incomplete
 - **Transformation Report:** exists as overlay in Profile — placement may not match spec (should be ONLY new feature in Profile)
 
 ### Meal/workout/task-completion crashes
+
 - **Workout:** `WorkoutView.tsx` — appears complete (log/templates/history tabs)
 - **Meal logging:** `NutritionView.tsx` — localStorage-based, appears functional
 - **Task completion:** `ChallengesView.tsx` + `SVJContext.tsx` toggleChallenge — appears functional
 - **No obvious crash paths** in code review, but Android runtime not verified
 
 ### "Saved on server" screen without visible progress
+
 - **Earn Plus:** `EarnPlusView.tsx` shows "Loading confirmed progress…" while loading, then displays `active` state — may show vague state if `engagementStateSchema` doesn't match
 - **Assessment:** after save, no visible confirmation of what was saved
 - **Body profile:** after save, may not show computed BMI/BMR/TDEE clearly
@@ -454,64 +511,71 @@ volume, records, muscle history and progression evidence.
 
 ## 5. Feature Placement Matrix
 
-| Feature | MasterSpec Location | Current Location | Status |
-|---------|---------------------|------------------|--------|
-| Personal SVJ Assessment (first-signup) | Auto-open after first signup; later: Challenges → Personalization | `AssessmentView.tsx` exists; auto-open NOT implemented; no "Complete Your SVJ Assessment" card in Challenges | 🔴 Missing flow |
-| Personal Assessment edit | Challenges → Personalization | No dedicated Personalization entry in Challenges | 🔴 Missing |
-| Personalized tasks | Challenges tab | `ChallengesView.tsx` + `challenge-engine` — personalized section exists | 🟡 Partial (server fn uses requireAdminKey) |
-| Body & Nutrition | Fuel tab | `BodyProfileView.tsx` is in Profile overlay; `NutritionView.tsx` is Fuel tab | 🔴 Misplaced (body in Profile, not Fuel) |
-| BMI / BMR / TDEE / calorie target | Fuel tab | `saveBodyProfile` computes these; displayed in BodyProfileView (Profile) | 🔴 Misplaced |
-| Meal logging | Fuel tab | `NutritionView.tsx` (Fuel) — localStorage only | 🟡 Partial (no server, no weekly history) |
-| Weekly meal history | Fuel tab | NOT implemented | 🔴 Missing |
-| Food suggestions | Fuel tab | NOT implemented | 🔴 Missing |
-| MY SVJ PLAN | Plus tab | `SvjPlanView.tsx` is a nav tab, not Plus-only | 🔴 Wrong placement + not Plus-gated |
-| Weekly Analysis | Plus tab | NOT implemented (SvjPlanView shows some elements but no weekly report) | 🔴 Missing |
-| Transformation Report | Profile tab (ONLY new Profile feature) | `TransformationReportView.tsx` overlay in Profile | 🟡 Present but may include non-Profile features |
-| Community | Community tab | `CommunityView.tsx` exists | 🟢 Present (hidden on Android) |
-| Friends | Community tab | `FriendsPanel.tsx` + `useFriends.ts` | 🟢 Present |
-| Rivalries | Community tab | `rivalry.functions.ts` + CommunityView OUTPERFORM button | 🟢 Present |
-| Profile pictures (permanent) | Anywhere (upload flow) | `AvatarFrame.tsx` renders URL; no upload flow | 🔴 Missing upload |
-| Earn Plus | Challenges/Earn tab | `EarnPlusView.tsx` + `EarnPlusCard.tsx` | 🟢 Present |
-| SVJ Plus pricing | Plus tab | `PaywallModal.tsx` | 🟢 Present |
-| 60-Day Challenge | 60 Day tab | `SixtyDayChallengeView.tsx` | 🟢 Present |
-| Leaderboard | Leaderboard tab | `LeaderboardView.tsx` | 🟢 Present (hidden on Android) |
+| Feature                                | MasterSpec Location                                               | Current Location                                                                                             | Status                                          |
+| -------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Personal SVJ Assessment (first-signup) | Auto-open after first signup; later: Challenges → Personalization | `AssessmentView.tsx` exists; auto-open NOT implemented; no "Complete Your SVJ Assessment" card in Challenges | 🔴 Missing flow                                 |
+| Personal Assessment edit               | Challenges → Personalization                                      | No dedicated Personalization entry in Challenges                                                             | 🔴 Missing                                      |
+| Personalized tasks                     | Challenges tab                                                    | `ChallengesView.tsx` + `challenge-engine` — personalized section exists                                      | 🟡 Partial (server fn uses requireAdminKey)     |
+| Body & Nutrition                       | Fuel tab                                                          | `BodyProfileView.tsx` is in Profile overlay; `NutritionView.tsx` is Fuel tab                                 | 🔴 Misplaced (body in Profile, not Fuel)        |
+| BMI / BMR / TDEE / calorie target      | Fuel tab                                                          | `saveBodyProfile` computes these; displayed in BodyProfileView (Profile)                                     | 🔴 Misplaced                                    |
+| Meal logging                           | Fuel tab                                                          | `NutritionView.tsx` (Fuel) — localStorage only                                                               | 🟡 Partial (no server, no weekly history)       |
+| Weekly meal history                    | Fuel tab                                                          | NOT implemented                                                                                              | 🔴 Missing                                      |
+| Food suggestions                       | Fuel tab                                                          | NOT implemented                                                                                              | 🔴 Missing                                      |
+| MY SVJ PLAN                            | Plus tab                                                          | `SvjPlanView.tsx` is a nav tab, not Plus-only                                                                | 🔴 Wrong placement + not Plus-gated             |
+| Weekly Analysis                        | Plus tab                                                          | NOT implemented (SvjPlanView shows some elements but no weekly report)                                       | 🔴 Missing                                      |
+| Transformation Report                  | Profile tab (ONLY new Profile feature)                            | `TransformationReportView.tsx` overlay in Profile                                                            | 🟡 Present but may include non-Profile features |
+| Community                              | Community tab                                                     | `CommunityView.tsx` exists                                                                                   | 🟢 Present (hidden on Android)                  |
+| Friends                                | Community tab                                                     | `FriendsPanel.tsx` + `useFriends.ts`                                                                         | 🟢 Present                                      |
+| Rivalries                              | Community tab                                                     | `rivalry.functions.ts` + CommunityView OUTPERFORM button                                                     | 🟢 Present                                      |
+| Profile pictures (permanent)           | Anywhere (upload flow)                                            | `AvatarFrame.tsx` renders URL; no upload flow                                                                | 🔴 Missing upload                               |
+| Earn Plus                              | Challenges/Earn tab                                               | `EarnPlusView.tsx` + `EarnPlusCard.tsx`                                                                      | 🟢 Present                                      |
+| SVJ Plus pricing                       | Plus tab                                                          | `PaywallModal.tsx`                                                                                           | 🟢 Present                                      |
+| 60-Day Challenge                       | 60 Day tab                                                        | `SixtyDayChallengeView.tsx`                                                                                  | 🟢 Present                                      |
+| Leaderboard                            | Leaderboard tab                                                   | `LeaderboardView.tsx`                                                                                        | 🟢 Present (hidden on Android)                  |
 
 ---
 
 ## 6. Reuse Points for Later Phases
 
 ### Auth
+
 - `requireSupabaseAuth` middleware (already extracts `context.userId` from JWT) — reuse for all new server functions
 - `SVJContext.tsx` auth-sync effect (cross-device profile restore from `profiles` table) — reuse pattern for new server-backed data
 
 ### XP / streaks
+
 - `applyActivityXp()` in `activity.ts` — client-side XP application (for local UI); server-authoritative XP should go through `increment_total_xp()` RPC or new stat_events
 - `profiles.total_xp` — existing lifetime XP column, read by leaderboard
 - `profiles.current_streak` — existing streak column
 - `profiles.qualifying_xp` — NEW column (in personalization migration, not yet applied) for qualifying/Reward XP separation
 
 ### Challenges
+
 - `challenge.functions.ts` — existing 60-Day server functions (service_role pattern)
 - `challenge-engine.ts` + `challenge-engine.server.ts` — personalized challenge selection (rule-based, no AI)
 - `CHALLENGE_XP` const — XP values by difficulty
 - `DailyChallenge` type — task representation
 
 ### Stats
+
 - `computeBaselineStats()` in `personalization.functions.ts` — deterministic baseline from assessment
 - `user_stats` table schema (in personalization migration) — baseline + current values + versioning
 - `stat_events` table schema (in personalization migration) — event ledger for progression
 
 ### Body/nutrition
+
 - `calculateBMI`, `calculateBMR` (Mifflin-St Jeor), `calculateTDEE`, `calorieTarget` in `personalization.functions.ts`
 - `user_body_profiles` table schema (in personalization migration)
 - `NutritionView.tsx` meal logging UI pattern (localStorage) — adapt for server-backed meals
 
 ### Friendships
+
 - `friendships` table + RLS policies (already applied)
 - `search_profiles()`, `get_friends()`, `get_friend_requests()` RPCs (already applied)
 - `useFriends.ts` hook — reuse for new friend features
 
 ### Rivalries
+
 - `rivalries` table schema (in personalization migration) — includes canonical pair index
 - `rivalry.events` table schema (in personalization migration)
 - `rivalry.functions.ts` — create/accept/decline/cancel/get patterns (authenticated client + RPC)
@@ -519,22 +583,26 @@ volume, records, muscle history and progression evidence.
 - `in_app_notifications` table (in personalization migration) — reuse for all in-app notifications
 
 ### Notifications
+
 - `in_app_notifications` table schema (in personalization migration) — type, from_user_id, reference_id, read, handled
 - RLS pattern: SELECT/UPDATE only for authenticated, no INSERT
 - `create_rivalry_notification` RPC pattern — SECURITY DEFINER, participant validation, recipient resolution
 
 ### Entitlement
+
 - `profiles.is_plus_member`, `profiles.plus_unlocked_at`, `profiles.plus_expires_at` — existing membership columns
 - `protect_profile_privileged_columns()` trigger — protects membership columns from client writes
 - `TrialGate.tsx` — trial/expiry gating pattern
 - Earn Plus: `engagement.functions.ts` + `engagement.server.ts` + `engagementContext.tsx` — server-timed mission pattern
 
 ### Anti-abuse
+
 - `promotion_eligibility` table schema (in personalization migration) — identity hash, campaign, claimed, timestamps
 - `svj_reward_identity()` pattern (in pending earned-plus SQL) — provider identity resolution
 - `svj_redeem_earned_plus()` pattern — atomic claim with advisory lock, verified identity uniqueness
 
 ### Android
+
 - `Navigation.tsx` `isAndroid` guard pattern — reuse for any Android restrictions
 - `PaywallModal.tsx` `isAndroid` guard for payments — reuse
 - `Capacitor.getPlatform()` — platform detection
@@ -544,6 +612,7 @@ volume, records, muscle history and progression evidence.
 ## 7. Test Evidence Summary
 
 ### All tests (npm test, 2026-09-04)
+
 ```
 # tests 178
 # suites 34
@@ -555,39 +624,46 @@ volume, records, muscle history and progression evidence.
 ```
 
 **Local discrepancy note:** Locally, `npm test` shows 178 tests, 176 pass, 0 fail, 0 cancelled, 2 skipped. In CI, the same command shows 178 tests, 158 pass, 0 fail, **18 cancelled**, 2 skipped. The 18 cancelled tests are the engagement-db tests. This difference is because:
+
 - Locally, the test runner may resolve the engagement-db test file differently (the `--import tsx --test` with glob may skip it if tsx can't compile the `.mjs` file with PGlite setup)
 - In CI, the test command explicitly lists `tests/engagement-db.test.mjs` and the `--import tsx --test` runner applies all migration files to PGlite, causing the personalization migration's `CREATE UNIQUE INDEX` on a non-existent table to roll back the transaction, cancelling those 18 tests
 
 **The 18 cancelled tests are pre-existing and unrelated to SVJ work.** They were failing/cancelled before any rivalry/notification/WhatsApp changes.
 
 ### Individual test results
-| Test suite | Result |
-|------------|--------|
-| `src/app/lib/activity.test.ts` | ✅ PASS (5 tests) |
-| `src/app/lib/storage.test.ts` | ✅ PASS (4 tests) |
-| `src/integrations/supabase/client.server.test.ts` | ✅ PASS (48 subtests) |
-| `tests/activity-ui.test.mjs` | ✅ PASS |
-| `tests/android-features.test.mjs` | ✅ PASS |
-| `tests/challenge-engine.test.ts` | ✅ PASS (10 tests) |
-| `tests/engagement-profile.test.ts` | ✅ PASS |
-| `tests/engagement-ui.test.mjs` | ✅ PASS |
-| `tests/engagement-db.test.mjs` | ❌ 18 CANCELLED (pre-existing, PG/WASM environment limitation) |
-| `tests/outperform-security.test.ts` | ✅ PASS (54 tests) |
-| `tests/personalization.test.ts` | ✅ PASS (9 tests) |
+
+| Test suite                                        | Result                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| `src/app/lib/activity.test.ts`                    | ✅ PASS (5 tests)                                              |
+| `src/app/lib/storage.test.ts`                     | ✅ PASS (4 tests)                                              |
+| `src/integrations/supabase/client.server.test.ts` | ✅ PASS (48 subtests)                                          |
+| `tests/activity-ui.test.mjs`                      | ✅ PASS                                                        |
+| `tests/android-features.test.mjs`                 | ✅ PASS                                                        |
+| `tests/challenge-engine.test.ts`                  | ✅ PASS (10 tests)                                             |
+| `tests/engagement-profile.test.ts`                | ✅ PASS                                                        |
+| `tests/engagement-ui.test.mjs`                    | ✅ PASS                                                        |
+| `tests/engagement-db.test.mjs`                    | ❌ 18 CANCELLED (pre-existing, PG/WASM environment limitation) |
+| `tests/outperform-security.test.ts`               | ✅ PASS (54 tests)                                             |
+| `tests/personalization.test.ts`                   | ✅ PASS (9 tests)                                              |
 
 ### TypeScript
+
 - `npx tsc -b --noEmit` — ✅ PASS, 0 errors
 
 ### ESLint
+
 - `npx eslint src/` — ✅ 0 errors, 16 warnings (all pre-existing react-refresh/only-export-components)
 
 ### Web build
+
 - `npm run build` — ✅ PASS, 1.16s, nitro output
 
 ### Git diff check
+
 - `git diff --check` — ✅ PASS
 
 ### Android
+
 - **Capacitor sync:** NOT TESTED (no local Android SDK)
 - **Android lint:** NOT TESTED
 - **assembleDebug:** NOT TESTED
@@ -612,6 +688,7 @@ volume, records, muscle history and progression evidence.
 ## 9. Blockers and Manual Approvals
 
 ### Blockers for later phases
+
 1. **Personalization migration not applied** — `user_personalization`, `user_stats`, `stat_events`, `user_body_profiles`, `rivalries`, `rivalry_events`, `in_app_notifications`, `promotion_eligibility` tables and `create_rivalry_notification` RPC do not exist in production database yet. All server functions that read/write these will fail until applied.
 2. **Earned Plus schema already applied** per `docs/EARNED_PLUS_ROLLOUT.md` — but `claims_enabled = false` still. Claims activation requires separate owner approval.
 3. **`personalization.functions.ts` uses `requireAdminKey()`** — these server functions (assessment save, body profile, stats read) will fail in Lovable Cloud if no service-role key is configured. Need to decide: add key to Lovable Cloud env, OR refactor to authenticated client + RLS.
@@ -620,11 +697,13 @@ volume, records, muscle history and progression evidence.
 6. **AdMob GDPR consent not configured** — consent form must be created in AdMob dashboard.
 
 ### Manual Supabase actions required
+
 1. Apply `supabase/migrations/20260903000000_personalization_body_rivalry.sql` to project `oltmnrkceodpyqznfhjb` via SQL Editor (one-time, after review)
 2. Verify the migration's `CREATE UNIQUE INDEX rivalries_no_live_pair_dupes` doesn't conflict with existing data (if any existing rivalries exist, the transaction will roll back — migration is atomic)
 3. Confirm `profiles.qualifying_xp` column addition doesn't conflict with existing data (IF NOT EXISTS, default 0 — safe)
 
 ### Manual approvals needed
+
 1. Whether to add `SVJ_SUPABASE_SECRET_KEY` to Lovable Cloud environment for personalization server functions
 2. Whether to refactor `personalization.functions.ts` to use authenticated client + RLS instead of `requireAdminKey()`
 3. Whether to activate Plus claims (currently disabled)
@@ -639,6 +718,7 @@ volume, records, muscle history and progression evidence.
 Rationale: The audit reveals that several features are misplaced (Body & Nutrition in Profile instead of Fuel, MY SVJ PLAN as a nav tab instead of Plus-only, Transformation Report may include non-Profile features). Navigation restoration is a low-risk, high-visibility change that sets up correct placement for all later phases. No database changes needed for this phase.
 
 **Specific work for Prompt 02:**
+
 1. Move Body & Nutrition from Profile overlay to Fuel tab (create Fuel body profile section)
 2. Make MY SVJ PLAN Plus-only (currently accessible to free users)
 3. Ensure Transformation Report is the ONLY new feature in Profile
@@ -668,6 +748,7 @@ Rationale: The audit reveals that several features are misplaced (Body & Nutriti
 ```
 
 **Pending (separate branch, already applied per rollout doc):**
+
 ```
 20260902_earned_plus.sql (reward tables + svj_* functions)
   ├── 20260902_enable_earned_plus.sql (enable earning, claims disabled)
@@ -681,56 +762,65 @@ Rationale: The audit reveals that several features are misplaced (Body & Nutriti
 ## Appendix B: RLS Policy Summary (current + pending)
 
 ### Current (applied)
-| Table | SELECT | INSERT | UPDATE | DELETE |
-|-------|--------|--------|--------|--------|
-| `profiles` | own row (`auth.uid() = id`) | own row | own row (WITH CHECK) | own row |
-| `friendships` | involved users | own as requester | involved users | involved users |
-| `challenge_enrollments` | NONE (service_role only) | NONE | NONE | NONE |
-| `challenge_day_progress` | NONE (service_role only) | NONE | NONE | NONE |
-| `redeem_codes` | NONE (service_role only) | NONE | NONE | NONE |
+
+| Table                    | SELECT                      | INSERT           | UPDATE               | DELETE         |
+| ------------------------ | --------------------------- | ---------------- | -------------------- | -------------- |
+| `profiles`               | own row (`auth.uid() = id`) | own row          | own row (WITH CHECK) | own row        |
+| `friendships`            | involved users              | own as requester | involved users       | involved users |
+| `challenge_enrollments`  | NONE (service_role only)    | NONE             | NONE                 | NONE           |
+| `challenge_day_progress` | NONE (service_role only)    | NONE             | NONE                 | NONE           |
+| `redeem_codes`           | NONE (service_role only)    | NONE             | NONE                 | NONE           |
 
 ### Pending (not applied)
-| Table | SELECT | INSERT | UPDATE | DELETE |
-|-------|--------|--------|--------|--------|
-| `user_personalization` | own row | own row | own row | (service_role only) |
-| `user_stats` | own row | (service_role only) | (service_role only) | (service_role only) |
-| `stat_events` | own row | (service_role only) | (service_role only) | (service_role only) |
-| `user_body_profiles` | own row | own row | own row | (service_role only) |
-| `rivalries` | participant | own as challenger | participant | (service_role only) |
-| `rivalry_events` | own row | own row (`auth.uid() = user_id`) | (service_role only) | (service_role only) |
-| `promotion_eligibility` | (service_role only) | (service_role only) | (service_role only) | (service_role only) |
-| `in_app_notifications` | own row | NONE (no INSERT grant) | own row (mark read) | (service_role only) |
+
+| Table                   | SELECT              | INSERT                           | UPDATE              | DELETE              |
+| ----------------------- | ------------------- | -------------------------------- | ------------------- | ------------------- |
+| `user_personalization`  | own row             | own row                          | own row             | (service_role only) |
+| `user_stats`            | own row             | (service_role only)              | (service_role only) | (service_role only) |
+| `stat_events`           | own row             | (service_role only)              | (service_role only) | (service_role only) |
+| `user_body_profiles`    | own row             | own row                          | own row             | (service_role only) |
+| `rivalries`             | participant         | own as challenger                | participant         | (service_role only) |
+| `rivalry_events`        | own row             | own row (`auth.uid() = user_id`) | (service_role only) | (service_role only) |
+| `promotion_eligibility` | (service_role only) | (service_role only)              | (service_role only) | (service_role only) |
+| `in_app_notifications`  | own row             | NONE (no INSERT grant)           | own row (mark read) | (service_role only) |
 
 ### RPCs (applied + pending)
-| RPC | Execute grant | Security |
-|-----|---------------|----------|
-| `db_now()` | authenticated, service_role | SECURITY DEFINER |
-| `increment_total_xp()` | service_role ONLY | SECURITY DEFINER |
-| `search_profiles(text)` | authenticated | SECURITY DEFINER |
-| `get_friends()` | authenticated | SECURITY DEFINER |
-| `get_friend_requests()` | authenticated | SECURITY DEFINER |
-| `protect_profile_privileged_columns()` | NONE (trigger only) | SECURITY DEFINER |
-| `create_rivalry_notification()` | authenticated (PENDING) | SECURITY DEFINER, participant validation |
+
+| RPC                                    | Execute grant               | Security                                 |
+| -------------------------------------- | --------------------------- | ---------------------------------------- |
+| `db_now()`                             | authenticated, service_role | SECURITY DEFINER                         |
+| `increment_total_xp()`                 | service_role ONLY           | SECURITY DEFINER                         |
+| `search_profiles(text)`                | authenticated               | SECURITY DEFINER                         |
+| `get_friends()`                        | authenticated               | SECURITY DEFINER                         |
+| `get_friend_requests()`                | authenticated               | SECURITY DEFINER                         |
+| `protect_profile_privileged_columns()` | NONE (trigger only)         | SECURITY DEFINER                         |
+| `create_rivalry_notification()`        | authenticated (PENDING)     | SECURITY DEFINER, participant validation |
 
 ---
 
 ## Appendix C: WhatsApp Implementation
 
 **Single source of truth:** `src/lib/whatsapp.ts`
+
 ```typescript
 export const SVJ_WHATSAPP_NUMBER = "917639662008";
 export function buildWhatsAppUrl(message: string): string {
   return `https://wa.me/${SVJ_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
-export function buildPlusActivationMessage(user: { name: string; email: string | null; id: string }): string {
-  return `Hi SVJ Founder, I have completed my SVJ Plus payment and would like to verify and activate my subscription.\n\nName: ${user.name}\nEmail: ${user.email ?? 'Not provided'}\nSVJ User ID: ${user.id}\n\nPlease verify my payment and activate SVJ Plus.`;
+export function buildPlusActivationMessage(user: {
+  name: string;
+  email: string | null;
+  id: string;
+}): string {
+  return `Hi SVJ Founder, I have completed my SVJ Plus payment and would like to verify and activate my subscription.\n\nName: ${user.name}\nEmail: ${user.email ?? "Not provided"}\nSVJ User ID: ${user.id}\n\nPlease verify my payment and activate SVJ Plus.`;
 }
 export function buildPaymentConfirmationMessage(email?: string | null): string {
-  return `Hi SVJ Founder, I have completed my SVJ Plus payment. Please verify and activate my subscription.\n\nEmail: ${email ?? 'Not provided'}\n\nPlease confirm my SVJ Plus activation.`;
+  return `Hi SVJ Founder, I have completed my SVJ Plus payment. Please verify and activate my subscription.\n\nEmail: ${email ?? "Not provided"}\n\nPlease confirm my SVJ Plus activation.`;
 }
 ```
 
 **Consumers:**
+
 - `PaywallModal.tsx` — `buildWhatsAppUrl(buildPlusActivationMessage({ name, email, id }))` for Android support link
 - `UPIPaymentModal.tsx` — `buildWhatsAppUrl(buildPaymentConfirmationMessage(email))`
 - `TrialExpiredScreen.tsx` — `buildWhatsAppUrl(buildPaymentConfirmationMessage(email))`
@@ -761,6 +851,7 @@ export function buildPaymentConfirmationMessage(email?: string | null): string {
 11. Active rivalry: shows COMPETITION ACTIVE badge; no OUTPERFORM button
 
 **Authorization summary:**
+
 - Self-challenge: prevented (server check + DB CHECK constraint)
 - Duplicate pending/active: prevented (server bidirectional query + partial unique index on LEAST/GREATEST)
 - Accept: only opponent (RLS + explicit `opponent_id` filter)
@@ -793,7 +884,7 @@ commit e7d697c (migration fix):
 
 ---
 
-*End of Phase 01 audit. Next: Prompt 02.*
+_End of Phase 01 audit. Next: Prompt 02._
 
 ---
 
@@ -822,7 +913,7 @@ is pinned by `tests/provider-free.test.mjs`.
 
 **Starting SHA:** `7204a86` — **Final SHA:** `bf85a94` (remote verified).
 
-**Root cause of "still heatmap?":** the previous run fixed the *route* map
+**Root cause of "still heatmap?":** the previous run fixed the _route_ map
 (`7204a86` gave ActivityMap a real OpenStreetMap slippy-map basemap, GPS first
 fix, and recentering), but the **personal heatmap** in Records → Heatmap still
 drew abstract SVG density dots with no geography behind them. The user was
@@ -856,10 +947,11 @@ reads, provider-free guarantee (all pinned by the existing suites, all green).
 
 ## 2026-09-19 — Real wearable / health sensor support (BLE HR) + map/pace/heatmap hardening
 
-**Starting SHA:** `d7db117`  **Final SHA:** `cbe08cf` (verified equal to
+**Starting SHA:** `d7db117` **Final SHA:** `cbe08cf` (verified equal to
 `origin/release/play-v1-compliance`)
 
 **Commits:**
+
 - `b0ab6c3` feat(wearables): add BLE heart-rate sensors, map touch controls and stabilized live pace
 - `c30c0fd` style: apply prettier and eslint fixes to wearable/map changes
 - `cbe08cf` style: prefer-const for auth-preview storage timer
@@ -945,22 +1037,22 @@ SVJ now ships an **SVJ Wear OS app** from this repository as the Gradle module
 on the watch — that talks to the SVJ phone app over the Wear OS **Data Layer**.
 Full detail: `docs/SVJ_WEAR_OS.md`.
 
-| Area | Implementation |
-| --- | --- |
-| Watch module | `android/wear` — Kotlin, `app.lovable.svj.wear`, registered in `android/settings.gradle` |
-| Watch UI | Home (readiness, HR, phone state), activity picker, 3-2-1-GO countdown, live workout, sensors, connection |
-| Background | `WearWorkoutService` — `foregroundServiceType="health"` + ongoing *“SVJ is recording your workout”* notification; survives screen-off and navigation |
-| Watch sensors | `WearSensors` — real `TYPE_HEART_RATE` and `TYPE_STEP_COUNTER`; BODY_SENSORS / ACTIVITY_RECOGNITION checked and requested per device |
-| Session logic | `WearWorkoutSession` — pure state machine (idle/running/paused/finished), paused time excluded from moving time, stable session id, baselined steps |
-| HR statistics | `WearHeartRate` — real samples only; 20–250 BPM accepted, everything else rejected; a silent sensor goes stale instead of freezing a value |
-| Communication | Capability discovery (`svj_wear_companion` / `svj_phone_app`) + messages on `/svj/wear/{handshake,sample,state,summary,command}`; the phone is never found by BLE scanning |
-| Offline | Watch outbox + flush on reconnect; phone-side `WearInboxStore` buffers messages while SVJ is closed; active session persisted and restored **paused** |
-| Phone bridge | `VjWearPlugin` + `VjWearListenerService` (Capacitor plugin `VjWear`) |
-| Phone controller | `src/app/lib/wearCompanion.ts` — one listener owner, inbox drain/ack, completion import |
-| Contract/validation | `src/app/lib/wearOs.ts` — protocol v1, capability model, measurement validation, source arbitration, duplicate protection |
-| Source arbitration | Explicit selection → direct BLE strap → SVJ Watch → nothing. Health Connect is never presented as live; steps are never summed across phone and watch |
-| XP / security | Watch supplies evidence only; completions import through the existing `svj_import_platform_activity` into the existing pipeline. No client reward entry point |
-| Migration | `20260924000000_wear_os_activity_source.sql` — additive + idempotent: adds the `wear_os` source to the existing CHECK constraint and derives stored provenance from the submitting device platform |
+| Area                | Implementation                                                                                                                                                                                     |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Watch module        | `android/wear` — Kotlin, `app.lovable.svj.wear`, registered in `android/settings.gradle`                                                                                                           |
+| Watch UI            | Home (readiness, HR, phone state), activity picker, 3-2-1-GO countdown, live workout, sensors, connection                                                                                          |
+| Background          | `WearWorkoutService` — `foregroundServiceType="health"` + ongoing _“SVJ is recording your workout”_ notification; survives screen-off and navigation                                               |
+| Watch sensors       | `WearSensors` — real `TYPE_HEART_RATE` and `TYPE_STEP_COUNTER`; BODY_SENSORS / ACTIVITY_RECOGNITION checked and requested per device                                                               |
+| Session logic       | `WearWorkoutSession` — pure state machine (idle/running/paused/finished), paused time excluded from moving time, stable session id, baselined steps                                                |
+| HR statistics       | `WearHeartRate` — real samples only; 20–250 BPM accepted, everything else rejected; a silent sensor goes stale instead of freezing a value                                                         |
+| Communication       | Capability discovery (`svj_wear_companion` / `svj_phone_app`) + messages on `/svj/wear/{handshake,sample,state,summary,command}`; the phone is never found by BLE scanning                         |
+| Offline             | Watch outbox + flush on reconnect; phone-side `WearInboxStore` buffers messages while SVJ is closed; active session persisted and restored **paused**                                              |
+| Phone bridge        | `VjWearPlugin` + `VjWearListenerService` (Capacitor plugin `VjWear`)                                                                                                                               |
+| Phone controller    | `src/app/lib/wearCompanion.ts` — one listener owner, inbox drain/ack, completion import                                                                                                            |
+| Contract/validation | `src/app/lib/wearOs.ts` — protocol v1, capability model, measurement validation, source arbitration, duplicate protection                                                                          |
+| Source arbitration  | Explicit selection → direct BLE strap → SVJ Watch → nothing. Health Connect is never presented as live; steps are never summed across phone and watch                                              |
+| XP / security       | Watch supplies evidence only; completions import through the existing `svj_import_platform_activity` into the existing pipeline. No client reward entry point                                      |
+| Migration           | `20260924000000_wear_os_activity_source.sql` — additive + idempotent: adds the `wear_os` source to the existing CHECK constraint and derives stored provenance from the submitting device platform |
 
 ### Preserved (per spec §22–28, §34)
 
@@ -972,19 +1064,19 @@ GPS coordinates, so heatmap/RECORDS behaviour is unchanged.
 
 ### Validation
 
-| Check | Result |
-| --- | --- |
-| `bun tsc -b --noEmit` | PASS |
-| `bun run test` | **686 pass / 0 fail / 2 skipped** (688 total; +35 new wear tests) |
-| `bun run build` | PASS |
-| `npx prettier --check "src/**/*.{ts,tsx,css}"` | PASS |
-| `npx eslint src/` | 0 errors (39 pre-existing warnings) |
-| `git diff --check` | Clean |
-| `bunx cap sync android` | PASS |
-| `./gradlew :wear:testDebugUnitTest` | **BUILD SUCCESSFUL** — 16/16 watch tests |
-| `./gradlew :app:testDebugUnitTest` | **BUILD SUCCESSFUL** |
-| `./gradlew :wear:assembleDebug` | **BUILD SUCCESSFUL** → `wear-debug.apk` (~3.1 MB) |
-| `./gradlew :app:assembleDebug` | **BUILD SUCCESSFUL** → `app-debug.apk` (~10.6 MB) |
+| Check                                          | Result                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------- |
+| `bun tsc -b --noEmit`                          | PASS                                                              |
+| `bun run test`                                 | **686 pass / 0 fail / 2 skipped** (688 total; +35 new wear tests) |
+| `bun run build`                                | PASS                                                              |
+| `npx prettier --check "src/**/*.{ts,tsx,css}"` | PASS                                                              |
+| `npx eslint src/`                              | 0 errors (39 pre-existing warnings)                               |
+| `git diff --check`                             | Clean                                                             |
+| `bunx cap sync android`                        | PASS                                                              |
+| `./gradlew :wear:testDebugUnitTest`            | **BUILD SUCCESSFUL** — 16/16 watch tests                          |
+| `./gradlew :app:testDebugUnitTest`             | **BUILD SUCCESSFUL**                                              |
+| `./gradlew :wear:assembleDebug`                | **BUILD SUCCESSFUL** → `wear-debug.apk` (~3.1 MB)                 |
+| `./gradlew :app:assembleDebug`                 | **BUILD SUCCESSFUL** → `app-debug.apk` (~10.6 MB)                 |
 
 Local Android builds ran with JDK 21 + Android SDK 36. The container has a 2 GB
 memory ceiling, so Gradle was run with a reduced heap, a single worker and
@@ -1028,12 +1120,12 @@ claimed.
 
 ### Old → new hierarchy
 
-| Surface | Before | After |
-|---|---|---|
-| Bottom navigation | Challenges, Activity, Train, Fuel, Community, Leaderboard, 60 Day, Plus, Profile | **Challenges, Activity, Train, Fuel, Plus** |
-| 60-Day program | its own bottom-nav tab | premium card inside **Challenges** (below Earn Plus) |
-| Structured Strength | entry card inside Activity → Overview | headline card at the top of **Train** |
-| Community / Leaderboard / Profile | bottom-nav tabs | **right-side vertical rail** (desktop/tablet) + **header utility drawer** (phones) |
+| Surface                           | Before                                                                           | After                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Bottom navigation                 | Challenges, Activity, Train, Fuel, Community, Leaderboard, 60 Day, Plus, Profile | **Challenges, Activity, Train, Fuel, Plus**                                        |
+| 60-Day program                    | its own bottom-nav tab                                                           | premium card inside **Challenges** (below Earn Plus)                               |
+| Structured Strength               | entry card inside Activity → Overview                                            | headline card at the top of **Train**                                              |
+| Community / Leaderboard / Profile | bottom-nav tabs                                                                  | **right-side vertical rail** (desktop/tablet) + **header utility drawer** (phones) |
 
 No route was deleted. Tab navigation is pure React state (the shell never
 navigates), so there were no URL deep links to preserve — every existing entry
@@ -1053,7 +1145,7 @@ Progress maths live in a new pure module `src/lib/challengeProgress.ts`.
 `TOTAL_MISSIONS` is derived by summing the real per-day task lists in
 `challengeDays.ts` — the program does **not** use a uniform tasks-per-day count,
 so the card reports the true total (and true per-day cumulative) instead of a
-hardcoded `180`. A missing/unknown state resolves to *not started*; out-of-range
+hardcoded `180`. A missing/unknown state resolves to _not started_; out-of-range
 values clamp rather than inflating progress.
 
 ### Train
@@ -1114,16 +1206,16 @@ Existing suites were updated rather than weakened: the structured-strength UI
 tests now mount the logger that moved (its entry card is asserted statically),
 and the Android mirror now describes the primary + utility split.
 
-| Check | Result |
-|---|---|
-| `bun tsc -b --noEmit` | PASS |
-| `bun run test` | **717 tests — 715 pass, 0 fail, 2 baseline skips** |
-| `bun run build` | PASS |
-| `bunx prettier --check "src/**/*.{ts,tsx,css}"` | PASS |
-| `bunx eslint src/` | 0 errors (40 pre-existing fast-refresh warnings) |
-| `git diff --check` | Clean |
-| `bunx cap sync android` | PASS |
-| `./gradlew :app:assembleDebug :wear:assembleDebug` | **BUILD SUCCESSFUL** — `app-debug.apk`, `wear-debug.apk` |
+| Check                                                      | Result                                                                                    |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `bun tsc -b --noEmit`                                      | PASS                                                                                      |
+| `bun run test`                                             | **717 tests — 715 pass, 0 fail, 2 baseline skips**                                        |
+| `bun run build`                                            | PASS                                                                                      |
+| `bunx prettier --check "src/**/*.{ts,tsx,css}"`            | PASS                                                                                      |
+| `bunx eslint src/`                                         | 0 errors (40 pre-existing fast-refresh warnings)                                          |
+| `git diff --check`                                         | Clean                                                                                     |
+| `bunx cap sync android`                                    | PASS                                                                                      |
+| `./gradlew :app:assembleDebug :wear:assembleDebug`         | **BUILD SUCCESSFUL** — `app-debug.apk`, `wear-debug.apk`                                  |
 | `./gradlew :app:testDebugUnitTest :wear:testDebugUnitTest` | **45 tests, 0 failures, 0 errors** (22 accel + 6 HR packet + 16 wear session + 1 example) |
 
 ### Migrations
@@ -1155,6 +1247,7 @@ deployment step, not a code change).
 **START SHA** `f384b6fcbcbc95c7b92228ebcec9df0706c09e5d`
 
 ## Changed
+
 - `android/wear/build.gradle`: applicationId `app.lovable.svj.wear` → **`app.lovable.svj`** (Data Layer requires identical package ID + signing cert between phone and watch). Namespace stays `app.lovable.svj.wear`. versionCode 200100. Env-driven release signing with hard failure when secrets are missing.
 - `android/app/build.gradle`: versionCode 1 → **100100** (form-factor band scheme; phone id untouched). Signing-config Groovy shadowing fixed (renamed env locals).
 - `android/wear/src/main/AndroidManifest.xml`: explicit `com.google.android.wearable.standalone=false` (companion phone required for accounts/sync/rewards).
@@ -1162,6 +1255,7 @@ deployment step, not a code change).
 - CI: new **Android Release Validation** job — `bundleRelease` for both modules, release unit tests, `keytool` SHA-256 fingerprint equality check (fails on mismatch), safe metadata report, artifacts `svj-phone-release-aab` / `svj-wear-release-aab`. Uses production keystore secrets when configured, otherwise a clearly-labeled ephemeral validation key. Nothing auto-publishes.
 
 ## Verified locally
+
 - Release AABs build: app-release.aab (7.7 MB), wear-release.aab (2.3 MB) — signed with the same ephemeral validation key, fingerprints **identical** (`keytool -printcert -jarfile`).
 - **No native `.so` libraries in either bundle** → 64-bit / 16 KB page-size requirements satisfied by inspection.
 - `:app` + `:wear` debug unit tests: 45/45 pass. Release unit tests: pass.
@@ -1170,9 +1264,11 @@ deployment step, not a code change).
 - lintVital was excluded from the LOCAL bundle run only (container OOM on the extra lint JVM); CI runs the full task.
 
 ## Migrations
+
 Added: none. Applied: none.
 
 ## Manual next step (Play Console)
+
 Configure Google Play App Signing + generate/store the upload keystore as repo secrets (`SVJ_KEYSTORE_PATH_B64`, `SVJ_KEYSTORE_PASSWORD`, `SVJ_KEY_ALIAS`, `SVJ_KEY_PASSWORD`), then upload the AABs to closed tracks. Checklist: `docs/SVJ_GOOGLE_PLAY_WEAR_RELEASE.md`.
 
 ---
@@ -1182,6 +1278,7 @@ Configure Google Play App Signing + generate/store the upload keystore as repo s
 Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 
 ### Visual System Changes
+
 - **Colors:** Added `svj-surface`, `svj-surface-raised`, `svj-muted` tokens; crimson borders reduced from 15-30% to 6-15% opacity across all cards
 - **Typography:** Replaced monospace labels with Inter throughout; monospace reserved for numeric readouts only (XP, HR, steps, timer, GPS)
 - **Spacing:** Standardized to 4-8-12-16-20-24-32 scale; removed random padding/gap values
@@ -1189,12 +1286,14 @@ Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 - **Buttons:** Added `.svj-press` (scale 0.98 on active); removed `shadow-lg` from buttons; cleaned up focus rings
 
 ### Motion System
+
 - Created `src/app/lib/motion.ts` with centralized timing presets (fast/normal/page/progress)
 - Added `prefers-reduced-motion: reduce` CSS media query that strips all animation
 - Added `.svj-transition-fast` (120ms), `.svj-transition` (200ms), `.svj-transition-slow` (350ms)
 - All animations use transform + opacity only — no layout thrashing
 
 ### Shared Components
+
 - `SVJCard` — clean surface levels
 - `SVJSectionHeader` — consistent section titles with Inter + Anton
 - `SVJProgress` — animated progress bar
@@ -1202,6 +1301,7 @@ Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 - `SVJBadge` — compact inline badges
 
 ### Screen Changes
+
 - **Challenges:** Removed blur glows, cleaned stat strip (connected `svj-stat` cards), cleaned category pills, cleaned difficulty badges, cleaned task cards
 - **Activity:** Cleaned status pill, tracking button, section tabs, progress ring wrapper, calorie cards, history panel, XP milestones — all font-mono → font-inter for non-numeric text
 - **Train:** StructuredStrengthCard cleaned — removed blur glow, Inter for labels
@@ -1212,6 +1312,7 @@ Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 - **Utility Rail/Drawer:** Cleaned border opacity, Inter for labels, added press feedback
 
 ### Tests
+
 - All 735 existing tests pass (0 failures, 2 baseline skips)
 - TypeScript: clean
 - Build: clean
@@ -1219,6 +1320,7 @@ Starting SHA: `0fe3b0f6e6439d0f609a0afcee40f84a78c21688`
 - ESLint: 0 errors
 
 ### Migrations
+
 Added: none. Applied: none.
 
 ## Bun migration (2026-09-21)

@@ -20,6 +20,7 @@ import {
   Loader2,
   Mountain,
   Route as RouteIcon,
+  Satellite,
   Timer,
   Watch,
 } from "lucide-react";
@@ -324,13 +325,18 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-anton text-xl uppercase tracking-wider text-white">
-            {activity.activityType} · {formatActivityDate(activity.startedAt)}
+          <h2 className="truncate font-anton text-xl tracking-wider text-white">
+            {activity.activityType}
           </h2>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90]">
-            {sourceLabel(activity.source)}
-            {activity.gpsQuality ? ` · GPS ${activity.gpsQuality}` : ""}
-          </span>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-inter text-[11px] text-[#8C8C90]">
+            <span>{formatActivityDate(activity.startedAt)}</span>
+            <span>{sourceLabel(activity.source)}</span>
+            {activity.gpsQuality && (
+              <span className="inline-flex items-center gap-1">
+                <Satellite aria-hidden className="h-3 w-3" /> GPS {activity.gpsQuality}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -406,12 +412,17 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                   Fastest split
                 </span>
               </div>
-              <div className="font-mono text-lg font-bold text-white">
-                Split {fastest.index} · {formatClock(fastest.durationSeconds)} ·{" "}
-                {formatPace(
-                  Math.round(fastest.durationSeconds / (fastest.distanceMeters / 1000)),
-                  unit,
-                )}
+              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                <span className="font-mono text-lg font-bold text-white">
+                  {formatClock(fastest.durationSeconds)}
+                </span>
+                <span className="font-mono text-xs text-[#8C8C90]">
+                  {formatPace(
+                    Math.round(fastest.durationSeconds / (fastest.distanceMeters / 1000)),
+                    unit,
+                  )}
+                </span>
+                <span className="font-inter text-[11px] text-[#8C8C90]">Split {fastest.index}</span>
               </div>
             </div>
           )}

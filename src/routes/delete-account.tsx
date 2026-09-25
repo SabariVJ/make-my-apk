@@ -16,7 +16,12 @@ export const Route = createFileRoute("/delete-account")({
   component: DeleteAccountPage,
 });
 
-function DeleteAccountPage() {
+/**
+ * Exported so `/data-deletion` can render the identical flow. Play Console asks
+ * for a "data deletion" URL while the app links to `/delete-account`; both paths
+ * must reach the same deliberate, re-authenticated deletion screen.
+ */
+export function DeleteAccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -102,22 +107,24 @@ function DeleteAccountPage() {
     }
   };
 
+  const fieldLabel = "block font-inter text-[11px] font-medium text-[#8C8C90] mb-1.5";
+
   if (result?.ok) {
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <Trash2 className="w-8 h-8 text-emerald-400" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0B0B0C] p-6 text-center text-[#F4F2ED]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20">
+          <Trash2 className="h-8 w-8 text-emerald-400" />
         </div>
-        <h1 className="font-anton text-2xl uppercase tracking-wider">Account Deleted</h1>
-        <p className="text-sm text-[#8C8C90] max-w-sm font-mono">
+        <h1 className="font-inter text-2xl font-semibold tracking-tight">Account deleted</h1>
+        <p className="max-w-sm font-inter text-sm text-[#8C8C90]">
           Your account has been removed. Some data may persist briefly in automated backups before
           being purged.
         </p>
         <a
           href="/"
-          className="mt-4 px-6 py-3 rounded-2xl bg-[#C81E3A] text-white font-mono text-xs font-bold uppercase tracking-wider"
+          className="mt-4 svj-radius-row bg-[#C81E3A] px-6 py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E]"
         >
-          Return to Home
+          Return home
         </a>
       </div>
     );
@@ -125,24 +132,22 @@ function DeleteAccountPage() {
 
   if (step === "check") {
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
-        <p className="text-[11px] font-mono text-[#8C8C90] uppercase tracking-wider">
-          Checking session…
-        </p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#0B0B0C] text-[#F4F2ED]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#C81E3A]" />
+        <p className="font-inter text-[11px] text-[#8C8C90]">Checking session…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0B0B0C] p-6 text-[#F4F2ED]">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-full bg-[#C81E3A]/20 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-8 h-8 text-[#C81E3A]" />
+        <div className="space-y-2 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#C81E3A]/20">
+            <AlertTriangle className="h-8 w-8 text-[#C81E3A]" />
           </div>
-          <h1 className="font-anton text-2xl uppercase tracking-wider">Delete Account</h1>
-          <p className="text-xs text-[#8C8C90] font-mono leading-relaxed">
+          <h1 className="font-inter text-2xl font-semibold tracking-tight">Delete account</h1>
+          <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
             This action is permanent. All your data, including profile, challenge progress, XP, and
             rewards will be removed.
           </p>
@@ -152,44 +157,46 @@ function DeleteAccountPage() {
           <>
             <form onSubmit={handleReauthEmail} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                <label htmlFor="delete-email" className={fieldLabel}>
                   Email
                 </label>
                 <input
+                  id="delete-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
-                  className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full svj-radius-row border border-white/10 bg-[#17171A] px-4 py-3 font-inter text-sm text-[#F4F2ED] focus:border-[#C81E3A] focus:outline-none"
                   placeholder="your@email.com"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-mono text-[#8C8C90] uppercase mb-1">
+                <label htmlFor="delete-password" className={fieldLabel}>
                   Password
                 </label>
                 <input
+                  id="delete-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#C81E3A]"
+                  className="w-full svj-radius-row border border-white/10 bg-[#17171A] px-4 py-3 font-inter text-sm text-[#F4F2ED] focus:border-[#C81E3A] focus:outline-none"
                   placeholder="••••••••"
                 />
               </div>
 
               {result && !result.ok && (
-                <p className="text-xs text-[#C81E3A] font-mono">{result.message}</p>
+                <p className="font-inter text-xs text-[#E62846]">{result.message}</p>
               )}
 
               <button
                 type="submit"
                 disabled={loading || !email || !password}
-                className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 svj-radius-row bg-[#C81E3A] py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Continue
               </button>
             </form>
@@ -199,7 +206,7 @@ function DeleteAccountPage() {
                 <div className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-[#0B0B0C] px-3 text-[#8C8C90] font-mono">or</span>
+                <span className="bg-[#0B0B0C] px-3 font-inter text-[#8C8C90]">or</span>
               </div>
             </div>
 
@@ -207,26 +214,26 @@ function DeleteAccountPage() {
               type="button"
               onClick={() => void handleReauthGoogle()}
               disabled={loading}
-              className="w-full py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 svj-radius-row border border-white/15 bg-white/5 py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Continue with Google
             </button>
 
             <a
               href="/"
-              className="block text-center text-xs text-[#8C8C90] hover:text-white font-mono"
+              className="block text-center font-inter text-xs text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
             >
               Cancel
             </a>
           </>
         ) : (
           <form onSubmit={handleDelete} className="space-y-4">
-            <div className="p-4 rounded-2xl bg-[#C81E3A]/10 border border-[#C81E3A]/30">
-              <p className="text-xs text-[#C81E3A] font-mono font-bold uppercase">
+            <div className="svj-radius-row border border-[#C81E3A]/30 bg-[#C81E3A]/10 p-4">
+              <p className="font-inter text-xs font-semibold text-[#E62846]">
                 Type DELETE to confirm
               </p>
-              <p className="text-[10px] text-[#8C8C90] font-mono mt-1">
+              <p className="mt-1 font-inter text-[11px] text-[#8C8C90]">
                 This is your final confirmation. Your account will be permanently erased.
               </p>
             </div>
@@ -236,21 +243,22 @@ function DeleteAccountPage() {
               value={confirmation}
               onChange={(e) => setConfirmation(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#17171A] border border-[#C81E3A]/30 text-white text-sm font-mono text-center tracking-widest uppercase focus:outline-none focus:border-[#C81E3A]"
+              aria-label="Type DELETE to confirm"
+              className="w-full svj-radius-row border border-[#C81E3A]/30 bg-[#17171A] px-4 py-3 text-center font-mono text-sm tracking-widest text-[#F4F2ED] uppercase focus:border-[#C81E3A] focus:outline-none"
               placeholder="DELETE"
             />
 
             {result && !result.ok && (
-              <p className="text-xs text-[#C81E3A] font-mono">{result.message}</p>
+              <p className="font-inter text-xs text-[#E62846]">{result.message}</p>
             )}
 
             <button
               type="submit"
               disabled={loading || confirmation.toUpperCase() !== "DELETE"}
-              className="w-full py-3 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 svj-radius-row bg-[#C81E3A] py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Permanently Delete Account
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Permanently delete account
             </button>
 
             <button
@@ -260,7 +268,7 @@ function DeleteAccountPage() {
                 setConfirmation("");
                 setResult(null);
               }}
-              className="w-full text-center text-xs text-[#8C8C90] hover:text-white font-mono"
+              className="w-full text-center font-inter text-xs text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
             >
               Go back
             </button>

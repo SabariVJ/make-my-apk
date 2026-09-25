@@ -195,14 +195,14 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl">
+      <div className="svj-radius-card svj-elev-3 svj-lit-top w-full max-w-md border border-white/10 bg-[#17171A] p-4">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="font-anton text-lg uppercase tracking-wide text-white">
-              Edit Profile Photo
+            <p className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+              Edit profile photo
             </p>
-            <p className="text-[11px] font-mono text-[#8C8C90]">
-              Drag to reposition • pinch or use zoom
+            <p className="font-inter text-[11px] text-[#8C8C90]">
+              Drag to reposition, pinch to zoom
             </p>
           </div>
           <button
@@ -216,7 +216,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
           </button>
         </div>
 
-        <div className="mx-auto h-[280px] w-[280px] overflow-hidden rounded-2xl bg-[#0B0B0C] shadow-inner">
+        <div className="mx-auto h-[280px] w-[280px] overflow-hidden svj-radius-card bg-[#08080A] shadow-inner">
           <div
             className="relative h-full w-full touch-none select-none"
             onPointerDown={handlePointerDown}
@@ -251,7 +251,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
               type="button"
               onClick={() => setSafeZoom(zoom - 0.1)}
               disabled={!naturalSize || processing || zoom <= MIN_ZOOM}
-              className="rounded-lg border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
+              className="svj-radius-row border border-white/10 bg-[#08080A] p-2 text-white disabled:opacity-40"
               aria-label="Zoom out"
             >
               <Minus className="h-4 w-4" />
@@ -271,7 +271,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
               type="button"
               onClick={() => setSafeZoom(zoom + 0.1)}
               disabled={!naturalSize || processing || zoom >= MAX_ZOOM}
-              className="rounded-lg border border-white/10 bg-[#0B0B0C] p-2 text-white disabled:opacity-40"
+              className="svj-radius-row border border-white/10 bg-[#08080A] p-2 text-white disabled:opacity-40"
               aria-label="Zoom in"
             >
               <Plus className="h-4 w-4" />
@@ -283,18 +283,18 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
                 setOffset({ x: 0, y: 0 });
               }}
               disabled={processing}
-              className="rounded-lg border border-white/10 bg-[#0B0B0C] p-2 text-[#8C8C90] hover:text-white disabled:opacity-40"
+              className="svj-radius-row border border-white/10 bg-[#08080A] p-2 text-[#8C8C90] hover:text-white disabled:opacity-40"
               aria-label="Reset crop"
             >
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-center justify-between text-[10px] font-mono text-[#8C8C90]">
-            <span>LIVE SQUARE OUTPUT</span>
-            <span>{Math.round(zoom * 100)}%</span>
+          <div className="flex items-center justify-between font-inter text-[11px] text-[#8C8C90]">
+            <span>Live square output</span>
+            <span className="font-mono tabular-nums">{Math.round(zoom * 100)}%</span>
           </div>
           {error && (
-            <p role="alert" className="text-xs font-mono text-rose-400">
+            <p role="alert" className="font-inter text-xs text-rose-400">
               {error}
             </p>
           )}
@@ -302,14 +302,14 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
             type="button"
             onClick={() => void handleUsePhoto()}
             disabled={!naturalSize || processing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
+            className="svj-radius-row flex w-full items-center justify-center gap-2 bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {processing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Check className="h-4 w-4" />
             )}
-            {processing ? "Preparing Photo…" : "Use Photo"}
+            {processing ? "Preparing photo…" : "Use photo"}
           </button>
         </div>
       </div>

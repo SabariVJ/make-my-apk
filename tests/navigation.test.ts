@@ -109,7 +109,9 @@ describe("Structured Strength is promoted into Train", () => {
 
   it("places the card above the existing training tools", () => {
     const cardIdx = train.indexOf("<StructuredStrengthCard");
-    const tabsIdx = train.indexOf("{/* Training modes */}");
+    // The tab row keeps its `role="tablist"` contract; only its comment changed
+    // during the responsive-density pass, so anchor on the role instead.
+    const tabsIdx = train.indexOf('role="tablist"');
     assert.ok(cardIdx > -1 && tabsIdx > -1, "Train must render the card and its tools");
     assert.ok(cardIdx < tabsIdx, "Structured Strength must lead the Train screen");
   });
@@ -216,7 +218,12 @@ describe("mobile responsiveness", () => {
 
 describe("layout safety for the rail", () => {
   it("reserves right-side space so the rail cannot cover content", () => {
-    assert.match(app, /sm:px-6 lg:max-w-5xl lg:pr-28/);
+    // One shared container owns the page padding and the rail reservation, and
+    // grows the desktop content box instead of pinning it to a phone width.
+    assert.match(app, /const PAGE_CONTAINER =/);
+    assert.match(app, /sm:px-6/);
+    assert.match(app, /const PAGE_CONTAINER_DESKTOP = "lg:max-w-\[86rem\] lg:pr-28"/);
+    assert.match(app, /\$\{PAGE_CONTAINER\} \$\{PAGE_CONTAINER_DESKTOP\}/);
   });
 
   it("keeps the rail out of document flow (no horizontal scroll)", () => {

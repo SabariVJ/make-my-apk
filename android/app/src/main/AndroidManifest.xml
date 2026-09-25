@@ -8,7 +8,7 @@
     <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -61,6 +61,21 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- Smart local reminders. The receiver owns alarm delivery and
+             restores repeating schedules after reboot, timezone change, clock
+             correction, or app replacement. It is not exported to other apps. -->
+        <receiver
+            android:name=".VjNotificationReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Wear OS Data Layer: receives watch messages (handshake, live
              samples, session state, completed workout summaries) even when SVJ
              is not running, and buffers them for the app. -->
@@ -78,6 +93,11 @@
         <meta-data
             android:name="com.google.android.wearable.capability"
             android:value="svj_phone_app" />
+
+        <!-- The phone is the companion host, not a standalone watch app. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
 
         <!-- Required Health Connect privacy/rationale declaration. Shown when the
              user asks why SVJ needs health data; it reuses SVJ's own privacy page
@@ -125,10 +145,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Wear OS Data Layer: lets the SVJ phone app discover and talk to the SVJ
-         Wear OS companion. No Bluetooth permission of its own is required. -->
-    <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+    <!-- The phone is a Wear OS companion host, not a watch-only APK. Do not
+         declare android.hardware.type.watch here: that feature is invalid in a
+         phone manifest and Play applies it to the Wear OS module instead. -->
 
     <!-- Health Connect: lets the plugin detect/install the platform provider. -->
     <queries>

@@ -2,30 +2,32 @@
 
 ## 1. Pre-Submission Code Checks (✅ Completed)
 
-| Check | Result |
-|---|---|
-| `npm ci` / dependency install | ✅ PASS |
-| `npx tsc --noEmit` | ✅ PASS |
-| `npm run build` (web) | ✅ PASS |
-| `npx tsx --test` (admin key tests) | ✅ 40/40 PASS |
-| `npx eslint` | ✅ 0 errors |
-| `git diff --check` | ✅ PASS |
-| `npx cap sync android` | NOT TESTED (no local Android SDK) |
-| Android lint / unit tests | NOT TESTED (no local Android SDK) |
-| `gradlew assembleDebug` | NOT TESTED (no local Android SDK) |
+| Check                                                               | Result                                                   |
+| ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `bun install --frozen-lockfile`                                     | ✅ PASS                                                  |
+| `bunx tsc --noEmit`                                                 | ✅ PASS                                                  |
+| `bun run build` (web)                                               | ✅ PASS                                                  |
+| `bun run test`                                                      | ✅ 1,349 tests: 1,347 pass, 0 fail, 2 skipped            |
+| `bunx eslint <changed files>`                                       | ✅ PASS — 0 errors, 0 warnings                           |
+| `bunx prettier --check <changed files>`                             | ✅ PASS                                                  |
+| `git diff --check`                                                  | ✅ PASS                                                  |
+| `python3 scripts/test_android_themes.py`                            | ✅ 8/8 PASS                                              |
+| `bun run cap:sync`                                                  | ✅ PASS — configuration/plugins synchronized             |
+| GitHub Actions Android phone/wear lint, unit tests and debug builds | ✅ PASS in CI                                            |
+| GitHub Actions release bundle validation                            | ✅ PASS — run `35964114638` at `07438d0`; all jobs green |
 
-**Verdict:** CODE CHECKS = PASS (web), NOT TESTED (Android native)
+**Verdict:** CODE + CI CHECKS PASS; physical-device verification remains
 
 ## 2. Signing Configuration
 
-| Item | Status |
-|---|---|
-| applicationId | `app.lovable.svj` (unchanged) |
-| compileSdk | 36 |
-| targetSdk | 36 |
-| minSdk | 24 |
+| Item            | Status                              |
+| --------------- | ----------------------------------- |
+| applicationId   | `app.lovable.svj` (unchanged)       |
+| compileSdk      | 36                                  |
+| targetSdk       | 36                                  |
+| minSdk          | 24                                  |
 | Release signing | Configured via env vars (see below) |
-| Upload keystore | NOT present — operator must supply |
+| Upload keystore | NOT present — operator must supply  |
 
 ### Environment Variables Required for Signed Release
 
@@ -44,31 +46,33 @@ The `android/app/build.gradle` reads these at build time. If any value is missin
 
 ### Data Collection
 
-| Data Type | Usage | Required |
-|---|---|---|
-| Account info (email, display name) | App functionality | Yes |
-| Profile photo | App functionality | No (optional) |
-| Fitness/exercise data (challenge progress) | App functionality | Yes |
-| Device identifiers (Advertising ID) | Ads | Yes |
+| Data Type                                   | Usage                                   | Required      |
+| ------------------------------------------- | --------------------------------------- | ------------- |
+| Account info (email, display name)          | App functionality                       | Yes           |
+| Profile photo                               | App functionality                       | No (optional) |
+| Fitness, training, recovery and health data | App functionality, history and insights | Yes           |
+| Precise/approx location and activity routes | GPS/activity recording                  | Yes           |
+| Notifications and notification preferences  | Reminders and workout alerts            | Yes           |
+| Device identifiers (Advertising ID)         | Ads, subject to UMP consent             | Yes           |
 
 ### Data Sharing
 
-| Shared with | Purpose |
-|---|---|
-| Google AdMob | Advertising |
-| Supabase | Authentication & database |
+| Shared with  | Purpose                   |
+| ------------ | ------------------------- |
+| Google AdMob | Advertising               |
+| Supabase     | Authentication & database |
 
 ### Data Security
 
-| Declaration | Value |
-|---|---|
-| Encrypted in transit | ✅ Yes (HTTPS) |
-| Deletion request supported | ✅ Yes (in-app + /delete-account) |
+| Declaration                | Value                              |
+| -------------------------- | ---------------------------------- |
+| Encrypted in transit       | ✅ Yes (HTTPS)                     |
+| Deletion request supported | ✅ Yes (in-app + `/data-deletion`) |
 
 ## 4. App Content Declarations
 
 - [ ] **Content Rating:** Complete IARC questionnaire (fitness/app — likely "Everyone")
-- [ ] **Target Audience:** Select appropriately (13+ recommended)
+- [ ] **Target Audience:** Select **18+** to match the signup attestation and Terms; no parental-consent flow exists
 - [ ] **Data Safety form:** Fill per declarations above
 - [ ] **Ads declaration:** Yes, app contains ads
 - [ ] **Advertising ID:** Yes, app uses Advertising ID
@@ -76,22 +80,22 @@ The `android/app/build.gradle` reads these at build time. If any value is missin
 
 ## 5. Privacy & Legal URLs
 
-| URL | Path | Status |
-|---|---|---|
-| Privacy Policy | `/privacy` | ✅ Implemented |
-| Terms of Service | `/terms` | ✅ Implemented |
-| Account Deletion | `/delete-account` | ✅ Implemented |
-| Delete Data URL | (Play Console field) | Set to `https://savaje-com.lovable.app/delete-account` |
+| URL                            | Path              | Status                                                                             |
+| ------------------------------ | ----------------- | ---------------------------------------------------------------------------------- |
+| Privacy Policy                 | `/privacy`        | ✅ Implemented                                                                     |
+| Terms of Service               | `/terms`          | ✅ Implemented                                                                     |
+| Account Deletion               | `/delete-account` | ✅ Implemented                                                                     |
+| Play Console Data Deletion URL | `/data-deletion`  | ✅ Same verified deletion flow; set `https://savaje-com.lovable.app/data-deletion` |
 
 ## 6. AdMob / UMP Consent
 
-| Item | Status |
-|---|---|
-| AdMob initialized after auth gate | ✅ Done |
-| UMP consent flow (requestConsentInfo → showConsentForm) | ✅ Done |
-| Privacy options form (showPrivacyOptionsForm) | ✅ Done (Profile → Privacy Choices) |
-| Test ad devices configured | ⚠ Must set in AdMob dashboard or env var |
-| Consent form configured | ⚠ Must create GDPR message in AdMob console |
+| Item                                                    | Status                                      |
+| ------------------------------------------------------- | ------------------------------------------- |
+| AdMob initialized after auth gate                       | ✅ Done                                     |
+| UMP consent flow (requestConsentInfo → showConsentForm) | ✅ Done                                     |
+| Privacy options form (showPrivacyOptionsForm)           | ✅ Done (Profile → Privacy Choices)         |
+| Test ad devices configured                              | ⚠ Must set in AdMob dashboard or env var    |
+| Consent form configured                                 | ⚠ Must create GDPR message in AdMob console |
 
 **⚠ BLOCKER:** The AdMob consent message must be configured in the AdMob dashboard (EU User Consent policy). Without it, `isConsentFormAvailable` will be `false` and the consent form will not show, but the SDK will still block ads in EEA regions.
 
@@ -113,10 +117,10 @@ The `android/app/build.gradle` reads these at build time. If any value is missin
 
 ```bash
 # Local web build (validates TypeScript + bundle)
-npm ci && npm run build
+bun install --frozen-lockfile && bun run build
 
-# Android sync (requires local Android SDK)
-npx cap sync android
+# Android sync (requires Java and Android SDK)
+bun run cap:sync
 
 # Debug build (no signing required)
 cd android && ./gradlew assembleDebug
@@ -128,8 +132,9 @@ cd android && ./gradlew bundleRelease
 
 ## 10. Known Limitations
 
-1. **No automated Android build in CI** — native build must be done locally or in a CI with Android SDK
+1. **No physical-device Android verification** — CI builds, native unit tests, and blocking lint pass; final phone/tablet permission and UI flows still require real hardware
 2. **AdMob consent dashboard** — GDPR message must be configured before ads work in EEA
 3. **12-testers-for-14-days** — New developer accounts require 12 closed testers for 14 days before production access
 4. **Upload keystore** — Must be obtained from original Lovable build or a new one generated (and backed up securely)
-5. **server.url in capacitor.config.ts** — Points to production `https://savaje-com.lovable.app`; removing it would break the app since it uses hosted server functions
+5. **server.url in capacitor.config.ts** — Points to production `https://savaje-com.lovable.app`; cleartext traffic is disabled and removing the URL would break hosted server functions
+6. **Privacy/legal review** — A qualified owner must review the public policy, retention language, Data Safety form, and support/refund process before publication

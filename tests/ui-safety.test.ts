@@ -33,8 +33,13 @@ describe("no fabricated community or badge content ships", () => {
 
   it("the community view renders clean empty states instead of fabricated activity", async () => {
     const view = await read("../src/app/views/CommunityView.tsx");
-    assert.match(view, /No activity yet/);
-    assert.match(view, /No members to show yet/);
+    // Both the feed and the member directory resolve to the shared empty-state
+    // primitive with copy for the actual situation, so nothing is invented and
+    // no bare spinner is left behind on an empty account.
+    assert.match(view, /SVJEmptyState/);
+    assert.match(view, /title="The feed is quiet"/);
+    assert.match(view, /No member matches that search/);
+    assert.match(view, /The directory is just you/);
   });
 });
 

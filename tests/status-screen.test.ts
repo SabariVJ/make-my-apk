@@ -18,9 +18,16 @@ const online = readFileSync("src/app/lib/useOnlineStatus.ts", "utf8");
 
 describe("StatusScreen", () => {
   it("is the single branded screen with the SVJ design tokens", () => {
-    assert.match(status, /min-h-screen bg-\[#0B0B0C\]/);
-    assert.match(status, /rounded-2xl bg-\[#121214\] border border-white\/10/);
-    assert.match(status, /font-anton text-xl uppercase/); // Anton title
+    // A real full-viewport gate using the dynamic viewport unit, so the centred
+    // card is never measured against a browser-chrome-inflated 100vh.
+    assert.match(status, /min-h-\[100dvh\]/);
+    assert.match(status, /bg-\[#0B0B0C\]/);
+    // A real elevation step rather than one flat card shell shared with
+    // ordinary content, and a lit top edge so near-black surfaces read as lit.
+    assert.match(status, /svj-radius-card svj-lit-top svj-elev-3/);
+    assert.match(status, /bg-\[#17171A\]/);
+    assert.match(status, /font-inter text-xl font-semibold/); // sentence-case title
+    assert.doesNotMatch(status, /font-anton/); // caps headings are badge-only now
     assert.match(status, /font-inter/); // Inter body
     assert.match(status, /bg-\[#C81E3A\] hover:bg-\[#A0182E\]/); // crimson primary
   });

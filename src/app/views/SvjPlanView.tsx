@@ -28,7 +28,9 @@ import {
   type PersonalizationData,
 } from "@/lib/personalization.functions";
 import { getChallengeInsights, selectPersonalizedChallenges } from "@/lib/challenge-engine";
-import { getMyReadiness } from "@/app/lib/recovery";
+import { getMyReadiness, type ReadinessData } from "@/app/lib/recovery";
+import { readinessFromServer } from "@/app/lib/recoveryInsights";
+import { PlanRecoveryCard } from "@/app/components/recovery/PlanRecoveryCard";
 import { useActivityOptional } from "@/app/context/ActivityContext";
 
 // ── Stat display config ──────────────────────────────────────────────────
@@ -150,14 +152,14 @@ function StatCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="relative p-4 rounded-2xl bg-[#17171A] border border-white/10 overflow-hidden"
+      className="svj-radius-card svj-lit-top relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-4"
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5`} />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Icon className={`w-4 h-4 ${stat.color}`} />
-            <span className="text-xs font-mono uppercase tracking-wider text-[#8C8C90]">
+            <span className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]">
               {stat.label}
             </span>
           </div>
@@ -224,7 +226,7 @@ function PriorityCard({ areas, reason }: { areas: string[]; reason: string }) {
     >
       <div className="flex items-center gap-2 mb-3">
         <Target className="w-5 h-5 text-[#C81E3A]" />
-        <span className="font-anton text-sm uppercase tracking-wider text-[#C81E3A]">
+        <span className="flex items-center gap-2 font-inter text-sm font-semibold text-[#E62846]">
           This Week's Priority
         </span>
       </div>
@@ -281,7 +283,7 @@ function MissionCard({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.08 }}
-      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-white/20 transition-colors text-left cursor-pointer"
+      className="svj-radius-card svj-lit-top flex w-full cursor-pointer items-center gap-4 border border-white/[0.06] bg-[#17171A] p-4 text-left transition-colors hover:border-white/20"
     >
       <div className="w-10 h-10 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center shrink-0">
         <span className="text-lg">🎯</span>
@@ -324,13 +326,13 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   const callGetPersonalization = useServerFn(getPersonalization);
   const activity = useActivityOptional();
   const history30 = activity?.history30 ?? [];
-  const [readinessScore, setReadinessScore] = useState<number | null>(null);
+  const [readiness, setReadiness] = useState<ReadinessData | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void getMyReadiness()
       .then((r) => {
-        if (!cancelled && r.ok && r.readiness) setReadinessScore(r.readiness.score);
+        if (!cancelled && r.ok && r.readiness) setReadiness(r.readiness);
       })
       .catch(() => undefined);
     return () => {
@@ -420,9 +422,9 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   const isPlus = isPlusMember === true;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 overflow-hidden">
+      <div className="svj-radius-card svj-lit-top overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-[11px] font-inter text-[#C81E3A] uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5" />
@@ -433,7 +435,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
               </span>
             )}
           </div>
-          <h1 className="font-anton text-2xl sm:text-3xl text-white uppercase tracking-wide">
+          <h1 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED] sm:text-3xl">
             Your Weekly Blueprint
           </h1>
           <p className="text-xs font-inter text-[#8C8C90] mt-1">{weekLabel}</p>
@@ -442,12 +444,14 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
       {!isPlus ? (
         /* Upgrade prompt for free users */
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06] text-center space-y-4">
+        <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center mx-auto">
             <Sparkles className="w-8 h-8 text-[#C81E3A]" />
           </div>
           <div>
-            <h3 className="font-anton text-lg text-white uppercase">Unlock MY SVJ PLAN</h3>
+            <h3 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+              Unlock My SVJ Plan
+            </h3>
             <p className="text-xs text-[#8C8C90] mt-1 max-w-sm mx-auto">
               Get personalized weekly analysis, stat intelligence, priority areas, and adaptive
               challenge recommendations based on your actual progress.
@@ -471,7 +475,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
       ) : (
         <>
           {/* Average Score */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
+          <div className="svj-radius-card svj-lit-top flex items-center justify-between border border-white/[0.06] bg-[#17171A] p-4">
             <div>
               <span className="text-[11px] font-inter text-[#8C8C90] uppercase">Overall Score</span>
               <div className="font-mono text-3xl font-bold text-white mt-0.5">{avgScore}</div>
@@ -491,10 +495,10 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
           {/* Weekly Analysis — real stored data only (stat deltas vs
               assessment baseline, recorded activity trend, recovery trend). */}
-          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
+          <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-4">
             <div className="flex items-center gap-2 mb-3">
               <Brain className="w-4 h-4 text-[#C81E3A]" />
-              <h3 className="font-anton text-sm uppercase tracking-wider text-white">
+              <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
                 Weekly Analysis
               </h3>
             </div>
@@ -527,7 +531,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
               </li>
               <li className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/40 px-3 py-2">
                 <span>Readiness (today)</span>
-                <span className="text-white">{readinessScore ?? "No check-in"}</span>
+                <span className="text-white">{readiness ? readiness.score : "No check-in"}</span>
               </li>
             </ul>
           </div>
@@ -535,7 +539,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           {/* 8 Stat Cards Grid */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-anton text-sm uppercase tracking-wider text-white">
+              <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
                 Attribute Matrix
               </h3>
               <div className="flex gap-1">
@@ -573,11 +577,16 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
             </div>
           </div>
 
+          {/* Recovery integration: presentation-only context for the current
+              day, reusing the ONE authoritative focus emphasis. It never
+              changes missions, XP or entitlement — only how today reads. */}
+          {readiness && <PlanRecoveryCard readiness={readinessFromServer(readiness)} />}
+
           {/* Recommended Missions */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Target className="w-4 h-4 text-[#C81E3A]" />
-              <h3 className="font-anton text-sm uppercase tracking-wider text-white">
+              <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
                 This Week's Missions
               </h3>
             </div>
@@ -621,10 +630,10 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           </div>
 
           {/* Week Summary */}
-          <div className="p-4 rounded-2xl bg-[#17171A] border border-white/[0.06]">
+          <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-4">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-              <h3 className="font-anton text-sm uppercase tracking-wider text-white">
+              <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
                 Week Summary
               </h3>
             </div>
@@ -661,7 +670,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                 <p className="text-[10px] font-mono uppercase text-[#C81E3A]">
                   {selectedMission.category} • {selectedMission.difficulty}
                 </p>
-                <h3 className="mt-1 font-anton text-xl uppercase text-white">
+                <h3 className="mt-1 font-inter text-lg font-semibold tracking-tight text-[#F4F2ED]">
                   {selectedMission.title}
                 </h3>
               </div>
@@ -684,7 +693,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
                 setSelectedMission(null);
                 onNavigateToChallenges?.();
               }}
-              className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white"
+              className="mt-4 w-full rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E]"
             >
               Go to Challenges
             </button>

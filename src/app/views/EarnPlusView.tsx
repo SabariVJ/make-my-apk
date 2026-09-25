@@ -100,10 +100,15 @@ function MissionCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-wider text-[#A1A1AA]">
-            {mission.category} · {mission.minimumMinutes} min
-          </p>
-          <h3 className="mt-1 font-anton text-xl uppercase text-white">{mission.title}</h3>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-rose-400/20 bg-rose-400/[0.06] px-2 py-0.5 font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-300">
+              {mission.category}
+            </span>
+            <span className="font-inter text-[11px] text-[#A1A1AA]">
+              {mission.minimumMinutes} min minimum
+            </span>
+          </div>
+          <h3 className="mt-1.5 font-anton text-xl text-white">{mission.title}</h3>
         </div>
         <span className="shrink-0 rounded-lg border border-rose-400/20 bg-rose-400/5 px-2 py-1 font-mono text-xs text-rose-300">
           +{mission.rewardXp} Reward XP
@@ -162,7 +167,7 @@ function MissionCard({
             placeholder="Describe the activity and your next useful step."
           />
           <p id={"reflection-help-" + mission.key} className="text-[11px] text-[#A1A1AA]">
-            {confirmation.trim().length} / 500 characters · at least 20
+            {confirmation.trim().length} of 500 characters. At least 20 required.
           </p>
           <button
             type="submit"
@@ -203,7 +208,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
   );
 
   return (
-    <div className="space-y-5 pb-28">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -217,19 +222,31 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           Refresh rewards
         </button>
       </div>
-      <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-8">
-        <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
+      <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-5">
+        <p className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
           <ShieldCheck className="h-4 w-4" /> Earned, not purchased
         </p>
-        <h1 className="font-anton text-4xl uppercase tracking-wide text-white">Earn Plus</h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#C4C4CC]">
+        <h1 className="font-anton text-2xl tracking-wide text-white sm:text-3xl">Earn Plus</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#C4C4CC]">
           Build consistency with daily missions. Your Reward XP is verified and saved on the server,
           separately from your profile level.
         </p>
         {active && (
-          <p className="mt-3 font-mono text-xs text-rose-200">
-            {active.policy.plusDays} days of Plus · one-time launch reward · no automatic charge
-          </p>
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+            {[
+              `${active.policy.plusDays} days of SVJ Plus`,
+              "One-time launch reward",
+              "No automatic charge",
+            ].map((fact) => (
+              <li
+                key={fact}
+                className="flex items-center gap-1.5 text-[11px] font-inter text-rose-100/85"
+              >
+                <Check className="h-3 w-3 shrink-0 text-rose-300" aria-hidden />
+                {fact}
+              </li>
+            ))}
+          </ul>
         )}
       </header>
 
@@ -264,7 +281,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       )}
       {state?.status === "setup_required" && (
         <section className="rounded-2xl border border-gold/20 bg-[#17171A] p-4">
-          <h2 className="font-anton text-xl uppercase text-white">Database activation pending</h2>
+          <h2 className="font-anton text-xl text-white">Database activation pending</h2>
           <p className="mt-2 text-sm leading-relaxed text-[#B8B8C0]">{state.message}</p>
           <p className="mt-3 text-xs text-[#A1A1AA]">
             Existing XP and memberships are unchanged. Earning and claiming stay disabled until
@@ -292,7 +309,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           )}
 
           <section className="grid gap-4 sm:grid-cols-[1.3fr_1fr]">
-            <div className="space-y-5 rounded-2xl border border-white/10 bg-[#17171A] p-4">
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Gift className="h-4 w-4 text-rose-300" /> Your reward progress
               </h2>
@@ -349,13 +366,15 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           <section aria-label="Today's reward missions" className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <h2 className="font-anton text-2xl uppercase text-white">
-                  Today's reward missions
-                </h2>
-                <p className="mt-1 text-xs text-[#A1A1AA]">
-                  {active.wallet.missionsCompletedToday} / {active.missions.length} completed ·{" "}
-                  {active.wallet.rewardXpToday} / {active.policy.dailyRewardXpCap} Reward XP today
-                </p>
+                <h2 className="font-anton text-2xl text-white">Today's reward missions</h2>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-inter text-xs text-[#A1A1AA]">
+                  <span>
+                    {active.wallet.missionsCompletedToday} of {active.missions.length} missions done
+                  </span>
+                  <span className="font-mono">
+                    {active.wallet.rewardXpToday} / {active.policy.dailyRewardXpCap} Reward XP today
+                  </span>
+                </div>
               </div>
               <p className="flex items-center gap-1.5 font-mono text-xs text-[#B8B8C0]">
                 <Clock3 className="h-3.5 w-3.5" /> Reset in{" "}
@@ -379,14 +398,35 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           </section>
 
           <section className="rounded-2xl border border-rose-400/20 bg-[#17171A] p-4">
-            <h2 className="font-anton text-2xl uppercase text-white">
+            <h2 className="font-anton text-2xl text-white">
               Claim your {active.policy.plusDays} days
             </h2>
-            <p className="mt-2 text-sm text-[#B8B8C0]">
-              {active.policy.rewardXpCost.toLocaleString()} Reward XP ·{" "}
-              {active.policy.requiredQualifyingDays} qualifying days · account age{" "}
-              {active.account.ageDays} / {active.policy.requiredAccountAgeDays} days
-            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-2.5">
+                <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8C8C90]">
+                  Cost
+                </p>
+                <p className="mt-0.5 font-mono text-sm text-white">
+                  {active.policy.rewardXpCost.toLocaleString()} XP
+                </p>
+              </div>
+              <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-2.5">
+                <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8C8C90]">
+                  Qualifying days
+                </p>
+                <p className="mt-0.5 font-mono text-sm text-white">
+                  {active.policy.requiredQualifyingDays}
+                </p>
+              </div>
+              <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-2.5">
+                <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8C8C90]">
+                  Account age
+                </p>
+                <p className="mt-0.5 font-mono text-sm text-white">
+                  {active.account.ageDays} / {active.policy.requiredAccountAgeDays} days
+                </p>
+              </div>
+            </div>
             {active.account.lifetimeAccess ? (
               <p className="mt-4 text-sm text-gold">
                 Lifetime access already active. Your membership will not be shortened and no XP will

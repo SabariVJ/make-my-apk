@@ -124,6 +124,38 @@ export function avatarInitials(name: string | null | undefined): string {
 }
 
 /**
+ * Two-letter monogram for the designed fallback tile.
+ *
+ * The shared avatar components render this on a deterministic two-tone tile
+ * rather than a bare grey circle with one letter, so a member without a photo
+ * still reads as a character in the guild.
+ */
+export function avatarMonogram(name: string | null | undefined): string {
+  const clean = (name ?? "").trim();
+  if (!clean) return "SVJ";
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+/** Deterministic two-tone fallback palette (no photos, no placeholder grey). */
+export const AVATAR_FALLBACK_PALETTE = [
+  { bg: "#33262B", fg: "#F47C8C" },
+  { bg: "#26313F", fg: "#7CB4F4" },
+  { bg: "#2C2638", fg: "#B48CF4" },
+  { bg: "#3A3320", fg: "#D8B653" },
+  { bg: "#20332B", fg: "#5FD0A0" },
+  { bg: "#382C20", fg: "#F0A85C" },
+] as const;
+
+export function avatarPalette(seed: string | null | undefined) {
+  const key = (seed ?? "").trim() || "svj";
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) % 100003;
+  return AVATAR_FALLBACK_PALETTE[hash % AVATAR_FALLBACK_PALETTE.length];
+}
+
+/**
  * Pick the avatar shown after a sign-in, in authority order:
  *
  *   1. server-stored avatar (source of truth — custom uploads, removals)

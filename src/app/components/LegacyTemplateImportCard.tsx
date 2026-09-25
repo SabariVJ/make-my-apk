@@ -132,15 +132,15 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
 
   return (
     <section
-      className="rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/5 p-4"
+      className="svj-radius-card svj-lit-top svj-elev-1 border border-[#C9A227]/25 bg-[#C9A227]/5 p-4"
       data-testid="legacy-template-import"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#D4AF37]">
+          <p className="flex items-center gap-1.5 font-inter text-[11px] font-semibold text-[#C9A227]">
             <Upload className="h-3.5 w-3.5" /> Templates on this device
           </p>
-          <p className="mt-1 text-xs font-inter text-[#B8B8C0]">
+          <p className="mt-1 font-inter text-xs text-[#A6A6AD]">
             {plans.length} template{plans.length === 1 ? "" : "s"} can move into your account.{" "}
             {unresolved > 0
               ? `${unresolved} exercise${unresolved === 1 ? "" : "s"} need your choice — SVJ never guesses.`
@@ -152,7 +152,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-controls="legacy-template-import-review"
-          className="shrink-0 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white"
+          className="shrink-0 svj-radius-row border border-white/10 bg-[#08080A] px-2.5 py-1.5 font-inter text-[11px] font-medium text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
         >
           {open ? "Hide" : "Review"}
         </button>
@@ -161,16 +161,19 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
       {open && (
         <div id="legacy-template-import-review" className="mt-3 space-y-3">
           {plans.map((plan) => (
-            <div key={plan.legacyId} className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <p className="font-anton text-sm uppercase text-[#F4F2ED]">{plan.name}</p>
+            <div
+              key={plan.legacyId}
+              className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-3"
+            >
+              <p className="font-inter text-[13px] font-semibold text-[#F4F2ED]">{plan.name}</p>
               <ul className="mt-2 space-y-2">
                 {plan.resolutions.map((resolution) => (
                   <li key={resolution.legacy.id} className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-[11px] font-inter text-[#B8B8C0]">
+                    <span className="min-w-0 flex-1 truncate font-inter text-[11px] text-[#A6A6AD]">
                       {resolution.legacy.name}
                     </span>
                     {resolution.kind === "matched" ? (
-                      <span className="shrink-0 text-[10px] font-mono text-[#8C8C90]">
+                      <span className="shrink-0 font-mono text-[11px] text-[#8C8C90]">
                         → {resolution.exerciseName}
                       </span>
                     ) : (
@@ -183,7 +186,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
                             [resolution.legacy.id]: e.target.value,
                           }))
                         }
-                        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[10px] font-inter text-white"
+                        className="min-w-0 flex-1 svj-radius-row border border-white/10 bg-[#08080A] px-2 py-1 font-inter text-[11px] text-[#F4F2ED]"
                       >
                         <option value="">
                           {resolution.kind === "ambiguous"
@@ -210,7 +213,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           {error && (
             <p
               role="alert"
-              className="flex items-start gap-1.5 text-[11px] font-inter text-[#E62846]"
+              className="flex items-start gap-1.5 font-inter text-[11px] text-[#E62846]"
             >
               <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" /> {error}
             </p>
@@ -218,7 +221,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           {done && (
             <p
               role="status"
-              className="flex items-start gap-1.5 text-[11px] font-inter text-[#D4AF37]"
+              className="flex items-start gap-1.5 font-inter text-[11px] text-[#C9A227]"
             >
               <Check className="mt-0.5 h-3 w-3 shrink-0" /> {done}
             </p>
@@ -229,7 +232,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
             onClick={() => void runImport()}
             disabled={busy}
             data-testid="legacy-template-import-confirm"
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 text-[11px] font-inter font-semibold uppercase tracking-wider text-white disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/60 bg-[#C81E3A]/15 px-4 py-2.5 font-inter text-[11px] font-semibold text-white transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-40"
           >
             {busy ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -238,7 +241,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
             )}
             Import these templates
           </button>
-          <p className="text-[10px] font-inter text-[#8C8C90]">
+          <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
             Imports only your own templates into your account. No XP is awarded and nothing is
             marked as performed. Your device copies stay until the server confirms.
           </p>

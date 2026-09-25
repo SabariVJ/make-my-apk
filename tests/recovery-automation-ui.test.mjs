@@ -278,7 +278,9 @@ describe("history accumulates from the server", { concurrency: false }, () => {
     globalThis.__svjRecovery.history = { ok: false, error: "boom" };
     await mount();
     const note = screen.getByTestId("recovery-history-note");
-    assert.match(note.textContent, /Server history is unavailable right now/);
+    // Same invariant: the fallback note explains the server is unreachable and
+    // that only device-recorded days are shown.
+    assert.match(note.textContent, /server history couldn't be reached/i);
     assert.match(note.textContent, /Nothing is invented/);
     assert.doesNotMatch(document.body.textContent, /boom/, "raw RPC errors never surface");
   });

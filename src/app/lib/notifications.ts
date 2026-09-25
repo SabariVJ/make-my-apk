@@ -2,7 +2,31 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 import { appStorage } from "./storage";
 
 export type NotificationChannel = "progress" | "coach" | "membership";
-export type NotificationTarget = "challenges" | "activity" | "nutrition" | "profile" | "earn";
+export type NotificationTarget =
+  "challenges" | "activity" | "workouts" | "nutrition" | "profile" | "earn";
+
+const NOTIFICATION_TARGETS: readonly NotificationTarget[] = [
+  "challenges",
+  "activity",
+  "workouts",
+  "nutrition",
+  "profile",
+  "earn",
+];
+
+export function notificationTargetFromUrl(value?: string | null): NotificationTarget | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "app.lovable.svj:" || url.hostname !== "notification") return null;
+    const target = decodeURIComponent(url.pathname.replace(/^\/+/, "").split("/")[0] ?? "");
+    return NOTIFICATION_TARGETS.includes(target as NotificationTarget)
+      ? (target as NotificationTarget)
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface NotificationPreferences {
   enabled: boolean;
@@ -27,14 +51,14 @@ export interface NotificationPreferences {
 }
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  enabled: false,
+  enabled: true,
   dailyPlan: true,
   eveningCoach: true,
   streakRisk: true,
   earnPlus: true,
   recovery: true,
-  nutrition: false,
-  training: false,
+  nutrition: true,
+  training: true,
   trainingSession: true,
   trainingTime: "17:30",
   inactivity: true,
@@ -141,11 +165,15 @@ function validTime(value: unknown, fallback: string): string {
 export function loadNotificationPreferences(userId: string): NotificationPreferences {
   const raw = appStorage.getItem(preferenceKey(userId));
   if (!raw) return { ...DEFAULT_NOTIFICATION_PREFERENCES };
+
+  // Notification category switches are no longer an in-app user setting.
+  // Preserve only previously chosen reminder TIMES for compatibility, while
+  // keeping the planner enabled. Android's system notification permission is
+  // the single source of truth for whether notifications may be delivered.
   try {
     const parsed = JSON.parse(raw) as Partial<NotificationPreferences>;
     return {
       ...DEFAULT_NOTIFICATION_PREFERENCES,
-      ...parsed,
       morningTime: validTime(parsed.morningTime, DEFAULT_NOTIFICATION_PREFERENCES.morningTime),
       eveningTime: validTime(parsed.eveningTime, DEFAULT_NOTIFICATION_PREFERENCES.eveningTime),
       recoveryTime: validTime(parsed.recoveryTime, DEFAULT_NOTIFICATION_PREFERENCES.recoveryTime),
@@ -154,10 +182,6 @@ export function loadNotificationPreferences(userId: string): NotificationPrefere
         DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime,
       ),
       trainingTime: validTime(parsed.trainingTime, DEFAULT_NOTIFICATION_PREFERENCES.trainingTime),
-      trainingSession:
-        typeof parsed.trainingSession === "boolean"
-          ? parsed.trainingSession
-          : DEFAULT_NOTIFICATION_PREFERENCES.trainingSession,
     };
   } catch {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES };
@@ -191,11 +215,32 @@ export function subscribeNotificationPreferences(
 }
 
 function nextTime(now: Date, hhmm: string): Date {
-  const [hour, minute] = hhmm.split(":").map(Number);
+  const preferred = clampOutOfQuietHours(hhmm);
   const target = new Date(now);
-  target.setHours(hour, minute, 0, 0);
+  target.setHours(preferred.hour, preferred.minute, 0, 0);
   if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
   return target;
+}
+
+function moveOutOfQuietHours(date: Date): Date {
+  if (!isWithinQuietHours(date)) return date;
+  const target = new Date(date);
+  if (target.getHours() >= QUIET_HOURS_START_HOUR) target.setDate(target.getDate() + 1);
+  target.setHours(QUIET_HOURS_END_HOUR, 0, 0, 0);
+  return target;
+}
+
+function thresholdReminder(now: Date, thresholdAt: Date, hhmm: string): Date {
+  const preferred = clampOutOfQuietHours(hhmm);
+  const target = new Date(thresholdAt);
+  target.setHours(preferred.hour, preferred.minute, 0, 0);
+  if (target.getTime() < thresholdAt.getTime()) target.setDate(target.getDate() + 1);
+  return target.getTime() > now.getTime() ? target : nextTime(now, hhmm);
+}
+
+export function trainingSessionNotificationId(dayKey: string): number {
+  const compact = Number(dayKey.replace(/-/g, ""));
+  return Number.isSafeInteger(compact) ? 10_000_000 + compact : 10_800_000;
 }
 
 function nextWeekday(now: Date, weekday: number, hour: number, minute: number): Date {
@@ -313,36 +358,32 @@ export function buildNotificationPlan(
   if (prefs.inactivity) {
     const last = latestDateFromDayKey(input.lastProgressAt);
     if (last) {
-      const at = new Date(last.getTime() + 48 * 60 * 60 * 1000);
-      at.setHours(18, 30, 0, 0);
-      if (at.getTime() > now.getTime()) {
-        schedules.push({
-          id: 106,
-          title: "Don't let momentum disappear",
-          body: "Two quiet days can become a week quickly. Log one real action and keep your progress current.",
-          triggerAt: at.getTime(),
-          channel: "progress",
-          target: "challenges",
-        });
-      }
+      const thresholdAt = new Date(last.getTime() + 48 * 60 * 60 * 1000);
+      const at = thresholdReminder(now, thresholdAt, "18:30");
+      schedules.push({
+        id: 106,
+        title: "Don't let momentum disappear",
+        body: "Two quiet days can become a week quickly. Log one real action and keep your progress current.",
+        triggerAt: at.getTime(),
+        channel: "progress",
+        target: "challenges",
+      });
     }
   }
 
   if (prefs.training) {
     const last = parseDate(input.lastWorkoutAt);
     if (last) {
-      const at = new Date(last.getTime() + 72 * 60 * 60 * 1000);
-      at.setHours(17, 30, 0, 0);
-      if (at.getTime() > now.getTime()) {
-        schedules.push({
-          id: 107,
-          title: "Training gap detected",
-          body: "No strength session has been logged for 3 days. Train if recovery and your plan allow it.",
-          triggerAt: at.getTime(),
-          channel: "coach",
-          target: "activity",
-        });
-      }
+      const thresholdAt = new Date(last.getTime() + 72 * 60 * 60 * 1000);
+      const at = thresholdReminder(now, thresholdAt, prefs.trainingTime);
+      schedules.push({
+        id: 107,
+        title: "Training gap detected",
+        body: "No strength session has been logged for 3 days. Train if recovery and your plan allow it.",
+        triggerAt: at.getTime(),
+        channel: "coach",
+        target: "workouts",
+      });
     }
   }
 
@@ -366,14 +407,14 @@ export function buildNotificationPlan(
       if (triggerAt.getTime() <= now.getTime()) continue; // already past today
       if (isWithinQuietHours(triggerAt)) continue; // never deliver at night
       schedules.push({
-        id: 108,
+        id: trainingSessionNotificationId(day.date),
         title: "Training session today",
         body: day.title
           ? `${day.title} is scheduled for today.`
           : "Your scheduled training session is today.",
         triggerAt: triggerAt.getTime(),
         channel: "coach",
-        target: "activity",
+        target: "workouts",
       });
     }
   }
@@ -398,7 +439,7 @@ export function buildNotificationPlan(
           id: 200,
           title: "Your SVJ Plus period has ended",
           body: "Your free features remain available. Open SVJ to review membership options.",
-          triggerAt: expiry.getTime(),
+          triggerAt: moveOutOfQuietHours(expiry).getTime(),
           channel: "membership",
           target: "profile",
         });
@@ -416,6 +457,37 @@ export async function notificationPermission(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+const PERMISSION_PROMPTED_PREFIX = "svj_notification_permission_prompted_v1:";
+
+function permissionPromptedKey(userId: string): string {
+  return PERMISSION_PROMPTED_PREFIX + (userId || "anonymous");
+}
+
+/**
+ * Called only from first-time onboarding. The marker is written BEFORE the
+ * Android permission sheet opens, so dismissal/denial never causes SVJ to ask
+ * again inside the app. If the user later changes notification permission in
+ * Android App Info, the planner automatically follows that system setting.
+ */
+export async function initializeNotificationsAtSignup(userId: string): Promise<boolean> {
+  saveNotificationPreferences(userId, { ...DEFAULT_NOTIFICATION_PREFERENCES });
+
+  if (!Capacitor.isNativePlatform()) return false;
+  if (appStorage.getItem(permissionPromptedKey(userId)) === "1") {
+    return notificationPermission();
+  }
+
+  // Mark first so an interrupted permission flow cannot become a repeat prompt.
+  appStorage.setItem(permissionPromptedKey(userId), "1");
+  const granted = await requestNotificationPermission();
+
+  // Re-publish the planner defaults after Android closes the permission sheet.
+  // This wakes the mounted coordinator so a newly granted permission starts
+  // scheduling immediately without requiring an app restart.
+  saveNotificationPreferences(userId, { ...DEFAULT_NOTIFICATION_PREFERENCES });
+  return granted;
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {

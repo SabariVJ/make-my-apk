@@ -5,7 +5,8 @@
 // zero score. Colour is never the only signal: every cell carries a glyph and a
 // full accessible label, selectable days are real buttons with ≥44px targets.
 import React, { useCallback, useMemo, useState } from "react";
-import { Loader2, Moon, RefreshCw, TriangleAlert } from "lucide-react";
+import { Loader2, Moon, RefreshCw } from "lucide-react";
+import { SVJEmptyState } from "../ui-primitives/SVJEmptyState";
 import { listMyRecoveryHistory, type RecoveryHistoryPoint } from "../../lib/recovery";
 import {
   SLEEP_CORRELATION_MIN_SAMPLES,
@@ -18,8 +19,9 @@ import {
 } from "../../lib/recoveryInsights";
 
 const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-3";
-const HEADING = "font-anton text-sm uppercase tracking-wide text-[#F4F2ED]";
-const SECTION_TITLE = "text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]";
+const HEADING = "font-inter text-[15px] font-semibold tracking-tight text-[#F4F2ED]";
+const SECTION_TITLE =
+  "font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8C8C90]";
 
 const HISTORY_LIMIT = 35;
 
@@ -180,22 +182,25 @@ const RecoveryHistorySection: React.FC = () => {
         className={CARD}
       >
         <h2 className={HEADING}>Recovery history</h2>
-        <p
-          className="mt-3 flex items-start gap-2 text-xs font-inter text-[#8C8C90]"
-          data-testid="recovery-history-error"
-        >
-          <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-          {error}
-        </p>
-        <button
-          type="button"
-          data-testid="recovery-history-retry"
-          onClick={() => setAttempt((n) => n + 1)}
-          className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-[#17171A] px-4 text-xs font-inter font-semibold text-[#F4F2ED] transition-colors hover:bg-black/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A]"
-        >
-          <RefreshCw aria-hidden className="h-3.5 w-3.5" />
-          Try again
-        </button>
+        <div data-testid="recovery-history-error">
+          <SVJEmptyState
+            variant="error"
+            compact
+            title="Your check-in history didn't load"
+            description="Your saved check-ins and readiness days couldn't be fetched from your account. Nothing has been lost, and no day is being filled in for you."
+            action={
+              <button
+                type="button"
+                data-testid="recovery-history-retry"
+                onClick={() => setAttempt((n) => n + 1)}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-[#17171A] px-4 text-xs font-inter font-semibold text-[#F4F2ED] transition-colors hover:bg-black/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A]"
+              >
+                <RefreshCw aria-hidden className="h-3.5 w-3.5" />
+                Try again
+              </button>
+            }
+          />
+        </div>
       </div>
     );
   }

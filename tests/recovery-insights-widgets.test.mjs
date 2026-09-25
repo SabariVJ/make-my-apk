@@ -69,6 +69,7 @@ before(async () => {
           const map = {
             // The recovery RPC boundary (readiness/history) — real shapes.
             "../lib/recovery": "recovery",
+            "../../lib/recovery": "recovery",
             "../lib/trainingClient": "trainingClient",
             "../lib/trainingErrors": "trainingErrors",
             "../lib/goalsRecords": "goalsRecords",
@@ -101,7 +102,8 @@ before(async () => {
                   globalThis.__svjP3.savedCheckins.push(i);
                   return { ok: true, readiness: globalThis.__svjP3.readiness.readiness };
                 };
-                export const listMyRecoveryHistory = async () => globalThis.__svjP3.history;`,
+                export const listMyRecoveryHistory = async () => globalThis.__svjP3.history;
+                export const listMyRecoveryRecords = async () => ({ ok: true, records: [] });`,
               trainingClient: `
                 export const trainingRpcClient = () => globalThis.__svjP3.rpc;
                 export const getTrainingProfile = async (rpc) => globalThis.__svjP3.profile;
@@ -397,12 +399,17 @@ describe("Phase 1/2 invariants stay intact", () => {
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
-    // History (Phase 4) and Goals (Phase 5) shipped with their own suites;
-    // Records, Progress and Devices are still honest "Coming next" placeholders.
+    // History (Phase 4), Goals (Phase 5), Records (Phase 6) and Progress
+    // (Phase 7) shipped with their own suites; Devices is the only remaining
+    // honest "Coming next" placeholder.
     await act(async () => {
       screen.getByTestId("recovery-section-tab-records").click();
     });
-    assert.ok(screen.getByText(/Coming next/));
+    assert.ok(screen.getByTestId("recovery-section-records"), "Records is real now");
+    await act(async () => {
+      screen.getByTestId("recovery-section-tab-progress").click();
+    });
+    assert.ok(screen.getByTestId("recovery-section-progress"), "Progress is real now");
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });

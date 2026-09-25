@@ -440,8 +440,9 @@ export function plannedRouteSummary(
   route: Pick<SavedRoute, "distanceMeters" | "elevationGainMeters">,
 ): string {
   const distance = formatDistance(route.distanceMeters);
+  // Reads as one sentence rather than a middle-dot meta string.
   return route.elevationGainMeters != null
-    ? `${distance} · +${Math.round(route.elevationGainMeters)} m`
+    ? `${distance} with ${Math.round(route.elevationGainMeters)} m of climb`
     : distance;
 }
 

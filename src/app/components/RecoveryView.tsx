@@ -16,6 +16,9 @@ import { RECOVERY_SECTIONS, type RecoverySection } from "../lib/recoveryNav";
 import { useRecoveryInsights } from "../hooks/useRecoveryInsights";
 import RecoveryGoalsSection from "./recovery/RecoveryGoalsSection";
 import RecoveryHistorySection from "./recovery/RecoveryHistorySection";
+import RecoveryRecordsSection from "./recovery/RecoveryRecordsSection";
+import RecoveryWeeklyDigest from "./recovery/RecoveryWeeklyDigest";
+import { RestDayAlertCard } from "./recovery/RestDayAlertCard";
 import { ReadinessHistoryProvider } from "./ReadinessHistoryProvider";
 import { useTrainRecoveryShared } from "../lib/readinessShared";
 import {
@@ -39,50 +42,63 @@ const UpcomingSection: React.FC<{
     id={`recovery-panel-${section}`}
     aria-labelledby={`recovery-tab-${section}`}
     data-testid={`recovery-section-${section}`}
-    className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-5"
+    className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-5"
   >
-    <p className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90]">Coming next</p>
-    <h2 className="mt-1 font-anton text-lg uppercase tracking-wide text-[#F4F2ED]">{title}</h2>
-    <p className="mt-2 text-xs font-inter leading-relaxed text-[#8C8C90]">{summary}</p>
+    <p className="font-inter text-[11px] font-semibold text-[#8C8C90]">Coming next</p>
+    <h2 className="mt-1 font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+      {title}
+    </h2>
+    <p className="mt-2 font-inter text-xs leading-relaxed text-[#8C8C90]">{summary}</p>
     <ul className="mt-3 space-y-1.5">
       {points.map((point) => (
-        <li key={point} className="flex gap-2 text-[11px] font-mono text-[#8C8C90]">
+        <li key={point} className="flex gap-2 font-inter text-[11px] text-[#A6A6AD]">
           <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C81E3A]" />
           <span>{point}</span>
         </li>
       ))}
     </ul>
-    <p className="mt-4 rounded-xl border border-white/5 bg-black/40 px-3 py-2 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+    <p className="mt-4 svj-radius-row border border-white/[0.06] bg-[#08080A] px-3 py-2 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
       Nothing is shown here yet because SVJ only displays recovery data it can actually derive from
       your recorded activity, check-ins and completed tasks.
     </p>
   </div>
 );
 
-const OverviewWithInsights: React.FC = () => {
+const OverviewWithInsights: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const { goals, trainingProfile, muscleRows, muscleAvailability } = useRecoveryInsights();
   const shared = useTrainRecoveryShared();
 
   return (
     <>
-      {/* Focus + streak derive from the SAME readiness the panel renders — the
-          panel publishes its computed values upward. Until the first publish
-          completes, the widgets stay quiet instead of guessing. */}
-      {shared?.today && (
-        <TodaysFocusCard
-          readiness={shared.today}
-          trainingGoal={trainingProfile.goal}
-          goals={goals}
-        />
-      )}
-      {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
+      {/* Focus, the Rest-Day alert and the streak all derive from the SAME
+          readiness the panel renders — the panel publishes its computed values
+          upward. Until the first publish completes, these stay quiet instead
+          of guessing.
+
+          Density: the small insight cards pair up on desktop width so several
+          recovery signals are visible together; the readiness panel and the
+          muscle map stay full width underneath. DOM order is unchanged, so the
+          mobile stack reads exactly as before. */}
+      <div className="grid items-start gap-x-3 xl:grid-cols-2">
+        {shared?.today && (
+          <>
+            <RestDayAlertCard readiness={shared.today} onReviewPlan={onOpenPlan} />
+            <TodaysFocusCard
+              readiness={shared.today}
+              trainingGoal={trainingProfile.goal}
+              goals={goals}
+            />
+          </>
+        )}
+        {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
+      </div>
       <TrainRecovery />
       <MuscleRecoveryCard rows={muscleRows} availability={muscleAvailability} />
     </>
   );
 };
 
-export const RecoveryView: React.FC = () => {
+export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
   const [section, setSection] = useState<RecoverySection>("overview");
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -108,18 +124,18 @@ export const RecoveryView: React.FC = () => {
   );
 
   return (
-    <div className="pb-28 space-y-4" data-testid="recovery-view">
-      <div className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/15">
+    <div className="space-y-3" data-testid="recovery-view">
+      <div className="svj-radius-card svj-lit-top svj-elev-2 border border-white/[0.06] bg-[#17171A] p-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/15">
             <HeartPulse aria-hidden className="h-4 w-4 text-[#E62846]" />
           </div>
-          <div>
-            <h1 className="font-anton text-2xl uppercase tracking-wider text-[#F4F2ED]">
+          <div className="min-w-0">
+            <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">
               Recovery
             </h1>
-            <p className="text-[11px] font-inter text-[#8C8C90]">
-              Readiness, sleep and training load — derived from your own data.
+            <p className="font-inter text-[11px] text-[#8C8C90]">
+              Readiness, sleep and training load, derived from your own data.
             </p>
           </div>
         </div>
@@ -149,10 +165,10 @@ export const RecoveryView: React.FC = () => {
               tabIndex={active ? 0 : -1}
               data-testid={`recovery-section-tab-${item.id}`}
               onClick={() => setSection(item.id)}
-              className={`flex shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-inter font-semibold transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] ${
+              className={`flex min-h-[44px] shrink-0 cursor-pointer items-center justify-center gap-1.5 svj-radius-row border px-2.5 py-2 font-inter text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] lg:min-h-0 ${
                 active
                   ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
-                  : "border-white/8 bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"
+                  : "border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
               <Icon aria-hidden className="h-4 w-4" />
@@ -173,7 +189,7 @@ export const RecoveryView: React.FC = () => {
           data-testid="recovery-section-overview"
         >
           <ReadinessHistoryProvider>
-            <OverviewWithInsights />
+            <OverviewWithInsights onOpenPlan={onOpenPlan} />
           </ReadinessHistoryProvider>
         </div>
       )}
@@ -182,34 +198,17 @@ export const RecoveryView: React.FC = () => {
 
       {section === "goals" && <RecoveryGoalsSection />}
 
-      {section === "records" && (
-        <UpcomingSection
-          section="records"
-          title="Records"
-          summary="Derived personal bests from your own recovery history."
-          points={[
-            "Highest legitimate readiness score",
-            "Longest check-in streak",
-            "Most consistent sleep duration (duration, not sleep window)",
-          ]}
-        />
-      )}
+      {section === "records" && <RecoveryRecordsSection />}
 
-      {section === "progress" && (
-        <UpcomingSection
-          section="progress"
-          title="Progress"
-          summary="A weekly recovery digest drawn from your real readiness, sleep, consistency and load."
-          points={[
-            "Average readiness and its trend across the week",
-            "Average sleep, check-in consistency and rest-day count",
-            "Also surfaced inside My SVJ Plan once it ships",
-          ]}
-        />
-      )}
+      {section === "progress" && <RecoveryWeeklyDigest />}
 
       {section === "devices" && (
-        <div className="space-y-3">
+        <div
+          role="tabpanel"
+          id="recovery-panel-devices"
+          aria-labelledby="recovery-tab-devices"
+          className="space-y-3"
+        >
           <UpcomingSection
             section="devices"
             title="Devices"
@@ -224,7 +223,7 @@ export const RecoveryView: React.FC = () => {
           <p
             role="status"
             data-testid="recovery-devices-status"
-            className="rounded-2xl border border-white/5 bg-[#0B0B0C] px-4 py-3 text-[11px] font-mono text-[#8C8C90]"
+            className="svj-radius-row border border-white/[0.06] bg-[#08080A] px-4 py-3 font-inter text-[11px] text-[#8C8C90]"
           >
             No device is connected.
           </p>

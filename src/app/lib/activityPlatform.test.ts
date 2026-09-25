@@ -112,7 +112,7 @@ describe("route display helpers", () => {
   it("builds a distance + elevation summary", () => {
     assert.equal(
       plannedRouteSummary({ distanceMeters: 2500, elevationGainMeters: 42 }),
-      "2.50 km · +42 m",
+      "2.50 km with 42 m of climb",
     );
   });
 

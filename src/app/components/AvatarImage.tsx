@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAvatarUrl } from "../hooks/useAvatarUrl";
-import { avatarInitials } from "@/lib/avatar";
+import { avatarMonogram, avatarPalette } from "@/lib/avatar";
 
 interface AvatarImageProps {
   src?: string | null;
@@ -35,12 +35,28 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({ src, name, alt, classN
     );
   }
 
+  // Designed fallback: a deterministic two-tone monogram tile. Never a bare
+  // letter on a flat grey circle.
+  const palette = avatarPalette(name);
   return (
     <div
       aria-hidden="true"
-      className={`flex items-center justify-center bg-[#17171A] border border-white/10 font-anton text-white uppercase ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden border border-white/10 svj-lit-top ${className}`}
+      style={{ background: palette.bg }}
     >
-      {avatarInitials(name)}
+      <span
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(120% 120% at 28% 0%, ${palette.fg}33 0%, transparent 62%)`,
+        }}
+      />
+      <span
+        className="relative font-anton text-[0.9em] uppercase tracking-wide"
+        style={{ color: palette.fg }}
+      >
+        {avatarMonogram(name)}
+      </span>
     </div>
   );
 };

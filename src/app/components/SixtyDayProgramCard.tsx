@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, CalendarCheck, Flame, ShieldCheck, Trophy } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Flame, ShieldCheck, Trophy } from "lucide-react";
 import { summarizeSixtyDayProgram, type ChallengeProgressInput } from "@/lib/challengeProgress";
 
 /**
@@ -13,14 +13,71 @@ export function SixtyDayProgramCard({
   state,
   loading = false,
   onOpen,
+  /**
+   * Compact status chip for the Challenges home. The full program card is
+   * still used where the program is the primary job of the screen; on the
+   * home it would otherwise compete with today's tasks for the same scroll.
+   */
+  compact = false,
 }: {
   state: ChallengeProgressInput | null;
   loading?: boolean;
   onOpen: () => void;
+  compact?: boolean;
 }) {
   const summary = summarizeSixtyDayProgram(state);
   const notStarted = summary.status === "not_started";
   const completed = summary.status === "completed";
+
+  if (compact) {
+    const statusLine = notStarted
+      ? "Not started yet"
+      : completed
+        ? "All days cleared"
+        : `Day ${summary.currentDay} of ${summary.totalDays}${summary.status === "paused" ? " (paused)" : ""}`;
+
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        data-testid="sixty-day-chip"
+        aria-label="Open 60 Day Transformation"
+        className={`flex w-full items-center gap-3 rounded-xl border bg-[#17171A] px-3.5 py-3 text-left transition-colors svj-press ${
+          completed
+            ? "border-[#C9A227]/30 hover:border-[#C9A227]/50"
+            : "border-white/[0.08] hover:border-white/[0.16]"
+        }`}
+      >
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+            completed
+              ? "border-[#C9A227]/30 bg-[#C9A227]/12 text-[#C9A227]"
+              : "border-white/10 bg-white/[0.04] text-[#C81E3A]"
+          }`}
+        >
+          {completed ? (
+            <Trophy aria-hidden className="h-4 w-4" />
+          ) : (
+            <CalendarCheck aria-hidden className="h-4 w-4" />
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-inter font-semibold text-[#F4F2ED]">
+            60-Day Transformation
+          </span>
+          <span className="block truncate text-[11px] font-inter text-[#8C8C90]">
+            {loading ? "Syncing progress…" : statusLine}
+          </span>
+        </span>
+        {!notStarted && (
+          <span className="shrink-0 font-mono text-[11px] font-semibold text-[#F4F2ED]">
+            {summary.percent}%
+          </span>
+        )}
+        <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-[#5C5C60]" />
+      </button>
+    );
+  }
 
   return (
     <section
@@ -35,7 +92,7 @@ export function SixtyDayProgramCard({
         </p>
 
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-anton text-2xl uppercase leading-none text-white">
+          <h2 className="font-anton text-2xl leading-none tracking-wide text-white">
             60 Day
             <span className="block text-[#C81E3A]">Transformation</span>
           </h2>

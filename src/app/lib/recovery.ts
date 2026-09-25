@@ -4,6 +4,7 @@
 // score math live in the database (deterministic, database clock); the client
 // sends only explicit check-in values.
 import { rewardsRpcClient, type RpcClient } from "./rewards";
+import { normalizeRecoveryRecords, type RecoveryRecordDto } from "./recoveryRecords";
 
 export interface ReadinessData {
   score: number;
@@ -153,3 +154,25 @@ export async function listMyRecoveryHistory(
 }
 
 export type { RpcClient };
+
+// ── Recovery records (Phase 6) ──────────────────────────────────────────────
+// Derived by the server at read time from canonical readiness + check-in days.
+// There is no create/update/delete counterpart: the client can only ask for
+// what the server can prove from its own history.
+export async function listMyRecoveryRecords(): Promise<{
+  ok: boolean;
+  records?: RecoveryRecordDto[];
+  error?: string;
+}> {
+  const client = rewardsRpcClient();
+  if (!client) return { ok: false, error: "Backend is not configured." };
+  try {
+    const { data, error } = await client.rpc("svj_list_recovery_records");
+    if (error) return { ok: false, error: error.message || "Recovery records failed." };
+    const records = normalizeRecoveryRecords(data);
+    if (!records) return { ok: false, error: "Unreadable records response." };
+    return { ok: true, records };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error." };
+  }
+}

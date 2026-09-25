@@ -338,7 +338,12 @@ export class GpsWorkoutRecorder {
     // Auto pause decides whether this interval counts as movement.
     if (this.autoPauseEnabled && previous != null) {
       const deltaSeconds = Math.max(0, (sample.timestampMs - this.lastAutoPauseAtMs) / 1000);
-      const distance = previous.moving === false ? 0 : distanceBetween(previous, point);
+      // Auto-pause must observe raw displacement even while the previous
+      // accepted point was marked non-moving; otherwise once paused the
+      // detector would feed itself 0 m/s forever and could never auto-resume.
+      // Whether the interval counts toward workout distance is decided later
+      // from the points' moving flags.
+      const distance = distanceBetween(previous, point);
       const speed = deltaSeconds > 0 ? distance / deltaSeconds : 0;
       const changed = this.autoPause.update(speed, deltaSeconds);
       this.lastAutoPauseAtMs = sample.timestampMs;

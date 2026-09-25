@@ -17,9 +17,10 @@ import {
 import type { GoalDto } from "../../lib/goalsRecords";
 import type { MuscleHistoryRow } from "../../lib/trainingClient";
 import type { MuscleDataAvailability } from "../../hooks/useRecoveryInsights";
+import { MuscleBodyMap } from "./MuscleBodyMap";
 
-const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-3";
-const CARD_TITLE = "text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]";
+const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-3.5 mb-2.5";
+const CARD_TITLE = "text-[11px] font-inter font-semibold text-[#8C8C90]";
 
 const STATE_COLORS: Record<string, string> = {
   fresh: "text-emerald-400",
@@ -64,9 +65,7 @@ export const TodaysFocusCard: React.FC<{
       <p className={`mb-1.5 flex items-center gap-1.5 ${CARD_TITLE}`}>
         <Sparkles aria-hidden className="h-3 w-3 text-[#C81E3A]" /> Today&apos;s focus
       </p>
-      <h2 className="font-anton text-lg uppercase tracking-wide text-[#F4F2ED]">
-        {focus.headline}
-      </h2>
+      <h2 className="font-anton text-lg tracking-wide text-[#F4F2ED]">{focus.headline}</h2>
       <p
         className={`mt-1.5 rounded-xl border px-3 py-2 text-xs font-inter leading-relaxed ${
           FocusEmphasisStyles[focus.emphasis] ?? FocusEmphasisStyles.normal
@@ -169,38 +168,48 @@ export const MuscleRecoveryCard: React.FC<{
     <div className={CARD} data-testid="recovery-muscles">
       <MuscleCardHeader />
       {!map.hasAnyData ? (
-        <p className="py-3 text-center text-[11px] font-mono uppercase text-[#8C8C90]">
+        <p className="py-3 text-center text-[11px] font-inter text-[#8C8C90]">
           No muscle data yet — complete a structured strength session.
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="recovery-muscle-list">
-          {map.entries.map((entry) => (
-            <li
-              key={entry.muscle}
-              data-testid={`muscle-${entry.muscle}`}
-              className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/30 px-3 py-2"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden
-                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATE_SWATCH[entry.state]}`}
-                />
-                <span className="truncate text-xs font-inter text-[#F4F2ED]">{entry.label}</span>
-              </span>
-              <span
-                className={`shrink-0 font-mono text-[10px] uppercase ${
-                  STATE_COLORS[entry.state] ?? "text-[#8C8C90]"
-                }`}
+        <>
+          <MuscleBodyMap
+            entries={map.entries.map((entry) => ({
+              muscle: entry.muscle,
+              label: entry.label,
+              state: entry.state,
+            }))}
+            className="mb-3"
+          />
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="recovery-muscle-list">
+            {map.entries.map((entry) => (
+              <li
+                key={entry.muscle}
+                data-testid={`muscle-${entry.muscle}`}
+                className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/30 px-3 py-2"
               >
-                {muscleRecoveryStateLabel(entry.state)}
-                <span className="sr-only"> — {entry.reason}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    aria-hidden
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATE_SWATCH[entry.state]}`}
+                  />
+                  <span className="truncate text-xs font-inter text-[#F4F2ED]">{entry.label}</span>
+                </span>
+                <span
+                  className={`shrink-0 font-inter text-[10px] font-semibold ${
+                    STATE_COLORS[entry.state] ?? "text-[#8C8C90]"
+                  }`}
+                >
+                  {muscleRecoveryStateLabel(entry.state)}
+                  <span className="sr-only"> — {entry.reason}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {/* Text equivalent of the whole map, for screen readers and scanning. */}
-      <p className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+      <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
         Estimated from recent training history — not a medical or sensor measurement.
       </p>
       {map.hasAnyData && (
@@ -217,7 +226,7 @@ export const MuscleRecoveryCard: React.FC<{
 };
 
 const MuscleCardHeader: React.FC = () => (
-  <p className={`mb-1.5 ${CARD_TITLE}`}>Muscle recovery map</p>
+  <p className={`mb-2 ${CARD_TITLE}`}>Estimated muscle recovery</p>
 );
 
 export const RecoveryWidgetsError: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (

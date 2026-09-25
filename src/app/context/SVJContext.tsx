@@ -708,7 +708,7 @@ export const SVJProvider: React.FC<{
     );
     addActivity(
       `Logged Workout: ${entry.name}`,
-      `${summary.sets} sets · ${Math.round(summary.volume).toLocaleString()} kg total volume.`,
+      `${summary.sets} working sets totalling ${Math.round(summary.volume).toLocaleString()} kg.`,
       entry.xpEarned,
     );
     triggerConfetti();

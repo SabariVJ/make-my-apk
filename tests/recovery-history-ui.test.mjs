@@ -97,7 +97,8 @@ before(async () => {
               recovery: `
                 export const getMyReadiness = async () => globalThis.__svjP4.readiness;
                 export const saveMyRecoveryCheckin = async () => ({ ok: true, readiness: globalThis.__svjP4.readiness.readiness });
-                export const listMyRecoveryHistory = async (limit) => globalThis.__svjP4.history(limit);`,
+                export const listMyRecoveryHistory = async (limit) => globalThis.__svjP4.history(limit);
+                export const listMyRecoveryRecords = async () => ({ ok: true, records: [] });`,
               storage: `
                 export const readStoredJson = (k, f) => globalThis.__svjP4.localHistory ?? f;
                 export const writeStoredJson = (k, v) => { globalThis.__svjP4.localHistory = v; };`,
@@ -301,7 +302,9 @@ describe("Recovery → History heatmap", () => {
       render(React.createElement(app.RecoveryHistorySection));
     });
     await waitFor(() => assert.ok(screen.getByTestId("recovery-history-error")));
-    assert.match(document.body.textContent, /Recovery history is unavailable right now/);
+    // Same invariant as before: a failed history load shows a retryable error
+    // carrying copy specific to what is missing (not a generic message).
+    assert.match(document.body.textContent, /Your check-in history didn't load/);
     assert.doesNotMatch(document.body.textContent, /Could not find the function/);
     const retry = screen.getByTestId("recovery-history-retry");
     // Recovery works again after a successful retry.
@@ -368,10 +371,13 @@ describe("Phase 1–3 invariants stay intact", () => {
       screen.getAllByRole("tab").map((tab) => tab.textContent?.replace("(selected)", "").trim()),
       ["Overview", "History", "Goals", "Records", "Progress", "Devices"],
     );
+    // Records is a real derived panel since Phase 6; Progress/Devices remain
+    // honest placeholders.
     await act(async () => {
       screen.getByTestId("recovery-section-tab-records").click();
     });
-    assert.ok(screen.getByText(/Coming next/), "Records stays an honest placeholder");
+    assert.ok(screen.getByTestId("recovery-section-records"));
+    assert.equal(screen.queryByText(/Coming next/), null, "Records is no longer a placeholder");
     await act(async () => {
       screen.getByTestId("recovery-section-tab-history").click();
     });

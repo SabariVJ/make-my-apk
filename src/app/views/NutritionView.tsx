@@ -20,6 +20,8 @@ import {
   X,
 } from "lucide-react";
 import { BodyProfileView } from "./BodyProfileView";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
+import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import {
   analyzeMealPhoto,
   deleteNutritionMeal,
@@ -98,34 +100,66 @@ async function compressMealPhoto(file: File): Promise<string> {
   }
 }
 
+/**
+ * Macro meter. Each macro carries its own hue and a gradient fill over a
+ * sunken track, so protein / carbs / fat are distinguishable at a glance
+ * instead of three identical flat bars.
+ */
 function MacroCard({
   label,
   value,
   target,
   unit = "g",
+  tone = "protein",
 }: {
   label: string;
   value: number;
   target: number;
   unit?: string;
+  tone?: "protein" | "carbs" | "fat";
 }) {
   const pct = Math.min(100, Math.round((value / Math.max(1, target)) * 100));
+  const tones = {
+    protein: { from: "#8C1327", to: "#E62846", accent: "#E62846" },
+    carbs: { from: "#8A6A2F", to: "#E0B84C", accent: "#E0B84C" },
+    fat: { from: "#1E3A5F", to: "#5C9BE0", accent: "#5C9BE0" },
+  }[tone];
+
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#101012] p-3">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">
-          {label}
-        </span>
-        <span className="text-[10px] font-mono text-[#8C8C90]">{pct}%</span>
-      </div>
-      <p className="mt-1 font-anton text-lg text-[#F4F2ED]">
-        {Math.round(value)}
-        <span className="ml-1 text-[10px] font-inter text-[#8C8C90]">
-          / {Math.round(target)} {unit}
-        </span>
-      </p>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/60">
-        <div className="h-full rounded-full bg-[#C81E3A]" style={{ width: `${pct}%` }} />
+    <div className="svj-radius-card svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#101012] p-3">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full opacity-[0.16] blur-2xl"
+        style={{ background: tones.accent }}
+      />
+      <div className="relative">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-inter text-[11px] font-semibold text-[#F4F2ED]">{label}</span>
+          <span className="font-mono text-[10px] text-[#8C8C90]">{pct}%</span>
+        </div>
+        <p className="mt-1 font-anton text-lg text-[#F4F2ED]">
+          {Math.round(value)}
+          <span className="ml-1 font-inter text-[10px] text-[#8C8C90]">
+            / {Math.round(target)} {unit}
+          </span>
+        </p>
+        <div
+          className="mt-2 h-2 overflow-hidden rounded-full border border-black/50 bg-black/70"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-label={`${label}: ${Math.round(value)} of ${Math.round(target)} ${unit}`}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-500 ease-out"
+            style={{
+              width: `${pct}%`,
+              background: `linear-gradient(90deg, ${tones.from} 0%, ${tones.to} 100%)`,
+              boxShadow: `0 0 10px -2px ${tones.accent}88`,
+            }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -399,7 +433,7 @@ export const NutritionView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-sm text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#8C8C90]">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading Fuel…
       </div>
     );
@@ -409,7 +443,9 @@ export const NutritionView: React.FC = () => {
     return (
       <div className="rounded-2xl border border-white/10 bg-[#17171A] p-5 text-center">
         <AlertTriangle className="mx-auto h-5 w-5 text-[#C81E3A]" />
-        <p className="mt-2 font-anton text-sm uppercase text-white">Fuel needs a connection</p>
+        <p className="mt-2 font-inter text-sm font-semibold text-[#F4F2ED]">
+          Fuel needs a connection
+        </p>
         <p className="mt-1 text-xs text-[#8C8C90]">
           {loadError ?? "Nutrition data is unavailable."}
         </p>
@@ -430,13 +466,13 @@ export const NutritionView: React.FC = () => {
   const reviewedTotals = scanReview ? totals(scanReview.items) : null;
 
   return (
-    <div className="space-y-4 pb-32">
+    <div className="space-y-3">
       <header className="flex items-center justify-between gap-3 pt-1">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-inter uppercase tracking-[0.2em] text-[#C81E3A]">
             <Utensils className="h-3.5 w-3.5" /> Fuel
           </p>
-          <h1 className="font-anton text-2xl uppercase text-[#F4F2ED]">Nutrition</h1>
+          <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Nutrition</h1>
           <p className="text-xs text-[#8C8C90]">Scan, review and track what you actually eat.</p>
         </div>
         <button
@@ -449,133 +485,149 @@ export const NutritionView: React.FC = () => {
         </button>
       </header>
 
-      <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">Today</p>
-            <p className="mt-1 font-anton text-4xl leading-none text-[#F4F2ED]">
-              {Math.round(daily.calories).toLocaleString()}
-              <span className="ml-1.5 text-sm font-inter text-[#8C8C90]">kcal</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <button
-              type="button"
-              onClick={() => setEditingTargets((value) => !value)}
-              className="inline-flex items-center gap-1.5 text-xs text-[#B8B8C0]"
-            >
-              <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
-            </button>
-            <p className="mt-1 text-[10px] text-[#8C8C90]">
-              {Math.max(
-                0,
-                Math.round(dashboard.targets.calories - daily.calories),
-              ).toLocaleString()}{" "}
-              kcal left
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/60">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${caloriePct}%` }}
-            className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
-          />
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <MacroCard label="Protein" value={daily.proteinG} target={dashboard.targets.proteinG} />
-          <MacroCard label="Carbs" value={daily.carbsG} target={dashboard.targets.carbsG} />
-          <MacroCard label="Fat" value={daily.fatG} target={dashboard.targets.fatG} />
-        </div>
-      </section>
-
-      {editingTargets && targetDraft && (
-        <section className="rounded-2xl border border-[#C81E3A]/20 bg-[#17171A] p-4">
-          <div className="flex items-center justify-between">
+      {/* Summary and meal actions share the first viewport: calories, macros,
+          Scan Meal and Manual Log are all reachable without scrolling. */}
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-3.5">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="font-anton text-sm uppercase text-white">Daily targets</p>
-              <p className="text-[10px] text-[#8C8C90]">
-                Starts from your Body Profile estimate; you can override it here.
+              <p className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">
+                Today
               </p>
+              <p className="mt-1 font-anton text-3xl leading-none text-[#F4F2ED]">
+                {Math.round(daily.calories).toLocaleString()}
+                <span className="ml-1.5 text-sm font-inter text-[#8C8C90]">kcal</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setEditingTargets((value) => !value)}
+                className="inline-flex items-center gap-1.5 text-xs text-[#B8B8C0]"
+              >
+                <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
+              </button>
+              <p className="mt-1 text-[10px] text-[#8C8C90]">
+                {Math.max(
+                  0,
+                  Math.round(dashboard.targets.calories - daily.calories),
+                ).toLocaleString()}{" "}
+                kcal left
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/60">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${caloriePct}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
+            />
+          </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            <MacroCard
+              label="Protein"
+              value={daily.proteinG}
+              target={dashboard.targets.proteinG}
+              tone="protein"
+            />
+            <MacroCard
+              label="Carbs"
+              value={daily.carbsG}
+              target={dashboard.targets.carbsG}
+              tone="carbs"
+            />
+            <MacroCard label="Fat" value={daily.fatG} target={dashboard.targets.fatG} tone="fat" />
+          </div>
+        </section>
+
+        {editingTargets && targetDraft && (
+          <section className="rounded-2xl border border-[#C81E3A]/20 bg-[#17171A] p-3.5 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Daily targets</p>
+                <p className="text-[10px] text-[#8C8C90]">
+                  Starts from your Body Profile estimate; you can override it here.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTargets(false)}
+                aria-label="Close targets"
+              >
+                <X className="h-4 w-4 text-[#8C8C90]" />
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[
+                ["Calories", "calories"],
+                ["Protein g", "proteinG"],
+                ["Carbs g", "carbsG"],
+                ["Fat g", "fatG"],
+                ["Fiber g", "fiberG"],
+                ["Water ml", "waterMl"],
+              ].map(([label, key]) => (
+                <label key={key} className="text-[10px] uppercase text-[#8C8C90]">
+                  {label}
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={String(targetDraft[key as keyof NutritionTargets] ?? "")}
+                    onChange={(e) =>
+                      setTargetDraft((prev) =>
+                        prev ? { ...prev, [key]: Number(e.target.value) || 0 } : prev,
+                      )
+                    }
+                    className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
+                  />
+                </label>
+              ))}
             </div>
             <button
               type="button"
-              onClick={() => setEditingTargets(false)}
-              aria-label="Close targets"
+              onClick={() => void saveTargets()}
+              disabled={busy}
+              className="mt-3 flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] font-anton text-xs uppercase text-white disabled:opacity-50"
             >
-              <X className="h-4 w-4 text-[#8C8C90]" />
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}
+              Save targets
             </button>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {[
-              ["Calories", "calories"],
-              ["Protein g", "proteinG"],
-              ["Carbs g", "carbsG"],
-              ["Fat g", "fatG"],
-              ["Fiber g", "fiberG"],
-              ["Water ml", "waterMl"],
-            ].map(([label, key]) => (
-              <label key={key} className="text-[10px] uppercase text-[#8C8C90]">
-                {label}
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={String(targetDraft[key as keyof NutritionTargets] ?? "")}
-                  onChange={(e) =>
-                    setTargetDraft((prev) =>
-                      prev ? { ...prev, [key]: Number(e.target.value) || 0 } : prev,
-                    )
-                  }
-                  className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
-                />
-              </label>
-            ))}
-          </div>
+          </section>
+        )}
+
+        <section className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            className="hidden"
+            onChange={(event) => void handlePhoto(event.target.files?.[0])}
+          />
           <button
             type="button"
-            onClick={() => void saveTargets()}
+            onClick={() => fileInputRef.current?.click()}
             disabled={busy}
-            className="mt-3 flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] font-anton text-xs uppercase text-white disabled:opacity-50"
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] px-3 font-anton text-xs uppercase text-white disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}
-            Save targets
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            Scan meal
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowManual((value) => !value)}
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#17171A] px-3 font-anton text-xs uppercase text-[#F4F2ED]"
+          >
+            <Plus className="h-4 w-4" /> Manual
           </button>
         </section>
-      )}
 
-      <section className="grid grid-cols-2 gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          capture="environment"
-          className="hidden"
-          onChange={(event) => void handlePhoto(event.target.files?.[0])}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] px-3 font-anton text-xs uppercase text-white disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-          Scan meal
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowManual((value) => !value)}
-          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#17171A] px-3 font-anton text-xs uppercase text-[#F4F2ED]"
-        >
-          <Plus className="h-4 w-4" /> Manual
-        </button>
-      </section>
-
-      <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
-        <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
-        Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
-        before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
-        logging stays available.
-      </p>
+        <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
+          <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
+          Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
+          before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
+          logging stays available.
+        </p>
+      </div>
 
       {scanError && (
         <p
@@ -750,7 +802,7 @@ export const NutritionView: React.FC = () => {
           className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4"
         >
           <div className="flex items-center justify-between">
-            <p className="font-anton text-sm uppercase text-white">Manual meal</p>
+            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Manual meal</p>
             <button
               type="button"
               onClick={() => setShowManual(false)}
@@ -800,106 +852,143 @@ export const NutritionView: React.FC = () => {
       )}
 
       <section className="space-y-3">
-        <p className="text-[10px] font-inter uppercase tracking-[0.2em] text-[#8C8C90]">
-          Today&apos;s meals
-        </p>
-        {MEAL_TYPES.map((type) => (
-          <div key={type} className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-anton text-sm uppercase text-white">{MEAL_LABELS[type]}</p>
-              <span className="text-[10px] text-[#8C8C90]">
-                {grouped[type].reduce((sum, meal) => sum + meal.calories, 0)} kcal
-              </span>
-            </div>
-            {grouped[type].length === 0 ? (
-              <p className="mt-2 text-xs text-[#5C5C60]">Nothing logged.</p>
-            ) : (
-              <div className="mt-2 space-y-2">
-                {grouped[type].map((meal) => (
-                  <div
-                    key={meal.id}
-                    className="rounded-xl border border-white/[0.04] bg-[#0B0B0C] p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#F4F2ED]">{meal.name}</p>
-                        <p className="mt-0.5 text-[10px] text-[#8C8C90]">
-                          {meal.calories} kcal · P {Math.round(meal.proteinG)} · C{" "}
-                          {Math.round(meal.carbsG)} · F {Math.round(meal.fatG)}
-                          {meal.aiEstimated ? " · AI estimate reviewed" : ""}
-                        </p>
+        <SVJSectionHeader
+          title="Today's meals"
+          icon={Utensils}
+          trailing={
+            <span className="text-[11px] font-inter text-[#8C8C90]">
+              {MEAL_TYPES.reduce((sum, type) => sum + grouped[type].length, 0)} logged
+            </span>
+          }
+        />
+        {MEAL_TYPES.every((type) => grouped[type].length === 0) && (
+          <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A]">
+            <SVJEmptyState
+              icon={Utensils}
+              title="No meals logged today"
+              description="Log your first meal with the form above, or estimate one from a photo. Totals and macros update as soon as a meal is saved."
+            />
+          </div>
+        )}
+        <div className="grid items-start gap-2.5 lg:grid-cols-2">
+          {MEAL_TYPES.map((type) => (
+            <div
+              key={type}
+              className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-inter text-sm font-semibold text-white">{MEAL_LABELS[type]}</p>
+                <span className="text-[10px] text-[#8C8C90]">
+                  {grouped[type].reduce((sum, meal) => sum + meal.calories, 0)} kcal
+                </span>
+              </div>
+              {grouped[type].length === 0 ? (
+                <p className="mt-2 text-[11px] font-inter text-[#5C5C60]">
+                  Nothing logged for this meal yet.
+                </p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {grouped[type].map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="svj-radius-row border border-white/[0.04] bg-[#0B0B0C] p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#F4F2ED]">
+                            {meal.name}
+                          </p>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-inter text-[#8C8C90]">
+                            <span className="font-mono font-semibold text-[#F4F2ED]">
+                              {meal.calories} kcal
+                            </span>
+                            <span>Protein {Math.round(meal.proteinG)} g</span>
+                            <span>Carbs {Math.round(meal.carbsG)} g</span>
+                            <span>Fat {Math.round(meal.fatG)} g</span>
+                            {meal.aiEstimated && (
+                              <span className="text-[#C9A227]">AI estimate reviewed</span>
+                            )}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void removeMeal(meal.id)}
+                          disabled={busy}
+                          className="p-1.5 text-[#8C8C90] hover:text-[#C81E3A]"
+                          aria-label={`Delete ${meal.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                       <button
                         type="button"
-                        onClick={() => void removeMeal(meal.id)}
+                        onClick={() => void repeatMeal(meal)}
                         disabled={busy}
-                        className="p-1.5 text-[#8C8C90] hover:text-[#C81E3A]"
-                        aria-label={`Delete ${meal.name}`}
+                        className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-[10px] uppercase tracking-wider text-[#8C8C90]"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <RotateCcw className="h-3.5 w-3.5" /> Log again
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void repeatMeal(meal)}
-                      disabled={busy}
-                      className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-[10px] uppercase tracking-wider text-[#8C8C90]"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" /> Log again
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
-        <p className="flex items-center gap-1.5 font-anton text-sm uppercase text-white">
-          <BarChart3 className="h-4 w-4 text-[#C81E3A]" /> Last 7 days
-        </p>
-        <div className="mt-4 flex h-28 items-end justify-between gap-2">
-          {dashboard.history.map((day) => {
-            const max = Math.max(
-              dashboard.targets.calories,
-              ...dashboard.history.map((row) => row.calories),
-              1,
-            );
-            const height = Math.round((day.calories / max) * 100);
-            return (
-              <div
-                key={day.dayKey}
-                className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-              >
-                <div className="flex h-full w-full items-end">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${Math.max(day.mealCount > 0 ? 6 : 2, height)}%` }}
-                    className={`w-full rounded-t-md ${
-                      day.mealCount > 0
-                        ? "bg-gradient-to-t from-[#8C1327] to-[#C81E3A]"
-                        : "bg-white/5"
-                    }`}
-                    title={`${day.dayKey}: ${day.calories} kcal, ${Math.round(day.proteinG)} g protein`}
-                  />
+      <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5">
+        <SVJSectionHeader title="Last 7 days" icon={BarChart3} />
+        {dashboard.history.every((day) => day.mealCount === 0) ? (
+          <SVJEmptyState
+            icon={BarChart3}
+            compact
+            title="No logged meals in the last 7 days"
+            description="This chart fills in from meals you actually save. Days with nothing logged stay visibly empty rather than reading as zero calories eaten."
+          />
+        ) : (
+          <div className="mt-3 flex h-28 items-end justify-between gap-2">
+            {dashboard.history.map((day) => {
+              const max = Math.max(
+                dashboard.targets.calories,
+                ...dashboard.history.map((row) => row.calories),
+                1,
+              );
+              const height = Math.round((day.calories / max) * 100);
+              return (
+                <div
+                  key={day.dayKey}
+                  className="flex h-full flex-1 flex-col items-center justify-end gap-2"
+                >
+                  <div className="flex h-full w-full items-end">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max(day.mealCount > 0 ? 6 : 2, height)}%` }}
+                      className={`w-full rounded-t-md ${
+                        day.mealCount > 0
+                          ? "bg-gradient-to-t from-[#8C1327] to-[#C81E3A]"
+                          : "bg-white/5"
+                      }`}
+                      title={`${day.dayKey}: ${day.calories} kcal, ${Math.round(day.proteinG)} g protein`}
+                    />
+                  </div>
+                  <span className="text-[9px] text-[#8C8C90]">
+                    {new Date(day.dayKey + "T12:00:00")
+                      .toLocaleDateString(undefined, { weekday: "short" })
+                      .slice(0, 2)}
+                  </span>
                 </div>
-                <span className="text-[9px] text-[#8C8C90]">
-                  {new Date(day.dayKey + "T12:00:00")
-                    .toLocaleDateString(undefined, { weekday: "short" })
-                    .slice(0, 2)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-[10px] text-[#8C8C90]">
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-[10px] font-inter text-[#8C8C90]">
           History uses saved meals only. SVJ does not infer meals you did not log.
         </p>
       </section>
 
       {showBodyProfile && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-24 pt-14">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-10 pt-14">
           <BodyProfileView />
           <button
             type="button"

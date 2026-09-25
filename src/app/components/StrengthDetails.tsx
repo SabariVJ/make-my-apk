@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, History, Loader2, RefreshCw, Trophy } from "lucide-react";
 import { strengthRpcClient } from "../lib/strengthClient";
+import { SVJEmptyState } from "./ui-primitives/SVJEmptyState";
 import {
   MUSCLE_LABELS,
   STRENGTH_RECORD_LABELS,
@@ -16,8 +17,14 @@ import {
 
 const LEVEL_STYLES: Record<MuscleTrained["level"], string> = {
   high: "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]",
-  medium: "border-gold/30 bg-gold/10 text-gold",
-  low: "border-white/10 bg-black/40 text-[#8C8C90]",
+  medium: "border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]",
+  low: "border-white/10 bg-[#08080A] text-[#8C8C90]",
+};
+
+const LEVEL_LABELS: Record<MuscleTrained["level"], string> = {
+  high: "High",
+  medium: "Moderate",
+  low: "Light",
 };
 
 /** Deterministic training summary — relative contribution, never EMG data. */
@@ -25,17 +32,17 @@ export const MuscleTrainedList: React.FC<{ muscles: MuscleTrained[] }> = ({ musc
   if (muscles.length === 0) return null;
   return (
     <div data-testid="muscles-trained">
-      <div className="mb-1.5 text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
-        Muscles Trained
+      <div className="mb-1.5 font-inter text-[11px] font-semibold text-[#8C8C90]">
+        Muscles trained
       </div>
       <div className="flex flex-wrap gap-1.5">
         {muscles.map((muscle) => (
           <span
             key={muscle.muscle}
-            className={`rounded-lg border px-2 py-1 text-[10px] font-mono uppercase tracking-wider ${LEVEL_STYLES[muscle.level]}`}
+            className={`svj-radius-row border px-2 py-1 font-inter text-[11px] font-medium ${LEVEL_STYLES[muscle.level]}`}
           >
             {MUSCLE_LABELS[muscle.muscle]}
-            <span className="ml-1.5 text-[9px] opacity-80">{muscle.level}</span>
+            <span className="ml-1.5 text-[10px] opacity-80">{LEVEL_LABELS[muscle.level]}</span>
           </span>
         ))}
       </div>
@@ -58,18 +65,18 @@ export const StrengthSetsList: React.FC<{
       return (
         <div
           key={`${exercise.exerciseId}-${exercise.position}`}
-          className="rounded-2xl border border-white/5 bg-black/40 p-3"
+          className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-3"
         >
           <div className="flex items-start justify-between gap-2">
             <button
               type="button"
               disabled={!onSelectExercise}
               onClick={() => onSelectExercise?.(exercise.exerciseId, exercise.name)}
-              className="text-left text-xs font-mono font-bold uppercase tracking-wider text-white disabled:cursor-default"
+              className="text-left font-inter text-sm font-semibold text-[#F4F2ED] disabled:cursor-default"
             >
               {exercise.name}
             </button>
-            <span className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
+            <span className="font-inter text-[11px] text-[#8C8C90]">
               {MUSCLE_LABELS[exercise.primaryMuscle]}
             </span>
           </div>
@@ -77,20 +84,20 @@ export const StrengthSetsList: React.FC<{
             {exercise.sets.map((set) => (
               <li
                 key={set.setNumber}
-                className="flex items-center justify-between text-[11px] font-mono"
+                className="flex items-center justify-between font-inter text-[12px]"
               >
-                <span className="text-[#8C8C90]">SET {set.setNumber}</span>
-                <span className="text-white">{formatSetLabel(set)}</span>
+                <span className="text-[#8C8C90]">Set {set.setNumber}</span>
+                <span className="font-mono text-[#F4F2ED]">{formatSetLabel(set)}</span>
               </li>
             ))}
           </ul>
           {volume > 0 && (
-            <p className="mt-1.5 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-              Volume {formatVolume(volume)}
+            <p className="mt-1.5 font-inter text-[11px] text-[#8C8C90]">
+              Volume <span className="font-mono text-[#F4F2ED]">{formatVolume(volume)}</span>
             </p>
           )}
           {exercise.notes && (
-            <p className="mt-1.5 text-[10px] font-mono text-[#F4F2ED]">{exercise.notes}</p>
+            <p className="mt-1.5 font-inter text-[11px] text-[#F4F2ED]">{exercise.notes}</p>
           )}
         </div>
       );
@@ -133,14 +140,14 @@ export const ExerciseHistoryPanel: React.FC<{
 
   return (
     <div
-      className="rounded-2xl border border-white/10 bg-black/40 p-3"
+      className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-3"
       data-testid="exercise-history"
     >
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onClose}
-          className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white"
+          className="flex items-center gap-1 font-inter text-[11px] font-medium text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Back
         </button>
@@ -148,7 +155,7 @@ export const ExerciseHistoryPanel: React.FC<{
           type="button"
           onClick={() => void load()}
           aria-label="Refresh exercise history"
-          className="rounded-lg border border-white/10 bg-black/40 p-1.5 text-[#8C8C90] hover:text-white"
+          className="svj-radius-row border border-white/10 bg-[#08080A] p-1.5 text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
         >
           <RefreshCw className="h-3 w-3" />
         </button>
@@ -156,56 +163,60 @@ export const ExerciseHistoryPanel: React.FC<{
 
       <div className="mt-2 flex items-center gap-2">
         <History className="h-3.5 w-3.5 text-[#E62846]" />
-        <span className="font-anton text-sm uppercase tracking-wider text-white">
+        <span className="font-inter text-sm font-semibold text-[#F4F2ED]">
           {history?.exercise.name ?? exerciseName}
         </span>
       </div>
 
       {loading && (
-        <p className="flex items-center justify-center gap-2 py-5 text-[10px] font-mono uppercase text-[#8C8C90]">
+        <p className="flex items-center justify-center gap-2 py-5 font-inter text-[11px] text-[#8C8C90]">
           <Loader2 className="h-3 w-3 animate-spin" /> Loading history…
         </p>
       )}
 
       {!loading && error && (
-        <div className="mt-3 rounded-lg border border-crimson/30 bg-crimson/5 p-2.5 text-center">
-          <p className="text-[10px] font-mono text-crimson">{error}</p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="mt-2 rounded-lg border border-crimson/40 bg-crimson/10 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-crimson"
-          >
-            Retry
-          </button>
-        </div>
+        <SVJEmptyState
+          compact
+          variant="error"
+          title="History unavailable"
+          description={error}
+          action={
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/10 px-3 py-1.5 font-inter text-[11px] font-semibold text-[#E62846]"
+            >
+              Retry
+            </button>
+          }
+        />
       )}
 
       {!loading && !error && history && history.sessions.length === 0 && (
-        <div className="py-5 text-center">
-          <p className="font-anton text-xs uppercase tracking-wider text-white">NO SESSIONS YET</p>
-          <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
-            Complete your first {history.exercise.name} workout to start tracking progress.
-          </p>
-        </div>
+        <SVJEmptyState
+          compact
+          title="No sessions yet"
+          description={`Complete your first ${history.exercise.name} workout to start tracking progress.`}
+        />
       )}
 
       {!loading && !error && history && history.sessions.length > 0 && (
         <>
           {history.records.length > 0 && (
-            <div className="mt-2 rounded-lg border border-gold/25 bg-gold/5 p-2">
-              <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest text-gold">
-                <Trophy className="h-3 w-3" /> Personal Bests
+            <div className="mt-2 svj-radius-row border border-[#C9A227]/25 bg-[#C9A227]/5 p-2.5">
+              <div className="flex items-center gap-1.5 font-inter text-[11px] font-semibold text-[#C9A227]">
+                <Trophy className="h-3 w-3" /> Personal bests
               </div>
-              <ul className="mt-1 space-y-0.5">
+              <ul className="mt-1.5 space-y-1">
                 {history.records.map((record) => (
                   <li
                     key={record.recordType}
-                    className="flex items-center justify-between text-[10px] font-mono"
+                    className="flex items-center justify-between font-inter text-[11px]"
                   >
                     <span className="text-[#8C8C90]">
                       {STRENGTH_RECORD_LABELS[record.recordType]}
                     </span>
-                    <span className="text-white">
+                    <span className="font-mono text-[#F4F2ED]">
                       {formatRecordValue(record.recordType, record.value)}
                     </span>
                   </li>
@@ -215,16 +226,18 @@ export const ExerciseHistoryPanel: React.FC<{
           )}
 
           <div className="mt-3 space-y-2" data-testid="exercise-history-sessions">
-            <div className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">
-              Recent Workouts
+            <div className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+              Recent workouts
             </div>
             {history.sessions.map((session) => (
               <div
                 key={session.activityId}
-                className="rounded-lg border border-white/5 bg-[#0B0B0C] p-2.5"
+                className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-2.5"
               >
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider">
-                  <span className="text-white">{formatSessionDate(session.performedAt)}</span>
+                <div className="flex items-center justify-between font-inter text-[11px]">
+                  <span className="font-medium text-[#F4F2ED]">
+                    {formatSessionDate(session.performedAt)}
+                  </span>
                   <span className="text-[#8C8C90]">
                     {session.setCount} {session.setCount === 1 ? "set" : "sets"}
                     {session.volumeKg > 0 ? ` · ${formatVolume(session.volumeKg)}` : ""}
@@ -234,10 +247,10 @@ export const ExerciseHistoryPanel: React.FC<{
                   {session.sets.map((set) => (
                     <li
                       key={set.setNumber}
-                      className="flex items-center justify-between text-[11px] font-mono"
+                      className="flex items-center justify-between font-inter text-[12px]"
                     >
                       <span className="text-[#8C8C90]">{set.setNumber}</span>
-                      <span className="text-white">{formatSetLabel(set)}</span>
+                      <span className="font-mono text-[#F4F2ED]">{formatSetLabel(set)}</span>
                     </li>
                   ))}
                 </ul>

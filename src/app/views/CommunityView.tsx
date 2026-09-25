@@ -21,6 +21,7 @@ import { useSVJ } from "../context/SVJContext";
 import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
 import { FriendsPanel } from "../components/FriendsPanel";
 import { AvatarImage } from "../components/AvatarImage";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
 import { useFriends } from "../hooks/useFriends";
 import {
   createRivalry,
@@ -28,6 +29,71 @@ import {
   cancelRivalry,
   type RivalryData,
 } from "@/lib/rivalry.functions";
+
+/**
+ * Tier is the one place the app earns an all-caps, premium-gold badge — tier
+ * names are the achievement moment the token was reserved for.
+ */
+const TierBadge: React.FC<{ tier: string }> = ({ tier }) => (
+  <span className="shrink-0 rounded-full border border-[#C9A227]/30 bg-[#C9A227]/[0.10] px-2 py-0.5 font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-[#C9A227]">
+    {tier}
+  </span>
+);
+
+/**
+ * ONE identity block for every member-shaped surface: activity posts, the
+ * member directory, comments.
+ *
+ * Username + tier read as primary, XP and streaks as secondary. Previously each
+ * surface invented its own version, and the feed joined them with a middle dot.
+ */
+const MemberIdentity: React.FC<{
+  name: string;
+  tier?: string | null;
+  avatar?: string;
+  avatarSize?: string;
+  verified?: boolean;
+  vip?: boolean;
+  meta?: React.ReactNode;
+  onOpen?: () => void;
+}> = ({
+  name,
+  tier,
+  avatar,
+  avatarSize = "h-10 w-10",
+  verified = false,
+  vip = false,
+  meta,
+  onOpen,
+}) => (
+  <div
+    className={`flex min-w-0 items-center gap-3 ${onOpen ? "group cursor-pointer" : ""}`}
+    onClick={onOpen}
+  >
+    <div
+      className={`relative shrink-0 overflow-hidden rounded-2xl border border-white/10 ${avatarSize} ${
+        onOpen ? "transition-colors group-hover:border-[#C81E3A]" : ""
+      }`}
+    >
+      <AvatarImage src={avatar} name={name} className="h-full w-full object-cover" />
+    </div>
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <span
+          className={`truncate font-inter text-sm font-semibold text-[#F4F2ED] ${
+            onOpen ? "transition-colors group-hover:text-[#E62846]" : ""
+          }`}
+        >
+          {name}
+        </span>
+        {verified && <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />}
+        {vip && <Crown aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C9A227]" />}
+        {tier && <TierBadge tier={tier} />}
+      </div>
+      {meta && <div className="mt-0.5 min-w-0">{meta}</div>}
+    </div>
+  </div>
+);
 
 export const CommunityView: React.FC = () => {
   const {
@@ -175,19 +241,19 @@ export const CommunityView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Header & Sub-tab Selector */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h1 className="font-anton text-3xl text-white uppercase tracking-wide">
-            Guild Community
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="min-w-0">
+          <h1 className="font-anton text-xl tracking-wide text-white sm:text-2xl">
+            Guild community
           </h1>
-          <p className="text-xs text-[#8C8C90] font-inter">
+          <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">
             Connect, compete, and celebrate self-mastery with top 1% improvers.
           </p>
         </div>
 
-        <div className="p-1 rounded-lg bg-[#17171A] border border-white/10 flex items-center text-xs font-mono">
+        <div className="flex items-center rounded-xl border border-white/10 bg-[#17171A] p-1 font-inter text-xs">
           <button
             onClick={() => setActiveSubTab("feed")}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
@@ -228,71 +294,52 @@ export const CommunityView: React.FC = () => {
         <FriendsPanel friendsApi={friendsApi} />
       ) : activeSubTab === "feed" ? (
         /* ACTIVITY FEED TAB */
-        <div className="space-y-4">
+        <div className="space-y-3">
           {feed.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
-              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
-              <p className="font-anton text-sm uppercase tracking-wide text-white">
-                No activity yet
-              </p>
-              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
-                Your verified SVJ activity and your friends&apos; milestones will appear here.
-              </p>
-            </div>
+            <SVJEmptyState
+              icon={Inbox}
+              title="The feed is quiet"
+              description="Your verified SVJ activity and your friends' milestones show up here as they happen. Add a friend to fill it faster."
+            />
           )}
           {feed.map((item, index) => {
             const userReaction = item.userReactions[user.id];
 
             return (
-              <motion.div
+              <div
                 key={`${item.id}-${index}`}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-2xl bg-[#17171A] border border-white/10 space-y-4 shadow-xl"
+                className="svj-radius-card svj-elev-1 space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5"
               >
                 {/* Author Info Header */}
-                <div className="flex items-center justify-between">
-                  <div
-                    className="flex items-center gap-3 cursor-pointer group"
-                    onClick={() => {
+                <div className="flex items-start justify-between gap-3">
+                  <MemberIdentity
+                    name={item.username}
+                    avatar={item.userAvatar}
+                    tier={item.userTier}
+                    verified={item.isVerified}
+                    vip={item.isVIP}
+                    onOpen={() => {
                       const found = leaderboard.find(
                         (l) => l.id === item.userId || l.username === item.username,
                       );
                       if (found) setSelectedMemberModal(found);
                     }}
-                  >
-                    <div className="relative w-10 h-10 rounded-2xl overflow-hidden border border-white/10 group-hover:border-[#C81E3A] transition-colors">
-                      <AvatarImage
-                        src={item.userAvatar}
-                        name={item.username}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-anton text-sm text-white uppercase group-hover:text-[#C81E3A] transition-colors">
-                          {item.username}
-                        </span>
-                        {item.isVerified && (
-                          <Shield className="w-3.5 h-3.5 text-[#C81E3A] fill-[#C81E3A]/20" />
-                        )}
-                        {item.isVIP && <Crown className="w-3.5 h-3.5 text-gold fill-gold/20" />}
-                      </div>
-                      <div className="text-[10px] font-mono text-[#8C8C90]">
-                        {item.userTier} Tier • {item.timestamp}
-                      </div>
-                    </div>
-                  </div>
+                    meta={
+                      <span className="font-inter text-[11px] text-[#8C8C90]">
+                        {item.timestamp}
+                      </span>
+                    }
+                  />
 
                   {item.xpEarned && (
-                    <span className="px-2.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-xs font-mono font-bold">
+                    <span className="shrink-0 rounded-full border border-[#C81E3A]/35 bg-[#C81E3A]/15 px-2.5 py-1 font-mono text-xs font-bold text-[#E62846]">
                       +{item.xpEarned} XP
                     </span>
                   )}
                 </div>
 
                 {/* Activity Detail */}
-                <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/5 space-y-1">
+                <div className="svj-radius-row space-y-1 border border-white/[0.05] bg-[#0B0B0C] p-3">
                   <h3 className="font-inter font-bold text-sm text-white">{item.title}</h3>
                   <p className="text-xs text-[#8C8C90] font-inter leading-relaxed">
                     {item.details}
@@ -329,23 +376,23 @@ export const CommunityView: React.FC = () => {
                       {item.comments.map((c, cIdx) => (
                         <div
                           key={`${c.id}-${cIdx}`}
-                          className="p-2.5 rounded-lg bg-[#0B0B0C]/60 text-xs flex items-start gap-2"
+                          className="svj-radius-row flex items-start gap-2.5 border border-white/[0.05] bg-[#08080A] p-2.5"
                         >
                           <AvatarImage
                             src={c.avatar}
                             name={c.username}
-                            className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
+                            className="mt-0.5 h-6 w-6 shrink-0 rounded-full object-cover"
                           />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-anton text-white uppercase text-[11px]">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate font-inter text-[11px] font-semibold text-white">
                                 {c.username}
                               </span>
-                              <span className="text-[9px] font-mono text-[#8C8C90]">
+                              <span className="shrink-0 font-inter text-[10px] text-[#8C8C90]">
                                 {c.createdAt}
                               </span>
                             </div>
-                            <p className="text-zinc-300 font-inter text-xs mt-0.5">{c.text}</p>
+                            <p className="mt-0.5 font-inter text-xs text-[#B8B8C0]">{c.text}</p>
                           </div>
                         </div>
                       ))}
@@ -362,23 +409,24 @@ export const CommunityView: React.FC = () => {
                         setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
                       }
                       onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(item.id)}
-                      className="flex-1 px-3.5 py-2 rounded-2xl bg-[#0B0B0C] border border-white/10 text-xs text-white placeholder:text-[#8C8C90] focus:outline-none focus:border-[#C81E3A]"
+                      className="svj-radius-row flex-1 border border-white/10 bg-[#0B0B0C] px-3.5 py-2 font-inter text-xs text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A] focus:outline-none"
                     />
                     <button
                       onClick={() => handleCommentSubmit(item.id)}
-                      className="p-2 rounded-lg bg-[#C81E3A] hover:bg-[#A0182E] text-white cursor-pointer"
+                      className="rounded-xl bg-[#C81E3A] p-2 text-white transition-colors hover:bg-[#A0182E]"
+                      aria-label="Post comment"
                     >
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
       ) : (
         /* MEMBER DIRECTORY TAB */
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-3.5 top-3 w-4 h-4 text-[#8C8C90]" />
@@ -436,18 +484,18 @@ export const CommunityView: React.FC = () => {
           )}
 
           {filteredMembers.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#17171A] px-4 py-14 text-center">
-              <Inbox className="mb-3 h-8 w-8 text-[#8C8C90]" />
-              <p className="font-anton text-sm uppercase tracking-wide text-white">
-                No members to show yet
-              </p>
-              <p className="mt-1 max-w-xs text-xs font-inter text-[#8C8C90]">
-                As real SVJ members join and appear in the directory, they will show up here.
-              </p>
-            </div>
+            <SVJEmptyState
+              icon={Inbox}
+              title={searchQuery ? "No member matches that search" : "The directory is just you"}
+              description={
+                searchQuery
+                  ? "Try a shorter name, or clear the search to see everyone in the guild."
+                  : "As real SVJ members join and appear in the directory, they show up here."
+              }
+            />
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filteredMembers.map((m) => {
               const isSelf = m.id === user.id;
               const rivalryState = isSelf ? "none" : getRivalryState(m.id);
@@ -455,38 +503,32 @@ export const CommunityView: React.FC = () => {
               return (
                 <motion.div
                   key={m.id}
-                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedMemberModal(m)}
-                  whileTap={{ scale: 0.97 }}
-                  className="p-4 rounded-2xl bg-[#17171A] border border-white/10 hover:border-[#C81E3A]/50 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-lg"
+                  className="svj-radius-card svj-elev-1 flex cursor-pointer items-start justify-between gap-3 border border-white/[0.06] bg-[#17171A] p-4 transition-colors hover:border-[#C81E3A]/40"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-white/10">
-                      <AvatarImage
-                        src={m.avatar}
-                        name={m.username}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-anton text-sm text-white uppercase">
-                          {m.username}
+                  <MemberIdentity
+                    name={m.username}
+                    avatar={m.avatar}
+                    tier={m.tier}
+                    verified={m.isVerified}
+                    avatarSize="h-11 w-11"
+                    meta={
+                      <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                        <span className="font-mono text-[11px] text-[#F4F2ED]">
+                          {m.totalXP.toLocaleString()} XP
                         </span>
-                        {m.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
-                      </div>
-                      <div className="text-[10px] font-mono text-[#8C8C90]">
-                        {m.tier} • {m.totalXP.toLocaleString()} XP
-                      </div>
-                      <div className="text-[10px] font-mono text-gold mt-0.5">
-                        🔥 {m.streak} day streak
-                      </div>
-                    </div>
-                  </div>
+                        <span className="inline-flex items-center gap-1 font-inter text-[11px] font-medium text-[#C9A227]">
+                          <Flame aria-hidden className="h-3 w-3" />
+                          {m.streak} day streak
+                        </span>
+                      </span>
+                    }
+                  />
 
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="px-2.5 py-1 rounded-full bg-[#0B0B0C] border border-white/10 text-xs font-mono text-white">
-                      Rank #{m.rank}
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="rounded-full border border-white/10 bg-[#0B0B0C] px-2.5 py-1 font-mono text-[11px] text-[#F4F2ED]">
+                      #{m.rank}
                     </span>
                     {/* Self accounts never get opponent actions; stale clicks are
                         resolved against the authenticated id inside the handler. */}
@@ -497,20 +539,20 @@ export const CommunityView: React.FC = () => {
                           void handleSendRivalry(m.id);
                         }}
                         disabled={sendingId === m.id || !!sendingId}
-                        className="px-3 py-1.5 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/40 text-[#C81E3A] text-[10px] font-mono font-bold hover:bg-[#C81E3A]/30 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                        className="flex cursor-pointer items-center gap-1 rounded-full border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#E62846] transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-50"
                       >
-                        {sendingId === m.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                        OUTPERFORM
+                        {sendingId === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                        Outperform
                       </button>
                     )}
                     {rivalryState === "outgoing_pending" && (
-                      <span className="px-3 py-1.5 rounded-full bg-gold/20 border border-gold/40 text-gold text-[10px] font-mono font-bold">
-                        REQUEST SENT
+                      <span className="rounded-full border border-gold/40 bg-gold/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-gold">
+                        Request sent
                       </span>
                     )}
                     {rivalryState === "incoming_pending" && (
-                      <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-[10px] font-mono font-bold">
-                        PENDING
+                      <span className="rounded-full border border-blue-500/40 bg-blue-500/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-blue-400">
+                        Wants to compete
                       </span>
                     )}
                     {rivalryState === "active" && (
@@ -520,9 +562,9 @@ export const CommunityView: React.FC = () => {
                           e.stopPropagation();
                           setComparingMember(m);
                         }}
-                        className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-mono font-bold hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                        className="cursor-pointer rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/25"
                       >
-                        VIEW RIVALRY
+                        View rivalry
                       </button>
                     )}
                   </div>

@@ -16,12 +16,12 @@ function PrivacyPage() {
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED]">
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-8">
         <div className="space-y-2">
-          <h1 className="font-anton text-3xl uppercase tracking-wider">Privacy Policy</h1>
+          <h1 className="font-inter text-3xl font-semibold tracking-tight">Privacy Policy</h1>
           <p className="text-xs font-mono text-[#8C8C90]">Last updated: September 2026</p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             1. Data We Collect
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -44,18 +44,33 @@ function PrivacyPage() {
               <strong className="text-white">Social data:</strong> Friend connections and friend
               requests you initiate or receive.
             </p>
+            <p>
+              <strong className="text-white">Fitness and recovery data:</strong> Workouts, sets,
+              reps, load, training plans, activity steps and routes, GPS points, recovery check-ins,
+              reported sleep, readiness history, goals, progress, and consistency insights. Health
+              Connect data is read only when you explicitly connect and authorize it; SVJ does not
+              write to Health Connect.
+            </p>
+            <p>
+              <strong className="text-white">Device and communication data:</strong> Notification
+              preferences, support messages you send, and advertising/device identifiers handled by
+              Google AdMob. SVJ keeps fitness data in the app while you use the service; you can
+              delete your account from Profile or the deletion page. SVJ is intended for people aged
+              18 or older and does not knowingly create accounts for children.
+            </p>
           </div>
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             2. How We Use Your Data
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              Your data is used to provide the SVJ experience: tracking your challenges, XP,
-              streaks, membership status, and social connections. Activity data powers the
-              leaderboard and friend comparisons.
+              Your data is used to provide the SVJ experience: tracking challenges, training,
+              recovery, XP, streaks, membership status, reminders, and social connections. Activity
+              data powers the leaderboard and friend comparisons. Location and route data are used
+              to record the routes and distance you choose to track.
             </p>
             <p>
               We do not sell your personal data to third parties. We do not directly use your data
@@ -66,7 +81,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             3. Third-Party Services
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -90,6 +105,12 @@ function PrivacyPage() {
               information per your Google permissions. We do not access other Google data.
             </p>
             <p>
+              <strong className="text-white">Health Connect and device sensors:</strong> With your
+              permission, SVJ reads health and activity records, step counts, and location during an
+              activity you start. Sensor readings stay on your device unless you save or sync the
+              resulting activity.
+            </p>
+            <p>
               <strong className="text-white">Google AdMob:</strong> The Android app displays
               advertisements through Google AdMob. When you consent to personalized advertising,
               AdMob may collect device identifiers (Advertising ID) and use them to serve relevant
@@ -110,7 +131,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             4. Data Retention
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -128,7 +149,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             5. Account Deletion
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -143,7 +164,7 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
             6. Security
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
@@ -156,7 +177,9 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-anton text-lg uppercase tracking-wider text-[#C81E3A]">7. Contact</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
+            7. Contact
+          </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For privacy-related questions or requests, contact us at{" "}

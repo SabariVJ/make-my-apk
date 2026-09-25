@@ -67,7 +67,7 @@ export const LeaderboardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Motivation Header */}
       <div className="relative rounded-2xl bg-gradient-to-r from-[#17171A] via-[#1B1B20] to-[#0B0B0C] border border-[#C81E3A]/40 p-4 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />
@@ -80,7 +80,7 @@ export const LeaderboardView: React.FC = () => {
               <span>•</span>
               <span className="text-emerald-400 font-bold">Live SVJ Ranks</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-anton text-3xl tracking-wide text-white sm:text-4xl">
               Global Hall of Mastery
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter mt-1">
@@ -116,7 +116,7 @@ export const LeaderboardView: React.FC = () => {
 
       {/* Empty state */}
       {sortedLeaderboard.length === 0 && (
-        <div className="text-center py-16 space-y-3">
+        <div className="space-y-3 py-8 text-center">
           <Trophy className="w-10 h-10 text-[#8C8C90] mx-auto" />
           <p className="text-sm font-inter text-[#8C8C90]">
             No leaderboard entries yet. Complete challenges to become the first.
@@ -124,18 +124,18 @@ export const LeaderboardView: React.FC = () => {
         </div>
       )}
 
-      {/* PODIUM TOP 3 */}
+      {/* PODIUM TOP 3 — the medals follow a real metal hierarchy
+          (champion gold / silver / bronze) instead of an extra plain card. */}
       {sortedLeaderboard.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-4 pb-2">
-          {/* 2nd Place */}
+        <div className="grid grid-cols-3 items-end gap-2 pb-2 pt-4 sm:gap-4">
+          {/* 2nd Place — silver */}
           {top3[1] && (
             <motion.div
-              whileHover={{ y: -4 }}
               onClick={() => setComparingMember(top3[1])}
               whileTap={{ scale: 0.97 }}
-              className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-slate-500/40 text-center relative cursor-pointer shadow-xl"
+              className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#C7CBD1]/30 bg-gradient-to-b from-[#1B1D20] to-[#141416] p-3 text-center sm:p-4"
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-slate-700 text-slate-200 text-xs font-anton flex items-center justify-center border border-slate-400">
+              <div className="absolute -top-3 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border border-[#C7CBD1]/50 bg-[#2A2E33] font-anton text-xs text-[#E3E6EA]">
                 2
               </div>
               <div className="mx-auto my-2 relative flex justify-center">
@@ -147,7 +147,7 @@ export const LeaderboardView: React.FC = () => {
                   isFounder={top3[1].id === user.id && user.isFounder}
                 />
               </div>
-              <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
+              <div className="truncate font-anton text-xs text-white sm:text-sm">
                 {top3[1].username}
               </div>
               <div className="text-[10px] font-mono text-slate-300 font-bold mt-0.5">
@@ -155,7 +155,7 @@ export const LeaderboardView: React.FC = () => {
                   ? `${top3[1].weeklyXP} XP`
                   : `${top3[1].totalXP.toLocaleString()} XP`}
               </div>
-              <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
+              <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
                 {top3[1].tier}
               </span>
             </motion.div>
@@ -164,13 +164,16 @@ export const LeaderboardView: React.FC = () => {
           {/* 1st Place (Crown Champion) */}
           {top3[0] && (
             <motion.div
-              whileHover={{ y: -4 }}
               onClick={() => setComparingMember(top3[0])}
               whileTap={{ scale: 0.97 }}
-              className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1E1A0F] to-[#17171A] border-2 border-gold text-center relative cursor-pointer shadow-2xl shadow-gold/20 -translate-y-2"
+              className="svj-radius-card svj-elev-3 relative -translate-y-2 cursor-pointer border-2 border-[#C9A227] bg-gradient-to-b from-[#241D0C] to-[#15130E] p-4 text-center sm:p-5"
             >
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-gold text-black text-sm font-anton flex items-center justify-center border-2 border-gold shadow-lg">
-                <Crown className="w-5 h-5 text-black fill-black" />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-8 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full bg-[#C9A227] opacity-25 blur-2xl"
+              />
+              <div className="absolute -top-5 left-1/2 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border-2 border-[#C9A227] bg-[#C9A227] shadow-[0_0_22px_-4px_rgba(201,162,39,0.8)]">
+                <Crown aria-hidden className="h-5 w-5 fill-black text-black" />
               </div>
               <div className="mx-auto my-2 relative flex justify-center">
                 <AvatarFrame
@@ -185,16 +188,20 @@ export const LeaderboardView: React.FC = () => {
                   isFounder={top3[0].id === user.id && user.isFounder}
                 />
               </div>
-              <div className="font-anton text-sm sm:text-base text-gold uppercase truncate">
+              <div className="truncate font-anton text-sm text-gold sm:text-base">
                 {top3[0].username}
               </div>
-              <div className="text-xs sm:text-sm font-mono text-gold font-extrabold mt-0.5">
+              <div className="mt-0.5 font-mono text-xs font-extrabold text-gold sm:text-sm">
                 {filter === "weekly"
                   ? `${top3[0].weeklyXP} XP`
                   : `${top3[0].totalXP.toLocaleString()} XP`}
               </div>
-              <span className="text-[9px] font-mono text-gold/80 uppercase block mt-1 font-bold">
-                {top3[0].tier} Legend
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/[0.14] px-2 py-0.5 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A227]">
+                <Crown aria-hidden className="h-3 w-3" />
+                Champion
+              </span>
+              <span className="mt-1 block font-inter text-[10px] text-[#C9A227]/75">
+                {top3[0].tier} tier
               </span>
             </motion.div>
           )}
@@ -202,12 +209,11 @@ export const LeaderboardView: React.FC = () => {
           {/* 3rd Place */}
           {top3[2] && (
             <motion.div
-              whileHover={{ y: -4 }}
               onClick={() => setComparingMember(top3[2])}
               whileTap={{ scale: 0.97 }}
-              className="p-3 sm:p-4 rounded-2xl bg-[#17171A] border border-gold/50 text-center relative cursor-pointer shadow-xl"
+              className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#B0713A]/35 bg-gradient-to-b from-[#1F1813] to-[#141416] p-3 text-center sm:p-4"
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gold text-gold text-xs font-anton flex items-center justify-center border border-gold">
+              <div className="absolute -top-3 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border border-[#B0713A]/60 bg-[#3A2415] font-anton text-xs text-[#E3A76B]">
                 3
               </div>
               <div className="mx-auto my-2 relative flex justify-center">
@@ -219,16 +225,16 @@ export const LeaderboardView: React.FC = () => {
                   isFounder={top3[2].id === user.id && user.isFounder}
                 />
               </div>
-              <div className="font-anton text-xs sm:text-sm text-white uppercase truncate">
+              <div className="truncate font-anton text-xs text-white sm:text-sm">
                 {top3[2].username}
               </div>
-              <div className="text-[10px] font-mono text-gold font-bold mt-0.5">
+              <div className="mt-0.5 font-mono text-[10px] font-bold text-gold">
                 {filter === "weekly"
                   ? `${top3[2].weeklyXP} XP`
                   : `${top3[2].totalXP.toLocaleString()} XP`}
               </div>
-              <span className="text-[9px] font-mono text-[#8C8C90] uppercase block mt-1">
-                {top3[2].tier}
+              <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
+                {top3[2].tier} tier
               </span>
             </motion.div>
           )}
@@ -237,16 +243,16 @@ export const LeaderboardView: React.FC = () => {
 
       {/* Rankings List */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between px-4 text-[10px] font-mono text-[#8C8C90] uppercase tracking-wider">
-          <span>Rank & Member</span>
-          <span>XP & Streak</span>
+        <div className="flex items-center justify-between px-1 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+          <span>Rank and member</span>
+          <span>XP and streak</span>
         </div>
 
         <motion.div
           variants={svjStaggerContainer}
           initial="hidden"
           animate="show"
-          className="space-y-2"
+          className="grid gap-2 lg:grid-cols-2"
         >
           {rest.map((entry, idx) => {
             const rankNum = idx + 4;
@@ -257,16 +263,15 @@ export const LeaderboardView: React.FC = () => {
                 key={entry.id}
                 variants={svjStaggerItem}
                 whileTap={svjWhileTap}
-                whileHover={{ scale: 1.01 }}
                 onClick={() => setComparingMember(entry)}
-                className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`svj-radius-row flex cursor-pointer items-center justify-between gap-3 border p-3 transition-colors ${
                   isMe
-                    ? "bg-[#C81E3A]/20 border-[#C81E3A] shadow-lg shadow-[#C81E3A]/20"
-                    : "bg-[#17171A] border-white/5 hover:border-white/20"
+                    ? "border-[#C81E3A]/60 bg-[#C81E3A]/15"
+                    : "border-white/[0.06] bg-[#17171A] hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="w-6 font-anton text-sm text-[#8C8C90] text-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="w-7 shrink-0 text-center font-anton text-sm text-[#8C8C90]">
                     #{rankNum}
                   </span>
 
@@ -278,21 +283,29 @@ export const LeaderboardView: React.FC = () => {
                     isFounder={entry.id === user.id && user.isFounder}
                   />
 
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-anton text-sm text-white uppercase">
+                      <span className="truncate font-inter text-sm font-semibold text-white">
                         {entry.username}
                       </span>
-                      {entry.isVerified && <Shield className="w-3.5 h-3.5 text-[#C81E3A]" />}
+                      {entry.isVerified && (
+                        <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />
+                      )}
                     </div>
-                    <div className="text-[10px] font-mono text-[#8C8C90]">
-                      {entry.tier} Tier • 🔥 {entry.streak}d
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="rounded-full border border-[#C9A227]/30 bg-[#C9A227]/[0.10] px-1.5 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.12em] text-[#C9A227]">
+                        {entry.tier}
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-inter text-[10px] text-[#C9A227]">
+                        <Flame aria-hidden className="h-3 w-3" />
+                        {entry.streak} day streak
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-right flex items-center gap-3">
-                  <div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right">
                     <div className="font-mono text-xs font-bold text-white">
                       {filter === "weekly"
                         ? `${entry.weeklyXP} XP`
@@ -300,14 +313,21 @@ export const LeaderboardView: React.FC = () => {
                           ? `${entry.monthlyXP} XP`
                           : `${entry.totalXP.toLocaleString()} XP`}
                     </div>
-                    <div className="text-[9px] font-mono text-emerald-400">
-                      ▲ {entry.rankDelta || 2}
-                    </div>
+                    {/* Only a real, measured movement is ever shown. */}
+                    {entry.rankDelta !== 0 && (
+                      <div
+                        className={`font-mono text-[10px] ${
+                          entry.rankDelta > 0 ? "text-emerald-400" : "text-[#E62846]"
+                        }`}
+                      >
+                        {entry.rankDelta > 0 ? "▲" : "▼"} {Math.abs(entry.rankDelta)}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="p-1.5 rounded-lg bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white">
-                    <Swords className="w-3.5 h-3.5 text-[#C81E3A]" />
-                  </div>
+                  <span className="rounded-lg border border-white/10 bg-[#0B0B0C] p-1.5 text-[#8C8C90]">
+                    <Swords aria-hidden className="h-3.5 w-3.5 text-[#C81E3A]" />
+                  </span>
                 </div>
               </motion.div>
             );

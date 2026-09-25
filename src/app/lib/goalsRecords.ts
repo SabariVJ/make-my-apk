@@ -33,12 +33,17 @@ export type RecoveryGoalMetric = (typeof RECOVERY_GOAL_METRICS)[number];
 export const GOAL_PERIODS = ["weekly", "monthly"] as const;
 export type GoalPeriod = (typeof GOAL_PERIODS)[number];
 
-export const RECORD_TYPES = [
+/**
+ * TRAINING (activity) personal records — the original set. Recovery records
+ * live in their own group in ./recoveryRecords (RECOVERY_RECORD_TYPES) so the
+ * two are never mixed into one list.
+ */
+export const TRAINING_RECORD_TYPES = [
   "most_steps_in_activity",
   "longest_activity_duration",
   "longest_distance",
 ] as const;
-export type RecordType = (typeof RECORD_TYPES)[number];
+export type TrainingRecordType = (typeof TRAINING_RECORD_TYPES)[number];
 
 export const GOAL_METRIC_LABELS: Record<GoalMetric, string> = {
   workout_count: "Workouts",
@@ -51,7 +56,7 @@ export const GOAL_METRIC_LABELS: Record<GoalMetric, string> = {
   readiness_60_day_count: "Ready Days (60+)",
 };
 
-export const RECORD_LABELS: Record<RecordType, string> = {
+export const TRAINING_RECORD_LABELS: Record<TrainingRecordType, string> = {
   most_steps_in_activity: "Most Steps",
   longest_activity_duration: "Longest Activity",
   longest_distance: "Longest Distance",
@@ -72,13 +77,13 @@ export interface GoalDto {
 }
 
 export interface NewRecordDto {
-  recordType: RecordType;
+  recordType: TrainingRecordType;
   value: number;
   previousValue: number | null;
 }
 
-export interface RecordDto {
-  recordType: RecordType;
+export interface TrainingRecordDto {
+  recordType: TrainingRecordType;
   value: number;
   activityId: string;
   activityType: string;
@@ -179,7 +184,7 @@ export function validateGoalInput(input: {
 
 // ── Source-eligibility for DISPLAY (authoritative rules live in SQL) ───────
 
-export function isEligibleForRecord(recordType: RecordType, source: string): boolean {
+export function isEligibleForRecord(recordType: TrainingRecordType, source: string): boolean {
   if (recordType === "longest_activity_duration") return true;
   return source === "svj_native";
 }
@@ -228,14 +233,14 @@ export function normalizeNewRecords(value: unknown): NewRecordDto[] {
       const r = raw as Record<string, unknown>;
       if (
         typeof r.record_type !== "string" ||
-        !(RECORD_TYPES as readonly string[]).includes(r.record_type)
+        !(TRAINING_RECORD_TYPES as readonly string[]).includes(r.record_type)
       )
         return null;
       const value2 = num(r.value);
       if (value2 === null) return null;
       const previous = num(r.previous_value);
       return {
-        recordType: r.record_type as RecordType,
+        recordType: r.record_type as TrainingRecordType,
         value: value2,
         previousValue: previous,
       };
@@ -243,18 +248,18 @@ export function normalizeNewRecords(value: unknown): NewRecordDto[] {
     .filter((r): r is NewRecordDto => r !== null);
 }
 
-export function normalizeRecord(value: unknown): RecordDto | null {
+export function normalizeRecord(value: unknown): TrainingRecordDto | null {
   if (!value || typeof value !== "object") return null;
   const r = value as Record<string, unknown>;
   if (
     typeof r.record_type !== "string" ||
-    !(RECORD_TYPES as readonly string[]).includes(r.record_type)
+    !(TRAINING_RECORD_TYPES as readonly string[]).includes(r.record_type)
   )
     return null;
   const v = num(r.value);
   if (v === null || typeof r.activity_id !== "string") return null;
   return {
-    recordType: r.record_type as RecordType,
+    recordType: r.record_type as TrainingRecordType,
     value: v,
     activityId: r.activity_id,
     activityType: typeof r.activity_type === "string" ? r.activity_type : "other",
@@ -272,7 +277,7 @@ export function formatGoalProgress(metric: GoalMetric, progress: number): string
   return Math.round(progress).toLocaleString();
 }
 
-export function formatRecordValue(recordType: RecordType, value: number): string {
+export function formatRecordValue(recordType: TrainingRecordType, value: number): string {
   switch (recordType) {
     case "most_steps_in_activity":
       return Math.round(value).toLocaleString();
@@ -400,14 +405,16 @@ export async function cancelGoal(
 
 export async function listRecords(
   callRpc: RpcCaller,
-): Promise<{ ok: boolean; records: RecordDto[]; error?: string }> {
+): Promise<{ ok: boolean; records: TrainingRecordDto[]; error?: string }> {
   try {
     const { data, error } = await callRpc("svj_list_records");
     if (error) return { ok: false, records: [], error: error.message || "Couldn't load records." };
     const env = data as { ok?: boolean; records?: unknown } | null;
     if (!env || env.ok !== true || !Array.isArray(env.records))
       return { ok: false, records: [], error: "The server returned an unreadable response." };
-    const records = env.records.map(normalizeRecord).filter((r): r is RecordDto => r !== null);
+    const records = env.records
+      .map(normalizeRecord)
+      .filter((r): r is TrainingRecordDto => r !== null);
     return { ok: true, records };
   } catch (e) {
     return { ok: false, records: [], error: e instanceof Error ? e.message : "Network error." };

@@ -15,6 +15,8 @@ import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
 import { createRivalry, getRivalries, type RivalryData } from "@/lib/rivalry.functions";
 import { AvatarImage } from "./AvatarImage";
+import { SVJProgress } from "./ui-primitives/SVJProgress";
+import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
 
 interface XPComparisonModalProps {
   member: LeaderboardEntry | null;
@@ -113,14 +115,14 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           role="dialog"
           aria-modal="true"
           aria-label="XP rivalry and analysis"
-          className="relative w-full max-w-lg bg-[#17171A] border border-white/10 rounded-2xl p-4 text-[#F4F2ED] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] w-full max-w-lg overflow-y-auto overflow-x-hidden border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
             <div className="flex items-center gap-2">
-              <Swords className="w-5 h-5 text-[#C81E3A]" />
-              <h2 className="font-anton text-xl tracking-wide uppercase text-white">
-                XP Rivalry & Analysis
+              <Swords className="h-5 w-5 text-[#C81E3A]" />
+              <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                XP comparison
               </h2>
             </div>
             <button
@@ -134,17 +136,19 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
           {isSelf ? (
             /* Self accounts never expose opponent actions. */
-            <div className="py-10 text-center">
+            <div className="py-8 text-center">
               <Swords className="mx-auto mb-3 h-8 w-8 text-[#8C8C90]" />
-              <p className="font-anton text-sm uppercase text-white">This is your own account</p>
-              <p className="mx-auto mt-2 max-w-xs text-xs font-mono text-[#8C8C90]">
+              <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
+                This is your own account
+              </p>
+              <p className="mx-auto mt-2 max-w-xs font-inter text-xs leading-relaxed text-[#8C8C90]">
                 Rivalries compare your verified activity against another member. Open someone
                 else&apos;s profile to compare and challenge.
               </p>
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 rounded-xl bg-[#C81E3A] px-5 py-2.5 font-anton text-xs uppercase tracking-wider text-white hover:bg-[#A0182E]"
+                className="mt-5 rounded-xl bg-[#C81E3A] px-5 py-2.5 font-inter text-xs font-semibold text-white hover:bg-[#A0182E]"
               >
                 Got it
               </button>
@@ -159,7 +163,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 </div>
 
                 {/* YOU Box */}
-                <div className="p-4 rounded-full bg-[#0B0B0C] border border-[#C81E3A]/40 flex flex-col items-center text-center">
+                <div className="svj-radius-row flex flex-col items-center border border-[#C81E3A]/35 bg-[#08080A] p-4 text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#C81E3A] mb-2">
                     <AvatarImage
                       src={user.avatar}
@@ -167,15 +171,17 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="font-anton text-sm text-white uppercase">{user.name}</span>
-                  <span className="text-[10px] font-mono text-[#8C8C90]">Rank {myRankLabel}</span>
-                  <div className="mt-2 text-lg font-mono font-bold text-[#C81E3A]">
+                  <span className="font-inter text-sm font-semibold text-[#F4F2ED]">
+                    {user.name}
+                  </span>
+                  <span className="font-inter text-[10px] text-[#8C8C90]">Rank {myRankLabel}</span>
+                  <div className="mt-2 font-mono text-lg font-bold text-[#E62846]">
                     {user.totalXP.toLocaleString()} XP
                   </div>
                 </div>
 
                 {/* TARGET MEMBER Box */}
-                <div className="p-4 rounded-full bg-[#0B0B0C] border border-white/10 flex flex-col items-center text-center">
+                <div className="svj-radius-row flex flex-col items-center border border-white/[0.08] bg-[#08080A] p-4 text-center">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 mb-2">
                     <AvatarImage
                       src={member.avatar}
@@ -183,35 +189,37 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="font-anton text-sm text-white uppercase">{member.username}</span>
-                  <span className="text-[10px] font-mono text-[#8C8C90]">Rank #{member.rank}</span>
-                  <div className="mt-2 text-lg font-mono font-bold text-gold">
+                  <span className="font-inter text-sm font-semibold text-[#F4F2ED]">
+                    {member.username}
+                  </span>
+                  <span className="font-inter text-[10px] text-[#8C8C90]">Rank #{member.rank}</span>
+                  <div className="mt-2 font-mono text-lg font-bold text-gold">
                     {member.totalXP.toLocaleString()} XP
                   </div>
                 </div>
               </div>
 
               {/* XP Difference & Estimated Catch-up */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#C81E3A]/20 via-[#17171A] to-gold/10 border border-white/10 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-[#C81E3A]" />
-                    Current Lifetime XP Gap
+              <div className="svj-radius-row mb-6 border border-white/[0.06] bg-gradient-to-r from-[#C81E3A]/15 via-[#17171A] to-[#C9A227]/10 p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-1.5 font-inter text-xs text-[#8C8C90]">
+                    <Zap className="h-3.5 w-3.5 text-[#E62846]" />
+                    Lifetime XP gap
                   </span>
-                  <span className="font-mono font-bold text-sm text-white">
+                  <span className="font-mono text-sm font-bold text-[#F4F2ED]">
                     {xpDiff.toLocaleString()} XP
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-[#8C8C90] uppercase flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-gold" />
-                    Current Comparison
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-1.5 font-inter text-xs text-[#8C8C90]">
+                    <Clock className="h-3.5 w-3.5 text-gold" />
+                    Right now
                   </span>
-                  <span className="font-mono font-bold text-xs text-emerald-400">
+                  <span className="text-right font-inter text-xs font-semibold text-emerald-400">
                     {isUserAhead
                       ? "You lead by " + xpDiff.toLocaleString() + " XP"
-                      : `${member.username} currently leads by ${xpDiff.toLocaleString()} XP`}
+                      : `${member.username} leads by ${xpDiff.toLocaleString()} XP`}
                   </span>
                 </div>
               </div>
@@ -219,81 +227,71 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               {/* Visual XP Progress Dual Bar */}
               <div className="space-y-4 mb-6">
                 <div>
-                  <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-white">Your Progress</span>
-                    <span className="text-[#C81E3A]">
-                      {user.totalXP.toLocaleString()} XP ({userPercent}%)
+                  <div className="mb-1.5 flex justify-between font-inter text-xs">
+                    <span className="text-[#F4F2ED]">You</span>
+                    <span className="font-mono text-[#E62846]">
+                      {user.totalXP.toLocaleString()} XP · {userPercent}%
                     </span>
                   </div>
-                  <div className="w-full h-3 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${userPercent}%` }}
-                      transition={{ duration: 1 }}
-                      className="h-full rounded-full bg-gradient-to-r from-[#E62846] to-[#C81E3A]"
-                    />
-                  </div>
+                  <SVJProgress value={userPercent} color="crimson" height="h-2.5" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-[#8C8C90]">{member.username}'s Progress</span>
-                    <span className="text-gold">
-                      {member.totalXP.toLocaleString()} XP ({memberPercent}%)
+                  <div className="mb-1.5 flex justify-between font-inter text-xs">
+                    <span className="text-[#F4F2ED]">{member.username}</span>
+                    <span className="font-mono text-gold">
+                      {member.totalXP.toLocaleString()} XP · {memberPercent}%
                     </span>
                   </div>
-                  <div className="w-full h-3 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${memberPercent}%` }}
-                      transition={{ duration: 1 }}
-                      className="h-full rounded-full bg-gradient-to-r from-gold to-gold"
-                    />
-                  </div>
+                  <SVJProgress value={memberPercent} color="gold" height="h-2.5" />
                 </div>
               </div>
 
               {/* Weekly & Monthly Comparison Table */}
-              <div className="space-y-3 mb-6">
-                <h3 className="font-anton text-sm tracking-wide text-[#8C8C90] uppercase">
-                  Performance Breakdown
-                </h3>
+              <div className="mb-6 space-y-3">
+                <SVJSectionHeader title="Performance breakdown" />
 
-                <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-                  <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
-                    <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Weekly XP</div>
-                    <div className="text-white font-bold">
-                      {user.weeklyXP} vs {member.weeklyXP}
-                    </div>
+                <div className="svj-radius-row grid grid-cols-3 gap-2 divide-x divide-white/[0.05] border border-white/[0.05] bg-[#08080A] py-3 text-center">
+                  <div className="px-1">
+                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Weekly XP</p>
+                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
+                      {user.weeklyXP}
+                      <span className="text-[#8C8C90]"> vs </span>
+                      {member.weeklyXP}
+                    </p>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
-                    <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Monthly XP</div>
-                    <div className="text-white font-bold">
-                      {user.monthlyXP} vs {member.monthlyXP}
-                    </div>
+                  <div className="px-1">
+                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Monthly XP</p>
+                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
+                      {user.monthlyXP}
+                      <span className="text-[#8C8C90]"> vs </span>
+                      {member.monthlyXP}
+                    </p>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-[#0B0B0C] border border-white/5">
-                    <div className="text-[10px] text-[#8C8C90] uppercase mb-1">Active Streak</div>
-                    <div className="text-white font-bold">
-                      {user.currentStreak}d vs {member.streak}d
-                    </div>
+                  <div className="px-1">
+                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Streak</p>
+                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
+                      {user.currentStreak}d<span className="text-[#8C8C90]"> vs </span>
+                      {member.streak}d
+                    </p>
                   </div>
                 </div>
               </div>
 
               {showRivalry && rivalry?.status === "active" && (
-                <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+                <div className="svj-radius-row mb-6 border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="font-anton text-sm uppercase text-emerald-400">
-                        Live Rivalry Score
+                      <p className="font-inter text-sm font-semibold text-emerald-400">
+                        Live rivalry score
                       </p>
-                      <p className="mt-1 text-[10px] font-mono text-[#8C8C90]">
+                      <p className="mt-1 font-inter text-[10px] leading-relaxed text-[#8C8C90]">
                         Only verified SVJ activity recorded after the rivalry started counts here.
                       </p>
                     </div>
-                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-mono font-bold text-emerald-400">
-                      LIVE
+                    <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-inter text-[10px] font-semibold text-emerald-400">
+                      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Live
                     </span>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center">
@@ -335,13 +333,13 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                   else void handleLockIn();
                 }}
                 disabled={sending || rivalry?.status === "pending"}
-                className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-[#C81E3A]/20 cursor-pointer disabled:opacity-60"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60"
               >
                 <span>{sending ? "Sending…" : actionLabel}</span>
                 <ArrowRight className="w-4 h-4" />
               </motion.button>
               {rivalry?.status === "pending" && rivalry.challengerId === user.id && (
-                <p role="status" className="mt-2 text-center text-xs font-mono text-emerald-400">
+                <p role="status" className="mt-2 text-center font-inter text-xs text-emerald-400">
                   Request sent — waiting for @{member.username}.
                 </p>
               )}
@@ -358,7 +356,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                       void handleLockIn();
                     }}
                     disabled={sending}
-                    className="rounded-lg border border-rose-500/40 px-3 py-1 text-[10px] font-mono font-bold uppercase text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
+                    className="rounded-lg border border-rose-500/40 px-3 py-1 font-inter text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20 disabled:opacity-50"
                   >
                     Retry
                   </button>

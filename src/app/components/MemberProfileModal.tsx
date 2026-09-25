@@ -43,7 +43,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-md bg-[#17171A] border border-white/10 rounded-2xl overflow-hidden text-[#F4F2ED] shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto overflow-x-hidden rounded-2xl border border-white/10 bg-[#17171A] text-[#F4F2ED] shadow-2xl"
         >
           {/* Cover Header */}
           <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-gold/20 relative p-4 flex justify-between items-start">
@@ -89,7 +89,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
             {/* Name & Handles */}
             <div className="mb-4">
               <div className="flex items-center gap-2">
-                <h2 className="font-anton text-2xl tracking-wide uppercase text-white">
+                <h2 className="font-inter text-xl font-semibold tracking-tight text-[#F4F2ED]">
                   {member.username}
                 </h2>
                 {member.isVerified && (

@@ -23,10 +23,15 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
     <div className="w-full max-w-md mx-auto my-6 perspective-1000">
       <div className="relative flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#C81E3A]" />
-          <span className="font-anton text-[#F4F2ED] tracking-wide text-sm uppercase">
-            Official SVJ Digital Card
-          </span>
+          <Sparkles className="h-4 w-4 text-[#C9A227]" />
+          <div className="leading-tight">
+            <span className="block font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#C9A227]">
+              Membership
+            </span>
+            <span className="block font-inter text-sm font-semibold text-[#F4F2ED]">
+              Your SVJ digital card
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -64,9 +69,15 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
           className="absolute inset-0 p-4 flex flex-col justify-between bg-gradient-to-br from-[#1B1B20] via-[#111114] to-[#0A0A0C] text-[#F4F2ED]"
           style={{ backfaceVisibility: "hidden" }}
         >
-          {/* Ambient Lighting & Hologram Foil overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#C81E3A]/20 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          {/* Premium treatment: brushed-metal base, a bronze-to-gold foil
+              band, and a soft top light. This is the app's one "wallet card"
+              moment, so it is deliberately richer than an ordinary surface. */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,#1B1B20_0%,#101013_38%,#17171B_62%,#0A0A0C_100%)]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.22] bg-[repeating-linear-gradient(105deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.06)_1px,transparent_1px,transparent_4px)]" />
+          <div className="pointer-events-none absolute -left-1/3 top-0 h-full w-2/3 rotate-12 bg-[linear-gradient(90deg,transparent_0%,rgba(201,162,39,0.16)_35%,rgba(240,220,150,0.26)_50%,rgba(201,162,39,0.16)_65%,transparent_100%)] blur-[1px]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#C81E3A]/16 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 border border-[#C9A227]/15" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
           {/* Top Row */}
           <div className="relative z-10 flex items-start justify-between">

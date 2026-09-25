@@ -2,9 +2,11 @@ package app.lovable.svj
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.annotation.RequiresApi
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
@@ -242,6 +244,10 @@ class VjHealthConnectPlugin : Plugin() {
             call.reject("Health Connect is not available on this device.")
             return
         }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            call.reject("Health Connect requires Android 8.0 or newer.")
+            return
+        }
 
         scope.launch {
             try {
@@ -267,6 +273,7 @@ class VjHealthConnectPlugin : Plugin() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun readType(
         healthClient: HealthConnectClient,
         type: String,
@@ -400,6 +407,7 @@ class VjHealthConnectPlugin : Plugin() {
      * start/end; instant-time records (resting heart rate, weight) pass the same
      * instant twice, so the client always receives a consistent shape.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun envelope(record: Record, startTime: java.time.Instant, endTime: java.time.Instant): JSObject {
         val metadata = record.metadata
         val result = JSObject()

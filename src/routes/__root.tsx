@@ -32,7 +32,7 @@ function NotFoundComponent() {
       {/* Keeps the SPA navigation path available for in-app links. */}
       <Link
         to="/"
-        className="block text-[11px] font-mono uppercase tracking-wider text-[#8C8C90] hover:text-white transition-colors"
+        className="block font-inter text-[11px] text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
       >
         Or navigate back to the app
       </Link>

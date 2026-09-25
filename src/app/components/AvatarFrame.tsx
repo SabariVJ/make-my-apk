@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Sparkles, Flame, Crown, Shield } from "lucide-react";
 import { useAvatarUrl } from "../hooks/useAvatarUrl";
-import { avatarInitials } from "@/lib/avatar";
+import { avatarMonogram, avatarPalette } from "@/lib/avatar";
 
 interface AvatarFrameProps {
   src?: string | null;
@@ -91,8 +91,24 @@ export const AvatarFrame: React.FC<AvatarFrameProps> = ({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center font-anton text-white uppercase">
-            {avatarInitials(alt)}
+          // Designed fallback: deterministic two-tone monogram, not a bare letter.
+          <div
+            className="svj-lit-top relative flex h-full w-full items-center justify-center"
+            style={{ background: avatarPalette(alt).bg }}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: `radial-gradient(120% 120% at 28% 0%, ${avatarPalette(alt).fg}33 0%, transparent 62%)`,
+              }}
+            />
+            <span
+              className="relative font-anton text-[0.85em] uppercase tracking-wide"
+              style={{ color: avatarPalette(alt).fg }}
+            >
+              {avatarMonogram(alt)}
+            </span>
           </div>
         )}
       </div>

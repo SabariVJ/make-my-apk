@@ -173,13 +173,13 @@ export const EditProfileModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative my-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#17171A] p-4 text-[#F4F2ED] shadow-2xl"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative my-auto w-full max-w-md overflow-hidden border border-white/[0.06] bg-[#17171A] p-5 text-[#F4F2ED]"
         >
-          <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-4">
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-[#C81E3A]" />
-              <h2 className="font-anton text-xl uppercase tracking-wide text-white">
-                Edit Profile
+              <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                Edit profile
               </h2>
             </div>
             <button
@@ -216,17 +216,17 @@ export const EditProfileModal: React.FC = () => {
                   className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <Camera className="h-6 w-6 text-[#C81E3A]" />
-                  <span className="text-[10px] font-mono font-bold uppercase">Change</span>
+                  <span className="font-inter text-[10px] font-semibold">Change</span>
                 </button>
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 font-mono text-xs text-white transition-colors hover:bg-white/20"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 font-inter text-xs text-white transition-colors hover:bg-white/20"
                 >
                   <Upload className="h-3.5 w-3.5 text-[#C81E3A]" />
-                  <span>Upload Photo from Device</span>
+                  <span>Upload from device</span>
                 </button>
                 {avatarUrl && (
                   <button
@@ -240,14 +240,14 @@ export const EditProfileModal: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-center text-[10px] font-mono text-[#8C8C90]">
-                Crop, reposition, zoom, and preview before saving.
+              <p className="mt-2 text-center font-inter text-[10px] text-[#8C8C90]">
+                Crop, reposition and zoom before saving.
               </p>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-mono uppercase text-[#8C8C90]">
-                Display Name
+              <label className="mb-1.5 block font-inter text-[11px] font-semibold text-[#8C8C90]">
+                Display name
               </label>
               <input
                 type="text"
@@ -260,8 +260,8 @@ export const EditProfileModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-mono uppercase text-[#8C8C90]">
-                Handle / Username
+              <label className="mb-1.5 block font-inter text-[11px] font-semibold text-[#8C8C90]">
+                Handle
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-2.5 text-xs font-mono text-[#8C8C90]">
@@ -283,8 +283,8 @@ export const EditProfileModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-mono uppercase text-[#8C8C90]">
-                Bio & Motivation
+              <label className="mb-1.5 block font-inter text-[11px] font-semibold text-[#8C8C90]">
+                Bio
               </label>
               <textarea
                 value={bio}
@@ -295,13 +295,11 @@ export const EditProfileModal: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3">
-              <label className="flex items-center justify-between text-[10px] font-mono uppercase text-[#8C8C90]">
-                <span>Profile Aura Frame</span>
-                <span className="font-bold text-gold">
-                  {user.equippedFrame
-                    ? user.equippedFrame.replace("frame-", "").toUpperCase()
-                    : "DEFAULT"}
+            <div className="svj-radius-row space-y-2 border border-white/[0.05] bg-[#08080A] p-3">
+              <label className="flex items-center justify-between font-inter text-[11px] text-[#8C8C90]">
+                <span>Profile frame</span>
+                <span className="font-semibold text-gold">
+                  {user.equippedFrame ? user.equippedFrame.replace("frame-", "") : "Default"}
                 </span>
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -332,7 +330,7 @@ export const EditProfileModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-mono uppercase text-[#8C8C90]">
+              <label className="mb-1.5 block font-inter text-[11px] font-semibold text-[#8C8C90]">
                 Location
               </label>
               <div className="relative">
@@ -348,20 +346,20 @@ export const EditProfileModal: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-2 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[10px] font-mono uppercase text-[#8C8C90]">
-                  <Mail className="h-3 w-3 text-[#C81E3A]" /> Google / Gmail Cloud Account
+            <div className="svj-radius-row space-y-2 border border-white/[0.05] bg-[#08080A] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 font-inter text-[11px] text-[#8C8C90]">
+                  <Mail className="h-3 w-3 text-[#C81E3A]" /> Gmail cloud account
                 </span>
                 {user.isFounder && (
-                  <span className="flex items-center gap-1 rounded-full border border-gold/30 bg-gold/20 px-2 py-0.5 text-[9px] font-mono font-bold text-gold">
+                  <span className="flex items-center gap-1 rounded-full border border-gold/30 bg-gold/20 px-2 py-0.5 font-inter text-[9px] font-semibold text-gold">
                     <Crown className="h-2.5 w-2.5" /> Founder
                   </span>
                 )}
               </div>
               {user.email ? (
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="truncate font-bold text-white">{user.email}</span>
+                <div className="flex items-center justify-between gap-3 font-inter text-xs">
+                  <span className="truncate font-semibold text-[#F4F2ED]">{user.email}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -382,7 +380,7 @@ export const EditProfileModal: React.FC = () => {
                   }}
                   className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 py-2 font-mono text-xs text-white transition-colors hover:bg-white/10"
                 >
-                  Link Gmail for Cloud Sync
+                  Link Gmail for cloud sync
                 </button>
               )}
             </div>
@@ -395,14 +393,14 @@ export const EditProfileModal: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Check className="h-4 w-4" />
               )}
-              <span>{saving ? "Saving…" : "Save Profile Changes"}</span>
+              <span>{saving ? "Saving…" : "Save profile"}</span>
             </button>
           </form>
         </motion.div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Check, Info, Loader2, TrendingUp } from "lucide-react";
+import { Check, Dumbbell, Info, Loader2, TrendingUp } from "lucide-react";
 import { MUSCLE_LABELS, formatVolume, type ExerciseHistory } from "../lib/strength";
 import {
   buildConsistency,
@@ -12,9 +12,13 @@ import {
   humanizeSlug,
   recency,
   TREND_LABELS,
+  type CoverageStatus,
   type ExerciseProgressPoint,
   type TrainingDecisionRecord,
 } from "../lib/trainingProgress";
+import { SVJEmptyState } from "./ui-primitives/SVJEmptyState";
+import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
+import { MuscleBodyMap, type MuscleMapState } from "./recovery/MuscleBodyMap";
 import type { MuscleHistoryRow, ServerPlan } from "../lib/trainingClient";
 import type { StrengthRecordDto } from "../lib/strength";
 import { toLocalIsoDate, type WeeklyPlan } from "../lib/trainingPlan";
@@ -45,16 +49,34 @@ const Card: React.FC<{ title: string; subtitle?: string; children: React.ReactNo
   subtitle,
   children,
 }) => (
-  <section className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-    <h3 className="font-anton text-sm uppercase tracking-wide text-white">{title}</h3>
-    {subtitle && <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">{subtitle}</p>}
-    <div className="mt-3">{children}</div>
+  <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5 sm:p-4">
+    <SVJSectionHeader title={title} />
+    {subtitle && (
+      <p className="mt-1.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">{subtitle}</p>
+    )}
+    <div className="mt-2.5">{children}</div>
   </section>
 );
 
 const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p className="text-[11px] font-inter text-[#8C8C90]">{children}</p>
 );
+
+/**
+ * Map the server's coverage status onto the body-map's load states.
+ *
+ * Recency drives the tint: work inside a day reads as recently trained, inside
+ * three days as still recovering, anything older as recovered. A muscle with no
+ * logged training is its own neutral state — never painted as a low value.
+ */
+const coverageState = (status: CoverageStatus, lastTrainedDate: string | null): MuscleMapState => {
+  if (status !== "trained" || lastTrainedDate === null) return "no_recent_data";
+  const [y, m, d] = lastTrainedDate.split("-").map(Number);
+  const days = Math.floor((Date.now() - new Date(y, (m ?? 1) - 1, d ?? 1).getTime()) / 86_400_000);
+  if (days <= 1) return "high";
+  if (days <= 3) return "moderate";
+  return "fresh";
+};
 
 export const TrainingProgress: React.FC<TrainingProgressProps> = ({
   loading,
@@ -169,7 +191,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-xs font-inter text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-8 text-xs font-inter text-[#8C8C90]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading your progress…
       </div>
     );
@@ -195,8 +217,11 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
         ? (point.topSeconds ?? 0)
         : (point.topReps ?? 0);
 
+  // Two columns at desktop width: the review, consistency, coverage,
+  // recommendation and trend cards use the horizontal space instead of one
+  // card per screenful.
   return (
-    <div className="space-y-4" data-testid="training-progress">
+    <div className="grid items-start gap-3 lg:grid-cols-2" data-testid="training-progress">
       {/* Plan review */}
       <Card title="Plan review" subtitle={review.headline}>
         <ul className="space-y-1">
@@ -261,29 +286,42 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
         subtitle="Direct and supporting work from completed sets, last 7 days"
       >
         {coverage.length === 0 ? (
-          <Empty>
-            No muscle data yet. Complete a structured session and coverage appears here.
-          </Empty>
+          <SVJEmptyState
+            icon={Dumbbell}
+            compact
+            title="No logged training yet"
+            description="Coverage is built from the sets you actually complete in a structured session. Log one and each muscle group fills in with its real direct and supporting work."
+          />
         ) : (
-          <ul className="space-y-2" data-testid="muscle-coverage">
-            {coverage.map((entry) => (
-              <li key={entry.muscle} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
-                  {entry.status === "trained" ? (
-                    <Check className="h-3.5 w-3.5 text-[#C81E3A]" aria-hidden />
-                  ) : (
-                    <span className="h-3.5 w-3.5 rounded-md border border-white/15" aria-hidden />
-                  )}
-                  {entry.label}
-                </span>
-                <span className="flex items-center gap-2 font-mono text-[10px] text-[#8C8C90]">
-                  <span>{recency(entry.lastTrainedDate)}</span>
-                  <span className="text-[#F4F2ED]">{entry.directSets} direct</span>
-                  <span>{entry.supportingSets} supporting</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <MuscleBodyMap
+              entries={coverage.map((entry) => ({
+                muscle: entry.muscle,
+                label: entry.label,
+                state: coverageState(entry.status, entry.lastTrainedDate),
+              }))}
+              className="mb-4"
+            />
+            <ul className="space-y-2" data-testid="muscle-coverage">
+              {coverage.map((entry) => (
+                <li key={entry.muscle} className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
+                    {entry.status === "trained" ? (
+                      <Check className="h-3.5 w-3.5 text-[#C81E3A]" aria-hidden />
+                    ) : (
+                      <span className="h-3.5 w-3.5 rounded-md border border-white/15" aria-hidden />
+                    )}
+                    {entry.label}
+                  </span>
+                  <span className="flex items-center gap-2 font-mono text-[10px] text-[#8C8C90]">
+                    <span>{recency(entry.lastTrainedDate)}</span>
+                    <span className="text-[#F4F2ED]">{entry.directSets} direct</span>
+                    <span>{entry.supportingSets} supporting</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </Card>
 
@@ -344,19 +382,28 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                   />
                 </div>
 
-                <p className="mt-2 flex items-center gap-1.5 text-[10px] font-mono text-[#8C8C90]">
-                  <TrendingUp className="h-3 w-3" />
-                  {TREND_LABELS[progress.trend]}
-                  {progress.warmupSetCount > 0 &&
-                    ` · ${progress.warmupSetCount} warm-up sets excluded`}
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-[#8C8C90]">
+                  <span className="flex items-center gap-1.5">
+                    <TrendingUp className="h-3 w-3" />
+                    {TREND_LABELS[progress.trend]}
+                  </span>
+                  {progress.warmupSetCount > 0 && (
+                    <span>{progress.warmupSetCount} warm-up sets excluded</span>
+                  )}
+                </div>
                 {progress.loadConvention && (
-                  <p className="mt-0.5 text-[10px] font-mono text-[#8C8C90]">
-                    Load convention: {progress.loadConvention.replace(/_/g, " ")}
-                    {progress.conventionConsistent
-                      ? " · comparable across these sessions"
-                      : " · sessions used different setups — not directly comparable"}
-                  </p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-[#8C8C90]">
+                    <span>Load convention: {progress.loadConvention.replace(/_/g, " ")}</span>
+                    <span
+                      className={
+                        progress.conventionConsistent ? "text-[#8C8C90]" : "text-[#EAB308]"
+                      }
+                    >
+                      {progress.conventionConsistent
+                        ? "Comparable across these sessions"
+                        : "Different setups — not directly comparable"}
+                    </span>
+                  </div>
                 )}
 
                 {/* Real per-session chart. Bars are completed work only. */}
@@ -402,17 +449,24 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                 )}
 
                 {nextTarget && (
-                  <p
-                    className="mt-3 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/5 px-3 py-2 text-[11px] font-inter text-[#E8D9A0]"
+                  <div
+                    className="svj-radius-row mt-3 border border-[#C9A227]/25 bg-[#C9A227]/[0.06] px-3 py-2.5"
                     data-testid="next-target"
                   >
-                    Next target · {nextTarget.session.scheduledDate}:{" "}
-                    {nextTarget.target.durationSeconds !== null
-                      ? `${nextTarget.target.workSets} × ${nextTarget.target.durationSeconds} sec`
-                      : `${nextTarget.target.workSets} × ${nextTarget.target.repMin}–${nextTarget.target.repMax}${
-                          nextTarget.target.loadKg ? ` @ ${nextTarget.target.loadKg} kg` : ""
-                        }`}
-                  </p>
+                    <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#C9A227]">
+                      Next target
+                    </p>
+                    <p className="mt-0.5 font-mono text-[11px] text-[#E8D9A0]">
+                      {nextTarget.session.scheduledDate}
+                      <span className="ml-2 text-[#F4F2ED]">
+                        {nextTarget.target.durationSeconds !== null
+                          ? `${nextTarget.target.workSets} × ${nextTarget.target.durationSeconds} sec`
+                          : `${nextTarget.target.workSets} × ${nextTarget.target.repMin}–${nextTarget.target.repMax}${
+                              nextTarget.target.loadKg ? ` @ ${nextTarget.target.loadKg} kg` : ""
+                            }`}
+                      </span>
+                    </p>
+                  </div>
                 )}
               </>
             )}

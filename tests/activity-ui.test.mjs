@@ -329,7 +329,9 @@ describe("real activity components", { concurrency: false }, () => {
     const difficulty = screen.getByRole("combobox", { name: "Difficulty" });
     fireEvent.keyDown(difficulty, { key: "ArrowDown" });
     const choice = await screen.findByRole("option", { name: "Hard (120 XP)" });
-    assert.match(screen.getByRole("listbox").className, /bg-\[#17171A\]/);
+    // The menu renders on the design system's overlay surface (it floats above
+    // the card plane), never a white native sheet.
+    assert.match(screen.getByRole("listbox").className, /bg-\[#212126\]/);
     fireEvent.click(choice);
     fireEvent.click(screen.getByRole("button", { name: "Add Task to Mission" }));
     assert.equal(api.challenges[0].title, "Read a book");

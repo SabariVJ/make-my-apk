@@ -23,13 +23,16 @@ import {
   GPS_ACTIVITY_LABELS,
   GPS_ACTIVITY_TYPES,
   GPS_QUALITY_LABELS,
+  currentPaceSecondsPerKm,
   formatClock,
   formatDistance,
   formatPace,
-  haversineMeters,
+  formatSpeed,
   type GpsActivityType,
   type TrackPoint,
 } from "../lib/gpsActivity";
+export { currentPaceSecondsPerKm } from "../lib/gpsActivity";
+
 import {
   liveShareUrl,
   plannedRouteSummary,
@@ -44,78 +47,26 @@ const QUALITY_STYLES: Record<string, string> = {
   excellent: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
 };
 
-/**
- * Current pace from the most recent stretch of accepted points, so the live
- * readout reflects what the athlete is doing now rather than the whole
- * average. Pure and local; the saved workout's pace is computed server-side.
- *
- * Stabilised against early-session GPS noise: until the window contains both
- * enough elapsed time AND enough plausible displacement, the readout stays
- * "—" instead of extrapolating a pace like 2:34/km from a 7-second,
- * 49-metre GPS jump. Points with poor accuracy are excluded entirely.
- */
-export function currentPaceSecondsPerKm(
-  points: readonly TrackPoint[],
-  windowSeconds = 30,
-  options: {
-    minWindowSeconds?: number;
-    minDistanceMeters?: number;
-    maxAccuracyMeters?: number;
-  } = {},
-): number | null {
-  const minWindowSeconds = options.minWindowSeconds ?? 20;
-  const minDistanceMeters = options.minDistanceMeters ?? 40;
-  const maxAccuracyMeters = options.maxAccuracyMeters ?? 30;
-  if (points.length < 2) return null;
-  const last = points[points.length - 1]!;
-  const cutoff = last.t - windowSeconds * 1000;
-  let startIndex = points.length - 1;
-  while (startIndex > 0 && points[startIndex - 1]!.t >= cutoff) startIndex -= 1;
-  const first = points[startIndex]!;
-  if (first === last) return null;
-  const seconds = (last.t - first.t) / 1000;
-  if (seconds < minWindowSeconds) return null;
-  let distance = 0;
-  for (let i = startIndex + 1; i < points.length; i += 1) {
-    const a = points[i - 1]!;
-    const b = points[i]!;
-    if (a.moving === false || b.moving === false) continue;
-    // Skip segments anchored to a low-accuracy fix: a ±25 m error over a
-    // short span fabricates either a sprint or a standstill.
-    if (
-      (a.accuracy != null && a.accuracy > maxAccuracyMeters) ||
-      (b.accuracy != null && b.accuracy > maxAccuracyMeters)
-    )
-      continue;
-    distance += haversineMeters(a.lat, a.lng, b.lat, b.lng);
-  }
-  if (distance < minDistanceMeters || seconds <= 0) return null;
-  return Math.round(seconds / (distance / 1000));
-}
-
 const Metric: React.FC<{
   label: string;
   value: string;
-  hint?: string;
-  accent?: boolean;
+  hint?: React.ReactNode;
   icon?: React.ReactNode;
-}> = ({ label, value, hint, accent, icon }) => (
-  <div
-    className={`rounded-2xl border p-3 ${
-      accent ? "border-[#C81E3A]/30 bg-[#C81E3A]/8" : "border-white/5 bg-black/40"
-    }`}
-  >
+}> = ({ label, value, hint, icon }) => (
+  <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-3">
     <div className="mb-1 flex items-center gap-1.5">
       {icon}
-      <span className="text-[9px] font-mono uppercase tracking-widest text-[#8C8C90]">{label}</span>
+      <span className="font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8C8C90]">
+        {label}
+      </span>
     </div>
     <div
-      className={`font-mono text-xl font-bold ${accent ? "text-[#E62846]" : "text-white"}`}
+      className="font-mono text-lg font-bold text-[#F4F2ED]"
       data-testid={`metric-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
     >
       {value}
     </div>
-    {hint && <div className="mt-0.5 text-[9px] font-mono text-[#8C8C90]">{hint}</div>}
+    {hint && <div className="mt-1 font-inter text-[10px] leading-snug text-[#8C8C90]">{hint}</div>}
   </div>
 );
 
@@ -296,12 +247,62 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         </div>
       )}
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Metric label="Elapsed" value={formatClock(session?.durationSeconds ?? 0)} accent />
-        <Metric label="Distance" value={formatDistance(summary?.distanceMeters ?? 0, splitUnit)} />
-        <Metric label="Current pace" value={formatPace(currentPace, splitUnit)} />
-        <Metric label="Average pace" value={formatPace(summary?.avgPaceSecondsPerKm, splitUnit)} />
+      {/*
+       * Metrics — Elapsed is the one number a runner glances at mid-run, so it
+       * gets a hero tile. The rest are genuinely secondary and stay in a quiet
+       * grid instead of seven boxes competing at the same weight.
+       */}
+      <div className="svj-radius-card svj-elev-1 svj-lit-top border border-white/[0.06] bg-[#17171A] px-4 py-3.5">
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8C8C90]">
+              Elapsed
+            </p>
+            <p
+              className={`mt-1 font-anton text-[42px] leading-none tracking-tight ${
+                state === "paused" ? "text-gold" : "text-[#F4F2ED]"
+              }`}
+              data-testid="metric-elapsed"
+            >
+              {formatClock(session?.durationSeconds ?? 0)}
+            </p>
+          </div>
+          <div className="min-w-0 text-right">
+            <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8C8C90]">
+              Distance
+            </p>
+            <p
+              className="mt-1 font-mono text-2xl font-bold leading-none text-[#F4F2ED]"
+              data-testid="metric-distance"
+            >
+              {formatDistance(summary?.distanceMeters ?? 0, splitUnit)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Metric
+          label={activityType === "cycling" ? "Current speed" : "Current pace"}
+          value={
+            activityType === "cycling"
+              ? formatSpeed(currentPace ? 1000 / currentPace : null, splitUnit)
+              : formatPace(currentPace, splitUnit)
+          }
+        />
+        <Metric
+          label={activityType === "cycling" ? "Average speed" : "Average pace"}
+          value={
+            activityType === "cycling"
+              ? formatSpeed(summary?.avgSpeedMps, splitUnit)
+              : formatPace(summary?.avgPaceSecondsPerKm, splitUnit)
+          }
+        />
+        <Metric
+          label="Moving time"
+          value={formatClock(summary?.movingSeconds ?? 0)}
+          hint={session?.autoPaused ? "Auto-paused" : undefined}
+        />
         <Metric
           label="Elevation"
           value={
@@ -312,11 +313,20 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           icon={<Mountain className="h-3 w-3 text-[#8C8C90]" />}
           hint="From GPS elevation"
         />
-        <Metric
-          label="Steps"
-          value={(session?.steps ?? 0).toLocaleString()}
-          icon={<Footprints className="h-3 w-3 text-[#8C8C90]" />}
-        />
+        {activityType === "cycling" ? (
+          <Metric
+            label="Cadence"
+            value={summary?.avgCadence != null ? `${summary.avgCadence} rpm` : "—"}
+            hint="Sensor data only"
+          />
+        ) : (
+          <Metric
+            label="Max speed"
+            value={formatSpeed(summary?.maxSpeedMps, splitUnit)}
+            icon={<Footprints className="h-3 w-3 text-[#8C8C90]" />}
+            hint="From accepted GPS segments"
+          />
+        )}
         <Metric
           label="Heart rate"
           value={
@@ -328,34 +338,42 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           }
           icon={<Heart className="h-3 w-3 text-[#E62846]" />}
           hint={
-            liveHeartRate
-              ? `${liveHeartRate.deviceName ?? (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")} · ${
-                  liveHeartRate.status === "reconnecting" ? "reconnecting" : "live"
-                }`
-              : summary?.maxHeartRate != null
-                ? `avg ${summary.avgHeartRate ?? "—"} · max ${summary.maxHeartRate} bpm`
-                : "No sensor connected"
+            liveHeartRate ? (
+              <span className="block">
+                {liveHeartRate.deviceName ??
+                  (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")}
+                <span
+                  className={`mt-0.5 block font-semibold ${
+                    liveHeartRate.status === "reconnecting" ? "text-gold" : "text-emerald-400"
+                  }`}
+                >
+                  {liveHeartRate.status === "reconnecting" ? "Reconnecting" : "Live now"}
+                </span>
+              </span>
+            ) : summary?.maxHeartRate != null ? (
+              `Average ${summary.avgHeartRate ?? "—"}, peak ${summary.maxHeartRate} bpm`
+            ) : (
+              "No sensor connected"
+            )
           }
-        />
-        <Metric
-          label="Moving time"
-          value={formatClock(summary?.movingSeconds ?? 0)}
-          hint={session?.autoPaused ? "Auto-paused" : undefined}
         />
       </div>
 
       {plannedRoute && (
-        <div className="flex items-center gap-2 rounded-full border border-[#C81E3A]/25 bg-[#C81E3A]/8 px-3 py-2">
-          <span className="flex-1 text-[10px] font-mono text-white">
-            Following route: <span className="text-[#E62846]">{plannedRoute.name}</span> ·{" "}
-            {plannedRouteSummary(plannedRoute)}
+        <div className="svj-radius-row flex items-center gap-2 border border-[#C81E3A]/25 bg-[#C81E3A]/[0.08] px-3 py-2.5">
+          <Link2 aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#E62846]" />
+          <span className="min-w-0 flex-1 font-inter text-[11px] text-white">
+            Following <span className="font-semibold text-[#E62846]">{plannedRoute.name}</span>
+            <span className="mt-0.5 block text-[10px] text-[#8C8C90]">
+              {plannedRouteSummary(plannedRoute)}
+            </span>
           </span>
           {onClearPlannedRoute && (
             <button
               type="button"
               onClick={onClearPlannedRoute}
               data-testid="clear-planned-route"
-              className="text-[10px] font-mono uppercase text-[#8C8C90] hover:text-white"
+              className="shrink-0 text-[11px] font-inter font-semibold text-[#8C8C90] hover:text-white"
             >
               Clear
             </button>
@@ -372,8 +390,8 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         showCurrentPosition={state === "recording" && points.length > 1}
         emptyMessage={
           active
-            ? "Searching for GPS — head outdoors for a fix."
-            : "Start recording to draw your SVJ route."
+            ? "Searching for GPS — the map frames your position the moment a fix lands, then draws as you move."
+            : "Start recording and this map centres on you, then draws your route as you move."
         }
       />
 

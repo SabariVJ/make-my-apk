@@ -86,7 +86,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
           transition={{ duration: 0.25 }}
-          className="relative w-full max-w-xl bg-[#0B0B0C] border border-[#C81E3A]/40 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl overflow-hidden my-auto"
+          className="relative my-auto max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#C81E3A]/40 bg-[#0B0B0C] p-4 text-[#F4F2ED] shadow-2xl sm:p-5"
         >
           {/* Ambient Lighting Background */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />
@@ -111,7 +111,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                   <span>SVJ PLUS</span>
                 </div>
 
-                <h1 className="font-anton text-3xl sm:text-4xl tracking-wide uppercase text-white leading-tight">
+                <h1 className="font-inter text-3xl font-semibold leading-tight tracking-tight text-[#F4F2ED] sm:text-4xl">
                   {user.isFounder ? "Founder — Lifetime" : "Lifetime"}{" "}
                   <span className="text-[#C81E3A]">SVJ Plus Active</span>
                 </h1>
@@ -164,7 +164,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               <button
                 type="button"
                 onClick={onOpenPlan}
-                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-inter text-sm font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/25"
               >
                 Open MY SVJ PLAN
               </button>
@@ -183,7 +183,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                   <span>SVJ PLUS</span>
                 </div>
 
-                <h1 className="font-anton text-3xl sm:text-4xl tracking-wide uppercase text-white leading-tight">
+                <h1 className="font-inter text-3xl font-semibold leading-tight tracking-tight text-[#F4F2ED] sm:text-4xl">
                   <span className="text-[#C81E3A]">SVJ Plus Active</span>
                 </h1>
               </div>
@@ -211,7 +211,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               <button
                 type="button"
                 onClick={onOpenPlan}
-                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-anton text-sm uppercase tracking-wider text-white transition-colors hover:bg-[#C81E3A]/25"
+                className="w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-3 font-inter text-sm font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/25"
               >
                 Open MY SVJ PLAN
               </button>
@@ -230,7 +230,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                   <span>SVJ PLUS</span>
                 </div>
 
-                <h1 className="font-anton text-3xl sm:text-4xl tracking-wide uppercase text-white leading-tight">
+                <h1 className="font-inter text-3xl font-semibold leading-tight tracking-tight text-[#F4F2ED] sm:text-4xl">
                   Become the <span className="text-[#C81E3A]">Strongest</span> Version
                 </h1>
 
@@ -276,7 +276,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                 >
                   Yearly
                   <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-gold text-[9px] font-bold text-black uppercase">
-                    Save 58%
+                    Save 50%
                   </span>
                 </button>
               </div>
@@ -295,7 +295,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                   <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">
                     Monthly
                   </div>
-                  <div className="text-2xl font-anton text-white">
+                  <div className="font-mono text-2xl font-bold text-[#F4F2ED]">
                     ₹99
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / month</span>
                   </div>
@@ -311,21 +311,23 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                       : "bg-[#17171A]/50 border-white/5 hover:border-white/20"
                   }`}
                 >
-                  <div className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full bg-[#C81E3A] text-[9px] font-anton text-white uppercase tracking-wider">
+                  <div className="absolute -top-2.5 left-4 rounded-full bg-[#C81E3A] px-2 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.08em] text-white">
                     BEST VALUE
                   </div>
                   <div className="text-xs font-mono text-[#8C8C90] font-bold uppercase mb-1">
                     Yearly
                   </div>
-                  <div className="text-2xl font-anton text-white flex items-baseline gap-1">
+                  <div className="flex items-baseline gap-1 font-mono text-2xl font-bold text-[#F4F2ED]">
+                    {/* ₹99 × 12 = ₹1,188 is the real monthly-equivalent total, so
+                        the comparison figure is not inflated. */}
                     <span className="text-xs font-mono text-[#8C8C90] line-through font-normal">
-                      ₹1,200
+                      ₹1,188
                     </span>
                     ₹599
                     <span className="text-xs font-mono text-[#8C8C90] font-normal"> / year</span>
                   </div>
                   <p className="text-[10px] font-mono text-emerald-400 mt-1 font-semibold">
-                    50% OFF — Save ₹600 vs monthly
+                    50% OFF — Save ₹589 vs 12 months
                   </p>
                 </div>
               </div>
@@ -375,7 +377,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                       to upgrade to SVJ Plus.
                     </p>
                     <p className="text-[10px] font-mono text-[#8C8C90] mt-2">
-                      Already paid? Contact support to activate your subscription:
+                      Already paid? Contact support to activate your SVJ Plus access:
                     </p>
                     <a
                       href={buildWhatsAppUrl(
@@ -401,7 +403,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleStartTrial}
-                      className="w-full py-4 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton text-lg tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl shadow-[#C81E3A]/40 cursor-pointer"
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-4 font-inter text-base font-semibold text-white shadow-lg shadow-[#C81E3A]/40 transition-colors hover:bg-[#A0182E]"
                     >
                       <span>Upgrade to SVJ Plus</span>
                       <ArrowRight className="w-5 h-5" />
@@ -413,7 +415,39 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
                         Secure Payment
                       </span>
                       <span>•</span>
-                      <span>Cancel Anytime</span>
+                      <span>One-time payment</span>
+                    </div>
+
+                    {/* Truthful purchase disclosure shown next to the CTA. SVJ
+                        Plus is a one-time UPI transfer with manual activation:
+                        there is no subscription and nothing recurs, so no
+                        auto-renewal, trial conversion or "cancel anytime"
+                        promise is made. */}
+                    <div
+                      data-testid="plus-purchase-disclosure"
+                      className="rounded-2xl border border-white/10 bg-[#17171A] p-3 space-y-1.5 text-[10px] font-mono leading-relaxed text-[#8C8C90]"
+                    >
+                      <p className="text-[#B8B8C0]">
+                        <span className="text-white font-bold">Price & term:</span> ₹99 for 1 month,
+                        or ₹599 for 12 months, in INR.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">No auto-renewal:</span> this is a
+                        one-time payment. It does not renew and no recurring charge is created.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">Activation:</span> SVJ Plus is turned
+                        on manually after the payment is verified, so it is not instant.
+                      </p>
+                      <p>
+                        <span className="text-white font-bold">Cancel & refunds:</span> there is no
+                        subscription to cancel and nothing to stop. For a refund or a billing
+                        question, contact support from Profile → Contact support. See the{" "}
+                        <a href="/terms" className="text-[#C81E3A] underline underline-offset-2">
+                          Terms of Service
+                        </a>
+                        .
+                      </p>
                     </div>
                   </>
                 )}

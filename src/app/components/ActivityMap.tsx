@@ -1,13 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Crosshair,
-  Maximize2,
-  MapPin,
-  Minimize2,
-  Navigation,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Crosshair, Maximize2, MapPin, Minimize2, Navigation, ZoomIn, ZoomOut } from "lucide-react";
 import type { TrackPoint } from "../lib/gpsActivity";
 
 /**

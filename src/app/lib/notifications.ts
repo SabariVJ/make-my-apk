@@ -481,7 +481,13 @@ export async function initializeNotificationsAtSignup(userId: string): Promise<b
 
   // Mark first so an interrupted permission flow cannot become a repeat prompt.
   appStorage.setItem(permissionPromptedKey(userId), "1");
-  return requestNotificationPermission();
+  const granted = await requestNotificationPermission();
+
+  // Re-publish the planner defaults after Android closes the permission sheet.
+  // This wakes the mounted coordinator so a newly granted permission starts
+  // scheduling immediately without requiring an app restart.
+  saveNotificationPreferences(userId, { ...DEFAULT_NOTIFICATION_PREFERENCES });
+  return granted;
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {

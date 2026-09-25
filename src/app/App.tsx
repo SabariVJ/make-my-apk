@@ -43,6 +43,23 @@ import {
   subscribeToSessionExpiry,
 } from "./lib/sessionExpired";
 
+/**
+ * One page container for every screen.
+ *
+ * Responsive density rule: the shell owns the padding and the vertical
+ * clearance for the fixed bottom navigation, so no view adds its own
+ * horizontal padding or its own `pb-24/28/32` — that duplication is what made
+ * screens unevenly spaced and pushed actions below the fold.
+ *
+ * Width: full-bleed on phones, fluid on tablets, and on desktop the content
+ * box grows to ~1264px (86rem minus the 7rem utility-rail reservation) so the
+ * app stops rendering a narrow mobile column inside a wide window.
+ */
+const PAGE_CONTAINER =
+  "mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4";
+/** Desktop content box + the right-side reservation that keeps the rail off content. */
+const PAGE_CONTAINER_DESKTOP = "lg:max-w-[86rem] lg:pr-28";
+
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
 // sandbox that has not had VITE_SUPABASE_PUBLISHABLE_KEY set. Lists exactly
@@ -51,7 +68,7 @@ import {
 const ConfigMissingScreen: React.FC = () => {
   const missing = getMissingSupabaseEnv();
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
+    <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="font-anton text-2xl tracking-wide">SVJ</div>
       <p className="max-w-sm font-inter text-sm text-[#8C8C90]">
         Backend configuration is missing
@@ -112,7 +129,7 @@ const AppContent: React.FC<{
   // if it were the real authenticated user.
   if (!profileLoaded) {
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
+      <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
         <p className="font-inter text-[11px] text-[#8C8C90]">Loading SVJ</p>
       </div>
@@ -203,16 +220,17 @@ const AppContent: React.FC<{
           </div>
         )}
 
-        <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6">
+        {/* Same container as the main shell, minus the (absent) utility rail. */}
+        <main className={`${PAGE_CONTAINER} max-w-4xl lg:max-w-6xl`}>
           {storageError && (
             <p
               role="alert"
-              className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+              className="mb-3 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
             >
               {storageError}
             </p>
           )}
-          <div className="mb-4 svj-radius-card border border-gold/30 bg-gold/10 p-4">
+          <div className="mb-3 svj-radius-card border border-gold/30 bg-gold/10 p-3.5">
             <p className="font-inter text-sm font-semibold text-gold">Your 7-Day Trial Has Ended</p>
             <p className="mt-1 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
               You can still use Earn Plus daily missions, complete the 60-Day Challenge, redeem a
@@ -274,15 +292,17 @@ const AppContent: React.FC<{
         setActiveTab={handleTabChange}
       />
 
-      {/* Main View Area — right padding reserves the rail so it never covers content.
-          Tab switches crossfade with a quick fade+slide. The animation wrapper
-          is visual only: state lives in providers above it, so Activity
-          tracking, workout recorders and native listeners are never reset. */}
-      <main className="max-w-4xl mx-auto px-4 pt-4 sm:px-6 lg:max-w-5xl lg:pr-28">
+      {/* Main View Area — the container reserves desktop width and the rail's
+          right gutter so it can never cover content, and it alone owns the
+          bottom-navigation clearance. Tab switches crossfade with a quick
+          fade+slide. The animation wrapper is visual only: state lives in
+          providers above it, so Activity tracking, workout recorders and
+          native listeners are never reset. */}
+      <main className={`${PAGE_CONTAINER} ${PAGE_CONTAINER_DESKTOP}`}>
         {storageError && (
           <p
             role="alert"
-            className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
+            className="mb-3 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
           >
             {storageError}
           </p>

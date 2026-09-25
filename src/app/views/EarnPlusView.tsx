@@ -208,7 +208,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
   );
 
   return (
-    <div className="space-y-5 pb-28">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -222,17 +222,17 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           Refresh rewards
         </button>
       </div>
-      <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-8">
-        <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
+      <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-5">
+        <p className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
           <ShieldCheck className="h-4 w-4" /> Earned, not purchased
         </p>
-        <h1 className="font-anton text-3xl tracking-wide text-white sm:text-4xl">Earn Plus</h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#C4C4CC]">
+        <h1 className="font-anton text-2xl tracking-wide text-white sm:text-3xl">Earn Plus</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#C4C4CC]">
           Build consistency with daily missions. Your Reward XP is verified and saved on the server,
           separately from your profile level.
         </p>
         {active && (
-          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
             {[
               `${active.policy.plusDays} days of SVJ Plus`,
               "One-time launch reward",
@@ -309,7 +309,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           )}
 
           <section className="grid gap-4 sm:grid-cols-[1.3fr_1fr]">
-            <div className="space-y-5 rounded-2xl border border-white/10 bg-[#17171A] p-4">
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Gift className="h-4 w-4 text-rose-300" /> Your reward progress
               </h2>

@@ -98,12 +98,12 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
       {ownedTemplates.length > 0 && (
         <section data-testid="imported-templates">
           <SVJSectionHeader title="Imported from this device" />
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
             {ownedTemplates.map((template) => (
               <article
                 key={template.id}
                 data-testid="imported-template-card"
-                className="svj-radius-card svj-lit-top border border-[#C9A227]/25 bg-[#17171A] p-4"
+                className="svj-radius-card svj-lit-top border border-[#C9A227]/25 bg-[#17171A] p-3.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -117,7 +117,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                   </div>
                 </div>
                 {template.exercises.length > 0 && (
-                  <ul className="mt-3 space-y-1">
+                  <ul className="mt-2.5 space-y-1">
                     {template.exercises.slice(0, 6).map((exercise) => (
                       <li
                         key={`${template.id}-${exercise.exerciseId}`}
@@ -138,7 +138,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                 <button
                   type="button"
                   onClick={() => onStartOwned?.(template)}
-                  className="mt-3 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2.5 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
+                  className="mt-2.5 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
                 >
                   <Play className="h-3.5 w-3.5" /> Start this workout
                 </button>
@@ -172,19 +172,32 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
       )}
 
       {/* Filters */}
-      <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-3">
-        <div className="flex items-center gap-2 svj-radius-row border border-white/10 bg-[#08080A] px-2">
-          <Search className="h-3.5 w-3.5 text-[#8C8C90]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search sessions or exercises"
-            placeholder="Search sessions or exercises"
-            className="w-full bg-transparent py-2 text-xs font-inter text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
-          />
+      <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-2.5">
+        {/* Search and the saved-only switch share a row as soon as there is
+            width, so the filter stack stays two compact rows on desktop. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-2 svj-radius-row border border-white/10 bg-[#08080A] px-2">
+            <Search className="h-3.5 w-3.5 shrink-0 text-[#8C8C90]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search sessions or exercises"
+              placeholder="Search sessions or exercises"
+              className="w-full bg-transparent py-2 text-xs font-inter text-white placeholder:text-[#8C8C90]/60 focus:outline-none"
+            />
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-[11px] font-inter text-[#8C8C90]">
+            <input
+              type="checkbox"
+              checked={onlySaved}
+              onChange={(e) => setOnlySaved(e.target.checked)}
+              className="h-3.5 w-3.5 rounded-md accent-[#C81E3A]"
+            />
+            Saved only
+          </label>
         </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setFamily("all")}
@@ -239,20 +252,14 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
             </button>
           ))}
         </div>
-
-        <label className="mt-2 flex items-center gap-2 text-[11px] font-inter text-[#8C8C90]">
-          <input
-            type="checkbox"
-            checked={onlySaved}
-            onChange={(e) => setOnlySaved(e.target.checked)}
-            className="h-3.5 w-3.5 rounded-md accent-[#C81E3A]"
-          />
-          Saved only
-        </label>
       </div>
 
-      {/* Catalog */}
-      <div className="space-y-3">
+      {/* Catalog — a responsive grid so several readable templates are visible
+          per viewport instead of roughly one card per screenful. */}
+      <div
+        data-testid="template-grid"
+        className="grid items-start gap-3 lg:grid-cols-2 xl:grid-cols-3"
+      >
         {templates.map((template) => {
           const saved = savedTemplateIds.has(template.id);
           const muscles = [...new Set(template.exercises.map((e) => e.muscle))]
@@ -264,10 +271,10 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               key={template.id}
               whileTap={svjWhileTap}
               data-testid="template-card"
-              className="svj-radius-card svj-lit-top svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
+              className="svj-radius-card svj-lit-top svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-inter text-[15px] font-semibold leading-tight text-[#F4F2ED]">
                     {template.name}
                   </h3>
@@ -296,7 +303,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                 </button>
               </div>
 
-              <ul className="mt-3 space-y-1">
+              <ul className="mt-2.5 space-y-1">
                 {template.exercises.slice(0, 6).map((e) => (
                   <li
                     key={e.slug}
@@ -315,7 +322,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
               <button
                 type="button"
                 onClick={() => onStartTemplate(template)}
-                className="mt-3 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2.5 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
+                className="mt-2.5 flex w-full items-center justify-center gap-2 svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/12 py-2 font-inter text-[11px] font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20"
               >
                 <Play className="h-3.5 w-3.5" /> Start this workout
               </button>

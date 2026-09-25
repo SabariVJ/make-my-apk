@@ -77,14 +77,14 @@ export const CompletedSessionCard: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-b from-[#C81E3A]/10 to-[#0B0B0C] p-4 mb-5"
+      className="mb-3 rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-b from-[#C81E3A]/10 to-[#0B0B0C] p-3.5"
       data-testid="workout-complete"
     >
       <p className="font-anton text-lg uppercase tracking-wider text-white">WORKOUT COMPLETE</p>
       <p className="mt-0.5 text-[10px] font-mono uppercase tracking-widest text-[#E62846]">
         {ACTIVITY_TYPE_LABELS[type]}
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-2.5 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <div className="rounded-2xl bg-black/40 border border-white/5 p-3">
           <div className="text-[9px] font-mono uppercase text-[#8C8C90]">Duration</div>
           <div className="font-mono text-xl font-bold text-white">
@@ -272,7 +272,7 @@ export const ActivityHistory: React.FC = () => {
 
   return (
     <div
-      className="svj-radius-card svj-lit-top mb-5 border border-white/[0.06] bg-[#17171A] p-4"
+      className="svj-radius-card svj-lit-top mb-3 border border-white/[0.06] bg-[#17171A] p-3.5"
       data-testid="activity-history"
     >
       <SVJSectionHeader
@@ -431,7 +431,7 @@ const ActivityDetail: React.FC<{
   const strengthSummary = detail?.summary ?? summary;
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-5">
+    <div className="mb-3 rounded-2xl border border-white/5 bg-[#0B0B0C] p-3.5">
       <button
         type="button"
         onClick={onBack}

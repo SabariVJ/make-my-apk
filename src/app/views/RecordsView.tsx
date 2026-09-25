@@ -383,13 +383,13 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
       )}
 
       {loading && records.length === 0 && segments.length === 0 && (
-        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-[#08080A] p-4 font-inter text-[11px] text-[#8C8C90]">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-[#08080A] p-3 font-inter text-[11px] text-[#8C8C90]">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
 
       {section === "records" && (
-        <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-4">
+        <div className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-3.5">
           <SVJSectionHeader
             title="Personal bests"
             className="mb-3"
@@ -525,7 +525,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
       {section === "segments" && (
         <div className="space-y-3">
           {segments.length === 0 && (
-            <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 text-center">
+            <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-3.5 text-center">
               <Flag className="mx-auto mb-2 h-5 w-5 text-[#8C8C90]" />
               <p className="text-[11px] font-mono text-[#8C8C90]">
                 No personal segments yet. Open a saved GPS workout and create one from its route.
@@ -535,7 +535,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
           {segments.map((segment) => (
             <div
               key={segment.id}
-              className="svj-radius-card border border-white/[0.06] bg-[#17171A] p-4"
+              className="svj-radius-card border border-white/[0.06] bg-[#17171A] p-3.5"
               data-testid="segment-card"
             >
               <div className="flex items-start gap-2">

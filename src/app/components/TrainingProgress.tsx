@@ -49,12 +49,12 @@ const Card: React.FC<{ title: string; subtitle?: string; children: React.ReactNo
   subtitle,
   children,
 }) => (
-  <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4 sm:p-5">
+  <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5 sm:p-4">
     <SVJSectionHeader title={title} />
     {subtitle && (
       <p className="mt-1.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">{subtitle}</p>
     )}
-    <div className="mt-3">{children}</div>
+    <div className="mt-2.5">{children}</div>
   </section>
 );
 
@@ -191,7 +191,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-xs font-inter text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-8 text-xs font-inter text-[#8C8C90]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading your progress…
       </div>
     );
@@ -217,8 +217,11 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
         ? (point.topSeconds ?? 0)
         : (point.topReps ?? 0);
 
+  // Two columns at desktop width: the review, consistency, coverage,
+  // recommendation and trend cards use the horizontal space instead of one
+  // card per screenful.
   return (
-    <div className="space-y-4" data-testid="training-progress">
+    <div className="grid items-start gap-3 lg:grid-cols-2" data-testid="training-progress">
       {/* Plan review */}
       <Card title="Plan review" subtitle={review.headline}>
         <ul className="space-y-1">

@@ -115,7 +115,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           role="dialog"
           aria-modal="true"
           aria-label="XP rivalry and analysis"
-          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90vh] w-full max-w-lg overflow-hidden overflow-y-auto border border-white/[0.06] bg-[#17171A] p-5 text-[#F4F2ED]"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] w-full max-w-lg overflow-y-auto overflow-x-hidden border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
@@ -136,7 +136,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
           {isSelf ? (
             /* Self accounts never expose opponent actions. */
-            <div className="py-10 text-center">
+            <div className="py-8 text-center">
               <Swords className="mx-auto mb-3 h-8 w-8 text-[#8C8C90]" />
               <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
                 This is your own account

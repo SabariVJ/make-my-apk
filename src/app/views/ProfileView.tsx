@@ -105,11 +105,11 @@ export const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Profile Header */}
-      <div className="svj-radius-card svj-lit-top svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-5">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="svj-radius-card svj-lit-top svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
+        <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:items-start sm:text-left">
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
             <div
               className="relative group cursor-pointer"
               onClick={() => setIsEditProfileOpen(true)}
@@ -129,7 +129,7 @@ export const ProfileView: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center justify-center gap-2 sm:justify-start">
-                <h1 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED] sm:text-3xl">
+                <h1 className="font-inter text-xl font-semibold tracking-tight text-[#F4F2ED] sm:text-2xl">
                   {user.name}
                 </h1>
                 {user.verifiedIcon && (
@@ -181,7 +181,7 @@ export const ProfileView: React.FC = () => {
 
       {/* Friends List — hidden on Android Play release */}
       {!isAndroid && friends.length > 0 && (
-        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5">
           <SVJSectionHeader
             title="Friends"
             icon={Users}
@@ -384,101 +384,105 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
-      {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
-      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
-        <SVJSectionHeader title="Your progress" />
-        <button
-          type="button"
-          onClick={() => setShowTransformation(true)}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C9A227]/30 bg-[#C9A227]/10 py-3 font-inter text-xs font-semibold text-[#C9A227] transition-colors hover:bg-[#C9A227]/20"
-        >
-          <BarChart3 className="h-4 w-4" />
-          Open transformation report
-        </button>
-      </div>
-      {/* Transformation Report overlay */}
-      {showTransformation && (
-        <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
-          <TransformationReportView />
+      {/* Trailing utility cards pair up on desktop width so Profile stops being
+          one very long single column. DOM order is unchanged on mobile. */}
+      <div className="grid items-start gap-3 lg:grid-cols-2">
+        {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5">
+          <SVJSectionHeader title="Your progress" />
           <button
             type="button"
-            onClick={() => setShowTransformation(false)}
-            className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
+            onClick={() => setShowTransformation(true)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C9A227]/30 bg-[#C9A227]/10 py-3 font-inter text-xs font-semibold text-[#C9A227] transition-colors hover:bg-[#C9A227]/20"
           >
-            ✕
+            <BarChart3 className="h-4 w-4" />
+            Open transformation report
           </button>
         </div>
-      )}
-      {/* Account actions */}
-      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
-        {isAndroid && (
-          <button
-            type="button"
-            onClick={() => void showPrivacyChoices()}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white"
-          >
-            <Shield className="h-4 w-4" />
-            Privacy choices
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            setSignOutError(null);
-            setShowLogoutDialog(true);
-          }}
-          disabled={signingOut}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 py-3 font-inter text-xs font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20 disabled:opacity-60"
-        >
-          <LogOut className="h-4 w-4" />
-          Log out
-        </button>
-        <button
-          type="button"
-          onClick={handleEmailSupport}
-          disabled={supportState === "opening"}
-          aria-busy={supportState === "opening"}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white disabled:opacity-60"
-        >
-          {supportState === "opening" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Mail className="w-4 h-4" />
-          )}
-          {supportState === "opening"
-            ? "Opening email..."
-            : supportState === "fallback"
-              ? "Copy support email"
-              : "Email Us"}
-        </button>
-        {supportState === "fallback" && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <p className="text-xs text-[#8C8C90]">Couldn't open an email app. Reach us at:</p>
-            <p className="my-1 font-mono text-sm text-white">sabarivj777@gmail.com</p>
+        {/* Transformation Report overlay */}
+        {showTransformation && (
+          <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
+            <TransformationReportView />
             <button
               type="button"
-              onClick={handleCopySupportEmail}
-              className="cursor-pointer rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 font-inter text-[11px] font-semibold text-white hover:bg-white/[0.08]"
+              onClick={() => setShowTransformation(false)}
+              className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
             >
-              {copiedEmail ? "Email copied" : "Copy email"}
+              ✕
             </button>
           </div>
         )}
-        <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
-          Opens a draft addressed to SVJ Support. You choose what to paste and send.
-        </p>
-        <div className="flex items-center justify-center gap-4 font-inter text-[10px] text-[#8C8C90]">
-          <a href="/delete-account" className="text-[#E62846] hover:text-[#A0182E]">
-            Delete account
-          </a>
-          <span aria-hidden className="h-3 w-px bg-white/10" />
-          <a href="/privacy" className="hover:text-white">
-            Privacy
-          </a>
-          <span aria-hidden className="h-3 w-px bg-white/10" />
-          <a href="/terms" className="hover:text-white">
-            Terms
-          </a>
+        {/* Account actions */}
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5">
+          {isAndroid && (
+            <button
+              type="button"
+              onClick={() => void showPrivacyChoices()}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white"
+            >
+              <Shield className="h-4 w-4" />
+              Privacy choices
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setSignOutError(null);
+              setShowLogoutDialog(true);
+            }}
+            disabled={signingOut}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/10 py-3 font-inter text-xs font-semibold text-[#F4F2ED] transition-colors hover:bg-[#C81E3A]/20 disabled:opacity-60"
+          >
+            <LogOut className="h-4 w-4" />
+            Log out
+          </button>
+          <button
+            type="button"
+            onClick={handleEmailSupport}
+            disabled={supportState === "opening"}
+            aria-busy={supportState === "opening"}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white disabled:opacity-60"
+          >
+            {supportState === "opening" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
+            {supportState === "opening"
+              ? "Opening email..."
+              : supportState === "fallback"
+                ? "Copy support email"
+                : "Email Us"}
+          </button>
+          {supportState === "fallback" && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+              <p className="text-xs text-[#8C8C90]">Couldn't open an email app. Reach us at:</p>
+              <p className="my-1 font-mono text-sm text-white">sabarivj777@gmail.com</p>
+              <button
+                type="button"
+                onClick={handleCopySupportEmail}
+                className="cursor-pointer rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 font-inter text-[11px] font-semibold text-white hover:bg-white/[0.08]"
+              >
+                {copiedEmail ? "Email copied" : "Copy email"}
+              </button>
+            </div>
+          )}
+          <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
+            Opens a draft addressed to SVJ Support. You choose what to paste and send.
+          </p>
+          <div className="flex items-center justify-center gap-4 font-inter text-[10px] text-[#8C8C90]">
+            <a href="/delete-account" className="text-[#E62846] hover:text-[#A0182E]">
+              Delete account
+            </a>
+            <span aria-hidden className="h-3 w-px bg-white/10" />
+            <a href="/privacy" className="hover:text-white">
+              Privacy
+            </a>
+            <span aria-hidden className="h-3 w-px bg-white/10" />
+            <a href="/terms" className="hover:text-white">
+              Terms
+            </a>
+          </div>
         </div>
       </div>
       {/* Log out confirmation dialog (in-app, SVJ-styled) */}

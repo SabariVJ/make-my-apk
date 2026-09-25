@@ -155,7 +155,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
     r.username || r.display_name || "Voyager";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Search */}
       <div>
         <div className="relative">
@@ -265,7 +265,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
 
       {/* Rivalries Section */}
       {activeSection === "rivalries" && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {incomingRivalries.length > 0 && (
             <section className="space-y-2">
               <SVJSectionHeader
@@ -282,7 +282,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                   key={r.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-[#C81E3A]/25 bg-[#17171A] p-4"
+                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-[#C81E3A]/25 bg-[#17171A] p-3.5"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <AvatarImage
@@ -368,7 +368,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
               {activeRivalries.map((r) => (
                 <div
                   key={r.id}
-                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-emerald-500/25 bg-[#17171A] p-4"
+                  className="svj-radius-card svj-elev-1 flex items-center justify-between gap-3 border border-emerald-500/25 bg-[#17171A] p-3.5"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <AvatarImage

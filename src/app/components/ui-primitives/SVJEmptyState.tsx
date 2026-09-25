@@ -53,7 +53,7 @@ export const SVJEmptyState: React.FC<{
   return (
     <div
       data-empty-variant={variant}
-      className={`flex flex-col items-center justify-center text-center ${compact ? "px-4 py-6" : "px-5 py-10"} ${className}`}
+      className={`flex flex-col items-center justify-center text-center ${compact ? "px-4 py-5" : "px-5 py-8"} ${className}`}
     >
       <div
         className={`flex items-center justify-center rounded-2xl border ${t.tile} ${compact ? "mb-3 h-10 w-10" : "mb-4 h-12 w-12"}`}

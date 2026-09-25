@@ -422,7 +422,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
   const isPlus = isPlusMember === true;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Header */}
       <div className="svj-radius-card svj-lit-top overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
         <div className="relative z-10">

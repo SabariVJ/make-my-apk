@@ -122,7 +122,7 @@ export const RewardsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24 relative">
+    <div className="relative space-y-4">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -373,7 +373,7 @@ export const RewardsView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="svj-radius-card svj-lit-top svj-elev-3 relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden border border-white/[0.06] bg-[#17171A] p-5"
+              className="svj-radius-card svj-lit-top svj-elev-3 relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden border border-white/[0.06] bg-[#17171A] p-4"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-4 border-b border-white/10">

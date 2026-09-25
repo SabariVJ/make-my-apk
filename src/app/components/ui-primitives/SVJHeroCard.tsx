@@ -73,7 +73,7 @@ export const SVJHeroCard: React.FC<{
         style={{ background: v.accent }}
       />
 
-      <div className="relative p-5">
+      <div className="relative p-3.5 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {eyebrow && (
@@ -83,7 +83,7 @@ export const SVJHeroCard: React.FC<{
                 {eyebrow}
               </p>
             )}
-            <h2 className="mt-1.5 font-anton text-xl leading-tight tracking-wide text-[#F4F2ED] sm:text-2xl">
+            <h2 className="mt-1 font-anton text-lg leading-tight tracking-wide text-[#F4F2ED] sm:text-xl">
               {title}
             </h2>
           </div>
@@ -110,14 +110,14 @@ export const SVJHeroCard: React.FC<{
         </div>
 
         {description && (
-          <p className="mt-2.5 max-w-prose text-xs font-inter leading-relaxed text-[#A9A9AE]">
+          <p className="mt-2 max-w-prose text-xs font-inter leading-relaxed text-[#A9A9AE]">
             {description}
           </p>
         )}
 
-        {children && <div className="mt-4">{children}</div>}
+        {children && <div className="mt-3">{children}</div>}
 
-        {actions && <div className="mt-4 flex flex-wrap gap-2">{actions}</div>}
+        {actions && <div className="mt-3 flex flex-wrap gap-2">{actions}</div>}
       </div>
     </section>
   );

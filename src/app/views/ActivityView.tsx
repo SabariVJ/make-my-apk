@@ -188,9 +188,9 @@ const ActivityViewContent: React.FC<{
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
+    <div className="w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
             <ActivityIcon className="w-5 h-5 text-[#E62846]" />
@@ -230,7 +230,7 @@ const ActivityViewContent: React.FC<{
             void stopTracking();
           else void startTracking();
         }}
-        className="mb-5 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
+        className="mb-3 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
       >
         {trackingStatus === "update-required"
           ? "APP UPDATE REQUIRED"
@@ -242,7 +242,7 @@ const ActivityViewContent: React.FC<{
       </button>
 
       {/* Train internal navigation: only working sections are exposed. */}
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-1" data-testid="train-sections">
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1" data-testid="train-sections">
         {(
           [
             { id: "activity", label: "Overview" },
@@ -300,9 +300,11 @@ const ActivityViewContent: React.FC<{
       {section === "devices" && <ConnectedDevicesView />}
 
       {/* Today's activity — visible on the Activity section. */}
+      {/* Overview cards share the desktop width instead of stacking two
+          full-width blocks down the page. */}
       {section === "activity" && (
-        <>
-          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+        <div className="mb-3 grid items-start gap-3 lg:grid-cols-2">
+          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-3.5">
             <SVJSectionHeader title="Today's activity" icon={Footprints} className="mb-1" />
             <div className="flex flex-col items-center">
               <SVJScoreRing
@@ -340,7 +342,7 @@ const ActivityViewContent: React.FC<{
           </div>
 
           {/* Calories */}
-          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+          <div className="svj-radius-card svj-elev-2 svj-lit-top border border-white/[0.06] bg-[#17171A] p-3.5">
             <SVJSectionHeader
               title="Calories burned"
               icon={Flame}
@@ -378,11 +380,11 @@ const ActivityViewContent: React.FC<{
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
+            <p className="mt-3 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
               Estimates from steps, distance and your body profile — not medical measurements.
             </p>
           </div>
-        </>
+        </div>
       )}
 
       {/* Completion summary + canonical server save (Update 01/02) */}
@@ -393,16 +395,16 @@ const ActivityViewContent: React.FC<{
 
       {/* Period summaries (Avg Steps / Best Day / Avg KCAL) — no chart blocks. */}
       {section === "activity" && (
-        <>
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           <HistoryPanel title="Last 7 Days" summary={summary7} />
           <HistoryPanel title="Last 30 Days" summary={summary30} />
-        </>
+        </div>
       )}
 
       {/* How XP works — rendered ONCE, on Overview only. It previously repeated
           verbatim on every Activity sub-tab. */}
       {section === "activity" && (
-        <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4 mb-5">
+        <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5 mb-3">
           <SVJSectionHeader title="Step XP milestones" icon={Trophy} className="mb-3" />
           <div className="grid grid-cols-4 gap-2">
             {[

@@ -89,7 +89,7 @@ export const UPIPaymentModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90vh] w-full max-w-md overflow-hidden overflow-y-auto border border-white/[0.06] bg-[#17171A] p-5 text-[#F4F2ED]"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] w-full max-w-md overflow-y-auto overflow-x-hidden border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
         >
           {/* Header */}
           <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-4">

@@ -89,7 +89,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-[#17171A] border-2 border-[#C81E3A]/50 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 my-auto overflow-hidden"
+          className="relative my-auto max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border-2 border-[#C81E3A]/50 bg-[#17171A] p-4 text-[#F4F2ED] shadow-2xl shadow-[#C81E3A]/20 sm:p-5"
         >
           {/* Ambient Lighting */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/20 blur-3xl rounded-full pointer-events-none" />

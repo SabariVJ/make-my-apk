@@ -248,48 +248,43 @@ export const WorkoutView: React.FC = () => {
 
   if (strengthOpen) {
     return (
-      <div className="pb-24 pt-4 max-w-2xl mx-auto">
+      <div className="mx-auto w-full max-w-3xl">
         <TrainStrength prescription={prescription} onExit={closeStrength} />
       </div>
     );
   }
 
   return (
-    <div className="pb-28 space-y-5">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-full svj-border bg-[#17171A] p-4">
-        <div className="absolute -top-16 -right-10 w-40 h-40 rounded-full bg-[#C81E3A]/20 blur-3xl animate-crimson-pulse" />
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED] sm:text-3xl">
-                Iron Log
-              </h1>
-              <p className="font-inter text-sm text-[#8C8C90] mt-1">
-                Track every lift. Every set feeds your{" "}
-                <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={toggleGuided}
-              aria-pressed={guided}
-              data-testid="train-guided-toggle"
-              title={
-                guided
-                  ? "Turn off the guided training experience (your data is kept)"
-                  : "Turn on the guided training experience"
-              }
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
-                guided
-                  ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
-                  : "border-white/10 bg-black/30 text-[#8C8C90]"
-              }`}
-            >
-              Guided {guided ? "on" : "off"}
-            </button>
-          </div>
+    <div className="space-y-3 lg:space-y-4">
+      {/* Page identity — one slim row instead of a hero block, so the compact
+          dashboard header, the tab controls and the working panel all fit the
+          first desktop viewport. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">Iron Log</h1>
+          <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">
+            Track every lift. Every set feeds your{" "}
+            <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={toggleGuided}
+          aria-pressed={guided}
+          data-testid="train-guided-toggle"
+          title={
+            guided
+              ? "Turn off the guided training experience (your data is kept)"
+              : "Turn on the guided training experience"
+          }
+          className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+            guided
+              ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
+              : "border-white/10 bg-black/30 text-[#8C8C90]"
+          }`}
+        >
+          Guided {guided ? "on" : "off"}
+        </button>
       </div>
 
       {/* Structured Strength — the primary Train destination, always on top. */}
@@ -305,13 +300,14 @@ export const WorkoutView: React.FC = () => {
         lastSessionLabel={recentStrengthQuery.data ?? null}
       />
 
-      {/* Training modes */}
-      {/* Horizontally scrollable so five destinations fit a narrow phone
+      {/* Training modes — one compact control row, pinned below the sticky
+          header on desktop so the working panel never scrolls out of reach.
+          Horizontally scrollable so five destinations fit a narrow phone
           without shrinking the touch targets. */}
       <div
         role="tablist"
         aria-label="Training sections"
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto bg-[#0B0B0C]/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:gap-2"
       >
         {tabs.map((t) => {
           const Icon = t.icon;
@@ -324,7 +320,7 @@ export const WorkoutView: React.FC = () => {
               aria-selected={active}
               aria-controls={`train-panel-${t.id}`}
               data-testid={`train-tab-${t.id}`}
-              className={`flex flex-1 shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-inter font-semibold transition-all cursor-pointer ${
+              className={`flex min-h-[44px] flex-1 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 font-inter text-[13px] font-semibold transition-all cursor-pointer lg:min-h-0 lg:px-3 ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
                   : "bg-[#17171A] border-white/8 text-[#8C8C90] hover:text-[#F4F2ED]"
@@ -380,100 +376,115 @@ export const WorkoutView: React.FC = () => {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            <input
-              aria-label="Session name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Session name (e.g. Push Day)"
-              className="w-full bg-[#17171A] svj-border rounded-xl px-4 py-3 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
-            />
+            {/* Session name and the add-exercise action share one row once
+                there is width, so the editor starts immediately. */}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                aria-label="Session name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Session name (e.g. Push Day)"
+                className="w-full flex-1 bg-[#17171A] svj-border rounded-xl px-4 py-2.5 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+              />
+              <button
+                onClick={() => setExercises((prev) => [...prev, blankExercise()])}
+                className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 font-inter text-[13px] text-[#8C8C90] transition-colors hover:border-[#C81E3A]/50 hover:text-[#F4F2ED] cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Add exercise
+              </button>
+            </div>
 
-            {exercises.map((ex, exIdx) => (
-              <div key={ex.id} className="rounded-2xl bg-[#17171A] svj-border p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-[#C81E3A]">
-                    {String(exIdx + 1).padStart(2, "0")}
-                  </span>
-                  <input
-                    aria-label={`Exercise ${exIdx + 1} name`}
-                    value={ex.name}
-                    onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
-                    placeholder="Exercise name"
-                    list="svj-exercise-names"
-                    className="flex-1 bg-transparent border-b border-white/10 pb-1 text-[#F4F2ED] font-inter font-semibold placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
-                  />
-                  {exercises.length > 1 && (
-                    <button
-                      onClick={() => setExercises((prev) => prev.filter((e2) => e2.id !== ex.id))}
-                      className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
-                      aria-label="Remove exercise"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 text-[10px] uppercase tracking-wider font-inter text-[#8C8C90]">
-                    <span>Set</span>
-                    <span>Reps</span>
-                    <span>Weight (kg)</span>
-                    <span />
+            <div className="grid items-start gap-3 lg:grid-cols-2">
+              {exercises.map((ex, exIdx) => (
+                <div key={ex.id} className="rounded-2xl bg-[#17171A] svj-border p-3.5 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-[#C81E3A]">
+                      {String(exIdx + 1).padStart(2, "0")}
+                    </span>
+                    <input
+                      aria-label={`Exercise ${exIdx + 1} name`}
+                      value={ex.name}
+                      onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
+                      placeholder="Exercise name"
+                      list="svj-exercise-names"
+                      className="flex-1 bg-transparent border-b border-white/10 pb-1 text-[#F4F2ED] font-inter font-semibold placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+                    />
+                    {exercises.length > 1 && (
+                      <button
+                        onClick={() => setExercises((prev) => prev.filter((e2) => e2.id !== ex.id))}
+                        className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                        aria-label="Remove exercise"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                  {ex.sets.map((st, i) => (
-                    <div key={i} className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 items-center">
-                      <span className="font-mono text-xs text-[#8C8C90]">{i + 1}</span>
-                      <input
-                        type="number"
-                        min={0}
-                        aria-label={`Exercise ${exIdx + 1}, set ${i + 1} reps`}
-                        value={st.reps}
-                        onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
-                        className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
-                      />
-                      <input
-                        type="number"
-                        min={0}
-                        step={2.5}
-                        aria-label={`Exercise ${exIdx + 1}, set ${i + 1} weight`}
-                        value={st.weight}
-                        onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
-                        className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
-                      />
-                      {ex.sets.length > 1 ? (
-                        <button
-                          onClick={() =>
-                            updateExercise(ex.id, { sets: ex.sets.filter((_, j) => j !== i) })
-                          }
-                          className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
-                          aria-label="Remove set"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      ) : (
-                        <span />
-                      )}
-                    </div>
-                  ))}
-                </div>
 
-                <button
-                  onClick={() =>
-                    updateExercise(ex.id, {
-                      sets: [
-                        ...ex.sets,
-                        { ...(ex.sets[ex.sets.length - 1] ?? { reps: 8, weight: 20 }) },
-                      ],
-                    })
-                  }
-                  className="text-xs font-inter font-semibold text-[#C81E3A] hover:text-[#E62846] cursor-pointer"
-                >
-                  + Add set
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-1.5">
+                    <div className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 text-[10px] uppercase tracking-wider font-inter text-[#8C8C90]">
+                      <span>Set</span>
+                      <span>Reps</span>
+                      <span>Weight (kg)</span>
+                      <span />
+                    </div>
+                    {ex.sets.map((st, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 items-center"
+                      >
+                        <span className="font-mono text-xs text-[#8C8C90]">{i + 1}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          aria-label={`Exercise ${exIdx + 1}, set ${i + 1} reps`}
+                          value={st.reps}
+                          onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
+                          className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          step={2.5}
+                          aria-label={`Exercise ${exIdx + 1}, set ${i + 1} weight`}
+                          value={st.weight}
+                          onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
+                          className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                        />
+                        {ex.sets.length > 1 ? (
+                          <button
+                            onClick={() =>
+                              updateExercise(ex.id, { sets: ex.sets.filter((_, j) => j !== i) })
+                            }
+                            className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                            aria-label="Remove set"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <span />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      updateExercise(ex.id, {
+                        sets: [
+                          ...ex.sets,
+                          { ...(ex.sets[ex.sets.length - 1] ?? { reps: 8, weight: 20 }) },
+                        ],
+                      })
+                    }
+                    className="text-xs font-inter font-semibold text-[#C81E3A] hover:text-[#E62846] cursor-pointer"
+                  >
+                    + Add set
+                  </button>
+                </div>
+              ))}
+            </div>
 
             <datalist id="svj-exercise-names">
               {exerciseNames.map((n) => (
@@ -481,24 +492,38 @@ export const WorkoutView: React.FC = () => {
               ))}
             </datalist>
 
-            <button
-              onClick={() => setExercises((prev) => [...prev, blankExercise()])}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/15 text-[#8C8C90] hover:text-[#F4F2ED] hover:border-[#C81E3A]/50 font-inter text-sm cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Add exercise
-            </button>
-
-            <div className="rounded-2xl bg-[#17171A] svj-border p-4 flex items-center justify-between">
-              <div className="font-inter text-sm text-[#8C8C90]">
-                <span className="font-semibold text-[#F4F2ED]">{totals.sets}</span> working sets,
-                moving{" "}
-                <span className="font-semibold text-[#F4F2ED]">
-                  {Math.round(totals.volume).toLocaleString()}
-                </span>{" "}
-                kg
+            {/* Live summary and both actions share one compact row: the primary
+                actions stay inside the first desktop viewport instead of
+                sitting below a separate summary card. */}
+            <div className="flex flex-col gap-2.5 rounded-2xl bg-[#17171A] svj-border p-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-inter text-[13px] text-[#8C8C90]">
+                <span>
+                  <span className="font-semibold text-[#F4F2ED]">{totals.sets}</span> working sets,
+                  moving{" "}
+                  <span className="font-semibold text-[#F4F2ED]">
+                    {Math.round(totals.volume).toLocaleString()}
+                  </span>{" "}
+                  kg
+                </span>
+                <span className="flex items-center gap-1.5 font-mono text-[#D4AF37]">
+                  <Zap className="h-3.5 w-3.5" /> +{totals.xp} XP
+                </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[#D4AF37] font-mono text-sm">
-                <Zap className="w-4 h-4" /> +{totals.xp} XP
+              <div className="flex gap-2 lg:shrink-0">
+                <button
+                  onClick={() => saveWorkoutTemplate(name || "Untitled Template", exercises)}
+                  disabled={!exercises.some((e) => e.name.trim())}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B0B0C] svj-border px-3.5 py-2.5 font-inter text-[13px] font-semibold text-[#F4F2ED] hover:bg-[#212126] disabled:opacity-40 cursor-pointer lg:flex-none"
+                >
+                  <Save className="h-4 w-4" /> Save template
+                </button>
+                <button
+                  onClick={handleLog}
+                  disabled={!totals.valid}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl svj-crimson-gradient px-3.5 py-2.5 font-inter text-[13px] font-bold text-white disabled:opacity-40 svj-card-glow cursor-pointer lg:flex-none"
+                >
+                  <Dumbbell className="h-4 w-4" /> Log workout
+                </button>
               </div>
             </div>
 
@@ -507,22 +532,6 @@ export const WorkoutView: React.FC = () => {
                 {saveError}
               </p>
             )}
-            <div className="flex gap-3">
-              <button
-                onClick={() => saveWorkoutTemplate(name || "Untitled Template", exercises)}
-                disabled={!exercises.some((e) => e.name.trim())}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#17171A] svj-border text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#212126] disabled:opacity-40 cursor-pointer"
-              >
-                <Save className="w-4 h-4" /> Save template
-              </button>
-              <button
-                onClick={handleLog}
-                disabled={!totals.valid}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl svj-crimson-gradient text-white font-inter font-bold text-sm disabled:opacity-40 svj-card-glow cursor-pointer"
-              >
-                <Dumbbell className="w-4 h-4" /> Log workout
-              </button>
-            </div>
           </motion.div>
         )}
 
@@ -557,39 +566,45 @@ export const WorkoutView: React.FC = () => {
               }))}
             />
 
-            <p className="pt-2 font-inter text-sm font-semibold text-[#F4F2ED]">
+            <p className="pt-1 font-inter text-[15px] font-semibold text-[#F4F2ED]">
               Your device templates
             </p>
             {workoutTemplates.length === 0 && (
-              <p className="text-center text-[#8C8C90] font-inter text-sm py-10">
+              <p className="py-6 text-center font-inter text-sm text-[#8C8C90]">
                 No templates yet. Build a session in the Log tab and hit “Save template”.
               </p>
             )}
-            {workoutTemplates.map((tpl) => (
-              <div key={tpl.id} className="rounded-2xl bg-[#17171A] svj-border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-anton text-lg text-[#F4F2ED]">{tpl.name}</h3>
-                    <p className="mt-1 font-inter text-xs text-[#8C8C90]">
-                      {tpl.exercises.map((e) => e.name).join(", ")}
-                    </p>
+            {/* Two columns at desktop width so several templates are visible per
+                viewport instead of one card per screenful. */}
+            <div className="grid items-start gap-3 lg:grid-cols-2">
+              {workoutTemplates.map((tpl) => (
+                <div key={tpl.id} className="rounded-2xl bg-[#17171A] svj-border p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-anton text-lg leading-tight text-[#F4F2ED]">
+                        {tpl.name}
+                      </h3>
+                      <p className="mt-1 font-inter text-[11px] text-[#8C8C90]">
+                        {tpl.exercises.map((e) => e.name).join(", ")}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteWorkoutTemplate(tpl.id)}
+                      className="shrink-0 text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                      aria-label="Delete template"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                   <button
-                    onClick={() => deleteWorkoutTemplate(tpl.id)}
-                    className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
-                    aria-label="Delete template"
+                    onClick={() => loadTemplate(tpl.id)}
+                    className="mt-2.5 w-full rounded-xl border border-[#C81E3A]/40 bg-[#C81E3A]/15 py-2 font-inter text-[13px] font-semibold text-[#F4F2ED] hover:bg-[#C81E3A]/25 cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    Start this workout
                   </button>
                 </div>
-                <button
-                  onClick={() => loadTemplate(tpl.id)}
-                  className="mt-3 w-full py-2.5 rounded-xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 text-[#F4F2ED] font-inter font-semibold text-sm hover:bg-[#C81E3A]/25 cursor-pointer"
-                >
-                  Start this workout
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </motion.div>
         )}
 
@@ -624,126 +639,131 @@ export const WorkoutView: React.FC = () => {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="space-y-4"
+            className="space-y-3"
           >
-            {completedPlanSessions.length > 0 && (
-              <section
-                data-testid="completed-plan-sessions"
-                className="rounded-2xl bg-[#17171A] svj-border p-4"
-              >
-                <div className="flex items-center gap-2 text-[#F4F2ED] font-inter font-semibold text-sm">
-                  <CalendarCheck className="w-4 h-4 text-[#C81E3A]" aria-hidden /> Completed plan
-                  sessions
-                </div>
-                <ul className="mt-3 space-y-1.5">
-                  {completedPlanSessions.map((session) => (
-                    <li
-                      key={session.id}
-                      className="flex items-center justify-between gap-3 text-xs font-inter"
-                    >
-                      <span className="flex items-center gap-2 text-[#F4F2ED]">
-                        <span>Session {session.slotIndex + 1}</span>
-                        <span className="font-mono text-[11px] text-[#8C8C90]">
-                          {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString(
-                            "en-US",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )}
-                        </span>
-                      </span>
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-[#D4AF37]">
-                        Completed
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {exerciseNames.length > 0 && (
-              <div className="rounded-2xl bg-[#17171A] svj-border p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
+            {/* Summary panels sit side by side on desktop width. */}
+            <div className="grid items-start gap-3 lg:grid-cols-2">
+              {completedPlanSessions.length > 0 && (
+                <section
+                  data-testid="completed-plan-sessions"
+                  className="rounded-2xl bg-[#17171A] svj-border p-3.5"
+                >
                   <div className="flex items-center gap-2 text-[#F4F2ED] font-inter font-semibold text-sm">
-                    <TrendingUp className="w-4 h-4 text-[#C81E3A]" /> Weight trend
+                    <CalendarCheck className="w-4 h-4 text-[#C81E3A]" aria-hidden /> Completed plan
+                    sessions
                   </div>
-                  <select
-                    value={trendExercise ?? exerciseNames[0]}
-                    onChange={(e) => setTrendExercise(e.target.value)}
-                    aria-label="Exercise for weight trend"
-                    className="bg-[#0B0B0C] svj-border rounded-lg px-2 py-1.5 text-xs font-inter text-[#F4F2ED] focus:outline-none"
-                  >
-                    {exerciseNames.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {completedPlanSessions.map((session) => (
+                      <li
+                        key={session.id}
+                        className="flex items-center justify-between gap-3 text-xs font-inter"
+                      >
+                        <span className="flex items-center gap-2 text-[#F4F2ED]">
+                          <span>Session {session.slotIndex + 1}</span>
+                          <span className="font-mono text-[11px] text-[#8C8C90]">
+                            {new Date(`${session.scheduledDate}T00:00:00`).toLocaleDateString(
+                              "en-US",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-[#D4AF37]">
+                          Completed
+                        </span>
+                      </li>
                     ))}
-                  </select>
-                </div>
-                <div className="flex items-end gap-2 h-28">
-                  {trendData.map((d, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                      <span className="font-mono text-[10px] text-[#8C8C90]">{d.top}</span>
-                      <div
-                        className="w-full rounded-t-md svj-crimson-gradient"
-                        style={{ height: `${Math.max(6, (d.top / maxTop) * 80)}px` }}
-                      />
-                      <span className="font-mono text-[9px] text-[#8C8C90] truncate w-full text-center">
-                        {d.date}
-                      </span>
+                  </ul>
+                </section>
+              )}
+
+              {exerciseNames.length > 0 && (
+                <div className="rounded-2xl bg-[#17171A] svj-border p-3.5">
+                  <div className="flex items-center justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2 text-[#F4F2ED] font-inter font-semibold text-sm">
+                      <TrendingUp className="w-4 h-4 text-[#C81E3A]" /> Weight trend
                     </div>
-                  ))}
+                    <select
+                      value={trendExercise ?? exerciseNames[0]}
+                      onChange={(e) => setTrendExercise(e.target.value)}
+                      aria-label="Exercise for weight trend"
+                      className="bg-[#0B0B0C] svj-border rounded-lg px-2 py-1.5 text-xs font-inter text-[#F4F2ED] focus:outline-none"
+                    >
+                      {exerciseNames.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex h-24 items-end gap-2">
+                    {trendData.map((d, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                        <span className="font-mono text-[10px] text-[#8C8C90]">{d.top}</span>
+                        <div
+                          className="w-full rounded-t-md svj-crimson-gradient"
+                          style={{ height: `${Math.max(6, (d.top / maxTop) * 80)}px` }}
+                        />
+                        <span className="font-mono text-[9px] text-[#8C8C90] truncate w-full text-center">
+                          {d.date}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {workouts.length === 0 && (
-              <p className="text-center text-[#8C8C90] font-inter text-sm py-10">
+              <p className="py-6 text-center font-inter text-sm text-[#8C8C90]">
                 No workouts logged yet.
               </p>
             )}
 
-            {workouts.map((w) => (
-              <div key={w.id} className="rounded-2xl bg-[#17171A] svj-border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-anton text-lg tracking-wide text-[#F4F2ED]">{w.name}</h3>
-                    <p className="font-mono text-[11px] text-[#8C8C90]">
-                      {new Date(w.date).toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[#D4AF37] font-mono text-sm">+{w.xpEarned} XP</span>
-                    <button
-                      onClick={() => deleteWorkout(w.id)}
-                      className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
-                      aria-label="Delete workout"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-1.5">
-                  {w.exercises.map((ex) => (
-                    <div key={ex.id} className="flex justify-between gap-3 text-xs font-inter">
-                      <span className="text-[#F4F2ED]">{ex.name}</span>
-                      <span className="font-mono text-[#8C8C90]">
-                        {ex.sets.map((s) => `${s.reps}×${s.weight}`).join("  ")}
-                      </span>
+            <div className="grid items-start gap-3 lg:grid-cols-2">
+              {workouts.map((w) => (
+                <div key={w.id} className="rounded-2xl bg-[#17171A] svj-border p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-anton text-lg tracking-wide text-[#F4F2ED]">{w.name}</h3>
+                      <p className="font-mono text-[11px] text-[#8C8C90]">
+                        {new Date(w.date).toLocaleDateString("en-US", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[#D4AF37] font-mono text-sm">+{w.xpEarned} XP</span>
+                      <button
+                        onClick={() => deleteWorkout(w.id)}
+                        className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                        aria-label="Delete workout"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    {w.exercises.map((ex) => (
+                      <div key={ex.id} className="flex justify-between gap-3 text-xs font-inter">
+                        <span className="text-[#F4F2ED]">{ex.name}</span>
+                        <span className="font-mono text-[#8C8C90]">
+                          {ex.sets.map((s) => `${s.reps}×${s.weight}`).join("  ")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2.5 font-mono text-[11px] text-[#8C8C90]">
+                    Volume {Math.round(w.totalVolume).toLocaleString()} kg
+                  </p>
                 </div>
-                <p className="mt-3 font-mono text-[11px] text-[#8C8C90]">
-                  Volume {Math.round(w.totalVolume).toLocaleString()} kg
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

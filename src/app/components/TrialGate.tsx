@@ -20,7 +20,7 @@ import {
 import { LogIn, RotateCw, ShieldAlert } from "lucide-react";
 
 const Splash: React.FC<{ label: string }> = ({ label }) => (
-  <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
+  <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-[#0B0B0C] text-[#F4F2ED]">
     <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
     <p className="font-inter text-[11px] text-[#8C8C90]">{label}</p>
   </div>

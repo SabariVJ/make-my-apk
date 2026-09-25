@@ -433,7 +433,7 @@ export const NutritionView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-sm text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#8C8C90]">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading Fuel…
       </div>
     );
@@ -466,7 +466,7 @@ export const NutritionView: React.FC = () => {
   const reviewedTotals = scanReview ? totals(scanReview.items) : null;
 
   return (
-    <div className="space-y-4 pb-32">
+    <div className="space-y-3">
       <header className="flex items-center justify-between gap-3 pt-1">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-inter uppercase tracking-[0.2em] text-[#C81E3A]">
@@ -485,143 +485,149 @@ export const NutritionView: React.FC = () => {
         </button>
       </header>
 
-      <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">Today</p>
-            <p className="mt-1 font-anton text-4xl leading-none text-[#F4F2ED]">
-              {Math.round(daily.calories).toLocaleString()}
-              <span className="ml-1.5 text-sm font-inter text-[#8C8C90]">kcal</span>
-            </p>
-          </div>
-          <div className="text-right">
-            <button
-              type="button"
-              onClick={() => setEditingTargets((value) => !value)}
-              className="inline-flex items-center gap-1.5 text-xs text-[#B8B8C0]"
-            >
-              <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
-            </button>
-            <p className="mt-1 text-[10px] text-[#8C8C90]">
-              {Math.max(
-                0,
-                Math.round(dashboard.targets.calories - daily.calories),
-              ).toLocaleString()}{" "}
-              kcal left
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/60">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${caloriePct}%` }}
-            className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
-          />
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <MacroCard
-            label="Protein"
-            value={daily.proteinG}
-            target={dashboard.targets.proteinG}
-            tone="protein"
-          />
-          <MacroCard
-            label="Carbs"
-            value={daily.carbsG}
-            target={dashboard.targets.carbsG}
-            tone="carbs"
-          />
-          <MacroCard label="Fat" value={daily.fatG} target={dashboard.targets.fatG} tone="fat" />
-        </div>
-      </section>
-
-      {editingTargets && targetDraft && (
-        <section className="rounded-2xl border border-[#C81E3A]/20 bg-[#17171A] p-4">
-          <div className="flex items-center justify-between">
+      {/* Summary and meal actions share the first viewport: calories, macros,
+          Scan Meal and Manual Log are all reachable without scrolling. */}
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-3.5">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Daily targets</p>
-              <p className="text-[10px] text-[#8C8C90]">
-                Starts from your Body Profile estimate; you can override it here.
+              <p className="text-[10px] font-inter uppercase tracking-wider text-[#8C8C90]">
+                Today
               </p>
+              <p className="mt-1 font-anton text-3xl leading-none text-[#F4F2ED]">
+                {Math.round(daily.calories).toLocaleString()}
+                <span className="ml-1.5 text-sm font-inter text-[#8C8C90]">kcal</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setEditingTargets((value) => !value)}
+                className="inline-flex items-center gap-1.5 text-xs text-[#B8B8C0]"
+              >
+                <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
+              </button>
+              <p className="mt-1 text-[10px] text-[#8C8C90]">
+                {Math.max(
+                  0,
+                  Math.round(dashboard.targets.calories - daily.calories),
+                ).toLocaleString()}{" "}
+                kcal left
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/60">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${caloriePct}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
+            />
+          </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            <MacroCard
+              label="Protein"
+              value={daily.proteinG}
+              target={dashboard.targets.proteinG}
+              tone="protein"
+            />
+            <MacroCard
+              label="Carbs"
+              value={daily.carbsG}
+              target={dashboard.targets.carbsG}
+              tone="carbs"
+            />
+            <MacroCard label="Fat" value={daily.fatG} target={dashboard.targets.fatG} tone="fat" />
+          </div>
+        </section>
+
+        {editingTargets && targetDraft && (
+          <section className="rounded-2xl border border-[#C81E3A]/20 bg-[#17171A] p-3.5 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Daily targets</p>
+                <p className="text-[10px] text-[#8C8C90]">
+                  Starts from your Body Profile estimate; you can override it here.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTargets(false)}
+                aria-label="Close targets"
+              >
+                <X className="h-4 w-4 text-[#8C8C90]" />
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[
+                ["Calories", "calories"],
+                ["Protein g", "proteinG"],
+                ["Carbs g", "carbsG"],
+                ["Fat g", "fatG"],
+                ["Fiber g", "fiberG"],
+                ["Water ml", "waterMl"],
+              ].map(([label, key]) => (
+                <label key={key} className="text-[10px] uppercase text-[#8C8C90]">
+                  {label}
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={String(targetDraft[key as keyof NutritionTargets] ?? "")}
+                    onChange={(e) =>
+                      setTargetDraft((prev) =>
+                        prev ? { ...prev, [key]: Number(e.target.value) || 0 } : prev,
+                      )
+                    }
+                    className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
+                  />
+                </label>
+              ))}
             </div>
             <button
               type="button"
-              onClick={() => setEditingTargets(false)}
-              aria-label="Close targets"
+              onClick={() => void saveTargets()}
+              disabled={busy}
+              className="mt-3 flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] font-anton text-xs uppercase text-white disabled:opacity-50"
             >
-              <X className="h-4 w-4 text-[#8C8C90]" />
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}
+              Save targets
             </button>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {[
-              ["Calories", "calories"],
-              ["Protein g", "proteinG"],
-              ["Carbs g", "carbsG"],
-              ["Fat g", "fatG"],
-              ["Fiber g", "fiberG"],
-              ["Water ml", "waterMl"],
-            ].map(([label, key]) => (
-              <label key={key} className="text-[10px] uppercase text-[#8C8C90]">
-                {label}
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={String(targetDraft[key as keyof NutritionTargets] ?? "")}
-                  onChange={(e) =>
-                    setTargetDraft((prev) =>
-                      prev ? { ...prev, [key]: Number(e.target.value) || 0 } : prev,
-                    )
-                  }
-                  className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-sm text-white"
-                />
-              </label>
-            ))}
-          </div>
+          </section>
+        )}
+
+        <section className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            className="hidden"
+            onChange={(event) => void handlePhoto(event.target.files?.[0])}
+          />
           <button
             type="button"
-            onClick={() => void saveTargets()}
+            onClick={() => fileInputRef.current?.click()}
             disabled={busy}
-            className="mt-3 flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#C81E3A] font-anton text-xs uppercase text-white disabled:opacity-50"
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] px-3 font-anton text-xs uppercase text-white disabled:opacity-50"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}
-            Save targets
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            Scan meal
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowManual((value) => !value)}
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#17171A] px-3 font-anton text-xs uppercase text-[#F4F2ED]"
+          >
+            <Plus className="h-4 w-4" /> Manual
           </button>
         </section>
-      )}
 
-      <section className="grid grid-cols-2 gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          capture="environment"
-          className="hidden"
-          onChange={(event) => void handlePhoto(event.target.files?.[0])}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#C81E3A] px-3 font-anton text-xs uppercase text-white disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-          Scan meal
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowManual((value) => !value)}
-          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#17171A] px-3 font-anton text-xs uppercase text-[#F4F2ED]"
-        >
-          <Plus className="h-4 w-4" /> Manual
-        </button>
-      </section>
-
-      <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
-        <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
-        Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
-        before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
-        logging stays available.
-      </p>
+        <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
+          <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
+          Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
+          before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
+          logging stays available.
+        </p>
+      </div>
 
       {scanError && (
         <p
@@ -864,70 +870,74 @@ export const NutritionView: React.FC = () => {
             />
           </div>
         )}
-        {MEAL_TYPES.map((type) => (
-          <div
-            key={type}
-            className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
-          >
-            <div className="flex items-center justify-between">
-              <p className="font-inter text-sm font-semibold text-white">{MEAL_LABELS[type]}</p>
-              <span className="text-[10px] text-[#8C8C90]">
-                {grouped[type].reduce((sum, meal) => sum + meal.calories, 0)} kcal
-              </span>
-            </div>
-            {grouped[type].length === 0 ? (
-              <p className="mt-2 text-[11px] font-inter text-[#5C5C60]">
-                Nothing logged for this meal yet.
-              </p>
-            ) : (
-              <div className="mt-2 space-y-2">
-                {grouped[type].map((meal) => (
-                  <div
-                    key={meal.id}
-                    className="svj-radius-row border border-white/[0.04] bg-[#0B0B0C] p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#F4F2ED]">{meal.name}</p>
-                        <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-inter text-[#8C8C90]">
-                          <span className="font-mono font-semibold text-[#F4F2ED]">
-                            {meal.calories} kcal
-                          </span>
-                          <span>Protein {Math.round(meal.proteinG)} g</span>
-                          <span>Carbs {Math.round(meal.carbsG)} g</span>
-                          <span>Fat {Math.round(meal.fatG)} g</span>
-                          {meal.aiEstimated && (
-                            <span className="text-[#C9A227]">AI estimate reviewed</span>
-                          )}
-                        </p>
+        <div className="grid items-start gap-2.5 lg:grid-cols-2">
+          {MEAL_TYPES.map((type) => (
+            <div
+              key={type}
+              className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-inter text-sm font-semibold text-white">{MEAL_LABELS[type]}</p>
+                <span className="text-[10px] text-[#8C8C90]">
+                  {grouped[type].reduce((sum, meal) => sum + meal.calories, 0)} kcal
+                </span>
+              </div>
+              {grouped[type].length === 0 ? (
+                <p className="mt-2 text-[11px] font-inter text-[#5C5C60]">
+                  Nothing logged for this meal yet.
+                </p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {grouped[type].map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="svj-radius-row border border-white/[0.04] bg-[#0B0B0C] p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#F4F2ED]">
+                            {meal.name}
+                          </p>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-inter text-[#8C8C90]">
+                            <span className="font-mono font-semibold text-[#F4F2ED]">
+                              {meal.calories} kcal
+                            </span>
+                            <span>Protein {Math.round(meal.proteinG)} g</span>
+                            <span>Carbs {Math.round(meal.carbsG)} g</span>
+                            <span>Fat {Math.round(meal.fatG)} g</span>
+                            {meal.aiEstimated && (
+                              <span className="text-[#C9A227]">AI estimate reviewed</span>
+                            )}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void removeMeal(meal.id)}
+                          disabled={busy}
+                          className="p-1.5 text-[#8C8C90] hover:text-[#C81E3A]"
+                          aria-label={`Delete ${meal.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                       <button
                         type="button"
-                        onClick={() => void removeMeal(meal.id)}
+                        onClick={() => void repeatMeal(meal)}
                         disabled={busy}
-                        className="p-1.5 text-[#8C8C90] hover:text-[#C81E3A]"
-                        aria-label={`Delete ${meal.name}`}
+                        className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-[10px] uppercase tracking-wider text-[#8C8C90]"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <RotateCcw className="h-3.5 w-3.5" /> Log again
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void repeatMeal(meal)}
-                      disabled={busy}
-                      className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-[10px] uppercase tracking-wider text-[#8C8C90]"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" /> Log again
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4">
+      <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5">
         <SVJSectionHeader title="Last 7 days" icon={BarChart3} />
         {dashboard.history.every((day) => day.mealCount === 0) ? (
           <SVJEmptyState
@@ -937,7 +947,7 @@ export const NutritionView: React.FC = () => {
             description="This chart fills in from meals you actually save. Days with nothing logged stay visibly empty rather than reading as zero calories eaten."
           />
         ) : (
-          <div className="mt-4 flex h-28 items-end justify-between gap-2">
+          <div className="mt-3 flex h-28 items-end justify-between gap-2">
             {dashboard.history.map((day) => {
               const max = Math.max(
                 dashboard.targets.calories,
@@ -978,7 +988,7 @@ export const NutritionView: React.FC = () => {
       </section>
 
       {showBodyProfile && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-24 pt-14">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-10 pt-14">
           <BodyProfileView />
           <button
             type="button"

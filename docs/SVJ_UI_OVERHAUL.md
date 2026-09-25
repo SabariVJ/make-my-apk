@@ -210,6 +210,73 @@ the task editor's select menu was `bg-[#17171A]`; it now asserts the overlay
 plane (`bg-[#212126]`) the menu actually renders on. Same behaviour (a dark,
 non-native menu), corrected token.
 
+## Phase 13 — app-wide responsive density / viewport pass
+
+**Presentation only.** No backend logic, RPC, schema, XP, tracking, training,
+recovery, nutrition, notification or membership behaviour was touched, and no
+migration was needed.
+
+### One shell owns padding and nav clearance
+
+`App.tsx` now exports two constants used by both the authenticated and the
+restricted post-trial shell:
+
+```
+PAGE_CONTAINER         = mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4
+PAGE_CONTAINER_DESKTOP = lg:max-w-[86rem] lg:pr-28
+```
+
+The old shell pinned the whole app to `max-w-5xl` (1024px) _and_ reserved the
+7rem rail gutter, so desktop rendered a phone-width column inside a wide window.
+The content box is now ~1264px on desktop, the rail gutter is reserved exactly
+once (`lg:pr-28` appears in one place), and one bottom-navigation clearance
+respects `env(safe-area-inset-bottom)`. The twelve screens that each carried
+their own `pb-24` / `pb-28` / `pb-32` were updated to stop duplicating it, which
+is what made spacing uneven between pages.
+
+Full-viewport gates (config-missing, profile splash, `StatusScreen`,
+`AuthScreen`, `TrialExpiredScreen`, `TrialGate`) moved from `min-h-screen` to
+`min-h-[100dvh]` so a browser-chrome-inflated `100vh` can never push the centred
+card out of view.
+
+### Per-screen composition
+
+| Screen            | Change                                                                                                                                                                                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Train             | Hero card + "Iron Log" hero collapsed into one slim page-identity row plus a compact two-column dashboard header (promise left, real last-session + Start workout right); sub-tabs pinned under the sticky header, one control row tall.                                    |
+| Train → Log       | Session name and _Add exercise_ share a row; exercise cards flow into a desktop 2-column grid; working-set summary and **Save template / Log workout** merged into one compact action row.                                                                                  |
+| Train → Templates | Catalog is a responsive grid (`lg:2 / xl:3` columns) with condensed cards; the filter panel is two rows on desktop.                                                                                                                                                         |
+| Train → Today     | Next session and the weekly plan sit in a desktop two-column grid, so the plan is visible without scrolling past the CTA.                                                                                                                                                   |
+| Train → Progress  | Cards flow in a desktop 2-column grid instead of one card per screenful.                                                                                                                                                                                                    |
+| Train → History   | Completed plan sessions + weight trend share a row; the workout list is a 2-column grid.                                                                                                                                                                                    |
+| Activity          | Dropped the `max-w-2xl` phone column; the Today's-activity and Calories cards pair on desktop and the two period summaries sit side by side. START/STOP is unchanged and still sits directly beneath the tracking status.                                                   |
+| Challenges        | Mission hero compacted (smaller ring, smaller title, denser stat row); task list is a 2-column grid on desktop; program chips pair up. Character Matrix stays removed.                                                                                                      |
+| Recovery          | Compact header and tab row; the small insight widgets pair on desktop (`xl:grid-cols-2`) with DOM order unchanged, so the mobile stack reads exactly as before. The Devices panel now carries the `recovery-panel-devices` id its tab's `aria-controls` already pointed at. |
+| Fuel              | Calorie/macro summary and the _Scan meal_ / _Manual_ actions share the first desktop row; the four meal sections are a 2-column grid; the 7-day chart keeps its height.                                                                                                     |
+| Plus              | Earn Plus header compacted; the existing reward-progress grid is unchanged. `PaywallModal` and `FirstTimeOnboardingModal` are now `max-h-[92dvh]` with internal scrolling so Save/Confirm can never sit off-screen.                                                         |
+| Profile           | Header and cards compacted; the _Your progress_ and _Account actions_ cards pair on desktop. Character Matrix stays in Profile. No notification controls reintroduced.                                                                                                      |
+| Community         | Header, feed cards and friend/rivalry cards densified; the member directory keeps its grid.                                                                                                                                                                                 |
+| Leaderboard       | Rankings are a 2-column grid instead of one row per screenful.                                                                                                                                                                                                              |
+| 60-Day            | Header, in-progress stats and the completion card compacted; the 6/10-column day grid is unchanged. Empty/loading states no longer reserve 60vh.                                                                                                                            |
+| Transformation    | Header and stat cards compacted; the four summary stats become a 4-column row on desktop.                                                                                                                                                                                   |
+| Records / History | Activity history, records and segment cards densified; the workout-complete stat row goes 4-up on desktop.                                                                                                                                                                  |
+| Modals            | `max-h-[90vh]` → `max-h-[90dvh]` on the member, UPI, XP-comparison and rewards dialogs.                                                                                                                                                                                     |
+| Empty states      | `SVJEmptyState` non-compact padding reduced (`py-10` → `py-8`).                                                                                                                                                                                                             |
+
+### Regression cover
+
+`tests/responsive-density.test.mjs` (new, wired into `bun run test`) pins the
+shared container constants, the single rail reservation, the absence of
+per-screen `pb-20/24/28/32`, and — per screen — the desktop-column compositions,
+the Train sub-tabs and Log controls, the template grid, the Recovery tabs,
+Fuel actions, Profile's Character Matrix, the Community/Leaderboard grids, and
+that no screen reintroduces in-app notification permission controls.
+
+Three existing expectations moved with the code: `tests/navigation.test.ts`
+(shell constants and the tab-row anchor), `tests/challenge-completion-ui.test.ts`
+(task-row radius with the new padding), and `tests/status-screen.test.ts`
+(`100dvh`).
+
 ## Deliberately left alone
 
 - `HexagonRadarChart` keeps its own minimum-value floors (12/20/12/14/10/15) when

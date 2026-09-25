@@ -86,7 +86,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
           transition={{ duration: 0.25 }}
-          className="relative w-full max-w-xl bg-[#0B0B0C] border border-[#C81E3A]/40 rounded-2xl p-4 sm:p-8 text-[#F4F2ED] shadow-2xl overflow-hidden my-auto"
+          className="relative my-auto max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#C81E3A]/40 bg-[#0B0B0C] p-4 text-[#F4F2ED] shadow-2xl sm:p-5"
         >
           {/* Ambient Lighting Background */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />

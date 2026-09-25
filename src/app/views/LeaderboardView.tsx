@@ -67,7 +67,7 @@ export const LeaderboardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Motivation Header */}
       <div className="relative rounded-2xl bg-gradient-to-r from-[#17171A] via-[#1B1B20] to-[#0B0B0C] border border-[#C81E3A]/40 p-4 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />
@@ -116,7 +116,7 @@ export const LeaderboardView: React.FC = () => {
 
       {/* Empty state */}
       {sortedLeaderboard.length === 0 && (
-        <div className="text-center py-16 space-y-3">
+        <div className="space-y-3 py-8 text-center">
           <Trophy className="w-10 h-10 text-[#8C8C90] mx-auto" />
           <p className="text-sm font-inter text-[#8C8C90]">
             No leaderboard entries yet. Complete challenges to become the first.
@@ -252,7 +252,7 @@ export const LeaderboardView: React.FC = () => {
           variants={svjStaggerContainer}
           initial="hidden"
           animate="show"
-          className="space-y-2"
+          className="grid gap-2 lg:grid-cols-2"
         >
           {rest.map((entry, idx) => {
             const rankNum = idx + 4;

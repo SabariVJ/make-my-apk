@@ -241,14 +241,14 @@ export const CommunityView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Header & Sub-tab Selector */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h1 className="font-anton text-2xl tracking-wide text-white sm:text-3xl">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="min-w-0">
+          <h1 className="font-anton text-xl tracking-wide text-white sm:text-2xl">
             Guild community
           </h1>
-          <p className="mt-1 font-inter text-xs text-[#8C8C90]">
+          <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">
             Connect, compete, and celebrate self-mastery with top 1% improvers.
           </p>
         </div>
@@ -294,7 +294,7 @@ export const CommunityView: React.FC = () => {
         <FriendsPanel friendsApi={friendsApi} />
       ) : activeSubTab === "feed" ? (
         /* ACTIVITY FEED TAB */
-        <div className="space-y-4">
+        <div className="space-y-3">
           {feed.length === 0 && (
             <SVJEmptyState
               icon={Inbox}
@@ -308,7 +308,7 @@ export const CommunityView: React.FC = () => {
             return (
               <div
                 key={`${item.id}-${index}`}
-                className="svj-radius-card svj-elev-1 space-y-4 border border-white/[0.06] bg-[#17171A] p-4"
+                className="svj-radius-card svj-elev-1 space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5"
               >
                 {/* Author Info Header */}
                 <div className="flex items-start justify-between gap-3">
@@ -426,7 +426,7 @@ export const CommunityView: React.FC = () => {
         </div>
       ) : (
         /* MEMBER DIRECTORY TAB */
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-3.5 top-3 w-4 h-4 text-[#8C8C90]" />

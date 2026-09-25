@@ -334,7 +334,7 @@ export const TransformationReportView: React.FC = () => {
   const needsAttention = [...statChanges].sort((a, b) => a.delta - b.delta)[0];
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4">
       {/* Header — the app's victory-lap moment, so it gets the premium accent
           and more weight than a standard data screen. */}
       <div className="svj-radius-card svj-elev-3 relative overflow-hidden border border-[#C9A227]/25 bg-gradient-to-br from-[#201A0C] via-[#141416] to-[#141416] p-5">
@@ -347,7 +347,7 @@ export const TransformationReportView: React.FC = () => {
             <Trophy aria-hidden className="h-3.5 w-3.5" />
             Transformation report
           </p>
-          <h1 className="mt-1.5 font-anton text-3xl leading-none tracking-wide text-white sm:text-4xl">
+          <h1 className="mt-1 font-anton text-2xl leading-none tracking-wide text-white sm:text-3xl">
             Day 1 → Day {daysSinceJoin}
           </h1>
           <p className="mt-2 text-xs font-inter text-[#A9A9AE]">
@@ -357,9 +357,9 @@ export const TransformationReportView: React.FC = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
             <Flame className="h-3.5 w-3.5 text-[#C81E3A]" />
             Total challenges
           </div>
@@ -367,15 +367,15 @@ export const TransformationReportView: React.FC = () => {
             {user.totalChallengesCompleted}
           </div>
         </div>
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+        <div className="rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
             <Target className="h-3.5 w-3.5 text-emerald-400" />
             Longest streak
           </div>
           <div className="font-mono text-xl font-bold text-white">{user.bestStreak} days</div>
         </div>
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+        <div className="rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
             <Zap className="h-3.5 w-3.5 text-[#C81E3A]" />
             Lifetime XP
           </div>
@@ -383,8 +383,8 @@ export const TransformationReportView: React.FC = () => {
             {user.totalXP.toLocaleString()}
           </div>
         </div>
-        <div className="p-4 rounded-2xl bg-[#17171A] border border-white/10">
-          <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] mb-1">
+        <div className="rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
             <Sparkles className="h-3.5 w-3.5 text-[#C9A227]" />
             Stats improved
           </div>
@@ -396,7 +396,7 @@ export const TransformationReportView: React.FC = () => {
 
       {/* Stat Changes Bar — each bar carries its attribute hue (the same colour
           as the matching Character Matrix point) rather than one flat fill. */}
-      <div className="svj-radius-card svj-elev-1 border border-white/10 bg-[#17171A] p-4 space-y-3">
+      <div className="space-y-3 rounded-2xl border border-white/10 bg-[#17171A] p-3.5">
         <SVJSectionHeader title="Attribute changes" icon={BarChart3} className="mb-1" />
 
         {statChanges.map((change, i) => {

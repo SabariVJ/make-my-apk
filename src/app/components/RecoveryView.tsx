@@ -73,18 +73,25 @@ const OverviewWithInsights: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPla
       {/* Focus, the Rest-Day alert and the streak all derive from the SAME
           readiness the panel renders — the panel publishes its computed values
           upward. Until the first publish completes, these stay quiet instead
-          of guessing. */}
-      {shared?.today && (
-        <>
-          <RestDayAlertCard readiness={shared.today} onReviewPlan={onOpenPlan} />
-          <TodaysFocusCard
-            readiness={shared.today}
-            trainingGoal={trainingProfile.goal}
-            goals={goals}
-          />
-        </>
-      )}
-      {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
+          of guessing.
+
+          Density: the small insight cards pair up on desktop width so several
+          recovery signals are visible together; the readiness panel and the
+          muscle map stay full width underneath. DOM order is unchanged, so the
+          mobile stack reads exactly as before. */}
+      <div className="grid items-start gap-x-3 xl:grid-cols-2">
+        {shared?.today && (
+          <>
+            <RestDayAlertCard readiness={shared.today} onReviewPlan={onOpenPlan} />
+            <TodaysFocusCard
+              readiness={shared.today}
+              trainingGoal={trainingProfile.goal}
+              goals={goals}
+            />
+          </>
+        )}
+        {shared?.historyPoints && <RecoveryStreakCard history={shared.historyPoints} />}
+      </div>
       <TrainRecovery />
       <MuscleRecoveryCard rows={muscleRows} availability={muscleAvailability} />
     </>
@@ -117,14 +124,16 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
   );
 
   return (
-    <div className="pb-28 space-y-4" data-testid="recovery-view">
-      <div className="svj-radius-card svj-lit-top svj-elev-2 border border-white/[0.06] bg-[#17171A] p-4">
+    <div className="space-y-3" data-testid="recovery-view">
+      <div className="svj-radius-card svj-lit-top svj-elev-2 border border-white/[0.06] bg-[#17171A] p-3.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/15">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/15">
             <HeartPulse aria-hidden className="h-4 w-4 text-[#E62846]" />
           </div>
-          <div>
-            <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Recovery</h1>
+          <div className="min-w-0">
+            <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">
+              Recovery
+            </h1>
             <p className="font-inter text-[11px] text-[#8C8C90]">
               Readiness, sleep and training load, derived from your own data.
             </p>
@@ -156,7 +165,7 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               tabIndex={active ? 0 : -1}
               data-testid={`recovery-section-tab-${item.id}`}
               onClick={() => setSection(item.id)}
-              className={`flex shrink-0 cursor-pointer items-center justify-center gap-2 svj-radius-row border px-3 py-2.5 font-inter text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] ${
+              className={`flex min-h-[44px] shrink-0 cursor-pointer items-center justify-center gap-1.5 svj-radius-row border px-2.5 py-2 font-inter text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] lg:min-h-0 ${
                 active
                   ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
                   : "border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"
@@ -194,7 +203,12 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
       {section === "progress" && <RecoveryWeeklyDigest />}
 
       {section === "devices" && (
-        <div className="space-y-3">
+        <div
+          role="tabpanel"
+          id="recovery-panel-devices"
+          aria-labelledby="recovery-tab-devices"
+          className="space-y-3"
+        >
           <UpcomingSection
             section="devices"
             title="Devices"

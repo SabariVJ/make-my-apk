@@ -18,7 +18,10 @@ const online = readFileSync("src/app/lib/useOnlineStatus.ts", "utf8");
 
 describe("StatusScreen", () => {
   it("is the single branded screen with the SVJ design tokens", () => {
-    assert.match(status, /min-h-screen bg-\[#0B0B0C\]/);
+    // A real full-viewport gate using the dynamic viewport unit, so the centred
+    // card is never measured against a browser-chrome-inflated 100vh.
+    assert.match(status, /min-h-\[100dvh\]/);
+    assert.match(status, /bg-\[#0B0B0C\]/);
     // A real elevation step rather than one flat card shell shared with
     // ordinary content, and a lit top edge so near-black surfaces read as lit.
     assert.match(status, /svj-radius-card svj-lit-top svj-elev-3/);

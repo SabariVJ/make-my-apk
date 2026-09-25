@@ -356,7 +356,7 @@ export const ChallengesView: React.FC<{
   };
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-4">
       {!personalizationQuery.isLoading &&
         !personalizationQuery.data?.personalization?.assessmentCompleted && (
           <button
@@ -395,7 +395,7 @@ export const ChallengesView: React.FC<{
           progress bar and the step counter used to each be their own
           equally-weighted block here; the daily XP goal now lives in the shared
           ScoreRing, and the secondary figures sit beside it. */}
-      <section className="svj-radius-card svj-elev-3 svj-lit-top relative overflow-hidden border border-[#C81E3A]/20 bg-gradient-to-br from-[#1E1114] via-[#141416] to-[#141416] p-5">
+      <section className="svj-radius-card svj-elev-3 svj-lit-top relative overflow-hidden border border-[#C81E3A]/20 bg-gradient-to-br from-[#1E1114] via-[#141416] to-[#141416] p-3.5 sm:p-4">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-[#C81E3A] opacity-[0.14] blur-3xl"
@@ -406,7 +406,7 @@ export const ChallengesView: React.FC<{
               <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E62846]">
                 Today&apos;s mission
               </p>
-              <h1 className="mt-1.5 font-anton text-3xl leading-none tracking-wide text-white sm:text-4xl">
+              <h1 className="mt-1 font-anton text-2xl leading-none tracking-wide text-white sm:text-3xl">
                 Forge your day
               </h1>
             </div>
@@ -416,16 +416,16 @@ export const ChallengesView: React.FC<{
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
+          <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
             <SVJScoreRing
               value={totalTodayXp}
               max={500}
               label="Daily XP"
               tone="crimson"
-              size={152}
+              size={132}
               sublabel={`${totalTodayXp} of 500 XP earned today`}
             />
-            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:grid-cols-1">
+            <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="svj-stat p-3">
                 <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
                   <Zap aria-hidden className="h-3.5 w-3.5 text-[#C81E3A]" />
@@ -461,7 +461,7 @@ export const ChallengesView: React.FC<{
           Each chip opens the exact destination it always did. */}
       <section className="space-y-3">
         <SVJSectionHeader title="Your programs" eyebrow="Long-running" />
-        <div className="space-y-2">
+        <div className="grid items-start gap-2 lg:grid-cols-2">
           {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} compact />}
           {onOpenSixtyDay && !sixtyDayQuery.isError && (
             <SixtyDayProgramCard
@@ -547,7 +547,7 @@ export const ChallengesView: React.FC<{
         variants={svjStaggerContainer}
         initial="hidden"
         animate="show"
-        className="space-y-3"
+        className="grid gap-2.5 lg:grid-cols-2"
       >
         <AnimatePresence mode="popLayout">
           {filteredChallenges.map((challenge) => (
@@ -565,7 +565,7 @@ export const ChallengesView: React.FC<{
                 if (challenge.completed) return;
                 handleToggle(challenge.id);
               }}
-              className={`group p-4 rounded-2xl bg-[#17171A] border transition-colors cursor-pointer flex items-center justify-between gap-4 ${
+              className={`group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border bg-[#17171A] p-3.5 transition-colors ${
                 completingId === challenge.id
                   ? "border-[#C81E3A]/40"
                   : challenge.completed

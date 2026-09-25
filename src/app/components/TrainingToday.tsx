@@ -90,7 +90,7 @@ const MuscleHistoryPanel: React.FC<{ rows: MuscleHistoryRow[] }> = ({ rows }) =>
   if (visible.length === 0) {
     return (
       <div
-        className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
+        className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
         data-testid="muscle-history"
       >
         <SVJSectionHeader title="Muscle history" icon={Dumbbell} />
@@ -106,7 +106,7 @@ const MuscleHistoryPanel: React.FC<{ rows: MuscleHistoryRow[] }> = ({ rows }) =>
 
   return (
     <div
-      className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
+      className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5"
       data-testid="muscle-history"
     >
       <SVJSectionHeader
@@ -117,7 +117,7 @@ const MuscleHistoryPanel: React.FC<{ rows: MuscleHistoryRow[] }> = ({ rows }) =>
       <p className="mt-1.5 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
         Direct and supporting work from the sets you actually completed.
       </p>
-      <ul className="mt-3 space-y-2">
+      <ul className="mt-2.5 space-y-1.5">
         {visible.map((row) => (
           <li key={row.muscle} className="flex items-center justify-between gap-3">
             <span className="text-xs font-inter text-[#F4F2ED]">
@@ -178,7 +178,7 @@ const SetupFlow: React.FC<{
 
   return (
     <div
-      className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] p-4"
+      className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] p-3.5 sm:p-4"
       data-testid="training-setup"
     >
       <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
@@ -191,7 +191,7 @@ const SetupFlow: React.FC<{
         SVJ builds a reviewed weekly plan from these answers. BMI is never used to choose it.
       </p>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-3 space-y-3.5">
         <div>
           <p className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90]">
             Experience
@@ -391,7 +391,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-xs font-inter text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-8 text-xs font-inter text-[#8C8C90]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading your training plan…
       </div>
     );
@@ -441,7 +441,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
 
   if (!profileReady) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {refreshPending}
         <SetupFlow profile={profile} saving={savingProfile} onSave={onSaveProfile} />
       </div>
@@ -488,250 +488,257 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
     : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {refreshPending}
 
-      {/* Today's or next session */}
-      {todaySession ? (
-        <section
-          data-testid="today-session"
-          className="rounded-2xl border border-[#C81E3A]/20 bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] p-4"
-        >
-          <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
-            <Dumbbell className="h-3.5 w-3.5" /> Next session
-          </p>
-          <h2 className="mt-0.5 font-anton text-2xl leading-none text-white">
-            {todaySession.label}
-          </h2>
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            {muscles.map((muscle) => (
-              <span
-                key={muscle}
-                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-inter text-[10px] text-[#B8B8C0]"
-              >
-                {muscle}
-              </span>
-            ))}
-            {template && (
-              <span className="ml-0.5 inline-flex items-center gap-1 font-inter text-[11px] text-[#8C8C90]">
-                <Clock aria-hidden className="h-3 w-3" /> about {template.estimatedMinutes} min
-              </span>
-            )}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-4">
-            <button
-              type="button"
-              onClick={() => setShowWhy((v) => !v)}
-              className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] hover:text-white"
-            >
-              <Info className="h-3.5 w-3.5" /> Why this session?
-            </button>
-            <motion.button
-              type="button"
-              whileTap={svjWhileTap}
-              onClick={() => onStartSession(todaySession)}
-              className="ml-auto inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white"
-            >
-              Start workout <ArrowRight className="h-4 w-4" />
-            </motion.button>
-          </div>
-
-          {showWhy && (
-            <ul className="mt-3 space-y-1 border-t border-white/[0.06] pt-3">
-              {reasons.map((reason) => (
-                <li key={reason} className="text-[11px] font-inter text-[#8C8C90]">
-                  • {reason}
-                </li>
+      {/* Today's/next session and the weekly plan share the first desktop
+          viewport instead of stacking behind a tall intro block. */}
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        {/* Today's or next session */}
+        {todaySession ? (
+          <section
+            data-testid="today-session"
+            className="rounded-2xl border border-[#C81E3A]/20 bg-gradient-to-br from-[#1e1114] via-[#17171A] to-[#17171A] p-3.5"
+          >
+            <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
+              <Dumbbell className="h-3.5 w-3.5" /> Next session
+            </p>
+            <h2 className="mt-0.5 font-anton text-2xl leading-none text-white">
+              {todaySession.label}
+            </h2>
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              {muscles.map((muscle) => (
+                <span
+                  key={muscle}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-inter text-[10px] text-[#B8B8C0]"
+                >
+                  {muscle}
+                </span>
               ))}
               {template && (
-                <li className="text-[11px] font-inter text-[#8C8C90]">
-                  • Warm-up: {template.warmup}
-                </li>
+                <span className="ml-0.5 inline-flex items-center gap-1 font-inter text-[11px] text-[#8C8C90]">
+                  <Clock aria-hidden className="h-3 w-3" /> about {template.estimatedMinutes} min
+                </span>
               )}
-            </ul>
-          )}
-        </section>
-      ) : (
-        <section className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-          <p className="font-inter text-sm font-semibold text-[#F4F2ED]">No session scheduled</p>
-          <p className="mt-1 text-xs font-inter text-[#8C8C90]">
-            Every planned session for this block is complete. Rebuild the plan when you are ready.
-          </p>
-        </section>
-      )}
+            </div>
 
-      {/* Plan summary */}
-      <section className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
-              {splitName ?? "Your plan"}
-            </p>
-            <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">{explanation ?? ""}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setEditingSetup(true)}
-            disabled={creatingPlan}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white disabled:opacity-40"
-          >
-            {creatingPlan ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3" />
-            )}
-            Rebuild
-          </button>
-        </div>
-
-        {sessionError && (
-          <p role="alert" className="mt-3 text-[11px] font-inter text-[#E8D9A0]">
-            {sessionError}
-          </p>
-        )}
-        <motion.ul
-          variants={svjStaggerContainer}
-          initial="hidden"
-          animate="show"
-          className="mt-3 space-y-2"
-        >
-          {sessions.map((session) => {
-            const serverId = serverSessionIdForSlot(session.slotIndex);
-            const editable = Boolean(serverId) && session.status !== "completed";
-            return (
-              <motion.li
-                key={`${session.slotIndex}-${session.scheduledDate}`}
-                variants={svjStaggerItem}
-                className="rounded-xl border border-white/5 bg-black/25 px-3 py-2"
+            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-3">
+              <button
+                type="button"
+                onClick={() => setShowWhy((v) => !v)}
+                className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90] hover:text-white"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
-                    <Clock className="h-3.5 w-3.5 text-[#8C8C90]" aria-hidden />
-                    {session.label}
-                  </span>
-                  <span className="flex items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
-                    <span>
-                      {new Date(`${session.scheduledDate}T12:00:00`).toLocaleDateString(undefined, {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                      })}
+                <Info className="h-3.5 w-3.5" /> Why this session?
+              </button>
+              <motion.button
+                type="button"
+                whileTap={svjWhileTap}
+                onClick={() => onStartSession(todaySession)}
+                className="ml-auto inline-flex items-center gap-2 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase tracking-wider text-white"
+              >
+                Start workout <ArrowRight className="h-4 w-4" />
+              </motion.button>
+            </div>
+
+            {showWhy && (
+              <ul className="mt-3 space-y-1 border-t border-white/[0.06] pt-3">
+                {reasons.map((reason) => (
+                  <li key={reason} className="text-[11px] font-inter text-[#8C8C90]">
+                    • {reason}
+                  </li>
+                ))}
+                {template && (
+                  <li className="text-[11px] font-inter text-[#8C8C90]">
+                    • Warm-up: {template.warmup}
+                  </li>
+                )}
+              </ul>
+            )}
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-white/5 bg-[#17171A] p-3.5">
+            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">No session scheduled</p>
+            <p className="mt-1 text-xs font-inter text-[#8C8C90]">
+              Every planned session for this block is complete. Rebuild the plan when you are ready.
+            </p>
+          </section>
+        )}
+
+        {/* Plan summary */}
+        <section className="rounded-2xl border border-white/5 bg-[#17171A] p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
+                {splitName ?? "Your plan"}
+              </p>
+              <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">{explanation ?? ""}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingSetup(true)}
+              disabled={creatingPlan}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 px-2.5 py-1.5 text-[10px] font-inter uppercase tracking-wider text-[#8C8C90] hover:text-white disabled:opacity-40"
+            >
+              {creatingPlan ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              Rebuild
+            </button>
+          </div>
+
+          {sessionError && (
+            <p role="alert" className="mt-3 text-[11px] font-inter text-[#E8D9A0]">
+              {sessionError}
+            </p>
+          )}
+          <motion.ul
+            variants={svjStaggerContainer}
+            initial="hidden"
+            animate="show"
+            className="mt-2.5 space-y-1.5"
+          >
+            {sessions.map((session) => {
+              const serverId = serverSessionIdForSlot(session.slotIndex);
+              const editable = Boolean(serverId) && session.status !== "completed";
+              return (
+                <motion.li
+                  key={`${session.slotIndex}-${session.scheduledDate}`}
+                  variants={svjStaggerItem}
+                  className="rounded-xl border border-white/5 bg-black/25 px-2.5 py-1.5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
+                      <Clock className="h-3.5 w-3.5 text-[#8C8C90]" aria-hidden />
+                      {session.label}
                     </span>
-                    {session.status === "completed" && (
-                      <span className="rounded-full bg-[#C81E3A]/15 px-2 py-0.5 text-[#F4F2ED]">
-                        Done
+                    <span className="flex items-center gap-2 text-[10px] font-mono text-[#8C8C90]">
+                      <span>
+                        {new Date(`${session.scheduledDate}T12:00:00`).toLocaleDateString(
+                          undefined,
+                          {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          },
+                        )}
                       </span>
-                    )}
-                    {session.status === "moved" && (
-                      <span className="rounded-full bg-[#D4AF37]/15 px-2 py-0.5 text-[#D4AF37]">
-                        Moved
-                      </span>
-                    )}
-                    {session.status === "skipped" && (
-                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[#8C8C90]">
-                        Rest
-                      </span>
-                    )}
-                    {session.status === "scheduled" &&
-                      session.slotIndex === todaySession?.slotIndex && (
-                        <span className="rounded-full bg-[#C81E3A]/20 px-2 py-0.5 text-[#F4F2ED]">
-                          Next
+                      {session.status === "completed" && (
+                        <span className="rounded-full bg-[#C81E3A]/15 px-2 py-0.5 text-[#F4F2ED]">
+                          Done
                         </span>
                       )}
-                  </span>
-                </div>
+                      {session.status === "moved" && (
+                        <span className="rounded-full bg-[#D4AF37]/15 px-2 py-0.5 text-[#D4AF37]">
+                          Moved
+                        </span>
+                      )}
+                      {session.status === "skipped" && (
+                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[#8C8C90]">
+                          Rest
+                        </span>
+                      )}
+                      {session.status === "scheduled" &&
+                        session.slotIndex === todaySession?.slotIndex && (
+                          <span className="rounded-full bg-[#C81E3A]/20 px-2 py-0.5 text-[#F4F2ED]">
+                            Next
+                          </span>
+                        )}
+                    </span>
+                  </div>
 
-                {editable && (
-                  <div className="mt-2.5 flex items-center gap-2">
-                    {/* Move keeps its day but shifts it; marking a rest day is the
+                  {editable && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {/* Move keeps its day but shifts it; marking a rest day is the
                         quieter, reversible fallback — so it reads as secondary. */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMovingSlot(movingSlot === session.slotIndex ? null : session.slotIndex)
-                      }
-                      aria-expanded={movingSlot === session.slotIndex}
-                      aria-label={`Move ${session.label}`}
-                      className={`rounded-xl border px-2.5 py-1.5 font-inter text-[11px] font-medium transition-colors ${
-                        movingSlot === session.slotIndex
-                          ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
-                          : "border-white/12 bg-white/[0.03] text-[#B8B8C0] hover:text-white"
-                      }`}
-                    >
-                      Move to another day
-                    </button>
-                    <button
-                      type="button"
-                      disabled={sessionBusy}
-                      onClick={async () => {
-                        if (!serverId) return;
-                        setSessionBusy(true);
-                        setSessionError(null);
-                        const result = await onSkipSession(serverId);
-                        setSessionBusy(false);
-                        if (!result.ok)
-                          setSessionError(result.error ?? "Couldn't skip that session.");
-                      }}
-                      aria-label={`Mark ${session.label} as a rest day`}
-                      className="rounded-xl px-2 py-1.5 font-inter text-[11px] text-[#8C8C90] transition-colors hover:text-white disabled:opacity-40"
-                    >
-                      {session.status === "skipped" ? "Rest day kept" : "Mark as rest day"}
-                    </button>
-                  </div>
-                )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setMovingSlot(movingSlot === session.slotIndex ? null : session.slotIndex)
+                        }
+                        aria-expanded={movingSlot === session.slotIndex}
+                        aria-label={`Move ${session.label}`}
+                        className={`rounded-xl border px-2.5 py-1.5 font-inter text-[11px] font-medium transition-colors ${
+                          movingSlot === session.slotIndex
+                            ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
+                            : "border-white/12 bg-white/[0.03] text-[#B8B8C0] hover:text-white"
+                        }`}
+                      >
+                        Move to another day
+                      </button>
+                      <button
+                        type="button"
+                        disabled={sessionBusy}
+                        onClick={async () => {
+                          if (!serverId) return;
+                          setSessionBusy(true);
+                          setSessionError(null);
+                          const result = await onSkipSession(serverId);
+                          setSessionBusy(false);
+                          if (!result.ok)
+                            setSessionError(result.error ?? "Couldn't skip that session.");
+                        }}
+                        aria-label={`Mark ${session.label} as a rest day`}
+                        className="rounded-xl px-2 py-1.5 font-inter text-[11px] text-[#8C8C90] transition-colors hover:text-white disabled:opacity-40"
+                      >
+                        {session.status === "skipped" ? "Rest day kept" : "Mark as rest day"}
+                      </button>
+                    </div>
+                  )}
 
-                {editable && movingSlot === session.slotIndex && (
-                  <div className="mt-2">
-                    {/*
-                     * Dark in-app calendar, never a native HTML date field.
-                     * Android WebView hands a native date input to the OS
-                     * DatePicker dialog, which is themed by Android rather than
-                     * by the web UI and shows up as a giant white sheet with a
-                     * dimmed app behind it — unthemeable from CSS. Cancel leaves
-                     * the schedule untouched; Set moves the session server-side.
-                     */}
-                    <SVJDatePicker
-                      label="New day"
-                      testId={`move-session-date-${session.slotIndex}`}
-                      value={session.scheduledDate}
-                      disabled={sessionBusy}
-                      onChange={async (value) => {
-                        if (!serverId) return;
-                        // Re-picking the day it already sits on is a no-op: close
-                        // the Move panel without a pointless server write.
-                        if (value === session.scheduledDate) {
-                          setMovingSlot(null);
-                          return;
-                        }
-                        setSessionBusy(true);
-                        setSessionError(null);
-                        const result = await onMoveSession(serverId, value);
-                        setSessionBusy(false);
-                        if (!result.ok) {
-                          setSessionError(result.error ?? "Couldn't move that session.");
-                        } else {
-                          setMovingSlot(null);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </motion.li>
-            );
-          })}
-        </motion.ul>
-        <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
-          Missing a session never stacks two hard days together — move it to a free day, or mark it
-          as a rest day.
-        </p>
-        {splitName && (
+                  {editable && movingSlot === session.slotIndex && (
+                    <div className="mt-2">
+                      {/*
+                       * Dark in-app calendar, never a native HTML date field.
+                       * Android WebView hands a native date input to the OS
+                       * DatePicker dialog, which is themed by Android rather than
+                       * by the web UI and shows up as a giant white sheet with a
+                       * dimmed app behind it — unthemeable from CSS. Cancel leaves
+                       * the schedule untouched; Set moves the session server-side.
+                       */}
+                      <SVJDatePicker
+                        label="New day"
+                        testId={`move-session-date-${session.slotIndex}`}
+                        value={session.scheduledDate}
+                        disabled={sessionBusy}
+                        onChange={async (value) => {
+                          if (!serverId) return;
+                          // Re-picking the day it already sits on is a no-op: close
+                          // the Move panel without a pointless server write.
+                          if (value === session.scheduledDate) {
+                            setMovingSlot(null);
+                            return;
+                          }
+                          setSessionBusy(true);
+                          setSessionError(null);
+                          const result = await onMoveSession(serverId, value);
+                          setSessionBusy(false);
+                          if (!result.ok) {
+                            setSessionError(result.error ?? "Couldn't move that session.");
+                          } else {
+                            setMovingSlot(null);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </motion.li>
+              );
+            })}
+          </motion.ul>
           <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
-            {SESSION_FAMILY_LABELS[todaySession?.family ?? "full_body"]} style block. Your plan
-            stays stable for the whole block; targets adapt between sessions.
+            Missing a session never stacks two hard days together — move it to a free day, or mark
+            it as a rest day.
           </p>
-        )}
-      </section>
+          {splitName && (
+            <p className="mt-2 text-[10px] font-inter text-[#8C8C90]">
+              {SESSION_FAMILY_LABELS[todaySession?.family ?? "full_body"]} style block. Your plan
+              stays stable for the whole block; targets adapt between sessions.
+            </p>
+          )}
+        </section>
+      </div>
 
       <MuscleHistoryPanel rows={muscleRows} />
     </div>

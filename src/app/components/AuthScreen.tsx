@@ -145,7 +145,7 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter flex items-center justify-center p-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#0B0B0C] p-4 font-inter text-[#F4F2ED]">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

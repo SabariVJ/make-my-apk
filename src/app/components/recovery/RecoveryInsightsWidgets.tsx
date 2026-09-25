@@ -19,7 +19,7 @@ import type { MuscleHistoryRow } from "../../lib/trainingClient";
 import type { MuscleDataAvailability } from "../../hooks/useRecoveryInsights";
 import { MuscleBodyMap } from "./MuscleBodyMap";
 
-const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-4 mb-3";
+const CARD = "rounded-2xl border border-white/5 bg-[#0B0B0C] p-3.5 mb-2.5";
 const CARD_TITLE = "text-[11px] font-inter font-semibold text-[#8C8C90]";
 
 const STATE_COLORS: Record<string, string> = {

@@ -102,9 +102,7 @@ function LiveSharePage() {
   if (view === "loading") {
     return (
       <Shell>
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#8C8C90]">
-          Connecting to the live session…
-        </p>
+        <p className="font-inter text-[11px] text-[#8C8C90]">Connecting to the live session…</p>
       </Shell>
     );
   }
@@ -112,14 +110,12 @@ function LiveSharePage() {
   if (view === "ended") {
     return (
       <Shell>
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#131316] p-8 text-center">
+        <div className="svj-radius-card svj-elev-2 svj-lit-top w-full max-w-md border border-white/[0.08] bg-[#17171A] p-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/5">
             <Radio className="h-6 w-6 text-[#8C8C90]" />
           </div>
-          <h1 className="font-anton text-2xl uppercase tracking-wider text-[#F4F2ED]">
-            Sharing has ended
-          </h1>
-          <p className="mt-3 font-mono text-xs leading-relaxed text-[#8C8C90]">
+          <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Sharing has ended</h1>
+          <p className="mt-3 font-inter text-xs leading-relaxed text-[#8C8C90]">
             This live share is finished, expired, or was stopped by the athlete. Nothing is being
             broadcast from this link anymore.
           </p>
@@ -134,25 +130,23 @@ function LiveSharePage() {
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C81E3A] opacity-75" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#C81E3A]/30 motion-safe:animate-pulse" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#C81E3A]" />
             </span>
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-[#C81E3A]">
+            <span className="font-inter text-[11px] font-bold tracking-wide text-[#E62846]">
               Live
             </span>
           </div>
-          <span className="font-anton text-lg uppercase tracking-wider text-[#F4F2ED]">SVJ</span>
+          <span className="font-anton text-lg tracking-wide text-[#F4F2ED]">SVJ</span>
         </header>
 
-        <section className="rounded-2xl border border-white/10 bg-[#131316] p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#8C8C90]">Now</p>
-          <h1 className="mt-1 font-anton text-3xl uppercase tracking-wide text-[#F4F2ED]">
+        <section className="svj-radius-card svj-lit-top border border-white/[0.08] bg-[#17171A] p-5">
+          <p className="font-inter text-[11px] font-semibold text-[#8C8C90]">Now</p>
+          <h1 className="mt-1 font-anton text-3xl tracking-wide text-[#F4F2ED]">
             {share?.displayName?.trim() || label}
           </h1>
           {share?.displayName?.trim() ? (
-            <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-[#8C8C90]">
-              {label}
-            </p>
+            <p className="mt-1 font-inter text-[11px] text-[#8C8C90]">{label}</p>
           ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -171,7 +165,7 @@ function LiveSharePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#131316]">
+        <section className="svj-radius-card overflow-hidden border border-white/[0.08] bg-[#17171A]">
           <ActivityMap
             points={points}
             height={220}
@@ -181,9 +175,9 @@ function LiveSharePage() {
           />
         </section>
 
-        <section className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[#131316] p-4">
+        <section className="flex items-start gap-3 svj-radius-card border border-white/[0.08] bg-[#17171A] p-4">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#8C8C90]" />
-          <p className="font-mono text-[10px] leading-relaxed text-[#8C8C90]">
+          <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
             Started {formatStarted(share?.startedAt)}. This link shows only a live position and
             expires {formatStarted(share?.expiresAt)}. It carries no account, sign-in or personal
             data, and the athlete can stop sharing at any moment.
@@ -204,12 +198,14 @@ function Shell({ children }: { children: ReactNode }) {
 
 function Stat({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-3">
+    <div className="svj-radius-row border border-white/[0.06] bg-[#08080A] p-3">
       <div className="flex items-center gap-1.5 text-[#8C8C90]">
         {icon}
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">{label}</span>
+        <span className="font-inter text-[11px] font-medium">{label}</span>
       </div>
-      <p className="mt-1.5 font-anton text-xl tracking-wide text-[#F4F2ED]">{children}</p>
+      <p className="mt-1.5 font-mono text-lg font-semibold tracking-tight text-[#F4F2ED]">
+        {children}
+      </p>
     </div>
   );
 }

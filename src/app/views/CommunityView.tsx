@@ -325,7 +325,9 @@ export const CommunityView: React.FC = () => {
                       if (found) setSelectedMemberModal(found);
                     }}
                     meta={
-                      <span className="font-inter text-[11px] text-[#8C8C90]">{item.timestamp}</span>
+                      <span className="font-inter text-[11px] text-[#8C8C90]">
+                        {item.timestamp}
+                      </span>
                     }
                   />
 

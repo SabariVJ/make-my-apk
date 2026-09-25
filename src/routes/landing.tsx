@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const APK_URL = "https://github.com/SabariVJ/make-my-apk/releases/latest/download/svj.apk";
+
 export const Route = createFileRoute("/landing")({
   head: () => ({
     meta: [
@@ -14,57 +16,68 @@ export const Route = createFileRoute("/landing")({
   component: LandingPage,
 });
 
+const ATTRIBUTES = [
+  { name: "Physical", color: "#10B981", desc: "Track workouts, reps and physical progress" },
+  { name: "Ambition", color: "#A855F7", desc: "Set goals and crush them daily" },
+  { name: "Intellect", color: "#F59E0B", desc: "Grow knowledge through focused learning" },
+  { name: "Mental", color: "#EAB308", desc: "Build resilience and mental clarity" },
+  { name: "Social", color: "#3B82F6", desc: "Connect with the SVJ community" },
+  { name: "Discipline", color: "#F43F5E", desc: "Consistency is your superpower" },
+];
+
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#0A0E1A] text-[#F2F4F8]">
+    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED]">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between bg-[#0A0E1A]/80 backdrop-blur-md border-b border-white/5">
-        <div className="font-sans text-xl font-bold tracking-tight">SVJ</div>
+      <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/[0.06] bg-[#0B0B0C]/85 px-6 py-4 backdrop-blur-md">
+        <div className="font-anton text-xl tracking-wide">SVJ</div>
         <a
-          href="https://github.com/SabariVJ/make-my-apk/releases/latest/download/svj.apk"
+          href={APK_URL}
           download="SVJ.apk"
-          className="px-5 py-2 bg-[#FB7185] text-[#0A0E1A] font-medium text-sm rounded-full hover:bg-[#FB7185]/90 transition-colors"
+          className="svj-radius-row bg-[#C81E3A] px-5 py-2 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E]"
         >
           Download APK
         </a>
       </nav>
 
       {/* Hero */}
-      <section className="min-h-screen flex flex-col items-center justify-center relative px-6 pt-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#12172A] to-[#0A0E1A] opacity-50" />
-        <div className="relative z-10 text-center max-w-2xl mx-auto">
-          <h1 className="font-sans text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-6">
-            Build a Life
-            <br />
-            <span className="text-[#8892A8]">That Shows</span>
-          </h1>
-          <p className="text-[#8892A8] text-lg md:text-xl mb-10 max-w-md mx-auto">
-            Daily discipline challenges, real stat tracking, 60-day transformation. Your character
-            hexagon awaits.
+      <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-20">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(200,30,58,0.18),transparent_70%)]" />
+        <div className="relative z-10 mx-auto max-w-2xl text-center">
+          <p className="font-inter text-[11px] font-semibold tracking-[0.18em] text-[#C9A227]">
+            THE PERFORMANCE OS
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <h1 className="mt-4 font-anton text-5xl leading-[0.95] tracking-tight sm:text-7xl">
+            Build a life
+            <br />
+            <span className="text-[#8C8C90]">that shows</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-md font-inter text-lg text-[#A6A6AD]">
+            Daily discipline challenges, real stat tracking and a 60-day transformation. Your
+            character hexagon awaits.
+          </p>
+          <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <a
-              href="https://github.com/SabariVJ/make-my-apk/releases/latest/download/svj.apk"
+              href={APK_URL}
               download="SVJ.apk"
-              className="px-8 py-4 bg-[#FB7185] text-[#0A0E1A] font-semibold rounded-full hover:bg-[#FB7185]/90 transition-all hover:scale-105"
+              className="svj-radius-row bg-[#C81E3A] px-8 py-4 font-inter font-semibold text-white transition-colors hover:bg-[#A0182E]"
             >
               Download APK
             </a>
             <a
               href="#how-it-works"
-              className="px-8 py-4 border border-white/10 text-[#F2F4F8] rounded-full hover:bg-white/5 transition-colors"
+              className="svj-radius-row border border-white/10 px-8 py-4 font-inter text-[#F4F2ED] transition-colors hover:bg-white/5"
             >
-              See How It Works
+              See how it works
             </a>
           </div>
         </div>
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
-          <svg
-            className="w-6 h-6 text-[#8892A8]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+        <a
+          href="#how-it-works"
+          aria-label="Scroll to how it works"
+          className="absolute bottom-10 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/10 text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -72,67 +85,57 @@ function LandingPage() {
               d="M19 14l-7 7m0 0l-7-7m7 7V3"
             />
           </svg>
-        </div>
+        </a>
       </section>
 
-      {/* Stats Section */}
+      {/* Character Matrix */}
       <section id="how-it-works" className="py-20">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold text-center mb-4">
-            Your Character Hexagon
-          </h2>
-          <p className="text-[#8892A8] text-center mb-12 max-w-xl mx-auto">
-            Six stats, one evolving character. Each completed action updates your hexagon in real
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <h2 className="font-anton text-4xl tracking-tight sm:text-5xl">Your character matrix</h2>
+          <p className="mx-auto mt-4 max-w-xl font-inter text-[#A6A6AD]">
+            Six stats, one evolving character. Every completed action updates your matrix in real
             time.
           </p>
         </div>
-        {[
-          {
-            name: "Physical",
-            color: "#34D399",
-            desc: "Track workouts, reps, and physical progress",
-          },
-          { name: "Ambition", color: "#A78BFA", desc: "Set goals and crush them daily" },
-          { name: "Intellect", color: "#FBBF24", desc: "Grow knowledge through focused learning" },
-          { name: "Mental", color: "#FDE047", desc: "Build resilience and mental clarity" },
-          { name: "Social", color: "#60A5FA", desc: "Connect with the SVJ community" },
-          { name: "Discipline", color: "#FB7185", desc: "Consistency is your superpower" },
-        ].map((stat) => (
-          <div key={stat.name} className="py-16 border-b border-white/5">
-            <div className="max-w-4xl mx-auto px-6 flex items-center gap-8">
+        <div className="mx-auto mt-12 grid max-w-4xl gap-3 px-6 sm:grid-cols-2">
+          {ATTRIBUTES.map((stat) => (
+            <div
+              key={stat.name}
+              className="svj-radius-card svj-lit-top flex items-center gap-4 border border-white/[0.06] bg-[#17171A] p-5"
+            >
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: `${stat.color}20`, border: `1px solid ${stat.color}` }}
+                className="flex h-12 w-12 shrink-0 items-center justify-center svj-radius-row"
+                style={{ backgroundColor: `${stat.color}1F`, border: `1px solid ${stat.color}66` }}
               >
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stat.color }} />
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: stat.color }} />
               </div>
               <div>
-                <h3 className="font-sans text-2xl font-bold mb-2" style={{ color: stat.color }}>
+                <h3 className="font-inter text-base font-semibold" style={{ color: stat.color }}>
                   {stat.name}
                 </h3>
-                <p className="text-[#8892A8]">{stat.desc}</p>
+                <p className="font-inter text-sm text-[#8C8C90]">{stat.desc}</p>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
       {/* 60-Day Challenge */}
-      <section className="py-24 bg-[#12172A]/50">
-        <div className="max-w-4xl mx-auto px-6 text-left">
-          <span className="text-[#A78BFA] font-mono text-sm tracking-wider uppercase">
-            The Program
-          </span>
-          <h2 className="font-sans text-4xl md:text-5xl font-bold mt-4 mb-6">60-Day Challenge</h2>
-          <p className="text-[#8892A8] text-lg mb-8 max-w-2xl">
-            A structured pathway with server-confirmed progress, milestone tracking, and an
+      <section className="border-y border-white/[0.06] bg-[#101014] py-24">
+        <div className="mx-auto max-w-4xl px-6">
+          <p className="font-inter text-[11px] font-semibold tracking-[0.18em] text-[#C9A227]">
+            The program
+          </p>
+          <h2 className="mt-3 font-anton text-4xl tracking-tight sm:text-5xl">60-day challenge</h2>
+          <p className="mt-6 max-w-2xl font-inter text-lg text-[#A6A6AD]">
+            A structured pathway with server-confirmed progress, milestone tracking and an
             end-of-journey reward code that unlocks SVJ Plus for two months. Every day counts.
           </p>
-          <div className="flex flex-wrap gap-3">
-            {["60 Days", "Server Confirmed", "Reward Code", "Plus Unlocked"].map((tag) => (
+          <div className="mt-8 flex flex-wrap gap-3">
+            {["60 days", "Server confirmed", "Reward code", "Plus unlocked"].map((tag) => (
               <span
                 key={tag}
-                className="px-4 py-2 bg-[#0A0E1A] border border-white/10 rounded-full text-sm text-[#8892A8]"
+                className="rounded-full border border-white/10 bg-[#0B0B0C] px-4 py-2 font-inter text-sm text-[#A6A6AD]"
               >
                 {tag}
               </span>
@@ -142,19 +145,19 @@ function LandingPage() {
       </section>
 
       {/* Download */}
-      <section className="py-24 bg-[#12172A]/50">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="font-sans text-4xl md:text-5xl font-bold mb-6">Start Your Journey</h2>
-          <p className="text-[#8892A8] text-lg mb-10">
+      <section className="py-24">
+        <div className="mx-auto max-w-2xl px-6 text-center">
+          <h2 className="font-anton text-4xl tracking-tight sm:text-5xl">Start your journey</h2>
+          <p className="mt-6 font-inter text-lg text-[#A6A6AD]">
             Download the APK and begin your 60-day transformation. Sideloading required — Android
             only.
           </p>
           <a
-            href="https://github.com/SabariVJ/make-my-apk/releases/latest/download/svj.apk"
+            href={APK_URL}
             download="SVJ.apk"
-            className="inline-flex items-center gap-3 px-10 py-5 bg-[#FB7185] text-[#0A0E1A] font-bold text-lg rounded-full hover:bg-[#FB7185]/90 transition-all hover:scale-105 mb-6"
+            className="mt-10 inline-flex items-center gap-3 svj-radius-row bg-[#C81E3A] px-10 py-5 font-inter text-lg font-bold text-white transition-colors hover:bg-[#A0182E]"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -164,29 +167,32 @@ function LandingPage() {
             </svg>
             Download APK
           </a>
-          <p className="text-[#8892A8] text-sm">
+          <p className="mt-6 font-inter text-sm text-[#8C8C90]">
             Android 8.0+ required. Enable "Install unknown apps" in Settings → Security.
           </p>
-          <p className="text-[#8892A8] text-sm mt-4">Play Store: Coming Soon</p>
+          <p className="mt-4 font-inter text-sm text-[#8C8C90]">Play Store: coming soon</p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="font-sans text-xl font-bold">SVJ</div>
-          <div className="flex gap-6 text-sm text-[#8892A8]">
-            <a href="#" className="hover:text-[#F2F4F8] transition-colors">
+      <footer className="border-t border-white/[0.06] py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
+          <div className="font-anton text-xl tracking-wide">SVJ</div>
+          <div className="flex gap-6 font-inter text-sm text-[#8C8C90]">
+            <a href="/privacy" className="transition-colors hover:text-[#F4F2ED]">
               Privacy
             </a>
-            <a href="#" className="hover:text-[#F2F4F8] transition-colors">
+            <a href="/terms" className="transition-colors hover:text-[#F4F2ED]">
               Terms
             </a>
-            <a href="mailto:contact@savaje.com" className="hover:text-[#F2F4F8] transition-colors">
+            <a
+              href="mailto:sabarivj777@gmail.com"
+              className="transition-colors hover:text-[#F4F2ED]"
+            >
               Contact
             </a>
           </div>
-          <p className="text-[#8892A8] text-sm">© 2026 SVJ. All rights reserved.</p>
+          <p className="font-inter text-sm text-[#8C8C90]">© 2026 SVJ. All rights reserved.</p>
         </div>
       </footer>
     </div>

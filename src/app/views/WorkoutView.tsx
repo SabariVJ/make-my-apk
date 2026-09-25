@@ -262,7 +262,9 @@ export const WorkoutView: React.FC = () => {
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="font-anton text-2xl sm:text-3xl uppercase text-[#F4F2ED]">Iron Log</h1>
+              <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED] sm:text-3xl">
+                Iron Log
+              </h1>
               <p className="font-inter text-sm text-[#8C8C90] mt-1">
                 Track every lift. Every set feeds your{" "}
                 <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
@@ -555,7 +557,7 @@ export const WorkoutView: React.FC = () => {
               }))}
             />
 
-            <p className="pt-2 font-anton text-sm uppercase tracking-wide text-white">
+            <p className="pt-2 font-inter text-sm font-semibold text-[#F4F2ED]">
               Your device templates
             </p>
             {workoutTemplates.length === 0 && (
@@ -707,7 +709,7 @@ export const WorkoutView: React.FC = () => {
               <div key={w.id} className="rounded-2xl bg-[#17171A] svj-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-anton uppercase text-lg text-[#F4F2ED]">{w.name}</h3>
+                    <h3 className="font-anton text-lg tracking-wide text-[#F4F2ED]">{w.name}</h3>
                     <p className="font-mono text-[11px] text-[#8C8C90]">
                       {new Date(w.date).toLocaleDateString("en-US", {
                         day: "2-digit",

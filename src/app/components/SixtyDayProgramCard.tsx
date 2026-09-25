@@ -92,7 +92,7 @@ export function SixtyDayProgramCard({
         </p>
 
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-anton text-2xl uppercase leading-none text-white">
+          <h2 className="font-anton text-2xl leading-none tracking-wide text-white">
             60 Day
             <span className="block text-[#C81E3A]">Transformation</span>
           </h2>

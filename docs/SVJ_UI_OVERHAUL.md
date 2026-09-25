@@ -135,46 +135,92 @@ card shell for everything, middle-dot meta strings, `rounded-full` used as a
 container). Those are now on the system:
 
 - **Blocking / gate screens** — `StatusScreen` (404, crash, offline, session
-expiry) and `TrialExpiredScreen` lost their ALL-CAPS Anton titles and flat
-`#121214` card, and now use the shared card radius, lit top edge and elevation
-step. `tests/status-screen.test.ts` was updated to assert the new tokens instead
-of the old ones.
+  expiry) and `TrialExpiredScreen` lost their ALL-CAPS Anton titles and flat
+  `#121214` card, and now use the shared card radius, lit top edge and elevation
+  step. `tests/status-screen.test.ts` was updated to assert the new tokens instead
+  of the old ones.
 - **Profile** — the bio/name/tier block was one middle-dotted meta string
-(`@handle • Tier Tier`); it is now identity on its own line with a real tier
-badge. Section headers use `SVJSectionHeader`, stat tiles are sunken data wells
-instead of four identical cards, and the Character Matrix no longer draws an
-**invented** `93/91/87/84/93/95` polygon for accounts with no stats — it renders
-`user.stats` only. The 🔥 emoji was removed from the streak tile.
+  (`@handle • Tier Tier`); it is now identity on its own line with a real tier
+  badge. Section headers use `SVJSectionHeader`, stat tiles are sunken data wells
+  instead of four identical cards, and the Character Matrix no longer draws an
+  **invented** `93/91/87/84/93/95` polygon for accounts with no stats — it renders
+  `user.stats` only. The 🔥 emoji was removed from the streak tile.
 - **Modals** — `XPComparisonModal`, `EditProfileModal`, `UPIPaymentModal`,
-`AuthScreen`, `RewardsView`'s reward detail. Two real defects fell out of this:
-the "you" and "opponent" competitor boxes used `rounded-full` on a `p-4` block
-(rendering as ellipses), and the same pattern appeared on the segment stat tiles
-in `RecordsView`. Both are now the shared row radius. The rivalry progress bars
-use `SVJProgress`.
+  `AuthScreen`, `RewardsView`'s reward detail. Two real defects fell out of this:
+  the "you" and "opponent" competitor boxes used `rounded-full` on a `p-4` block
+  (rendering as ellipses), and the same pattern appeared on the segment stat tiles
+  in `RecordsView`. Both are now the shared row radius. The rivalry progress bars
+  use `SVJProgress`.
 - **Activity** — `ActivitySummaryCard` (shared progress primitive, sentence-case
-units), `ActivityHistory` (shared header + `SVJEmptyState` for "no activities",
-split meta strings, source badge) and `RecordsView` (personal-best cards, record
-values, heatmap filters, segment cards).
+  units), `ActivityHistory` (shared header + `SVJEmptyState` for "no activities",
+  split meta strings, source badge) and `RecordsView` (personal-best cards, record
+  values, heatmap filters, segment cards).
 - **Train / plan / body** — `TrainGoals`, `SvjPlanView`, `BodyProfileView`,
-`SixtyDayChallengeView`, `AssessmentView`, `RouteLibrary` and the two recovery
-cards (`RestDayAlertCard`, `PlanRecoveryCard`).
+  `SixtyDayChallengeView`, `AssessmentView`, `RouteLibrary` and the two recovery
+  cards (`RestDayAlertCard`, `PlanRecoveryCard`).
 
 The only test expectations changed were source-scanning assertions that pinned
-the *old* copy (`REQUEST SENT`, `Active Outperform Rivalry`, `% OF STEP GOAL`,
+the _old_ copy (`REQUEST SENT`, `Active Outperform Rivalry`, `% OF STEP GOAL`,
 `KCAL`, the old StatusScreen tokens, `No activity yet` / `No members to show
 yet`). Each was rewritten to assert the same behaviour with the new copy, and the
 Activity-summary test now also asserts the shared progress primitive is used
 rather than a bespoke bar.
 
-## Not yet done
+## Phase 12 — closing the long tail
 
-- The long tail of modal/editor components that were not in this pass:
-  `MemberProfileModal`, `PaywallModal`, `RedeemPlusCodeForm`, `TaskEditorDialog`,
-  `TemplateBrowser`, `LegacyTemplateImportCard`, `FirstTimeOnboardingModal`,
-  `GoogleAuthModal`, `AvatarCropEditor`, `StrengthDetails`,
-  `StructuredStrengthCard`, `NativeBannerAd`.
-- The public legal routes (`src/routes/privacy.tsx`, `terms.tsx`,
-  `delete-account.tsx`) still use the old Anton ALL-CAPS page titles.
-- `HexagonRadarChart` still applies its own minimum-value floors (12/20/12/14/
-  10/15) when a stat is missing; those floors are a separate, deliberate
-  decision about the polygon's minimum drawable shape and were left alone.
+A final sweep brought the last surfaces that were still on the template onto the
+system, and reconciled this changelog with the code (the previous "Not yet done"
+list had drifted: several components it named had already been converted, and it
+still described the legal routes as ALL-CAPS when they were not).
+
+**Converted in this pass**
+
+- **Editors / modals** — `TaskEditorDialog` (sentence-case title, Inter field
+  labels, menus now on the overlay plane `#212126` so a menu reads as floating),
+  `GoogleAuthModal` (obsidian card, real elevation, de-caps founder/status copy),
+  `AvatarCropEditor` (sentence-case header, dropped "LIVE SQUARE OUTPUT").
+- **Train surfaces** — `TemplateBrowser` (section headers use
+  `SVJSectionHeader`, card titles are Inter semibold, filter chips are chips not
+  containers, empty catalog uses `SVJEmptyState`), `LegacyTemplateImportCard`
+  (premium-amber eyebrow on the token, de-dotted meta), `StrengthDetails`
+  (muscle chips, set rows and the whole exercise-history panel now use
+  `SVJEmptyState` for its error/empty states instead of bespoke banners),
+  `StructuredStrengthCard` (hero keeps Anton but loses the ALL-CAPS).
+- **Recovery** — `RecoveryView`'s destination header and the honest
+  "Coming next" placeholders are sentence-case on the shared card/row radii; the
+  tab strip uses the row radius. Copy the tests pin is unchanged.
+- **Shell** — `App.tsx` (config-missing screen, profile splash, the restricted
+  post-trial shell's modal + banner + Redeem Code heading), `TrialGate` splash.
+- **Public routes** — `src/routes/landing.tsx` was still an off-palette navy/rose
+  Lovable marketing page with a perpetual `animate-bounce`; it is now on the SVJ
+  obsidian/crimson/premium palette with the six Character Matrix hues, and it
+  links to the real `/privacy` and `/terms` pages. `src/routes/live.$token.tsx`
+  (public live-share) moved to the same surfaces, and `src/routes/delete-account.tsx`
+  went sentence-case/Inter. `src/routes/__root.tsx`'s 404 link dropped its mono
+  micro-label.
+- **Titles** — the remaining screen/section titles that still forced ALL-CAPS
+  (`Activity`, `Iron Log`, `Leaderboard`, `Nutrition`, `Earn Plus`, the 60-Day
+  card, `TrainingToday`'s headings, `WorkoutView` history names, `Recovery`) are
+  sentence case to match the convention `ChallengesView`, `CommunityView` and
+  `RecoveryView` already used. Anton small-caps stays on primary CTA buttons and
+  on real badges/tiers, which is the system's intent.
+
+One test expectation moved with the code: `tests/activity-ui.test.mjs` asserted
+the task editor's select menu was `bg-[#17171A]`; it now asserts the overlay
+plane (`bg-[#212126]`) the menu actually renders on. Same behaviour (a dark,
+non-native menu), corrected token.
+
+## Deliberately left alone
+
+- `HexagonRadarChart` keeps its own minimum-value floors (12/20/12/14/10/15) when
+  a stat is missing — a separate, deliberate decision about the polygon's
+  minimum drawable shape.
+- `SVJDatePicker` / `SVJTimePicker` keep their small mono weekday/column labels:
+  they are the Android native-picker replacement, their layout is pinned by
+  `tests/train-picker.test.mjs` and the mono caps is a data/telemetry treatment,
+  not section chrome.
+- The two completion banners (`WORKOUT COMPLETE`, `STRENGTH COMPLETE`) keep their
+  literal caps wording — they are celebratory moments, not section headers, and
+  behavioural tests assert the exact strings.
+- `NativeBannerAd` renders `null` (side-effect-only AdMob component), so it has no
+  visual chrome to restyle.

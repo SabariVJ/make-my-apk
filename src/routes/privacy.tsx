@@ -177,7 +177,9 @@ function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">7. Contact</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
+            7. Contact
+          </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For privacy-related questions or requests, contact us at{" "}

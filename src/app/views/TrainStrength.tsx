@@ -498,8 +498,8 @@ export const TrainStrength: React.FC<{
 
       {phase === "idle" && (
         <div className="py-6 text-center">
-          <p className="font-anton text-lg uppercase tracking-wider text-white">
-            {prescription?.title ?? "STRUCTURED STRENGTH"}
+          <p className="font-anton text-lg tracking-wide text-white">
+            {prescription?.title ?? "Structured strength"}
           </p>
           <p className="mx-auto mt-1 max-w-xs text-[11px] font-mono text-[#8C8C90]">
             Log exercises, sets, reps and weight. One workout is saved as a single canonical
@@ -561,9 +561,7 @@ export const TrainStrength: React.FC<{
         <>
           {drafts.length === 0 && (
             <div className="rounded-2xl border border-white/5 bg-black/40 p-4 text-center">
-              <p className="font-anton text-sm uppercase tracking-wider text-white">
-                NO EXERCISES YET
-              </p>
+              <p className="font-inter text-sm font-semibold text-[#F4F2ED]">No exercises yet</p>
               <p className="mt-1 text-[11px] font-mono text-[#8C8C90]">
                 Add your first exercise to start logging sets.
               </p>

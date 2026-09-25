@@ -74,7 +74,7 @@ export const GoogleAuthModal: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-md rounded-2xl bg-[#121214] border border-white/10 p-4 shadow-2xl overflow-hidden"
+          className="svj-radius-card svj-elev-3 svj-lit-top relative w-full max-w-md overflow-hidden border border-white/10 bg-[#17171A] p-4"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -83,10 +83,10 @@ export const GoogleAuthModal: React.FC = () => {
                 {googleIcon}
               </div>
               <div>
-                <h2 className="font-anton text-base text-white uppercase tracking-wide">
+                <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
                   Sign in with Google
                 </h2>
-                <p className="text-[10px] font-mono text-[#8C8C90]">accounts.google.com</p>
+                <p className="font-inter text-[11px] text-[#8C8C90]">accounts.google.com</p>
               </div>
             </div>
             <button
@@ -112,33 +112,35 @@ export const GoogleAuthModal: React.FC = () => {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm truncate">{user.name}</span>
+                        <span className="font-inter text-sm font-semibold text-[#F4F2ED] truncate">
+                          {user.name}
+                        </span>
                         {user.isFounder && (
-                          <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                          <span className="flex items-center gap-1 rounded-full border border-[#C9A227]/30 bg-[#C9A227]/15 px-2 py-0.5 font-inter text-[10px] font-semibold text-[#C9A227]">
                             <Crown className="w-3 h-3" /> Founder
                           </span>
                         )}
                       </div>
-                      <div className="text-xs font-mono text-[#8C8C90] truncate flex items-center gap-1 mt-0.5">
-                        <Mail className="w-3 h-3 text-[#C81E3A]" />
+                      <div className="mt-0.5 flex items-center gap-1 font-inter text-xs text-[#8C8C90] truncate">
+                        <Mail className="w-3 h-3 shrink-0 text-[#E62846]" />
                         {user.email}
                       </div>
                     </div>
                   </div>
 
                   {user.isFounder ? (
-                    <div className="p-3 rounded-2xl bg-gold/10 border border-gold/20 text-gold text-xs font-mono flex items-center gap-2">
-                      <Crown className="w-4 h-4 shrink-0 text-gold animate-bounce" />
+                    <div className="flex items-center gap-2 svj-radius-row border border-[#C9A227]/20 bg-[#C9A227]/10 p-3 font-inter text-xs text-[#C9A227]">
+                      <Crown className="w-4 h-4 shrink-0" />
                       <span>
-                        FOUNDER PRIVILEGES ACTIVE: SVJ Plus, VIP Status, & Unlimited Perks unlocked
-                        automatically.
+                        Founder privileges are active — SVJ Plus, VIP status and unlimited perks are
+                        unlocked automatically.
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <div className="flex items-center gap-2 svj-radius-row border border-emerald-500/20 bg-emerald-500/10 p-3 font-inter text-xs text-emerald-400">
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
                       <span>
-                        Cloud Sync Active. All your XP, challenges, and progress are tied to{" "}
+                        Cloud sync is active. Your XP, challenges and progress are tied to{" "}
                         {user.email}.
                       </span>
                     </div>
@@ -148,14 +150,14 @@ export const GoogleAuthModal: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={logoutGmail}
-                    className="flex-1 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-2 svj-radius-row border border-white/10 bg-white/5 py-2.5 font-inter text-xs font-semibold text-[#F4F2ED] transition-colors hover:bg-white/10"
                   >
-                    <LogOut className="w-4 h-4 text-crimson" />
-                    Sign Out / Switch Account
+                    <LogOut className="w-4 h-4 text-[#E62846]" />
+                    Sign out / switch account
                   </button>
                   <button
                     onClick={() => setIsGoogleAuthModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-2xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-2 svj-radius-row bg-[#C81E3A] py-2.5 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E]"
                   >
                     Done
                   </button>
@@ -168,36 +170,36 @@ export const GoogleAuthModal: React.FC = () => {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="font-anton text-lg text-white uppercase tracking-wide">
-                    Authentication Successful
+                  <h3 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+                    Authentication successful
                   </h3>
-                  <p className="text-xs text-emerald-400 font-mono mt-1">
-                    Google Account verified & cloud profile synced
+                  <p className="mt-1 font-inter text-xs text-emerald-400">
+                    Google account verified and cloud profile synced.
                   </p>
                 </div>
                 <button
                   onClick={() => setIsGoogleAuthModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+                  className="w-full svj-radius-row cursor-pointer bg-[#C81E3A] py-2.5 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E]"
                 >
-                  Return to Application
+                  Return to the app
                 </button>
               </div>
             ) : (
               /* ── Connect prompt ── */
               <div className="space-y-4">
-                <p className="text-xs text-[#8C8C90] leading-relaxed">
+                <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
                   Tap below to open a secure Google sign-in page. After you approve access, you'll
                   be brought straight back to SVJ with your account linked.
                 </p>
 
                 {error && (
-                  <div className="bg-crimson/10 border border-crimson/20 rounded-2xl px-3 py-2 space-y-2">
-                    <p className="text-[11px] text-crimson font-mono">{error}</p>
+                  <div className="space-y-2 svj-radius-row border border-[#C81E3A]/25 bg-[#C81E3A]/10 px-3 py-2">
+                    <p className="font-inter text-[11px] text-[#E62846]">{error}</p>
                     <button
                       type="button"
                       onClick={handleConnect}
                       disabled={busy}
-                      className="text-[11px] font-mono text-white underline underline-offset-2 hover:text-crimson cursor-pointer disabled:opacity-60"
+                      className="cursor-pointer font-inter text-[11px] font-semibold text-[#F4F2ED] underline underline-offset-2 hover:text-[#E62846] disabled:opacity-60"
                     >
                       Try again
                     </button>
@@ -207,7 +209,7 @@ export const GoogleAuthModal: React.FC = () => {
                 <button
                   onClick={handleConnect}
                   disabled={busy}
-                  className="w-full py-3 rounded-xl bg-white text-black hover:bg-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 svj-radius-row bg-white py-3 font-inter text-xs font-semibold text-black transition-colors hover:bg-slate-200 disabled:opacity-60"
                 >
                   {busy ? (
                     <>
@@ -222,7 +224,7 @@ export const GoogleAuthModal: React.FC = () => {
                   )}
                 </button>
 
-                <p className="text-[10px] text-center font-mono text-[#8C8C90]">
+                <p className="text-center font-inter text-[11px] text-[#8C8C90]">
                   You'll be redirected to Google's secure login page.
                 </p>
               </div>

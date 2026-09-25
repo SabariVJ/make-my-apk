@@ -3,12 +3,7 @@ import { appStorage } from "./storage";
 
 export type NotificationChannel = "progress" | "coach" | "membership";
 export type NotificationTarget =
-  | "challenges"
-  | "activity"
-  | "workouts"
-  | "nutrition"
-  | "profile"
-  | "earn";
+  "challenges" | "activity" | "workouts" | "nutrition" | "profile" | "earn";
 
 const NOTIFICATION_TARGETS: readonly NotificationTarget[] = [
   "challenges",

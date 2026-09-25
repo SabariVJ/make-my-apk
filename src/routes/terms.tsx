@@ -33,7 +33,9 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">2. Account</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
+            2. Account
+          </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               You must be at least 18 years old to create an account. SVJ does not offer accounts to
@@ -118,7 +120,9 @@ function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">8. Contact</h2>
+          <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
+            8. Contact
+          </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
               For questions about these terms, contact us at{" "}

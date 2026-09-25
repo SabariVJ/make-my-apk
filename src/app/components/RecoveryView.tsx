@@ -42,20 +42,22 @@ const UpcomingSection: React.FC<{
     id={`recovery-panel-${section}`}
     aria-labelledby={`recovery-tab-${section}`}
     data-testid={`recovery-section-${section}`}
-    className="rounded-2xl border border-white/5 bg-[#0B0B0C] p-5"
+    className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-5"
   >
-    <p className="text-[10px] font-mono uppercase tracking-widest text-[#8C8C90]">Coming next</p>
-    <h2 className="mt-1 font-anton text-lg uppercase tracking-wide text-[#F4F2ED]">{title}</h2>
-    <p className="mt-2 text-xs font-inter leading-relaxed text-[#8C8C90]">{summary}</p>
+    <p className="font-inter text-[11px] font-semibold text-[#8C8C90]">Coming next</p>
+    <h2 className="mt-1 font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
+      {title}
+    </h2>
+    <p className="mt-2 font-inter text-xs leading-relaxed text-[#8C8C90]">{summary}</p>
     <ul className="mt-3 space-y-1.5">
       {points.map((point) => (
-        <li key={point} className="flex gap-2 text-[11px] font-mono text-[#8C8C90]">
+        <li key={point} className="flex gap-2 font-inter text-[11px] text-[#A6A6AD]">
           <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C81E3A]" />
           <span>{point}</span>
         </li>
       ))}
     </ul>
-    <p className="mt-4 rounded-xl border border-white/5 bg-black/40 px-3 py-2 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
+    <p className="mt-4 svj-radius-row border border-white/[0.06] bg-[#08080A] px-3 py-2 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
       Nothing is shown here yet because SVJ only displays recovery data it can actually derive from
       your recorded activity, check-ins and completed tasks.
     </p>
@@ -116,17 +118,15 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
 
   return (
     <div className="pb-28 space-y-4" data-testid="recovery-view">
-      <div className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#C81E3A]/40 bg-[#C81E3A]/15">
+      <div className="svj-radius-card svj-lit-top svj-elev-2 border border-white/[0.06] bg-[#17171A] p-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center svj-radius-row border border-[#C81E3A]/40 bg-[#C81E3A]/15">
             <HeartPulse aria-hidden className="h-4 w-4 text-[#E62846]" />
           </div>
           <div>
-            <h1 className="font-anton text-2xl uppercase tracking-wider text-[#F4F2ED]">
-              Recovery
-            </h1>
-            <p className="text-[11px] font-inter text-[#8C8C90]">
-              Readiness, sleep and training load — derived from your own data.
+            <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Recovery</h1>
+            <p className="font-inter text-[11px] text-[#8C8C90]">
+              Readiness, sleep and training load, derived from your own data.
             </p>
           </div>
         </div>
@@ -156,10 +156,10 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               tabIndex={active ? 0 : -1}
               data-testid={`recovery-section-tab-${item.id}`}
               onClick={() => setSection(item.id)}
-              className={`flex shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-inter font-semibold transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] ${
+              className={`flex shrink-0 cursor-pointer items-center justify-center gap-2 svj-radius-row border px-3 py-2.5 font-inter text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] ${
                 active
                   ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
-                  : "border-white/8 bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"
+                  : "border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
               <Icon aria-hidden className="h-4 w-4" />
@@ -209,7 +209,7 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           <p
             role="status"
             data-testid="recovery-devices-status"
-            className="rounded-2xl border border-white/5 bg-[#0B0B0C] px-4 py-3 text-[11px] font-mono text-[#8C8C90]"
+            className="svj-radius-row border border-white/[0.06] bg-[#08080A] px-4 py-3 font-inter text-[11px] text-[#8C8C90]"
           >
             No device is connected.
           </p>

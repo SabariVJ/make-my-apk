@@ -443,7 +443,9 @@ export const NutritionView: React.FC = () => {
     return (
       <div className="rounded-2xl border border-white/10 bg-[#17171A] p-5 text-center">
         <AlertTriangle className="mx-auto h-5 w-5 text-[#C81E3A]" />
-        <p className="mt-2 font-anton text-sm uppercase text-white">Fuel needs a connection</p>
+        <p className="mt-2 font-inter text-sm font-semibold text-[#F4F2ED]">
+          Fuel needs a connection
+        </p>
         <p className="mt-1 text-xs text-[#8C8C90]">
           {loadError ?? "Nutrition data is unavailable."}
         </p>
@@ -470,7 +472,7 @@ export const NutritionView: React.FC = () => {
           <p className="flex items-center gap-1.5 text-[10px] font-inter uppercase tracking-[0.2em] text-[#C81E3A]">
             <Utensils className="h-3.5 w-3.5" /> Fuel
           </p>
-          <h1 className="font-anton text-2xl uppercase text-[#F4F2ED]">Nutrition</h1>
+          <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Nutrition</h1>
           <p className="text-xs text-[#8C8C90]">Scan, review and track what you actually eat.</p>
         </div>
         <button
@@ -537,7 +539,7 @@ export const NutritionView: React.FC = () => {
         <section className="rounded-2xl border border-[#C81E3A]/20 bg-[#17171A] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-anton text-sm uppercase text-white">Daily targets</p>
+              <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Daily targets</p>
               <p className="text-[10px] text-[#8C8C90]">
                 Starts from your Body Profile estimate; you can override it here.
               </p>
@@ -794,7 +796,7 @@ export const NutritionView: React.FC = () => {
           className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-4"
         >
           <div className="flex items-center justify-between">
-            <p className="font-anton text-sm uppercase text-white">Manual meal</p>
+            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Manual meal</p>
             <button
               type="button"
               onClick={() => setShowManual(false)}

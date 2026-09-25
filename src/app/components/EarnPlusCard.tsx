@@ -63,7 +63,7 @@ export function EarnPlusCard({
           <p className="mb-2 flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
             <ShieldCheck className="h-3.5 w-3.5" /> Server-validated rewards
           </p>
-          <h2 className="font-anton text-2xl uppercase text-white">Earn Plus</h2>
+          <h2 className="font-anton text-2xl tracking-wide text-white">Earn Plus</h2>
           <p className="mt-1 max-w-md text-xs font-inter leading-relaxed text-[#B8B8C0]">
             {active?.account.lifetimeAccess
               ? "Lifetime access already active. Your membership stays untouched."

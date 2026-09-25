@@ -31,6 +31,8 @@ import {
   type GpsActivityType,
   type TrackPoint,
 } from "../lib/gpsActivity";
+export { currentPaceSecondsPerKm } from "../lib/gpsActivity";
+
 import {
   liveShareUrl,
   plannedRouteSummary,

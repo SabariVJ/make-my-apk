@@ -32,7 +32,6 @@ import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SixtyDayProgramCard } from "../components/SixtyDayProgramCard";
 import { ActivitySummaryCard } from "../components/ActivitySummaryCard";
 import { ChallengeCategory, DailyChallenge } from "../types";
-import { HexagonRadarChart } from "../components/HexagonRadarChart";
 import { getChallengeState, type ChallengeState } from "@/lib/challenge.functions";
 import {
   getPersonalizedChallenges,
@@ -41,9 +40,7 @@ import {
 } from "@/lib/challenge-engine.server";
 import {
   getAssessmentEntryState,
-  getUserStats,
   type AssessmentEntryState,
-  type UserStatsData,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
 import { formatCompletedAt } from "../lib/dateFormat";
@@ -89,7 +86,6 @@ export const ChallengesView: React.FC<{
   const callGetPersonalized = useServerFn(getPersonalizedChallenges);
   const callRefreshPersonalized = useServerFn(refreshPersonalizedChallenges);
   const callGetAssessmentEntryState = useServerFn(getAssessmentEntryState);
-  const callGetUserStats = useServerFn(getUserStats);
   const personalizationQuery = useQuery<AssessmentEntryState>({
     queryKey: ["assessment-entry-state"],
     queryFn: () => callGetAssessmentEntryState({}) as Promise<AssessmentEntryState>,
@@ -207,30 +203,6 @@ export const ChallengesView: React.FC<{
     }
   };
 
-  const statsQuery = useQuery<UserStatsData | null>({
-    queryKey: ["user-stats"],
-    queryFn: async () => {
-      try {
-        return (await callGetUserStats({})) as UserStatsData | null;
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
-
-  const radarStats = statsQuery.data
-    ? {
-        physical: statsQuery.data.fitness,
-        ambition: statsQuery.data.confidence,
-        intellect: statsQuery.data.consistency,
-        mental: statsQuery.data.focus,
-        social: statsQuery.data.social,
-        discipline: statsQuery.data.discipline,
-      }
-    : user.stats;
-
   // Merge personalized SERVER assignments with user's existing challenges.
   // Personalized rows carry stable database IDs and server completion state,
   // so they are never routed through the local toggleChallenge() path.
@@ -307,8 +279,8 @@ export const ChallengesView: React.FC<{
         }
         // Refetch so the checked state comes from SERVER assignment state.
         await personalizedQuery.refetch();
-        // Invalidate profile/XP + stats so Character Matrix, total XP and
-        // XP Today refresh from ledger-confirmed data. No optimistic writes.
+        // Invalidate profile/XP + stats so account totals and any Character
+        // Matrix surface outside Challenges refresh from ledger-confirmed data.
         void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
         void queryClient.invalidateQueries({ queryKey: ["profile"] });
       } catch {
@@ -407,7 +379,6 @@ export const ChallengesView: React.FC<{
               setShowAssessment(false);
               void personalizationQuery.refetch();
               void personalizedQuery.refetch();
-              void statsQuery.refetch();
             }}
           />
           <button
@@ -510,46 +481,6 @@ export const ChallengesView: React.FC<{
           <ActivitySummaryCard onOpen={onOpenActivity} />
         </section>
       )}
-
-      <section className="space-y-3">
-        {/* Character Hexagon Matrix */}
-        <div>
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <SVJSectionHeader
-                title={`Character Matrix — Level ${user.level || 1}`}
-                icon={Sparkles}
-                className="min-w-0"
-              />
-              <span className="rounded-full border border-[#C9A227]/30 bg-[#C9A227]/10 px-2 py-0.5 font-anton text-[10px] uppercase tracking-wide text-[#C9A227]">
-                {user.leagueRank || "APPRENTICE I"}
-              </span>
-            </div>
-            <span className="hidden text-[11px] font-inter text-[#8C8C90] sm:inline">
-              Complete tasks to grow
-            </span>
-          </div>
-
-          <HexagonRadarChart
-            stats={radarStats}
-            level={user.level}
-            onStatClick={(statKey) => {
-              // Quick filter by clicked attribute's category!
-              const statCatMap: Record<string, ChallengeCategory> = {
-                physical: "Physical",
-                mental: "Mental",
-                discipline: "Discipline",
-                social: "Mindset",
-                intellect: "Mindset",
-                ambition: "Mindset",
-              };
-              if (statCatMap[statKey]) {
-                setSelectedCategory(statCatMap[statKey]);
-              }
-            }}
-          />
-        </div>
-      </section>
 
       {/* Task filters + the challenge list — the screen's actual "what do I do
           today" content. */}

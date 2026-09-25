@@ -18,6 +18,9 @@ const onboardingSource = await read("src/app/components/FirstTimeOnboardingModal
 const notificationPreferencesSource = await read(
   "src/app/components/NotificationPreferencesCard.tsx",
 );
+const notificationCoordinatorSource = await read(
+  "src/app/components/NotificationCoordinator.tsx",
+);
 const notificationsSource = await read("src/app/lib/notifications.ts");
 
 // ─── Navigation filtering logic ──────────────────────────────────────────────
@@ -247,6 +250,9 @@ describe("Notification permission UX", () => {
     );
     assert.doesNotMatch(notificationPreferencesSource, /requestNotificationPermission/);
     assert.doesNotMatch(notificationPreferencesSource, /type="checkbox"/);
+    assert.match(notificationCoordinatorSource, /appStateChange/);
+    assert.match(notificationCoordinatorSource, /notificationPermission\(\)/);
+    assert.doesNotMatch(notificationCoordinatorSource, /requestNotificationPermission/);
   });
 
   it("keeps planner categories enabled while Android system permission is the delivery switch", () => {

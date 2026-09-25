@@ -12,6 +12,10 @@ const notificationReceiverSource = await read(
   "android/app/src/main/java/app/lovable/svj/VjNotificationReceiver.java",
 );
 const manifestSource = await read("android/app/src/main/AndroidManifest.xml");
+const challengesViewSource = await read("src/app/views/ChallengesView.tsx");
+const profileViewSource = await read("src/app/views/ProfileView.tsx");
+const onboardingSource = await read("src/app/components/FirstTimeOnboardingModal.tsx");
+const notificationsSource = await read("src/app/lib/notifications.ts");
 
 // ─── Navigation filtering logic ──────────────────────────────────────────────
 // These tests validate the filtering predicate used by Navigation.tsx to decide
@@ -215,5 +219,35 @@ describe("Smart notifications — Android native bridge", () => {
     assert.match(notificationsPluginSource, /svj_progress/);
     assert.match(notificationsPluginSource, /svj_coach/);
     assert.match(notificationsPluginSource, /svj_membership/);
+  });
+});
+
+
+describe("Challenge dashboard scope", () => {
+  it("does not render the Character Matrix inside Challenges", () => {
+    assert.doesNotMatch(challengesViewSource, /HexagonRadarChart/);
+    assert.doesNotMatch(challengesViewSource, /Character Matrix/);
+  });
+});
+
+describe("Notification permission UX", () => {
+  it("removes granular notification controls from Profile", () => {
+    assert.doesNotMatch(profileViewSource, /NotificationPreferencesCard/);
+  });
+
+  it("requests notification permission only from first-time onboarding", () => {
+    assert.match(onboardingSource, /initializeNotificationsAtSignup/);
+    assert.match(notificationsSource, /PERMISSION_PROMPTED_PREFIX/);
+    assert.match(notificationsSource, /Mark first so an interrupted permission flow cannot become a repeat prompt/);
+  });
+
+  it("keeps planner categories enabled while Android system permission is the delivery switch", () => {
+    assert.match(notificationsSource, /enabled: true/);
+    assert.match(notificationsSource, /nutrition: true/);
+    assert.match(notificationsSource, /training: true/);
+    assert.match(
+      notificationsSource,
+      /Android's system notification permission is\s+the single source of truth/,
+    );
   });
 });

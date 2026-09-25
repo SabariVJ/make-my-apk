@@ -7,16 +7,18 @@ Implemented on `release/play-v1-compliance` as an additive Android/local-notific
 ## Architecture
 
 - `NotificationCoordinator.tsx` builds a user-specific schedule from real SVJ state: tasks, streak, Earn Plus, meals, workouts, weekly XP, membership expiry and automated-training plan days.
-- `notifications.ts` owns preferences, quiet hours, planner rules and notification deep-link targets.
+- `notifications.ts` owns the default planner policy, quiet hours, one-time permission marker and notification deep-link targets.
 - `VjNotificationsPlugin.java` owns Android permission, channels, durable AlarmManager schedules, immediate test delivery and cancellation.
 - `VjNotificationReceiver.java` delivers alarms and restores schedules after reboot, timezone/clock changes and app replacement.
 - Notification taps use `app.lovable.svj://notification/<target>`; the existing Capacitor App bridge routes the user to the relevant SVJ destination.
 
 ## Safety / anti-spam rules
 
-- Notifications are opt-in.
-- Each category has its own preference toggle.
-- User-selected times are clamped outside 22:00–07:00 quiet hours.
+- Android notification permission is requested once during first-time onboarding.
+- SVJ does not re-prompt inside the app after that onboarding attempt.
+- Delivery is controlled globally from Android App Info / notification settings.
+- Planner categories use SVJ defaults rather than separate in-app permission toggles.
+- Reminder times are clamped outside 22:00–07:00 quiet hours.
 - No exact-alarm permission is requested.
 - The native layer rejects duplicate IDs and caps one replacement plan to 64 schedules.
 - Automated-training reminders get stable unique IDs per local day.
@@ -31,4 +33,4 @@ Implemented on `release/play-v1-compliance` as an additive Android/local-notific
 
 ## Verification
 
-CI covers the TypeScript planner and Android source contracts. Final physical-device verification should include permission allow/deny, Send test, a scheduled reminder, notification-tap navigation, reboot persistence and turning notifications off.
+CI covers the TypeScript planner and Android source contracts. Final physical-device verification should include the one-time onboarding permission sheet, a scheduled reminder, notification-tap navigation, reboot persistence, and disabling/re-enabling notifications from Android App Info without any SVJ re-prompt.

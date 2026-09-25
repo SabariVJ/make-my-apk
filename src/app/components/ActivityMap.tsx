@@ -266,6 +266,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const [followGps, setFollowGps] = useState(true);
   const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mouseDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const gesture = useRef<{
     mode: "none" | "pan" | "pinch";
     lastX: number;
@@ -418,6 +419,30 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
+      onPointerDown={(event) => {
+        if (event.pointerType !== "mouse") return;
+        mouseDrag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const drag = mouseDrag.current;
+        if (event.pointerType !== "mouse" || !drag || drag.pointerId !== event.pointerId) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        drag.x = event.clientX;
+        drag.y = event.clientY;
+        setManualCenter(
+          (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+        );
+        setUserPan((previous) => ({ x: previous.x + dx, y: previous.y + dy }));
+        setFollowGps(false);
+      }}
+      onPointerUp={(event) => {
+        if (mouseDrag.current?.pointerId === event.pointerId) mouseDrag.current = null;
+      }}
+      onPointerCancel={() => {
+        mouseDrag.current = null;
+      }}
       data-testid="activity-map-surface"
     >
       {tileProvider.urlTemplate &&

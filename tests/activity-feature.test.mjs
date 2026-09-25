@@ -119,6 +119,8 @@ test("Activity V2 maps expose real user-controlled zoom, pan and recenter", () =
   assert.match(activityMap, /manualCenter/);
   assert.match(activityMap, /ResizeObserver/);
   assert.match(activityMap, /onPointerMove/);
+  assert.match(activityMap, /const latest = points\[points\.length - 1\]/);
+  assert.match(activityMap, /showCurrentPosition && latest/);
   assert.match(activityMap, /setFollowGps\(false\)/);
 });
 

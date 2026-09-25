@@ -1,6 +1,22 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Flame, Flag, Loader2, RefreshCw, Trash2, Trophy } from "lucide-react";
-import { SVJ_STREET_TILES, createTileViewport, type MapBounds } from "../components/ActivityMap";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  Crosshair,
+  Flame,
+  Flag,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  Trophy,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import {
+  SVJ_STREET_TILES,
+  createTileViewport,
+  createTileViewportAtZoom,
+  type MapBounds,
+} from "../components/ActivityMap";
 import {
   HEATMAP_RANGES,
   HEATMAP_RANGE_LABELS,
@@ -59,8 +75,31 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
 }) => {
   const width = 400;
   const mapPoints = useMemo(() => cells.map((cell) => ({ lat: cell.lat, lng: cell.lng })), [cells]);
+  const fitViewport = useMemo(
+    () => createTileViewport(mapPoints, width, height),
+    [mapPoints, height],
+  );
+  const [zoom, setZoom] = useState<number | null>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
 
-  const viewport = useMemo(() => createTileViewport(mapPoints, width, height), [mapPoints, height]);
+  useEffect(() => {
+    setZoom(null);
+    setPan({ x: 0, y: 0 });
+  }, [cells]);
+
+  const viewport = useMemo(() => {
+    if (zoom == null && pan.x === 0 && pan.y === 0) return fitViewport;
+    return createTileViewportAtZoom(
+      fitViewport.centerLat,
+      fitViewport.centerLng,
+      zoom ?? fitViewport.zoom,
+      width,
+      height,
+      pan.x,
+      pan.y,
+    );
+  }, [fitViewport, height, pan, zoom]);
 
   const maxWeight = useMemo(
     () => cells.reduce((max, cell) => Math.max(max, cell.weight), 0),
@@ -71,6 +110,15 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
     () => cells.map((cell) => viewport.project(cell.lat, cell.lng)),
     [cells, viewport],
   );
+
+  const changeZoom = (delta: number) => {
+    setZoom((current) => Math.min(19, Math.max(3, Math.round(current ?? fitViewport.zoom) + delta)));
+  };
+
+  const resetView = () => {
+    setZoom(null);
+    setPan({ x: 0, y: 0 });
+  };
 
   if (cells.length === 0) {
     return (
@@ -89,8 +137,28 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
+      className="relative touch-none overflow-hidden rounded-2xl border border-white/8 bg-[#08080A]"
+      style={{ height }}
       data-testid="heatmap"
+      onPointerDown={(event) => {
+        dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        drag.x = event.clientX;
+        drag.y = event.clientY;
+        setPan((current) => ({ x: current.x + dx, y: current.y + dy }));
+      }}
+      onPointerUp={(event) => {
+        if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+      }}
+      onPointerCancel={() => {
+        dragRef.current = null;
+      }}
     >
       {SVJ_STREET_TILES.urlTemplate &&
         viewport.tiles.map((tile) => (
@@ -106,9 +174,10 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
             style={{ left: tile.left, top: tile.top, width: 256, height: 256 }}
           />
         ))}
+
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0 w-full"
+        className="pointer-events-none absolute inset-0 w-full"
         style={{ height }}
         role="img"
         aria-label="Personal activity heatmap"
@@ -128,6 +197,42 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
           );
         })}
       </svg>
+
+      <div
+        className="absolute left-2 top-2 flex flex-col gap-1"
+        aria-label="Heatmap controls"
+        data-testid="heatmap-controls"
+      >
+        <button
+          type="button"
+          onClick={() => changeZoom(1)}
+          aria-label="Zoom heatmap in"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/75 text-white"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => changeZoom(-1)}
+          aria-label="Zoom heatmap out"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/75 text-white"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={resetView}
+          aria-label="Reset heatmap view"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-black/75 text-white"
+        >
+          <Crosshair className="h-4 w-4" />
+        </button>
+      </div>
+
+      <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[8px] font-mono text-[#B8B8C0]">
+        Drag to pan · zoom {viewport.zoom}
+      </span>
+
       {SVJ_STREET_TILES.attribution && (
         <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-mono text-[#8C8C90]">
           {SVJ_STREET_TILES.attribution}

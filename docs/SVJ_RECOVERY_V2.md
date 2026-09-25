@@ -714,6 +714,13 @@ evidence text, and a ≥44 px CTA (“Review today's plan”). The CTA is passed
 when a real destination exists — `RecoveryView` receives `onOpenPlan` from
 `App.tsx` (`handleTabChange("plan")`), so the button is never dead.
 
+It is a genuinely **dismissible** card: a second ≥44 px “Dismiss” control hides
+it for the remainder of the local day. Dismissal is UI-only — it writes a single
+local-day marker (`svj_recovery_rest_alert_dismissed_day`) and performs no
+Recovery, Activity, check-in or load work, so the underlying history is never
+altered. The marker expires at the local day boundary, so the card returns the
+next day if the rule still fires.
+
 ### Notification integration decision (documented limitation)
 
 The existing `NotificationCoordinator` builds a **deterministic, app-wide**
@@ -757,7 +764,9 @@ existing canonical history; the plan note reuses the existing readiness RPC.
   mocked) — digest loading / full week / partial / insufficient / sanitized
   retryable error + successful retry, the alert absent when unjustified and
   present with real evidence when justified, no CTA without a handler and a
-  working CTA with one, the four plan states (rest/lighter/normal/stronger,
+  working CTA with one, dismissal hiding the card with only a local-day marker
+  written (no RPC issued) and a previous-day marker never suppressing today's
+  alert, the four plan states (rest/lighter/normal/stronger,
   including “not an automatic increase”), the Progress panel is real and the
   placeholder is gone, Overview wires the alert CTA to the plan, and the
   standalone Train › Recovery path carries no Phase-7 surfaces.

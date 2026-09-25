@@ -113,6 +113,7 @@ before(async () => {
       import { PlanRecoveryCard } from './src/app/components/recovery/PlanRecoveryCard';
       export { PlanRecoveryCard };
       export { TrainRecovery } from './src/app/views/TrainRecovery';
+      export { dayKeyOffset } from './src/app/lib/recoveryInsights';
     `,
       resolveDir: process.cwd(),
       loader: "tsx",
@@ -157,8 +158,15 @@ before(async () => {
                   },
                 };`,
               storage: `
-                export const readStoredJson = (k, f) => f;
-                export const writeStoredJson = () => {};`,
+                const bag = () => (globalThis.__svjP7.storage ||= new Map());
+                export const readStoredJson = (k, f) => { const m = bag(); return m.has(k) ? JSON.parse(m.get(k)) : f; };
+                export const writeStoredJson = (k, v) => { bag().set(k, JSON.stringify(v)); return { ok: true }; };
+                export const readStoredArray = (k, f) => { const v = readStoredJson(k, f); return Array.isArray(v) ? v : f; };
+                export const appStorage = {
+                  getItem: (k) => { const m = bag(); return m.has(k) ? m.get(k) : null; },
+                  setItem: (k, v) => { bag().set(k, v); return { ok: true }; },
+                  removeItem: (k) => { bag().delete(k); return { ok: true }; },
+                };`,
               context: `
                 const EMPTY = [];
                 export const useSVJ = () => ({
@@ -344,6 +352,33 @@ describe("Rest-Day alert card", () => {
       cta.click();
     });
     assert.equal(opened, 1);
+  });
+
+  it("dismisses the card for the rest of the local day with a UI marker only", async () => {
+    await renderAlert(readinessResult({ score: 36, band: "moderate", restDaysLast3: 2 }));
+    const callsBefore = globalThis.__svjP7.calls.length;
+    const dismiss = screen.getByTestId("recovery-rest-alert-dismiss");
+    await act(async () => {
+      dismiss.click();
+    });
+    assert.equal(screen.queryByTestId("recovery-rest-alert"), null);
+    // Dismissal is UI-only: it writes a single local-day marker and performs no
+    // Recovery/Activity/check-in work of any kind.
+    assert.equal(
+      globalThis.__svjP7.storage.get("svj_recovery_rest_alert_dismissed_day"),
+      JSON.stringify(app.dayKeyOffset(0)),
+    );
+    assert.equal(globalThis.__svjP7.calls.length, callsBefore);
+  });
+
+  it("does not hide today's card for a dismissal recorded on a previous day", async () => {
+    globalThis.__svjP7.storage = new Map();
+    globalThis.__svjP7.storage.set(
+      "svj_recovery_rest_alert_dismissed_day",
+      JSON.stringify("2000-01-01"),
+    );
+    await renderAlert(readinessResult({ score: 36, band: "moderate", restDaysLast3: 2 }));
+    assert.ok(screen.getByTestId("recovery-rest-alert"));
   });
 });
 

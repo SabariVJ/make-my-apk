@@ -6,17 +6,36 @@
 // the Overview already renders — the score, a genuinely high load band, and an
 // actually-zero recent rest count. Nothing renders when the rule does not fire,
 // so this can never become a generic warning banner.
-import React from "react";
-import { HeartPulse, ShieldAlert } from "lucide-react";
-import { restDayAlert, type ReadinessResult } from "../../lib/recoveryInsights";
+//
+// It is a DISMISSIBLE card: dismissing only hides the UI for the rest of the
+// local day. It never mutates Activity, Recovery, check-in or load data — the
+// stored value is a single UI day marker — and the card returns tomorrow if the
+// rule still fires.
+import React, { useState } from "react";
+import { HeartPulse, ShieldAlert, X } from "lucide-react";
+import { dayKeyOffset, restDayAlert, type ReadinessResult } from "../../lib/recoveryInsights";
+import { readStoredJson, writeStoredJson } from "../../lib/storage";
+
+/** UI-only marker: the local day the athlete dismissed the alert. */
+export const REST_ALERT_DISMISS_KEY = "svj_recovery_rest_alert_dismissed_day";
 
 export const RestDayAlertCard: React.FC<{
   readiness: ReadinessResult;
   /** Supplied only when a real navigation target exists (never a dead button). */
   onReviewPlan?: () => void;
 }> = ({ readiness, onReviewPlan }) => {
+  const today = dayKeyOffset(0);
+  const [dismissedDay, setDismissedDay] = useState<string | null>(() =>
+    readStoredJson<string | null>(REST_ALERT_DISMISS_KEY, null),
+  );
+
   const alert = restDayAlert(readiness);
-  if (!alert.active) return null;
+  if (!alert.active || dismissedDay === today) return null;
+
+  const handleDismiss = () => {
+    setDismissedDay(today);
+    writeStoredJson(REST_ALERT_DISMISS_KEY, today);
+  };
 
   return (
     <section
@@ -49,17 +68,29 @@ export const RestDayAlertCard: React.FC<{
         {alert.suggestion}
       </p>
 
-      {onReviewPlan && (
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {onReviewPlan && (
+          <button
+            type="button"
+            onClick={onReviewPlan}
+            data-testid="recovery-rest-alert-plan"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-xs font-inter font-semibold text-gold transition-colors hover:bg-gold/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          >
+            <HeartPulse aria-hidden className="h-3.5 w-3.5" />
+            Review today&apos;s plan
+          </button>
+        )}
         <button
           type="button"
-          onClick={onReviewPlan}
-          data-testid="recovery-rest-alert-plan"
-          className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-4 text-xs font-inter font-semibold text-gold transition-colors hover:bg-gold/20 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+          onClick={handleDismiss}
+          data-testid="recovery-rest-alert-dismiss"
+          aria-label="Dismiss the recovery priority alert for today"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 px-4 text-xs font-inter font-semibold text-[#8C8C90] transition-colors hover:text-[#F4F2ED] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
         >
-          <HeartPulse aria-hidden className="h-3.5 w-3.5" />
-          Review today&apos;s plan
+          <X aria-hidden className="h-3.5 w-3.5" />
+          Dismiss
         </button>
-      )}
+      </div>
     </section>
   );
 };

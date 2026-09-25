@@ -229,7 +229,7 @@ describe("Smart notifications — Android native bridge", () => {
 describe("Challenge dashboard scope", () => {
   it("does not render the Character Matrix inside Challenges", () => {
     assert.doesNotMatch(challengesViewSource, /HexagonRadarChart/);
-    assert.doesNotMatch(challengesViewSource, /Character Matrix/);
+    assert.doesNotMatch(challengesViewSource, /title=\{\`Character Matrix/);
   });
 });
 

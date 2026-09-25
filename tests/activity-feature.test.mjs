@@ -13,6 +13,9 @@ const challengesView = await read("src/app/views/ChallengesView.tsx");
 const activityContext = await read("src/app/context/ActivityContext.tsx");
 const activityView = await read("src/app/views/ActivityView.tsx");
 const activitySummary = await read("src/app/components/ActivitySummaryCard.tsx");
+const activityMap = await read("src/app/components/ActivityMap.tsx");
+const recordsView = await read("src/app/views/RecordsView.tsx");
+const workoutRecorder = await read("src/app/views/WorkoutRecorder.tsx");
 const tracker = await read("src/app/lib/activityTracker.ts");
 const pkg = JSON.parse(await read("package.json"));
 const capBuild = await read("android/app/capacitor.build.gradle");
@@ -99,6 +102,28 @@ test("step tracking is native-sensor based with a graceful web fallback", () => 
   assert.match(activityContext, /Step tracking active — motion estimate/);
   assert.match(activityContext, /No compatible step sensor found on this device\./);
   assert.match(activityView, /Estimated steps — accelerometer motion detection/);
+});
+
+test("Activity V2 maps expose real user-controlled zoom, pan and recenter", () => {
+  assert.match(recordsView, /data-testid="heatmap-controls"/);
+  assert.match(recordsView, /Zoom heatmap in/);
+  assert.match(recordsView, /Zoom heatmap out/);
+  assert.match(recordsView, /Reset heatmap view/);
+  assert.match(recordsView, /onPointerMove/);
+  assert.match(recordsView, /createTileViewportAtZoom/);
+
+  assert.match(activityMap, /data-testid="map-zoom-in"/);
+  assert.match(activityMap, /data-testid="map-zoom-out"/);
+  assert.match(activityMap, /data-testid="map-recenter"/);
+  assert.match(activityMap, /manualCenter/);
+  assert.match(activityMap, /setFollowGps\(false\)/);
+});
+
+test("Activity V2 uses activity-type-specific truthful live metrics", () => {
+  assert.match(workoutRecorder, /activityType === "cycling" \? "Current speed" : "Current pace"/);
+  assert.match(workoutRecorder, /activityType === "cycling" \? "Average speed" : "Average pace"/);
+  assert.match(workoutRecorder, /label="Cadence"/);
+  assert.match(workoutRecorder, /Sensor data only/);
 });
 
 test("daily counts persist and reset at midnight", () => {

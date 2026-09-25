@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   buildNotificationPlan,
+  notificationTargetFromUrl,
+  trainingSessionNotificationId,
   type NotificationPlannerInput,
 } from "./notifications";
 
@@ -102,6 +104,64 @@ test("notification plan is chronological", () => {
   }
 });
 
+test("all user-selected reminder times are clamped outside quiet hours", () => {
+  const plan = buildNotificationPlan(base(), {
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    enabled: true,
+    nutrition: true,
+    morningTime: "23:15",
+    eveningTime: "23:20",
+    recoveryTime: "23:25",
+    nutritionTime: "23:30",
+  });
+  for (const id of [101, 102, 103, 104]) {
+    const reminder = plan.find((item) => item.id === id);
+    assert.ok(reminder);
+    const at = new Date(reminder.triggerAt);
+    assert.equal(at.getHours(), 7);
+    assert.equal(at.getMinutes(), 0);
+  }
+});
+
+test("an already-overdue inactivity threshold still schedules the next useful nudge", () => {
+  const now = new Date("2026-09-21T12:00:00");
+  const plan = buildNotificationPlan(
+    { ...base(now), lastProgressAt: "2026-09-10T09:00:00" },
+    { ...DEFAULT_NOTIFICATION_PREFERENCES, enabled: true },
+  );
+  const reminder = plan.find((item) => item.id === 106);
+  assert.ok(reminder);
+  assert.ok(reminder.triggerAt > now.getTime());
+});
+
+test("membership expiry itself never fires during quiet hours", () => {
+  const now = new Date("2026-09-21T12:00:00");
+  const plan = buildNotificationPlan(
+    { ...base(now), plusExpiresAt: "2026-09-25T23:30:00" },
+    { ...DEFAULT_NOTIFICATION_PREFERENCES, enabled: true },
+  );
+  const expiry = plan.find((item) => item.id === 200);
+  assert.ok(expiry);
+  const at = new Date(expiry.triggerAt);
+  assert.equal(at.getDate(), 26);
+  assert.equal(at.getHours(), 7);
+  assert.equal(at.getMinutes(), 0);
+});
+
+test("notification deep links accept only known SVJ destinations", () => {
+  assert.equal(notificationTargetFromUrl("app.lovable.svj://notification/workouts"), "workouts");
+  assert.equal(notificationTargetFromUrl("app.lovable.svj://notification/nutrition"), "nutrition");
+  assert.equal(notificationTargetFromUrl("https://example.com/workouts"), null);
+  assert.equal(notificationTargetFromUrl("app.lovable.svj://notification/admin"), null);
+});
+
+test("training session notification ids are stable and unique per local day", () => {
+  const first = trainingSessionNotificationId("2026-09-22");
+  assert.equal(first, trainingSessionNotificationId("2026-09-22"));
+  assert.notEqual(first, trainingSessionNotificationId("2026-09-23"));
+  assert.ok(Number.isSafeInteger(first));
+});
+
 // ── Automated training scheduling ───────────────────────────────────────────
 
 const trainingOn = {
@@ -124,8 +184,9 @@ test("training session reminders schedule one entry per scheduled plan day", () 
     },
     trainingOn,
   );
-  const reminders = plan.filter((item) => item.id === 108);
+  const reminders = plan.filter((item) => item.title === "Training session today");
   assert.equal(reminders.length, 2, "one reminder per DISTINCT scheduled day");
+  assert.notEqual(reminders[0].id, reminders[1].id, "distinct days need distinct native alarm ids");
   assert.equal(reminders[0].title, "Training session today");
   assert.match(reminders[0].body, /Upper A is scheduled for today/);
   assert.match(reminders[1].body, /Your scheduled training session is today/);
@@ -147,7 +208,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...trainingOn, trainingSession: false },
   );
   assert.equal(
-    byPreference.some((item) => item.id === 108),
+    byPreference.some((item) => item.title === "Training session today"),
     false,
     "the preference can turn session reminders off",
   );
@@ -157,7 +218,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...trainingOn, trainingSession: true },
   );
   assert.equal(
-    withoutPlan.some((item) => item.id === 108),
+    withoutPlan.some((item) => item.title === "Training session today"),
     false,
     "no plan loaded → no session reminders",
   );
@@ -166,7 +227,7 @@ test("training session reminders honor the preference, quiet hours and a missing
     { ...base(), trainingPlanDays: day },
     { ...trainingOn, trainingTime: "23:30" },
   );
-  const clamped = quietPreference.find((item) => item.id === 108);
+  const clamped = quietPreference.find((item) => item.title === "Training session today");
   assert.ok(clamped, "a quiet-hours preference still delivers — outside quiet hours");
   const at = new Date(clamped.triggerAt);
   assert.equal(at.getHours(), 7, "23:30 is clamped out of the 22:00–07:00 quiet window");
@@ -185,6 +246,7 @@ test("a training-gap reminder follows the last real workout and can be off", () 
   assert.equal(at.getHours(), 17);
   assert.equal(at.getMinutes(), 30);
   assert.match(gap.body, /No strength session has been logged for 3 days/);
+  assert.equal(gap.target, "workouts");
 
   const noWorkout = buildNotificationPlan({ ...base(), lastWorkoutAt: null }, trainingOn);
   assert.equal(

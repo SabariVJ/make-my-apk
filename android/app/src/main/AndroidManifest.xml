@@ -61,6 +61,21 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- Smart local reminders. The receiver owns alarm delivery and
+             restores repeating schedules after reboot, timezone change, clock
+             correction, or app replacement. It is not exported to other apps. -->
+        <receiver
+            android:name=".VjNotificationReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Wear OS Data Layer: receives watch messages (handshake, live
              samples, session state, completed workout summaries) even when SVJ
              is not running, and buffers them for the app. -->
@@ -130,6 +145,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- The phone is a Wear OS companion host, not a watch-only APK. Do not
          declare android.hardware.type.watch here: that feature is invalid in a

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useQuery } from "@tanstack/react-query";
 import { useSVJ } from "../context/SVJContext";
@@ -10,9 +11,11 @@ import {
   cancelNativeNotifications,
   loadNotificationPreferences,
   notificationPermission,
+  notificationTargetFromUrl,
   replaceNativeNotificationSchedules,
   subscribeNotificationPreferences,
   type NotificationPreferences,
+  type NotificationTarget,
 } from "../lib/notifications";
 
 function sameLocalDay(iso: string, now: Date): boolean {
@@ -27,8 +30,12 @@ function localDayKey(date: Date): string {
   ).padStart(2, "0")}`;
 }
 
-export const NotificationCoordinator: React.FC = () => {
+export const NotificationCoordinator: React.FC<{
+  onNavigate?: (target: NotificationTarget) => void;
+}> = ({ onNavigate }) => {
   const { user, challenges, meals, workouts, plusExpiresAt } = useSVJ();
+  const navigateRef = useRef(onNavigate);
+  navigateRef.current = onNavigate;
   const engagement = useEngagement();
   const [prefs, setPrefs] = useState<NotificationPreferences>(() =>
     loadNotificationPreferences(user.id),
@@ -38,6 +45,33 @@ export const NotificationCoordinator: React.FC = () => {
     setPrefs(loadNotificationPreferences(user.id));
     return subscribeNotificationPreferences(user.id, setPrefs);
   }, [user.id]);
+
+  // Notification taps use the app's existing custom URL scheme, so cold-start
+  // and warm-start behavior are identical. Only SVJ notification URLs are
+  // handled here; OAuth and other app links keep their existing listeners.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let disposed = false;
+    let listener: { remove: () => Promise<void> } | null = null;
+
+    const open = (url?: string | null) => {
+      const target = notificationTargetFromUrl(url);
+      if (target) navigateRef.current?.(target);
+    };
+
+    void CapacitorApp.getLaunchUrl().then((launch) => {
+      if (!disposed) open(launch?.url);
+    });
+    void CapacitorApp.addListener("appUrlOpen", (event) => open(event.url)).then((handle) => {
+      if (disposed) void handle.remove();
+      else listener = handle;
+    });
+
+    return () => {
+      disposed = true;
+      if (listener) void listener.remove();
+    };
+  }, []);
 
   // Server-driven plan, only while the automated-training flag is on. The
   // query feeds session DAYS to the planner; it never marks anything done.

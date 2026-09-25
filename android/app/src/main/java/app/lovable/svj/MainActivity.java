@@ -36,6 +36,10 @@ public class MainActivity extends BridgeActivity {
         // inbox of watch messages, and commands sent back to the watch.
         registerPlugin(VjWearPlugin.class);
 
+        // Smart local notifications: user-controlled reminders, quiet-hour-safe
+        // scheduling and notification-tap deep links back into SVJ.
+        registerPlugin(VjNotificationsPlugin.class);
+
         // Profile support email: opens the device email chooser with a
         // prefilled draft (recipient + subject). Never sends automatically.
         registerPlugin(VjSupportPlugin.class);

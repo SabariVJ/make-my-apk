@@ -152,7 +152,7 @@ const AppContent: React.FC<{
         <Header />
 
         {/* Renders nothing visually — schedules the notification plan. */}
-        <NotificationCoordinator />
+        <NotificationCoordinator onNavigate={handleTabChange} />
 
         {/* Trial-expired notice modal — shown once on first render */}
         {showTrialNotice && (
@@ -270,7 +270,7 @@ const AppContent: React.FC<{
 
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
-      <NotificationCoordinator />
+      <NotificationCoordinator onNavigate={handleTabChange} />
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />

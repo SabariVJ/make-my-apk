@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Sparkles, MapPin, Check, Shield, Flame, Target, Trophy } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
+import { initializeNotificationsAtSignup } from "../lib/notifications";
 
 const PRESET_AVATARS = [
   {
@@ -52,21 +53,33 @@ export const FirstTimeOnboardingModal: React.FC = () => {
   const [location, setLocation] = useState("New York, USA");
   const [selectedAvatar, setSelectedAvatar] = useState(PRESET_AVATARS[0].url);
   const [selectedGoal, setSelectedGoal] = useState(FOCUS_GOALS[0]);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isFirstTimeOnboardingOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
     const finalName = name.trim() || "Initiate Member";
     const finalUsername = (username.trim() || "voyager_svj").toLowerCase().replace(/\s+/g, "_");
 
-    completeOnboarding({
-      name: finalName,
-      username: finalUsername,
-      bio: `${selectedGoal} • ${bio.trim() || "Daily discipline over motivation."}`,
-      location: location.trim() || "Earth",
-      avatar: selectedAvatar,
-    });
+    setSubmitting(true);
+    try {
+      // Android asks once, here, during first-time account setup. SVJ never
+      // requests notification permission again inside the app after this.
+      await initializeNotificationsAtSignup(user.id);
+
+      completeOnboarding({
+        name: finalName,
+        username: finalUsername,
+        bio: `${selectedGoal} • ${bio.trim() || "Daily discipline over motivation."}`,
+        location: location.trim() || "Earth",
+        avatar: selectedAvatar,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -223,10 +236,11 @@ export const FirstTimeOnboardingModal: React.FC = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] py-3.5 font-inter text-base font-semibold text-white shadow-xl shadow-[#C81E3A]/30 transition-colors hover:from-[#C81E3A] hover:to-[#A0182E]"
+                disabled={submitting}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E62846] to-[#C81E3A] py-3.5 font-inter text-base font-semibold text-white shadow-xl shadow-[#C81E3A]/30 transition-colors hover:from-[#C81E3A] hover:to-[#A0182E] disabled:cursor-wait disabled:opacity-60"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Save Profile</span>
+                <span>{submitting ? "Finishing setup…" : "Save Profile"}</span>
               </button>
             </div>
           </form>

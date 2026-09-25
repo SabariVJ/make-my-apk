@@ -130,7 +130,9 @@ export const HeatmapCanvas: React.FC<{ cells: readonly HeatmapCell[]; height?: n
   );
 
   const changeZoom = (delta: number) => {
-    setZoom((current) => Math.min(19, Math.max(3, Math.round(current ?? fitViewport.zoom) + delta)));
+    setZoom((current) =>
+      Math.min(19, Math.max(3, Math.round(current ?? fitViewport.zoom) + delta)),
+    );
   };
 
   const resetView = () => {

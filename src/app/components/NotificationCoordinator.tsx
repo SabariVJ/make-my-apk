@@ -40,6 +40,7 @@ export const NotificationCoordinator: React.FC<{
   const [prefs, setPrefs] = useState<NotificationPreferences>(() =>
     loadNotificationPreferences(user.id),
   );
+  const [permissionRefresh, setPermissionRefresh] = useState(0);
 
   useEffect(() => {
     setPrefs(loadNotificationPreferences(user.id));
@@ -52,7 +53,8 @@ export const NotificationCoordinator: React.FC<{
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let disposed = false;
-    let listener: { remove: () => Promise<void> } | null = null;
+    let urlListener: { remove: () => Promise<void> } | null = null;
+    let stateListener: { remove: () => Promise<void> } | null = null;
 
     const open = (url?: string | null) => {
       const target = notificationTargetFromUrl(url);
@@ -64,12 +66,23 @@ export const NotificationCoordinator: React.FC<{
     });
     void CapacitorApp.addListener("appUrlOpen", (event) => open(event.url)).then((handle) => {
       if (disposed) void handle.remove();
-      else listener = handle;
+      else urlListener = handle;
+    });
+    void CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+      if (isActive && !disposed) {
+        // Re-check Android's system permission after returning from App Info.
+        // This never opens a permission sheet; it only follows the OS setting.
+        setPermissionRefresh((value) => value + 1);
+      }
+    }).then((handle) => {
+      if (disposed) void handle.remove();
+      else stateListener = handle;
     });
 
     return () => {
       disposed = true;
-      if (listener) void listener.remove();
+      if (urlListener) void urlListener.remove();
+      if (stateListener) void stateListener.remove();
     };
   }, []);
 
@@ -180,6 +193,7 @@ export const NotificationCoordinator: React.FC<{
     user.weeklyXP,
     trainingPlanDays,
     trainingEnabled,
+    permissionRefresh,
   ]);
 
   return null;

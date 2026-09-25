@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Crosshair,
   Maximize2,
@@ -254,7 +254,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   emptyMessage = "No route recorded",
 }) => {
   const [fullscreen, setFullscreen] = useState(false);
-  const width = 400;
+  const [viewportWidth, setViewportWidth] = useState(400);
   const viewportHeight = fullscreen ? 620 : height;
 
   // ── Touch interaction: pinch zoom, drag pan, recenter ──────────────────
@@ -266,6 +266,24 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const [followGps, setFollowGps] = useState(true);
   const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const width = viewportWidth;
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const update = () => {
+      const measured = Math.round(node.getBoundingClientRect().width);
+      if (measured > 0) setViewportWidth(measured);
+    };
+    update();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(update);
+      observer.observe(node);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [fullscreen]);
   const mouseDrag = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const gesture = useRef<{
     mode: "none" | "pan" | "pinch";

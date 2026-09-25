@@ -27,6 +27,7 @@ import {
   formatClock,
   formatDistance,
   formatPace,
+  formatSpeed,
   type GpsActivityType,
   type TrackPoint,
 } from "../lib/gpsActivity";
@@ -251,8 +252,22 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Metric label="Elapsed" value={formatClock(session?.durationSeconds ?? 0)} accent />
         <Metric label="Distance" value={formatDistance(summary?.distanceMeters ?? 0, splitUnit)} />
-        <Metric label="Current pace" value={formatPace(currentPace, splitUnit)} />
-        <Metric label="Average pace" value={formatPace(summary?.avgPaceSecondsPerKm, splitUnit)} />
+        <Metric
+          label={activityType === "cycling" ? "Current speed" : "Current pace"}
+          value={
+            activityType === "cycling"
+              ? formatSpeed(currentPace ? 1000 / currentPace : null, splitUnit)
+              : formatPace(currentPace, splitUnit)
+          }
+        />
+        <Metric
+          label={activityType === "cycling" ? "Average speed" : "Average pace"}
+          value={
+            activityType === "cycling"
+              ? formatSpeed(summary?.avgSpeedMps, splitUnit)
+              : formatPace(summary?.avgPaceSecondsPerKm, splitUnit)
+          }
+        />
         <Metric
           label="Elevation"
           value={
@@ -263,11 +278,19 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
           icon={<Mountain className="h-3 w-3 text-[#8C8C90]" />}
           hint="From GPS elevation"
         />
-        <Metric
-          label="Steps"
-          value={(session?.steps ?? 0).toLocaleString()}
-          icon={<Footprints className="h-3 w-3 text-[#8C8C90]" />}
-        />
+        {activityType === "cycling" ? (
+          <Metric
+            label="Cadence"
+            value={summary?.avgCadence != null ? `${summary.avgCadence} rpm` : "—"}
+            hint="Sensor data only"
+          />
+        ) : (
+          <Metric
+            label="Steps"
+            value={(session?.steps ?? 0).toLocaleString()}
+            icon={<Footprints className="h-3 w-3 text-[#8C8C90]" />}
+          />
+        )}
         <Metric
           label="Heart rate"
           value={

@@ -439,15 +439,21 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                 }}
                 whileTap={{ scale: 0.97 }}
                 className={`svj-radius-row flex cursor-pointer items-start gap-3 border p-4 transition-colors ${
-                  n.read ? "border-white/[0.06] bg-[#17171A]/60" : "border-[#C81E3A]/25 bg-[#17171A]"
+                  n.read
+                    ? "border-white/[0.06] bg-[#17171A]/60"
+                    : "border-[#C81E3A]/25 bg-[#17171A]"
                 }`}
               >
                 <div className="shrink-0 rounded-xl bg-[#0B0B0C] p-2">
-                  {n.type === "rivalry_request" && <Swords aria-hidden className="h-4 w-4 text-[#C81E3A]" />}
+                  {n.type === "rivalry_request" && (
+                    <Swords aria-hidden className="h-4 w-4 text-[#C81E3A]" />
+                  )}
                   {n.type === "rivalry_accepted" && (
                     <Check aria-hidden className="h-4 w-4 text-emerald-400" />
                   )}
-                  {n.type === "rivalry_declined" && <X aria-hidden className="h-4 w-4 text-[#E62846]" />}
+                  {n.type === "rivalry_declined" && (
+                    <X aria-hidden className="h-4 w-4 text-[#E62846]" />
+                  )}
                   {!n.type.startsWith("rivalry") && (
                     <Bell aria-hidden className="h-4 w-4 text-[#8C8C90]" />
                   )}
@@ -457,9 +463,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
                     <p className="truncate font-inter text-sm font-semibold text-white">
                       {n.title}
                     </p>
-                    {!n.read && (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#C81E3A]" />
-                    )}
+                    {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-[#C81E3A]" />}
                   </div>
                   <p className="mt-0.5 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
                     {n.body}

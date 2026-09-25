@@ -219,7 +219,9 @@ export const ConnectedDevicesView: React.FC = () => {
           </span>
           <div className="min-w-0">
             <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
-              {nativeAvailable ? "Sensors are live on this device" : "Sensors need the SVJ Android app"}
+              {nativeAvailable
+                ? "Sensors are live on this device"
+                : "Sensors need the SVJ Android app"}
             </p>
             <p className="mt-1 text-xs font-inter leading-relaxed text-[#8C8C90]">
               {nativeAvailable
@@ -281,7 +283,9 @@ export const ConnectedDevicesView: React.FC = () => {
                 <p className="text-xs font-bold text-white">{state.device.name}</p>
                 <p className="text-[11px] font-inter text-[#8C8C90]">
                   Direct Bluetooth sensor
-                  {state.device.bodySensorLocation ? ` \u2014 worn on the ${state.device.bodySensorLocation}` : ""}
+                  {state.device.bodySensorLocation
+                    ? ` \u2014 worn on the ${state.device.bodySensorLocation}`
+                    : ""}
                 </p>
               </div>
             </div>
@@ -485,7 +489,10 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
   }, [workout?.sessionId]);
 
   return (
-    <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4" data-testid="wear-devices">
+    <div
+      className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4"
+      data-testid="wear-devices"
+    >
       <SVJSectionHeader
         title="My devices"
         icon={Watch}
@@ -597,7 +604,9 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
       {/* Heart-rate source selection: both transports can be live at once, so
           the user decides, and only the selected source feeds the workout. */}
       <div className="mt-4">
-        <p className="mb-2 font-inter text-[11px] font-semibold text-[#F4F2ED]">Heart rate source</p>
+        <p className="mb-2 font-inter text-[11px] font-semibold text-[#F4F2ED]">
+          Heart rate source
+        </p>
         <div className="space-y-1.5" role="radiogroup" aria-label="Heart rate source">
           {HEART_RATE_SOURCE_OPTIONS.map((option) => {
             const selected = preference === option.value;

@@ -51,7 +51,9 @@ const Card: React.FC<{ title: string; subtitle?: string; children: React.ReactNo
 }) => (
   <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4 sm:p-5">
     <SVJSectionHeader title={title} />
-    {subtitle && <p className="mt-1.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">{subtitle}</p>}
+    {subtitle && (
+      <p className="mt-1.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">{subtitle}</p>
+    )}
     <div className="mt-3">{children}</div>
   </section>
 );
@@ -67,15 +69,10 @@ const Empty: React.FC<{ children: React.ReactNode }> = ({ children }) => (
  * three days as still recovering, anything older as recovered. A muscle with no
  * logged training is its own neutral state — never painted as a low value.
  */
-const coverageState = (
-  status: CoverageStatus,
-  lastTrainedDate: string | null,
-): MuscleMapState => {
+const coverageState = (status: CoverageStatus, lastTrainedDate: string | null): MuscleMapState => {
   if (status !== "trained" || lastTrainedDate === null) return "no_recent_data";
   const [y, m, d] = lastTrainedDate.split("-").map(Number);
-  const days = Math.floor(
-    (Date.now() - new Date(y, (m ?? 1) - 1, d ?? 1).getTime()) / 86_400_000,
-  );
+  const days = Math.floor((Date.now() - new Date(y, (m ?? 1) - 1, d ?? 1).getTime()) / 86_400_000);
   if (days <= 1) return "high";
   if (days <= 3) return "moderate";
   return "fresh";
@@ -294,33 +291,33 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
           />
         ) : (
           <>
-          <MuscleBodyMap
-            entries={coverage.map((entry) => ({
-              muscle: entry.muscle,
-              label: entry.label,
-              state: coverageState(entry.status, entry.lastTrainedDate),
-            }))}
-            className="mb-4"
-          />
-          <ul className="space-y-2" data-testid="muscle-coverage">
-            {coverage.map((entry) => (
-              <li key={entry.muscle} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
-                  {entry.status === "trained" ? (
-                    <Check className="h-3.5 w-3.5 text-[#C81E3A]" aria-hidden />
-                  ) : (
-                    <span className="h-3.5 w-3.5 rounded-md border border-white/15" aria-hidden />
-                  )}
-                  {entry.label}
-                </span>
-                <span className="flex items-center gap-2 font-mono text-[10px] text-[#8C8C90]">
-                  <span>{recency(entry.lastTrainedDate)}</span>
-                  <span className="text-[#F4F2ED]">{entry.directSets} direct</span>
-                  <span>{entry.supportingSets} supporting</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+            <MuscleBodyMap
+              entries={coverage.map((entry) => ({
+                muscle: entry.muscle,
+                label: entry.label,
+                state: coverageState(entry.status, entry.lastTrainedDate),
+              }))}
+              className="mb-4"
+            />
+            <ul className="space-y-2" data-testid="muscle-coverage">
+              {coverage.map((entry) => (
+                <li key={entry.muscle} className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
+                    {entry.status === "trained" ? (
+                      <Check className="h-3.5 w-3.5 text-[#C81E3A]" aria-hidden />
+                    ) : (
+                      <span className="h-3.5 w-3.5 rounded-md border border-white/15" aria-hidden />
+                    )}
+                    {entry.label}
+                  </span>
+                  <span className="flex items-center gap-2 font-mono text-[10px] text-[#8C8C90]">
+                    <span>{recency(entry.lastTrainedDate)}</span>
+                    <span className="text-[#F4F2ED]">{entry.directSets} direct</span>
+                    <span>{entry.supportingSets} supporting</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </Card>
@@ -462,9 +459,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                         {nextTarget.target.durationSeconds !== null
                           ? `${nextTarget.target.workSets} × ${nextTarget.target.durationSeconds} sec`
                           : `${nextTarget.target.workSets} × ${nextTarget.target.repMin}–${nextTarget.target.repMax}${
-                              nextTarget.target.loadKg
-                                ? ` @ ${nextTarget.target.loadKg} kg`
-                                : ""
+                              nextTarget.target.loadKg ? ` @ ${nextTarget.target.loadKg} kg` : ""
                             }`}
                       </span>
                     </p>

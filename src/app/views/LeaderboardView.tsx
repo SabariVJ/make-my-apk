@@ -80,7 +80,7 @@ export const LeaderboardView: React.FC = () => {
               <span>•</span>
               <span className="text-emerald-400 font-bold">Live SVJ Ranks</span>
             </div>
-            <h1 className="font-anton text-3xl sm:text-4xl text-white uppercase tracking-wide">
+            <h1 className="font-anton text-3xl tracking-wide text-white sm:text-4xl">
               Global Hall of Mastery
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter mt-1">
@@ -288,7 +288,9 @@ export const LeaderboardView: React.FC = () => {
                       <span className="truncate font-inter text-sm font-semibold text-white">
                         {entry.username}
                       </span>
-                      {entry.isVerified && <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />}
+                      {entry.isVerified && (
+                        <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className="rounded-full border border-[#C9A227]/30 bg-[#C9A227]/[0.10] px-1.5 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.12em] text-[#C9A227]">

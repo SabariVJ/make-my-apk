@@ -182,29 +182,29 @@ export const MuscleRecoveryCard: React.FC<{
             className="mb-3"
           />
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2" data-testid="recovery-muscle-list">
-          {map.entries.map((entry) => (
-            <li
-              key={entry.muscle}
-              data-testid={`muscle-${entry.muscle}`}
-              className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/30 px-3 py-2"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden
-                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATE_SWATCH[entry.state]}`}
-                />
-                <span className="truncate text-xs font-inter text-[#F4F2ED]">{entry.label}</span>
-              </span>
-              <span
-                className={`shrink-0 font-inter text-[10px] font-semibold ${
-                  STATE_COLORS[entry.state] ?? "text-[#8C8C90]"
-                }`}
+            {map.entries.map((entry) => (
+              <li
+                key={entry.muscle}
+                data-testid={`muscle-${entry.muscle}`}
+                className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/30 px-3 py-2"
               >
-                {muscleRecoveryStateLabel(entry.state)}
-                <span className="sr-only"> — {entry.reason}</span>
-              </span>
-            </li>
-          ))}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    aria-hidden
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATE_SWATCH[entry.state]}`}
+                  />
+                  <span className="truncate text-xs font-inter text-[#F4F2ED]">{entry.label}</span>
+                </span>
+                <span
+                  className={`shrink-0 font-inter text-[10px] font-semibold ${
+                    STATE_COLORS[entry.state] ?? "text-[#8C8C90]"
+                  }`}
+                >
+                  {muscleRecoveryStateLabel(entry.state)}
+                  <span className="sr-only"> — {entry.reason}</span>
+                </span>
+              </li>
+            ))}
           </ul>
         </>
       )}

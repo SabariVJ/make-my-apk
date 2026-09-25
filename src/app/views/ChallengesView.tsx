@@ -392,8 +392,8 @@ export const ChallengesView: React.FC<{
             onClick={() => setShowAssessment(true)}
             className="w-full svj-card-crimson p-4 text-left svj-press"
           >
-            <span className="flex items-center gap-2 font-anton text-sm uppercase tracking-wide text-white">
-              <ClipboardCheck className="h-4 w-4 text-[#C81E3A]" /> Complete Your SVJ Assessment
+            <span className="flex items-center gap-2 font-inter text-sm font-semibold text-[#F4F2ED]">
+              <ClipboardCheck className="h-4 w-4 text-[#E62846]" /> Complete your SVJ assessment
             </span>
             <span className="mt-1 block text-xs font-inter text-[#8C8C90]">
               Personalize challenges around your goals, interests and improvement areas.

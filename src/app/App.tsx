@@ -52,12 +52,12 @@ const ConfigMissingScreen: React.FC = () => {
   const missing = getMissingSupabaseEnv();
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="font-anton text-2xl uppercase tracking-wider">SVJ</div>
-      <p className="text-sm text-[#8C8C90] max-w-sm font-mono">
+      <div className="font-anton text-2xl tracking-wide">SVJ</div>
+      <p className="max-w-sm font-inter text-sm text-[#8C8C90]">
         Backend configuration is missing
         {missing.length > 0 ? ` (${missing.join(", ")})` : ""}.
       </p>
-      <p className="text-[11px] font-mono text-[#8C8C90] max-w-sm">
+      <p className="max-w-sm font-inter text-[11px] text-[#8C8C90]">
         Set the missing variable(s) in the project's environment / API keys and restart the preview.
         The app will load here once Supabase is connected.
       </p>
@@ -114,7 +114,7 @@ const AppContent: React.FC<{
     return (
       <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
-        <p className="text-[11px] font-mono text-[#8C8C90] uppercase tracking-wider">Loading SVJ</p>
+        <p className="font-inter text-[11px] text-[#8C8C90]">Loading SVJ</p>
       </div>
     );
   }
@@ -162,14 +162,11 @@ const AppContent: React.FC<{
             aria-labelledby="trial-expired-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
           >
-            <div className="w-full max-w-sm rounded-2xl bg-[#121214] border border-white/10 p-6 shadow-2xl space-y-5 text-center">
-              <h2
-                id="trial-expired-title"
-                className="font-anton text-xl uppercase tracking-wider text-white"
-              >
+            <div className="w-full max-w-sm space-y-5 svj-radius-card svj-elev-3 svj-lit-top border border-white/10 bg-[#17171A] p-6 text-center">
+              <h2 id="trial-expired-title" className="font-anton text-xl tracking-wide text-white">
                 Your 7-Day Trial Has Ended
               </h2>
-              <p className="text-xs font-mono text-[#8C8C90] leading-relaxed">
+              <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
                 You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and
                 your profile, or view SVJ Plus membership details.
               </p>
@@ -190,14 +187,14 @@ const AppContent: React.FC<{
                     setShowTrialNotice(false);
                     setIsPaywallOpen(true);
                   }}
-                  className="w-full py-3 rounded-xl bg-[#C81E3A] hover:bg-[#A0182E] text-white font-anton uppercase tracking-wider text-xs cursor-pointer"
+                  className="w-full cursor-pointer svj-radius-row bg-[#C81E3A] py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E]"
                 >
                   Explore SVJ Plus
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowTrialNotice(false)}
-                  className="w-full py-3 rounded-xl border border-white/15 text-[#8C8C90] hover:text-white font-mono text-xs cursor-pointer"
+                  className="w-full cursor-pointer svj-radius-row border border-white/15 py-3 font-inter text-xs text-[#8C8C90] transition-colors hover:text-[#F4F2ED]"
                 >
                   Continue in Limited Mode
                 </button>
@@ -215,11 +212,9 @@ const AppContent: React.FC<{
               {storageError}
             </p>
           )}
-          <div className="rounded-2xl border border-gold/30 bg-gold/10 p-4 mb-4">
-            <p className="font-anton text-sm uppercase tracking-wider text-gold">
-              Your 7-Day Trial Has Ended
-            </p>
-            <p className="text-[11px] font-mono text-[#8C8C90] mt-1 leading-relaxed">
+          <div className="mb-4 svj-radius-card border border-gold/30 bg-gold/10 p-4">
+            <p className="font-inter text-sm font-semibold text-gold">Your 7-Day Trial Has Ended</p>
+            <p className="mt-1 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
               You can still use Earn Plus daily missions, complete the 60-Day Challenge, redeem a
               reward code, manage your profile or sign out.
             </p>
@@ -232,9 +227,7 @@ const AppContent: React.FC<{
           {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
           {activeTab === "redeem" && (
             <div className="space-y-4">
-              <h2 className="font-anton text-xl uppercase tracking-wider text-white">
-                Redeem Code
-              </h2>
+              <h2 className="font-anton text-xl tracking-wide text-white">Redeem Code</h2>
               <p className="text-xs text-[#8C8C90] font-inter">
                 Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
               </p>

@@ -184,7 +184,7 @@ const SetupFlow: React.FC<{
       <p className="flex items-center gap-1.5 font-inter text-[11px] uppercase tracking-wider text-[#C81E3A]">
         <Sparkles className="h-3.5 w-3.5" /> Build my program
       </p>
-      <h2 className="mt-1 font-anton text-xl uppercase leading-none text-white">
+      <h2 className="mt-1 font-anton text-xl leading-none tracking-wide text-white">
         How do you train?
       </h2>
       <p className="mt-1.5 text-xs font-inter text-[#8C8C90]">
@@ -410,7 +410,9 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
         className="rounded-2xl border border-white/10 bg-[#17171A] p-5 text-center"
         data-testid="training-load-error"
       >
-        <p className="font-anton text-sm uppercase text-white">Training needs a connection</p>
+        <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
+          Training needs a connection
+        </p>
         <p role="alert" className="mt-2 text-xs font-inter text-[#B8B8C0]">
           {safeMessage}
         </p>
@@ -451,7 +453,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
       <div className="space-y-3" data-testid="training-rebuild-setup">
         <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#17171A] px-3 py-2">
           <div>
-            <p className="font-anton text-sm uppercase text-white">Rebuild your program</p>
+            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">Rebuild your program</p>
             <p className="text-[11px] font-inter text-[#8C8C90]">
               Change your goal, days, session length or equipment. Saving creates a fresh plan from
               these choices.
@@ -552,7 +554,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
         </section>
       ) : (
         <section className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
-          <p className="font-anton text-sm uppercase text-white">No session scheduled</p>
+          <p className="font-inter text-sm font-semibold text-[#F4F2ED]">No session scheduled</p>
           <p className="mt-1 text-xs font-inter text-[#8C8C90]">
             Every planned session for this block is complete. Rebuild the plan when you are ready.
           </p>
@@ -563,7 +565,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
       <section className="rounded-2xl border border-white/5 bg-[#17171A] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-anton text-sm uppercase tracking-wide text-white">
+            <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
               {splitName ?? "Your plan"}
             </p>
             <p className="mt-0.5 text-[11px] font-inter text-[#8C8C90]">{explanation ?? ""}</p>

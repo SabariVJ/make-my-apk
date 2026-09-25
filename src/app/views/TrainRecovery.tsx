@@ -367,7 +367,7 @@ export const TrainRecovery: React.FC = () => {
                 </p>
                 <p
                   data-testid="recovery-score"
-                  className="font-anton text-xl uppercase"
+                  className="font-anton text-xl tracking-wide"
                   style={{ color: SCORE_COLOR(today.score) }}
                 >
                   {today.score} / 100
@@ -535,7 +535,7 @@ export const TrainRecovery: React.FC = () => {
             <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C8C90]">
               <Moon className="h-3 w-3 text-gold" /> Tonight&apos;s sleep window
             </p>
-            <p className="font-anton text-xl uppercase text-white">
+            <p className="font-mono text-xl font-semibold tracking-tight text-white">
               {window.minHours}–{window.maxHours} h
             </p>
             <p className="mt-0.5 text-xs font-mono text-[#8C8C90]">

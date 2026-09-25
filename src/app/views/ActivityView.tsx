@@ -118,9 +118,7 @@ export const ActivityView: React.FC<{ hideRecoverySection?: boolean }> = ({
   if (!activity) {
     return (
       <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 text-center space-y-2">
-        <p className="font-anton text-lg uppercase tracking-wider text-white">
-          Activity Unavailable
-        </p>
+        <p className="font-anton text-lg tracking-wide text-white">Activity Unavailable</p>
         <p className="text-xs font-inter text-[#8C8C90]">
           Reload the app to reconnect step tracking.
         </p>
@@ -197,7 +195,7 @@ const ActivityViewContent: React.FC<{
           <div className="w-9 h-9 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
             <ActivityIcon className="w-5 h-5 text-[#E62846]" />
           </div>
-          <h1 className="font-anton text-2xl uppercase tracking-wider text-white">Activity</h1>
+          <h1 className="font-anton text-2xl tracking-wide text-white">Activity</h1>
         </div>
         <div
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
@@ -456,9 +454,7 @@ const ActivityViewContent: React.FC<{
             </span>
           </div>
           <ul className="space-y-1 text-[10px] font-mono leading-relaxed">
-            <li className="text-[#8C8C90]">
-              Platform android, tracking status {trackingStatus}
-            </li>
+            <li className="text-[#8C8C90]">Platform android, tracking status {trackingStatus}</li>
             <li className="text-[#8C8C90]">
               Plugin registered:{" "}
               {debugInfo.pluginAvailable == null

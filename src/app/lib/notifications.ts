@@ -51,14 +51,14 @@ export interface NotificationPreferences {
 }
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  enabled: false,
+  enabled: true,
   dailyPlan: true,
   eveningCoach: true,
   streakRisk: true,
   earnPlus: true,
   recovery: true,
-  nutrition: false,
-  training: false,
+  nutrition: true,
+  training: true,
   trainingSession: true,
   trainingTime: "17:30",
   inactivity: true,
@@ -165,11 +165,15 @@ function validTime(value: unknown, fallback: string): string {
 export function loadNotificationPreferences(userId: string): NotificationPreferences {
   const raw = appStorage.getItem(preferenceKey(userId));
   if (!raw) return { ...DEFAULT_NOTIFICATION_PREFERENCES };
+
+  // Notification category switches are no longer an in-app user setting.
+  // Preserve only previously chosen reminder TIMES for compatibility, while
+  // keeping the planner enabled. Android's system notification permission is
+  // the single source of truth for whether notifications may be delivered.
   try {
     const parsed = JSON.parse(raw) as Partial<NotificationPreferences>;
     return {
       ...DEFAULT_NOTIFICATION_PREFERENCES,
-      ...parsed,
       morningTime: validTime(parsed.morningTime, DEFAULT_NOTIFICATION_PREFERENCES.morningTime),
       eveningTime: validTime(parsed.eveningTime, DEFAULT_NOTIFICATION_PREFERENCES.eveningTime),
       recoveryTime: validTime(parsed.recoveryTime, DEFAULT_NOTIFICATION_PREFERENCES.recoveryTime),
@@ -178,10 +182,6 @@ export function loadNotificationPreferences(userId: string): NotificationPrefere
         DEFAULT_NOTIFICATION_PREFERENCES.nutritionTime,
       ),
       trainingTime: validTime(parsed.trainingTime, DEFAULT_NOTIFICATION_PREFERENCES.trainingTime),
-      trainingSession:
-        typeof parsed.trainingSession === "boolean"
-          ? parsed.trainingSession
-          : DEFAULT_NOTIFICATION_PREFERENCES.trainingSession,
     };
   } catch {
     return { ...DEFAULT_NOTIFICATION_PREFERENCES };
@@ -457,6 +457,31 @@ export async function notificationPermission(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+const PERMISSION_PROMPTED_PREFIX = "svj_notification_permission_prompted_v1:";
+
+function permissionPromptedKey(userId: string): string {
+  return PERMISSION_PROMPTED_PREFIX + (userId || "anonymous");
+}
+
+/**
+ * Called only from first-time onboarding. The marker is written BEFORE the
+ * Android permission sheet opens, so dismissal/denial never causes SVJ to ask
+ * again inside the app. If the user later changes notification permission in
+ * Android App Info, the planner automatically follows that system setting.
+ */
+export async function initializeNotificationsAtSignup(userId: string): Promise<boolean> {
+  saveNotificationPreferences(userId, { ...DEFAULT_NOTIFICATION_PREFERENCES });
+
+  if (!Capacitor.isNativePlatform()) return false;
+  if (appStorage.getItem(permissionPromptedKey(userId)) === "1") {
+    return notificationPermission();
+  }
+
+  // Mark first so an interrupted permission flow cannot become a repeat prompt.
+  appStorage.setItem(permissionPromptedKey(userId), "1");
+  return requestNotificationPermission();
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {

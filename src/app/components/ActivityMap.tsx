@@ -311,7 +311,10 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       const distance = pinchDistance(event.touches);
       if (distance != null && gesture.current.startDistance > 0) {
         const scale = distance / gesture.current.startDistance;
-        const next = Math.min(19, Math.max(3, gesture.current.startZoom + Math.log2(scale)));
+        const next = Math.min(
+          19,
+          Math.max(3, Math.round(gesture.current.startZoom + Math.log2(scale))),
+        );
         setManualCenter(
           (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
         );

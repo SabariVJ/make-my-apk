@@ -29,6 +29,8 @@ export const SVJSurface: React.FC<{
   interactive?: boolean;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
   className?: string;
+  /** Optional stable hook for tests / analytics. */
+  testId?: string;
   children: React.ReactNode;
 }> = ({
   level = "surface",
@@ -37,6 +39,7 @@ export const SVJSurface: React.FC<{
   interactive = false,
   onClick,
   className = "",
+  testId,
   children,
 }) => {
   const paddings = { none: "", sm: "p-3", md: "p-4", lg: "p-5" } as const;
@@ -47,6 +50,7 @@ export const SVJSurface: React.FC<{
   return (
     <div
       onClick={onClick}
+      data-testid={testId}
       className={`border ${LEVEL_CLASSES[level]} ${radii[radius]} ${paddings[padding]} ${hover} ${press} ${className}`}
     >
       {children}

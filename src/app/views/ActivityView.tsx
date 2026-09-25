@@ -6,11 +6,15 @@ import {
   Flame,
   TrendingUp,
   Trophy,
-  Watch,
-  ActivitySquare,
   BarChart3,
   Cpu,
   AlertCircle,
+  Crosshair,
+  History as HistoryIcon,
+  Play,
+  Square,
+  RotateCw,
+  Download,
 } from "lucide-react";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
@@ -20,6 +24,18 @@ import { RouteLibrary } from "./RouteLibrary";
 import { RecordsView } from "./RecordsView";
 import { ConnectedDevicesView } from "./ConnectedDevicesView";
 import { WorkoutRecorder } from "./WorkoutRecorder";
+import {
+  SVJActionCard,
+  SVJHeroCard,
+  SVJMetricCard,
+  SVJProgressMeter,
+  SVJScoreRing,
+  SVJSectionHeader,
+  SVJStatusPill,
+  SVJSurface,
+  type StatusToneName,
+} from "../components/ui-primitives";
+import { BRAND_COLORS } from "../lib/designTokens";
 import type { SavedRoute } from "../lib/activityPlatform";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
@@ -39,58 +55,94 @@ const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, cl
   return (
     <motion.span
       key={value}
-      initial={bump ? { scale: 1.12 } : false}
+      initial={bump ? { scale: 1.06 } : false}
       animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 400, damping: 18 }}
-      className={`inline-block ${className ?? ""}`}
+      transition={{ type: "spring", stiffness: 400, damping: 22 }}
+      className={`inline-block tabular-nums ${className ?? ""}`}
     >
       {value.toLocaleString()}
     </motion.span>
   );
 };
 
-/** Circular progress ring with neon sweep. */
-const ProgressRing: React.FC<{
-  percent: number;
-  size?: number;
-  stroke?: number;
-  color?: string;
-  children: React.ReactNode;
-}> = ({ percent, size = 190, stroke = 12, color = "#E62846", children }) => {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - Math.min(100, Math.max(0, percent)) / 100);
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={stroke}
-          fill="none"
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-          style={{ filter: `drop-shadow(0 0 8px ${color}66)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        {children}
-      </div>
-    </div>
-  );
+/**
+ * Real tracking states only — every label maps to a state the provider can
+ * actually be in. Nothing here is invented for decoration.
+ */
+type TrackingStatus = ActivityContextValue["trackingStatus"];
+
+const STATUS_COPY: Record<
+  TrackingStatus,
+  { label: string; tone: StatusToneName; pulse: boolean; headline: string }
+> = {
+  stopped: {
+    label: "Ready",
+    tone: "positive",
+    pulse: false,
+    headline: "Ready to track",
+  },
+  starting: {
+    label: "Starting",
+    tone: "warning",
+    pulse: true,
+    headline: "Starting sensors",
+  },
+  tracking: {
+    label: "Recording",
+    tone: "crimson",
+    pulse: true,
+    headline: "Live tracking",
+  },
+  stopping: {
+    label: "Stopping",
+    tone: "warning",
+    pulse: true,
+    headline: "Stopping session",
+  },
+  denied: {
+    label: "Needs attention",
+    tone: "caution",
+    pulse: false,
+    headline: "Permission needed",
+  },
+  unsupported: {
+    label: "Needs attention",
+    tone: "caution",
+    pulse: false,
+    headline: "No step sensor",
+  },
+  error: {
+    label: "Retry stop",
+    tone: "critical",
+    pulse: false,
+    headline: "Stop incomplete",
+  },
+  "update-required": {
+    label: "App update required",
+    tone: "critical",
+    pulse: false,
+    headline: "App update required",
+  },
+};
+
+/** Honest sensor-source copy — never claims a source the device did not report. */
+const STEP_SOURCE_COPY: Record<string, { label: string; detail: string; tone: StatusToneName }> = {
+  counter: {
+    label: "Hardware step counter",
+    detail: "Source: hardware step counter",
+    tone: "positive",
+  },
+  detector: {
+    label: "Step detector",
+    detail: "Source: step detector",
+    tone: "info",
+  },
+  accelerometer: {
+    label: "Motion estimate",
+    detail: "Estimated steps — accelerometer motion detection",
+    tone: "warning",
+  },
+  ios: { label: "Device pedometer", detail: "Source: device pedometer", tone: "info" },
 };
 
 /**
@@ -112,40 +164,34 @@ const HistoryPanel: React.FC<{
     averageActiveKcal: number;
   };
 }> = ({ title, summary }) => (
-  <div
-    data-testid="activity-period-summary"
-    className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-3"
-  >
-    <div className="flex items-center gap-2 mb-2.5">
-      <BarChart3 className="w-4 h-4 text-[#C81E3A]" />
-      <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-        {title}
-      </span>
-    </div>
-    <div className="grid grid-cols-3 gap-2">
+  <SVJSurface level="surface" testId="activity-period-summary">
+    <SVJSectionHeader title={title} icon={BarChart3} className="mb-3" />
+    <dl className="grid grid-cols-3 gap-2">
       <div className="svj-stat p-2.5 text-center">
-        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg Steps</div>
-        <div className="font-mono text-sm font-bold text-white">
+        <dt className="svj-label-xs uppercase tracking-[0.08em] mb-1">Avg Steps</dt>
+        <dd className="font-mono text-sm font-semibold text-svj-text tabular-nums">
           {summary.averageSteps.toLocaleString()}
-        </div>
+        </dd>
       </div>
       <div className="svj-stat p-2.5 text-center">
-        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Best Day</div>
-        <div className="font-mono text-sm font-bold text-[#C81E3A]">
+        <dt className="svj-label-xs uppercase tracking-[0.08em] mb-1">Best Day</dt>
+        <dd className="font-mono text-sm font-semibold text-svj-crimson tabular-nums">
           {summary.bestDay ? summary.bestDay.steps.toLocaleString() : "—"}
-        </div>
+        </dd>
         {summary.bestDay && (
-          <div className="text-[10px] font-inter text-[#8C8C90]">{summary.bestDay.label}</div>
+          <p className="text-[10px] font-inter text-svj-secondary mt-0.5">
+            {summary.bestDay.label}
+          </p>
         )}
       </div>
       <div className="svj-stat p-2.5 text-center">
-        <div className="text-[11px] font-inter text-[#8C8C90] mb-0.5">Avg KCAL</div>
-        <div className="font-mono text-sm font-bold text-gold">
+        <dt className="svj-label-xs uppercase tracking-[0.08em] mb-1">Avg KCAL</dt>
+        <dd className="font-mono text-sm font-semibold text-gold tabular-nums">
           {summary.averageActiveKcal.toLocaleString()}
-        </div>
+        </dd>
       </div>
-    </div>
-  </div>
+    </dl>
+  </SVJSurface>
 );
 
 /**
@@ -159,14 +205,12 @@ export const ActivityView: React.FC<{ hideRecoverySection?: boolean }> = ({
   const activity = useActivityOptional();
   if (!activity) {
     return (
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 text-center space-y-2">
-        <p className="font-anton text-lg uppercase tracking-wider text-white">
-          Activity Unavailable
-        </p>
-        <p className="text-xs font-inter text-[#8C8C90]">
+      <SVJSurface level="surface" className="text-center space-y-2">
+        <p className="svj-heading text-lg">Activity Unavailable</p>
+        <p className="text-xs font-inter text-svj-secondary">
           Reload the app to reconnect step tracking.
         </p>
-      </div>
+      </SVJSurface>
     );
   }
   return <ActivityViewContent activity={activity} hideRecoverySection={hideRecoverySection} />;
@@ -182,6 +226,18 @@ type TrainSection =
   | "goals"
   | "progress"
   | "recovery";
+
+const SECTION_ITEMS: ReadonlyArray<{ id: TrainSection; label: string }> = [
+  { id: "activity", label: "Overview" },
+  { id: "record", label: "Record" },
+  { id: "history", label: "History" },
+  { id: "routes", label: "Routes" },
+  { id: "records", label: "Records" },
+  { id: "devices", label: "Devices" },
+  { id: "goals", label: "Goals" },
+  { id: "progress", label: "Progress" },
+  { id: "recovery", label: "Recovery" },
+];
 
 const ActivityViewContent: React.FC<{
   activity: ActivityContextValue;
@@ -210,6 +266,8 @@ const ActivityViewContent: React.FC<{
     getSensorInfo,
     statusMessage,
     stepSource,
+    xpEarnedToday,
+    serverActivityXpToday,
     summary7,
     summary30,
     debugInfo,
@@ -230,92 +288,155 @@ const ActivityViewContent: React.FC<{
   const [plannedRoute, setPlannedRoute] = useState<SavedRoute | null>(null);
 
   const nextMilestone = [2500, 5000, 7500, 10000].find((m) => milestoneSteps < m) ?? 10000;
+  // Defensive: an unexpected status (older persisted state, a future provider
+  // value) must degrade to the calm "ready" copy instead of crashing the
+  // screen. The tracking engine itself is untouched.
+  const status = STATUS_COPY[trackingStatus] ?? STATUS_COPY.stopped;
+  const source = stepSource ? (STEP_SOURCE_COPY[stepSource] ?? null) : null;
+  const busy = trackingStatus === "starting" || trackingStatus === "stopping";
+  const ctaDisabled = busy || trackingStatus === "update-required";
+  const ctaLabel =
+    trackingStatus === "update-required"
+      ? "APP UPDATE REQUIRED"
+      : trackingStatus === "error"
+        ? "RETRY STOP"
+        : trackingRequested || trackingActive
+          ? "STOP TRACKING"
+          : "START TRACKING";
+  const CtaIcon =
+    trackingStatus === "update-required"
+      ? Download
+      : trackingStatus === "error"
+        ? RotateCw
+        : trackingRequested || trackingActive
+          ? Square
+          : Play;
+
+  const sections = SECTION_ITEMS.filter((s) => !hideRecoverySection || s.id !== "recovery");
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
-            <ActivityIcon className="w-5 h-5 text-[#E62846]" />
-          </div>
-          <h1 className="font-anton text-2xl uppercase tracking-wider text-white">Activity</h1>
-        </div>
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
-            trackingStatus === "tracking"
-              ? "bg-emerald-500/10 text-emerald-400"
-              : trackingStatus === "starting"
-                ? "bg-gold/10 text-gold"
-                : "bg-white/[0.04] text-[#8C8C90]"
-          }`}
-        >
-          {trackingStatus === "tracking" ? (
-            <Watch className="w-3.5 h-3.5" />
-          ) : (
-            <ActivitySquare className="w-3.5 h-3.5" />
-          )}
-          {trackingActive ? "Tracking active" : "Tracking stopped"}
-        </div>
-      </div>
+    <div className="pb-28 pt-4 px-4 sm:px-6 max-w-2xl mx-auto lg:max-w-4xl">
+      {/* ── A. Live / ready hero ─────────────────────────────────────────── */}
+      <SVJHeroCard
+        eyebrow="Performance telemetry"
+        title="Activity"
+        icon={ActivityIcon}
+        description={status.headline}
+        action={
+          <SVJStatusPill tone={status.tone} dot pulse={status.pulse}>
+            {trackingActive ? "Tracking active" : "Tracking stopped"}
+          </SVJStatusPill>
+        }
+        graphic={
+          <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+            <div className="flex justify-center md:justify-start">
+              <SVJScoreRing
+                value={stepPercent}
+                size={164}
+                strokeWidth={10}
+                color={BRAND_COLORS.crimson}
+                label="Step goal progress"
+              >
+                <Footprints className="w-4 h-4 text-svj-crimson mb-1" aria-hidden="true" />
+                <LiveNumber
+                  value={todaySteps}
+                  className="font-mono text-[32px] leading-none font-semibold text-svj-text"
+                />
+                <p className="font-mono text-[10px] text-svj-secondary mt-1.5 tabular-nums">
+                  of {stepGoal.toLocaleString()} · {stepPercent}%
+                </p>
+              </SVJScoreRing>
+            </div>
 
-      {/* Always visible: the Activity screen must never be silently stuck. */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <SVJStatusPill tone={status.tone} dot={false}>
+                  {status.label}
+                </SVJStatusPill>
+                {source && (
+                  <SVJStatusPill tone={source.tone}>
+                    <Cpu className="w-3 h-3" aria-hidden="true" />
+                    {source.label}
+                  </SVJStatusPill>
+                )}
+              </div>
+
+              <SVJProgressMeter
+                label="Step goal"
+                value={todaySteps}
+                max={stepGoal}
+                readout={
+                  remainingSteps > 0 ? `${remainingSteps.toLocaleString()} to go` : "Goal complete"
+                }
+                tone="crimson"
+              />
+              <SVJProgressMeter
+                label="Active calorie goal"
+                value={activeKcal}
+                max={kcalGoal}
+                readout={`${activeKcal.toLocaleString()} / ${kcalGoal.toLocaleString()} KCAL`}
+                tone="gold"
+              />
+
+              <button
+                type="button"
+                disabled={ctaDisabled}
+                onClick={() => {
+                  if (trackingRequested || trackingActive || trackingStatus === "error")
+                    void stopTracking();
+                  else void startTracking();
+                }}
+                data-testid="activity-tracking-toggle"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-svj-crimson px-4 py-3 font-anton text-xs uppercase tracking-wider text-white transition-colors hover:bg-svj-crimson-hover disabled:opacity-50 svj-press"
+              >
+                <CtaIcon className="w-4 h-4" aria-hidden="true" />
+                <span>{ctaLabel}</span>
+              </button>
+            </div>
+          </div>
+        }
+      />
+
+      {/* The provider's own status sentence is always visible: the screen must
+          never be silently stuck. */}
       <p
         role="status"
-        className="mb-3 rounded-lg bg-[#0b0b0c] border border-white/[0.04] px-3 py-2 text-[11px] font-inter text-[#8C8C90]"
+        className="mt-3 rounded-xl svj-inset px-3 py-2.5 text-[11px] font-inter leading-relaxed text-svj-secondary"
       >
         {statusMessage}
       </p>
-      <button
-        type="button"
-        disabled={trackingStatus === "stopping" || trackingStatus === "update-required"}
-        onClick={() => {
-          if (trackingRequested || trackingActive || trackingStatus === "error")
-            void stopTracking();
-          else void startTracking();
-        }}
-        className="mb-5 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
-      >
-        {trackingStatus === "update-required"
-          ? "APP UPDATE REQUIRED"
-          : trackingStatus === "error"
-            ? "RETRY STOP"
-            : trackingRequested || trackingActive
-              ? "STOP TRACKING"
-              : "START TRACKING"}
-      </button>
+      {source && (
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-svj-muted">
+          {source.detail}
+        </p>
+      )}
 
-      {/* Train internal navigation: only working sections are exposed. */}
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-1" data-testid="train-sections">
-        {(
-          [
-            { id: "activity", label: "Overview" },
-            { id: "record", label: "Record" },
-            { id: "history", label: "History" },
-            { id: "routes", label: "Routes" },
-            { id: "records", label: "Records" },
-            { id: "devices", label: "Devices" },
-            { id: "goals", label: "Goals" },
-            { id: "progress", label: "Progress" },
-            { id: "recovery", label: "Recovery" },
-          ] as const
-        )
-          .filter((s) => !hideRecoverySection || s.id !== "recovery")
-          .map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSection(s.id)}
-              className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-inter font-medium transition-colors ${
-                section === s.id
-                  ? "bg-[#C81E3A]/15 text-white"
-                  : "bg-white/[0.04] text-[#8C8C90] hover:text-white"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-      </div>
+      {/* ── Section navigation (9 internal destinations, never bottom-nav) ── */}
+      <nav aria-label="Activity sections" className="mt-5">
+        <div
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
+          data-testid="train-sections"
+        >
+          {sections.map((s) => {
+            const active = section === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSection(s.id)}
+                aria-current={active ? "true" : undefined}
+                className={`shrink-0 rounded-lg border px-3 py-2.5 min-h-11 text-[11px] font-inter font-semibold uppercase tracking-[0.06em] transition-colors svj-press ${
+                  active
+                    ? "border-svj-crimson/40 bg-svj-crimson/12 text-svj-text"
+                    : "border-white/[0.06] bg-white/[0.03] text-svj-secondary hover:text-svj-text"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {section === "goals" && <TrainGoals />}
       {section === "progress" && <TrainProgress />}
@@ -343,175 +464,169 @@ const ActivityViewContent: React.FC<{
       {section === "records" && <RecordsView />}
       {section === "devices" && <ConnectedDevicesView />}
 
-      {/* Today's activity — visible on the Activity section. */}
       {section === "activity" && (
-        <>
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
-            <div className="text-[11px] font-inter uppercase tracking-wider text-[#8C8C90] mb-3">
-              Today&apos;s Activity
+        <div className="mt-5 space-y-4">
+          {/* ── B. Live telemetry ────────────────────────────────────────── */}
+          <section aria-label="Today's telemetry">
+            <SVJSectionHeader
+              title="Today's telemetry"
+              icon={TrendingUp}
+              trailing={<span className="svj-label-xs">Step mode · Estimate</span>}
+              className="mb-2.5"
+            />
+            <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+              <SVJMetricCard
+                label="Steps"
+                value={<LiveNumber value={todaySteps} />}
+                icon={Footprints}
+                tone="crimson"
+                footer={<SVJProgressMeter label="Goal" value={stepPercent} height={4} />}
+                className="col-span-2 md:col-span-1"
+              />
+              <SVJMetricCard
+                label="Active Calories"
+                value={<LiveNumber value={activeKcal} />}
+                unit="KCAL"
+                icon={Flame}
+                tone="gold"
+                footer={
+                  <p className="svj-label-xs">
+                    {kcalPercent}% of {kcalGoal.toLocaleString()} KCAL goal
+                  </p>
+                }
+              />
+              <SVJMetricCard
+                label="Total Calories"
+                value={<LiveNumber value={totalKcal} />}
+                unit="KCAL"
+                icon={Flame}
+                tone="neutral"
+                footer={<p className="svj-label-xs">Includes resting burn</p>}
+              />
+              <SVJMetricCard
+                label="Step XP today"
+                value={xpEarnedToday}
+                unit="XP"
+                icon={Trophy}
+                tone="crimson"
+                footer={
+                  <p className="svj-label-xs">
+                    {serverActivityXpToday > 0
+                      ? `${serverActivityXpToday.toLocaleString()} XP confirmed by server`
+                      : "Awarded at step milestones"}
+                  </p>
+                }
+              />
             </div>
-            <div className="flex flex-col items-center">
-              <ProgressRing percent={stepPercent}>
-                <Footprints className="w-5 h-5 text-[#E62846] mb-1" />
-                <LiveNumber
-                  value={todaySteps}
-                  className="font-mono text-4xl font-bold text-white"
-                />
-                <div className="text-[10px] font-mono text-[#8C8C90] mt-1">
-                  of {stepGoal.toLocaleString()} steps · {stepPercent}%
-                </div>
-                <div className="text-[10px] font-mono text-[#E62846] mt-0.5">
-                  {remainingSteps > 0
-                    ? `${remainingSteps.toLocaleString()} to go`
-                    : "Goal complete"}
-                </div>
-              </ProgressRing>
-              {stepSource === "accelerometer" && (
-                <div className="mt-2 rounded-lg border border-gold/25 bg-gold/5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider text-gold">
-                  Estimated steps — accelerometer motion detection
-                </div>
-              )}
-              {stepSource === "detector" && (
-                <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-                  Source: step detector
-                </div>
-              )}
-              {stepSource === "counter" && (
-                <div className="mt-2 text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">
-                  Source: hardware step counter
-                </div>
-              )}
-              <div className="mt-3 text-[10px] font-mono text-[#8C8C90] text-center">
-                Next milestone:{" "}
-                <span className="text-white">{nextMilestone.toLocaleString()} steps</span> — XP
-                awarded automatically at 2.5K / 5K / 7.5K / 10K
-              </div>
-            </div>
-          </div>
-
-          {/* Calories */}
-          <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4 mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-gold" />
-                <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-                  Calories Burned
-                </span>
-              </div>
-              <span className="text-[10px] font-inter text-[#8C8C90]">Estimate</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="svj-stat p-3">
-                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Active Calories</div>
-                <LiveNumber value={activeKcal} className="font-mono text-2xl font-bold text-gold" />
-                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
-                  KCAL · from movement
-                </div>
-              </div>
-              <div className="svj-stat p-3">
-                <div className="text-[11px] font-inter text-[#8C8C90] mb-1">Total Calories</div>
-                <LiveNumber value={totalKcal} className="font-mono text-2xl font-bold text-white" />
-                <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">
-                  KCAL · incl. resting burn
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex justify-between text-[11px] font-inter text-[#8C8C90]">
-                <span>Active Calorie Goal</span>
-                <span>
-                  {activeKcal.toLocaleString()} / {kcalGoal.toLocaleString()} KCAL
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-[#0b0b0c] overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${kcalPercent}%` }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-gold to-gold"
-                />
-              </div>
-            </div>
-            <p className="mt-3 text-[10px] font-inter leading-relaxed text-[#8C8C90]">
-              Estimates from steps, distance and your body profile — not medical measurements.
+            <p className="mt-2 text-[10px] font-inter leading-relaxed text-svj-muted">
+              Estimates from steps, distance and your body profile — not medical measurements. Step
+              mode reports steps and active calories only; pace, distance and elevation appear in
+              the GPS recorder, where they are real.
             </p>
-          </div>
-        </>
+          </section>
+
+          {/* ── C. GPS / route entry point (the recorder mounts once, in Record) ── */}
+          <SVJActionCard
+            icon={Crosshair}
+            title="Record an outdoor workout"
+            subtitle="GPS route, pace, splits and elevation from the native foreground recorder."
+            onClick={() => setSection("record")}
+            tone="crimson"
+          />
+
+          {/* ── E. Recent activity: the frozen completion summary ─────────── */}
+          <section aria-label="Recent activity">
+            <SVJSectionHeader
+              title="Recent activity"
+              icon={HistoryIcon}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setSection("history")}
+                  className="svj-label-xs uppercase tracking-[0.08em] text-svj-crimson hover:underline"
+                >
+                  Full history
+                </button>
+              }
+              className="mb-2.5"
+            />
+            <CompletedSessionCard />
+          </section>
+
+          {/* ── D. Daily summary (Avg Steps / Best Day / Avg KCAL, no charts) ── */}
+          <section aria-label="Period summaries" className="space-y-2.5">
+            <HistoryPanel title="Last 7 Days" summary={summary7} />
+            <HistoryPanel title="Last 30 Days" summary={summary30} />
+          </section>
+
+          {/* ── Step XP milestones ───────────────────────────────────────── */}
+          <SVJSurface level="surface">
+            <SVJSectionHeader title="Step XP" icon={Trophy} className="mb-3" />
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { steps: 2500, xp: 40 },
+                { steps: 5000, xp: 60 },
+                { steps: 7500, xp: 80 },
+                { steps: 10000, xp: 120 },
+              ].map((m) => {
+                const reached = milestoneSteps >= m.steps;
+                return (
+                  <div
+                    key={m.steps}
+                    className={`rounded-lg border p-2 text-center ${
+                      reached
+                        ? "border-svj-crimson/25 bg-svj-crimson/10"
+                        : "border-white/[0.04] bg-svj-bg"
+                    }`}
+                  >
+                    <p
+                      className={`font-mono text-sm font-semibold tabular-nums ${
+                        reached ? "text-svj-crimson" : "text-svj-secondary"
+                      }`}
+                    >
+                      {(m.steps / 1000).toFixed(1)}K
+                    </p>
+                    <p
+                      className={`text-[10px] font-inter ${
+                        reached ? "text-state-positive" : "text-svj-muted"
+                      }`}
+                    >
+                      +{m.xp} XP
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 flex items-start gap-1.5 text-[10px] font-inter leading-relaxed text-svj-secondary">
+              <TrendingUp className="mt-0.5 w-3 h-3 shrink-0" aria-hidden="true" />
+              Next milestone {nextMilestone.toLocaleString()} steps — XP is granted once per
+              milestone per day by the server and counts toward your streak.
+            </p>
+          </SVJSurface>
+        </div>
       )}
 
       {/* Completion summary + canonical server save (Update 01/02) */}
-      <CompletedSessionCard />
+      {section !== "activity" && <CompletedSessionCard />}
 
       {/* Server-backed activity history + manual logging (Update 01) */}
       {section === "history" && <ActivityHistory />}
 
-      {/* Period summaries (Avg Steps / Best Day / Avg KCAL) — no chart blocks. */}
-      {section === "activity" && (
-        <>
-          <HistoryPanel title="Last 7 Days" summary={summary7} />
-          <HistoryPanel title="Last 30 Days" summary={summary30} />
-        </>
-      )}
-
-      {/* How XP works */}
-      <div className="rounded-2xl bg-[#17171A] border border-white/[0.06] p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-gold" />
-          <span className="text-[11px] font-inter font-semibold uppercase tracking-wider text-white">
-            Step XP
-          </span>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { steps: 2500, xp: 40 },
-            { steps: 5000, xp: 60 },
-            { steps: 7500, xp: 80 },
-            { steps: 10000, xp: 120 },
-          ].map((m) => {
-            const reached = milestoneSteps >= m.steps;
-            return (
-              <div
-                key={m.steps}
-                className={`rounded-lg p-2 text-center ${
-                  reached ? "bg-[#C81E3A]/10" : "bg-[#0b0b0c]"
-                }`}
-              >
-                <div
-                  className={`font-mono text-sm font-bold ${reached ? "text-[#C81E3A]" : "text-[#8C8C90]"}`}
-                >
-                  {(m.steps / 1000).toFixed(1)}K
-                </div>
-                <div
-                  className={`text-[10px] font-inter ${reached ? "text-emerald-400" : "text-[#8C8C90]"}`}
-                >
-                  +{m.xp} XP
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex items-center gap-1.5 text-[10px] font-inter text-[#8C8C90]">
-          <TrendingUp className="w-3 h-3" />
-          XP is granted once per milestone per day and counts toward your streak.
-        </div>
-      </div>
-
       {/* Developer diagnostics — only render when the explicit opt-in or a dev/test bundle enables them. */}
       {showDiagnostics && debugInfo && (
-        <div className="rounded-2xl border border-gold/30 bg-black/60 p-4 mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Cpu className="w-3.5 h-3.5 text-gold" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-gold">
+        <SVJSurface level="raised" className="mt-4 border-gold/25">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <Cpu className="w-3.5 h-3.5 text-gold" aria-hidden="true" />
+            <span className="font-mono text-[10px] uppercase tracking-widest text-gold">
               ANDROID PEDOMETER DEBUG
             </span>
-            <span className="text-[9px] font-mono text-[#8C8C90]">
-              {" "}
+            <span className="font-mono text-[9px] text-svj-secondary">
               — shown when the native sensor bridge is present
             </span>
           </div>
           <ul className="space-y-1 text-[10px] font-mono leading-relaxed">
-            <li className="text-[#8C8C90]">Platform: android · status: {trackingStatus}</li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">Platform: android · status: {trackingStatus}</li>
+            <li className="text-svj-secondary">
               Plugin registered:{" "}
               {debugInfo.pluginAvailable == null
                 ? "unknown"
@@ -519,12 +634,12 @@ const ActivityViewContent: React.FC<{
                   ? "yes"
                   : "no"}
             </li>
-            <li className="text-[#8C8C90]">Sensor mode: {debugInfo.sensorMode ?? "none"}</li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">Sensor mode: {debugInfo.sensorMode ?? "none"}</li>
+            <li className="text-svj-secondary">
               Sensor name: {debugInfo.sensorName ?? "none"}
               {debugInfo.sensorVendor ? ` (${debugInfo.sensorVendor})` : ""}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Sensor available:{" "}
               {debugInfo.sensorAvailable === true
                 ? "true"
@@ -532,60 +647,60 @@ const ActivityViewContent: React.FC<{
                   ? "false"
                   : "unknown"}
             </li>
-            <li className="text-[#8C8C90]">Permission: {debugInfo.permission ?? "unknown"}</li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">Permission: {debugInfo.permission ?? "unknown"}</li>
+            <li className="text-svj-secondary">
               Tracking requested: {debugInfo.trackingRequested ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Tracking active: {debugInfo.trackingActive ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Listener registered: {debugInfo.listenerRegistered ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Listener removed: {debugInfo.listenerRemoved ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Session baseline raw: {debugInfo.sessionBaselineRaw ?? "waiting for first reading"}
             </li>
-            <li className="text-[#8C8C90]">Session steps: {debugInfo.sessionSteps}</li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">Session steps: {debugInfo.sessionSteps}</li>
+            <li className="text-svj-secondary">
               Selected sensor mode: {debugInfo.selectedSensorMode ?? "none"}
             </li>
-            <li className="text-[#8C8C90]">Active calories: {activeKcal} kcal</li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">Active calories: {activeKcal} kcal</li>
+            <li className="text-svj-secondary">
               Listener connected: {debugInfo.listenerConnected ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Sensor started: {debugInfo.sensorStarted ? "yes" : "no"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Last raw value: {debugInfo.lastRawSteps != null ? debugInfo.lastRawSteps : "none"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Last daily steps:{" "}
               {debugInfo.lastDailySteps != null ? debugInfo.lastDailySteps : "none"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Last measurement at:{" "}
               {debugInfo.lastMeasurementAtMs != null
                 ? new Date(debugInfo.lastMeasurementAtMs).toISOString()
                 : "none"}
             </li>
-            <li className="text-[#8C8C90]">
+            <li className="text-svj-secondary">
               Last event time:{" "}
               {debugInfo.lastMeasurementAtMs != null
                 ? new Date(debugInfo.lastMeasurementAtMs).toLocaleTimeString()
                 : "none"}
             </li>
-            <li className="text-[#8C8C90]">Last error: {debugInfo.lastError ?? "none"}</li>
+            <li className="text-svj-secondary">Last error: {debugInfo.lastError ?? "none"}</li>
           </ul>
           <button
             type="button"
             onClick={() => {
               void getSensorInfo();
             }}
-            className="mt-3 text-[10px] font-mono text-gold underline"
+            className="mt-3 min-h-11 rounded-lg border border-gold/30 px-3 font-mono text-[10px] uppercase tracking-wider text-gold svj-press"
           >
             Refresh diagnostics
           </button>
@@ -594,7 +709,7 @@ const ActivityViewContent: React.FC<{
               {debugInfo.notes.slice(0, 40).map((n, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded-full bg-gold/10 border border-gold/20 px-1.5 py-0.5 text-[9px] font-mono text-gold break-all"
+                  className="inline-block break-all rounded-md border border-gold/20 bg-gold/10 px-1.5 py-0.5 font-mono text-[9px] text-gold"
                 >
                   {n}
                 </span>
@@ -602,12 +717,12 @@ const ActivityViewContent: React.FC<{
             </div>
           )}
           {debugInfo.lastError && (
-            <div className="mt-2 flex items-start gap-2 rounded-full border border-crimson/30 bg-crimson/5 p-2 text-[10px] font-mono text-crimson">
-              <AlertCircle className="mt-0.5 shrink-0" />
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-svj-crimson/30 bg-svj-crimson/5 p-2 font-mono text-[10px] text-svj-crimson">
+              <AlertCircle className="mt-0.5 shrink-0 w-3.5 h-3.5" aria-hidden="true" />
               <span>{debugInfo.lastError}</span>
             </div>
           )}
-        </div>
+        </SVJSurface>
       )}
     </div>
   );

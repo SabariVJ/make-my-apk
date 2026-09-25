@@ -11,7 +11,8 @@ import type { LucideIcon } from "lucide-react";
  */
 export const SVJMetricCard: React.FC<{
   label: string;
-  value: string | number;
+  /** Mono readout. Pass a node (e.g. an animated number) for live telemetry. */
+  value: React.ReactNode;
   unit?: string;
   icon?: LucideIcon;
   /** Optional delta element (use SVJStatDelta). */

@@ -1,5 +1,13 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Crosshair, Maximize2, MapPin, Minimize2, Navigation } from "lucide-react";
+import {
+  Crosshair,
+  Maximize2,
+  MapPin,
+  Minimize2,
+  Navigation,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import type { TrackPoint } from "../lib/gpsActivity";
 
 /**
@@ -256,6 +264,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const [userZoom, setUserZoom] = useState<number | null>(null);
   const [userPan, setUserPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [followGps, setFollowGps] = useState(true);
+  const [manualCenter, setManualCenter] = useState<{ lat: number; lng: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const gesture = useRef<{
     mode: "none" | "pan" | "pinch";
@@ -303,6 +312,9 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       if (distance != null && gesture.current.startDistance > 0) {
         const scale = distance / gesture.current.startDistance;
         const next = Math.min(19, Math.max(3, gesture.current.startZoom + Math.log2(scale)));
+        setManualCenter(
+          (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+        );
         setUserZoom(next);
         setFollowGps(false);
       }
@@ -312,6 +324,9 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       const dy = touch.clientY - gesture.current.lastY;
       gesture.current.lastX = touch.clientX;
       gesture.current.lastY = touch.clientY;
+      setManualCenter(
+        (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+      );
       setUserPan((previous) => ({ x: previous.x + dx, y: previous.y + dy }));
       setFollowGps(false);
     }
@@ -324,6 +339,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   const recenter = () => {
     setUserZoom(null);
     setUserPan({ x: 0, y: 0 });
+    setManualCenter(null);
     setFollowGps(true);
   };
 
@@ -350,17 +366,31 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   // pan in world pixels at the new zoom.
   const mapViewport = useMemo(() => {
     const zoom = userZoom ?? fitViewport.zoom;
-    if (userZoom == null && userPan.x === 0 && userPan.y === 0) return fitViewport;
+    if (followGps && userZoom == null && userPan.x === 0 && userPan.y === 0) return fitViewport;
+    const center =
+      !followGps && manualCenter
+        ? manualCenter
+        : { lat: fitViewport.centerLat, lng: fitViewport.centerLng };
     return createTileViewportAtZoom(
-      fitViewport.centerLat,
-      fitViewport.centerLng,
+      center.lat,
+      center.lng,
       zoom,
       width,
       viewportHeight,
       userPan.x,
       userPan.y,
     );
-  }, [mapPoints, fitViewport, userZoom, userPan, viewportHeight]);
+  }, [fitViewport, followGps, manualCenter, userZoom, userPan, viewportHeight]);
+
+  const changeZoom = (delta: number) => {
+    setManualCenter(
+      (current) => current ?? { lat: mapViewport.centerLat, lng: mapViewport.centerLng },
+    );
+    setUserZoom((current) =>
+      Math.min(19, Math.max(3, Math.round(current ?? mapViewport.zoom) + delta)),
+    );
+    setFollowGps(false);
+  };
 
   const projected = useMemo(
     () => points.map((point) => mapViewport.project(point.lat, point.lng)),
@@ -547,6 +577,26 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
       >
         {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
+      <div className="absolute right-3 top-12 flex flex-col gap-1" aria-label="Map zoom controls">
+        <button
+          type="button"
+          onClick={() => changeZoom(1)}
+          aria-label="Zoom map in"
+          data-testid="map-zoom-in"
+          className="rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => changeZoom(-1)}
+          aria-label="Zoom map out"
+          data-testid="map-zoom-out"
+          className="rounded-lg border border-white/10 bg-black/60 p-1.5 text-[#8C8C90] backdrop-blur transition-colors hover:text-white"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </button>
+      </div>
       {!followGps && (
         <button
           type="button"

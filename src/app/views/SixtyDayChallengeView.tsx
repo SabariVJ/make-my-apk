@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { RedeemPlusCodeForm } from "../components/RedeemPlusCodeForm";
+import { SvjTransformationHero } from "../components/SvjTransformationHero";
 import { CHALLENGE_DAYS, TOTAL_DAYS, getDayDef } from "@/lib/challengeDays";
 import {
   getChallengeState,
@@ -622,6 +623,9 @@ export const SixtyDayChallengeView: React.FC = () => {
           className="relative overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-b from-[#2A1F10] via-[#17171A] to-[#0B0B0C] p-5 text-center shadow-2xl"
         >
           <div className="pointer-events-none absolute -top-20 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-gold/10 blur-3xl" />
+
+          {/* Decorative transformation hero — hides itself until the asset exists. */}
+          <SvjTransformationHero />
 
           <div className="relative space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gold/20 border border-gold/50 text-gold text-xs font-mono font-bold tracking-widest uppercase">

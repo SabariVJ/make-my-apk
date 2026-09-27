@@ -469,7 +469,7 @@ export const NutritionView: React.FC = () => {
   return (
     <div className="relative space-y-3">
       <SvjFuelHero />
-      <header className="relative flex items-center justify-between gap-3 pt-1">
+      <header className="relative z-10 flex items-center justify-between gap-3 pt-1">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-inter uppercase tracking-[0.2em] text-[#C81E3A]">
             <Utensils className="h-3.5 w-3.5" /> Fuel
@@ -489,7 +489,7 @@ export const NutritionView: React.FC = () => {
 
       {/* Summary and meal actions share the first viewport: calories, macros,
           Scan Meal and Manual Log are all reachable without scrolling. */}
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="relative z-10 grid items-start gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <section className="rounded-2xl border border-white/[0.06] bg-[#17171A] p-3.5">
           <div className="flex items-end justify-between gap-3">
             <div>

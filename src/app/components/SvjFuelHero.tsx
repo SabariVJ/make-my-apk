@@ -18,6 +18,8 @@ import React, { useState } from "react";
  *   available for real nutrition UI
  * - desktop gets a taller, brighter presentation so the premium asset reads
  *   clearly on large monitors while mobile keeps heavier protection
+ * - z-0 keeps the layer behind all real UI; the bottom fade clamps the
+ *   strip so it ends before the summary card and tab controls
  */
 export const SvjFuelHero: React.FC = () => {
   const [failed, setFailed] = useState(false);
@@ -28,7 +30,7 @@ export const SvjFuelHero: React.FC = () => {
     <div
       data-testid="fuel-hero-visual"
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 h-24 select-none overflow-hidden sm:h-36 lg:h-48"
+      className="pointer-events-none absolute inset-x-0 top-0 z-0 h-24 select-none overflow-hidden sm:h-36 lg:h-40"
     >
       <img
         src="/assets/svj-premium/fuel/hero.webp"

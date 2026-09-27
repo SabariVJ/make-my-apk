@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { BodyProfileView } from "./BodyProfileView";
+import { SvjFuelHero } from "../components/SvjFuelHero";
 import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
 import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import {
@@ -466,8 +467,9 @@ export const NutritionView: React.FC = () => {
   const reviewedTotals = scanReview ? totals(scanReview.items) : null;
 
   return (
-    <div className="space-y-3">
-      <header className="flex items-center justify-between gap-3 pt-1">
+    <div className="relative space-y-3">
+      <SvjFuelHero />
+      <header className="relative flex items-center justify-between gap-3 pt-1">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-inter uppercase tracking-[0.2em] text-[#C81E3A]">
             <Utensils className="h-3.5 w-3.5" /> Fuel

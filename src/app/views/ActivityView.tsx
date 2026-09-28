@@ -21,6 +21,7 @@ import { RecordsView } from "./RecordsView";
 import { ConnectedDevicesView } from "./ConnectedDevicesView";
 import { WorkoutRecorder } from "./WorkoutRecorder";
 import type { SavedRoute } from "../lib/activityPlatform";
+import { ScreenHero } from "@/components/ScreenHero";
 import { SVJScoreRing } from "../components/ui-primitives/SVJScoreRing";
 import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
@@ -189,6 +190,9 @@ const ActivityViewContent: React.FC<{
 
   return (
     <div className="w-full">
+      {/* Premium Activity hero: a flow-level band above the screen header, and
+          currently invisible because the art is not committed yet. */}
+      <ScreenHero screen="activity" height="md" priority />
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">

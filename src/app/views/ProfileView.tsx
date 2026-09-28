@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ScreenHero } from "@/components/ScreenHero";
 import { useSVJ } from "../context/SVJContext";
 import { MembershipCard } from "../components/MembershipCard";
 import { AvatarFrame } from "../components/AvatarFrame";
@@ -106,6 +107,9 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Premium Profile hero: a flow-level band above the profile card, and
+          currently invisible because the art is not committed yet. */}
+      <ScreenHero screen="profile" height="md" priority />
       {/* Profile Header */}
       <div className="svj-radius-card svj-lit-top svj-elev-1 relative overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
         <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:items-start sm:text-left">

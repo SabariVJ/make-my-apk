@@ -17,8 +17,10 @@ import { HERO_ASSETS, type HeroScreen } from "@/lib/heroAssets";
  * Performance: `loading="lazy"` + `decoding="async"` by default; `priority`
  * switches an above-the-fold hero to eager/high-priority loading.
  *
- * Resilience: a missing or broken file never breaks the screen — the image is
- * replaced with a crimson/charcoal gradient and the hero keeps its height.
+ * Resilience: a missing or broken file never breaks the screen. A decorative
+ * hero (no title/subtitle) renders nothing at all, so a screen can be wired up
+ * ahead of its art; a hero with copy falls back to a crimson/charcoal gradient
+ * and keeps its height.
  */
 export interface ScreenHeroProps {
   /** Registry key; must match the folder under public/assets/svj-premium. */
@@ -61,6 +63,13 @@ export const ScreenHero: React.FC<ScreenHeroProps> = ({
   }, []);
 
   const decorative = !title && !subtitle;
+
+  // A decorative hero has no copy to keep readable, so a missing file hides the
+  // whole hero and leaves the screen byte-for-byte as it was. That is what lets
+  // a screen be wired up before its art is delivered: it lights up on its own
+  // the moment the file exists. Heroes that carry a title keep the gradient
+  // fallback below so the copy stays legible over whatever is behind it.
+  if (decorative && state === "failed") return null;
 
   return (
     <section

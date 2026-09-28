@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import { ScreenHero } from "@/components/ScreenHero";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -222,6 +223,9 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
           Refresh rewards
         </button>
       </div>
+      {/* Premium Plus hero: a flow-level art band above the Earn Plus header.
+          Decorative only — the header below carries the screen copy. */}
+      <ScreenHero screen="plus" height="md" priority />
       <header className="relative overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-gradient-to-br from-[#30121B] via-[#17171A] to-[#121214] p-4 sm:p-5">
         <p className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-300">
           <ShieldCheck className="h-4 w-4" /> Earned, not purchased

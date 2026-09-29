@@ -15,6 +15,7 @@ import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
 import { createRivalry, getRivalries, type RivalryData } from "@/lib/rivalry.functions";
 import { AvatarImage } from "./AvatarImage";
+import { SvjRivalryHero } from "./SvjRivalryHero";
 import { SVJProgress } from "./ui-primitives/SVJProgress";
 import { SVJSectionHeader } from "./ui-primitives/SVJSectionHeader";
 
@@ -117,8 +118,11 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           aria-label="XP rivalry and analysis"
           className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] w-full max-w-lg overflow-y-auto overflow-x-hidden border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
         >
+          {/* Decorative rivalry hero — hidden automatically until the asset exists. */}
+          <SvjRivalryHero />
+
           {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+          <div className="relative flex items-center justify-between border-b border-white/[0.06] pb-4">
             <div className="flex items-center gap-2">
               <Swords className="h-5 w-5 text-[#C81E3A]" />
               <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">

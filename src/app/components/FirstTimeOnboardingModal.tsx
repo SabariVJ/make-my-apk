@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { User, Sparkles, MapPin, Check, Shield, Flame, Target, Trophy } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { initializeNotificationsAtSignup } from "../lib/notifications";
+import { ScreenHero } from "@/components/ScreenHero";
 
 const PRESET_AVATARS = [
   {
@@ -94,6 +95,10 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           {/* Ambient Lighting */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C81E3A]/20 blur-3xl rounded-full pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
+
+          {/* Premium onboarding hero for the welcome step: it sits at the top
+              of the card in normal flow and is invisible until its art lands. */}
+          <ScreenHero screen="onboarding" height="sm" priority />
 
           {/* Top Banner */}
           <div className="relative z-10 text-center mb-6 space-y-2">

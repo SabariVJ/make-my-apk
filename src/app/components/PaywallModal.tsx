@@ -26,6 +26,10 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
   const { user, isPlusMember, plusExpiresAt, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen } =
     useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
+  const [heroFailed, setHeroFailed] = useState(false);
+
+  const premiumHero = "/assets/svj-premium/plus/hero.webp";
+  const showPremiumHero = !heroFailed;
 
   const isAndroid = Capacitor.getPlatform() === "android";
 
@@ -90,6 +94,28 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
         >
           {/* Ambient Lighting Background */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />
+
+          {/* Premium hero asset — decorative background behind the SVJ PLUS badge/title. */}
+          {/* Loaded from /assets/svj-premium/plus/hero.webp; hidden gracefully if absent. */}
+          {showPremiumHero && (
+            <div
+              data-testid="plus-hero-visual"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-36 sm:h-44 md:h-52 overflow-hidden rounded-t-2xl select-none"
+            >
+              <img
+                src={premiumHero}
+                alt=""
+                onError={() => setHeroFailed(true)}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover object-[72%_30%] opacity-50 sm:object-[68%_35%] sm:opacity-60 md:object-[64%_40%]"
+              />
+              {/* Dark gradient overlay keeps badge/title/status text readable. */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0B0B0C]/70 via-[#0B0B0C]/55 to-[#0B0B0C]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0C]/80 via-[#0B0B0C]/35 to-transparent" />
+            </div>
+          )}
 
           {/* Close Button */}
           <button

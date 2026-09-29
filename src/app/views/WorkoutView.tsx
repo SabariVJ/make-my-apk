@@ -19,6 +19,7 @@ import { WorkoutExercise } from "../types";
 import { summarizeWorkout } from "../lib/activity";
 import { StructuredStrengthCard } from "../components/StructuredStrengthCard";
 import { TrainStrength, type StrengthPrescription } from "./TrainStrength";
+import { SvjTrainHero } from "../components/SvjTrainHero";
 import { TrainingToday } from "../components/TrainingToday";
 import { TemplateBrowser } from "../components/TemplateBrowser";
 import { TrainingProgress } from "../components/TrainingProgress";
@@ -255,11 +256,12 @@ export const WorkoutView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3 lg:space-y-4">
+    <div className="relative space-y-3 lg:space-y-4">
+      <SvjTrainHero />
       {/* Page identity — one slim row instead of a hero block, so the compact
           dashboard header, the tab controls and the working panel all fit the
           first desktop viewport. */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">Iron Log</h1>
           <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">

@@ -10,14 +10,18 @@ import React, { useState } from "react";
  * - pointer-events-none: never intercepts taps or clicks
  * - onError fallback: if the asset is missing, the layer hides itself and
  *   the Train screen renders exactly as before
- * - z-0 keeps the layer behind all real UI; the sticky tab strip (z-20)
- *   and the z-10 header always render above it
+ * - `absolute inset-0` fills the parent hero section exactly. The caller wraps
+ *   this layer and the header row in one in-flow band that owns the responsive
+ *   hero height, so the art covers that box and nothing more: the band pushes
+ *   the following content down and `overflow-hidden` clips the image to it, so
+ *   it can never cover the cards below
+ * - z-0 keeps the layer behind the header row (z-10) inside that band
  * - dark graphite gradients keep the title and Guided toggle readable
  *   without burying the asset
  * - focal point keeps the athlete + barbell left/left-center; the right of
  *   the frame is negative space usable by real stats UI
- * - desktop gets a taller, brighter presentation so the gym scene reads
- *   clearly on large monitors while mobile crops toward the subject
+ * - the desktop step brightens the art so the gym scene reads clearly on
+ *   large monitors while mobile keeps the quieter crop toward the subject
  */
 export const SvjTrainHero: React.FC = () => {
   const [failed, setFailed] = useState(false);
@@ -28,7 +32,7 @@ export const SvjTrainHero: React.FC = () => {
     <div
       data-testid="train-hero-visual"
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 z-0 h-20 select-none overflow-hidden sm:h-28 lg:h-36"
+      className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden"
     >
       <img
         src="/assets/svj-premium/train/hero.webp"

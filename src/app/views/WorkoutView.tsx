@@ -257,36 +257,44 @@ export const WorkoutView: React.FC = () => {
 
   return (
     <div className="relative space-y-3 lg:space-y-4">
-      <SvjTrainHero />
-      {/* Page identity — one slim row instead of a hero block, so the compact
-          dashboard header, the tab controls and the working panel all fit the
-          first desktop viewport. */}
-      <div className="relative z-10 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">Iron Log</h1>
-          <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">
-            Track every lift. Every set feeds your{" "}
-            <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
-          </p>
+      {/* Hero section — a real, in-flow band with an intentional responsive
+          height. The band owns the height (mobile h-20, sm h-28, lg h-36), so
+          the cards, tabs, panels and bottom navigation below are pushed down
+          by exactly that much, and the art layer clipped inside it can never
+          paint outside this box. */}
+      <div className="relative h-20 sm:h-28 lg:h-36">
+        <SvjTrainHero />
+        {/* Page identity — vertically centered in the hero band so the title
+            and Guided toggle stay inside it and above the art. */}
+        <div className="relative z-10 flex h-full items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-anton text-xl tracking-wide text-[#F4F2ED] sm:text-2xl">
+              Iron Log
+            </h1>
+            <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90] sm:text-xs">
+              Track every lift. Every set feeds your{" "}
+              <span className="text-[#C81E3A] font-semibold">Physical</span> stat.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleGuided}
+            aria-pressed={guided}
+            data-testid="train-guided-toggle"
+            title={
+              guided
+                ? "Turn off the guided training experience (your data is kept)"
+                : "Turn on the guided training experience"
+            }
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+              guided
+                ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
+                : "border-white/10 bg-black/30 text-[#8C8C90]"
+            }`}
+          >
+            Guided {guided ? "on" : "off"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={toggleGuided}
-          aria-pressed={guided}
-          data-testid="train-guided-toggle"
-          title={
-            guided
-              ? "Turn off the guided training experience (your data is kept)"
-              : "Turn on the guided training experience"
-          }
-          className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
-            guided
-              ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
-              : "border-white/10 bg-black/30 text-[#8C8C90]"
-          }`}
-        >
-          Guided {guided ? "on" : "off"}
-        </button>
       </div>
 
       {/* Structured Strength — the primary Train destination, always on top. */}

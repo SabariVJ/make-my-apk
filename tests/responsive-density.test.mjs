@@ -21,6 +21,7 @@ const challenges = read("src/app/views/ChallengesView.tsx");
 const activity = read("src/app/views/ActivityView.tsx");
 const train = read("src/app/views/WorkoutView.tsx");
 const strengthCard = read("src/app/components/StructuredStrengthCard.tsx");
+const trainHero = read("src/app/components/SvjTrainHero.tsx");
 const templates = read("src/app/components/TemplateBrowser.tsx");
 const today = read("src/app/components/TrainingToday.tsx");
 const progress = read("src/app/components/TrainingProgress.tsx");
@@ -191,6 +192,24 @@ describe("Train is dense without losing any ability", () => {
 
   it("keeps the guided toggle so the automated-training rollback still works", () => {
     assert.ok(train.includes('data-testid="train-guided-toggle"'));
+  });
+
+  it("keeps the Train hero clipped to its own band so it cannot cover the cards", () => {
+    // The decorative art layer is out of flow inside the band, so the band —
+    // not the art — owns the hero height and pushes everything below it down.
+    // The band therefore has to be an in-flow sibling of the content, never a
+    // positioned element protruding outside a zero-height parent.
+    assert.match(train, /<div className="relative h-20 sm:h-28 lg:h-36">\s*<SvjTrainHero \/>/);
+    assert.equal(train.match(/<SvjTrainHero \/>/g)?.length, 1);
+    // The band keeps the intentional responsive height while staying in flow.
+    const band = train.match(/<div className="relative h-20 sm:h-28 lg:h-36"[^>]*>/)?.[0] ?? "";
+    assert.doesNotMatch(band, /absolute|inset-x-0|inset-0|top-0/);
+    // Filling that band and owning no fixed height of its own is what contains
+    // the art: `absolute inset-0` + `overflow-hidden` clip the image to the
+    // band, which is why it can never paint over the Structured Strength card.
+    assert.ok(trainHero.includes("absolute inset-0"));
+    assert.ok(trainHero.includes("overflow-hidden"));
+    assert.doesNotMatch(trainHero, /h-20|sm:h-28|lg:h-36/);
   });
 });
 

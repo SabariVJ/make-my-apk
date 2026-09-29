@@ -1,6 +1,7 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { hmacRequestMiddleware } from "./lib/hmac-request.middleware";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -27,5 +28,9 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  // Order: error boundary → CSRF (same-origin gate) → HMAC request integrity
+  // → per-function Supabase auth/authorization. HMAC verifies request
+  // integrity only; it never replaces authentication. See
+  // docs/SVJ_HMAC_REQUEST_SIGNING.md.
+  requestMiddleware: [errorMiddleware, csrfMiddleware, hmacRequestMiddleware],
 }));

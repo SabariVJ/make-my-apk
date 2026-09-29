@@ -182,6 +182,11 @@
   --color-svj-overlay: #212126;
   --color-svj-crimson: #c81e3a;
   --color-svj-crimson-hover: #a0182e;
+  /* Active signal ON GLASS: crimson lightened for the one translucent
+     surface (the bottom dock), where #c81e3a drops to ~3.5:1 contrast.
+     #f0566f holds ~5.9:1 on obsidian while staying inside the brand hue —
+     the "red-400" of the Liquid Glass request, in SVJ's crimson family. */
+  --color-svj-crimson-bright: #f0566f;
   --color-svj-text: #f4f2ed;
   --color-svj-secondary: #8c8c90;
   --color-svj-muted: #5c5c60;
@@ -331,6 +336,46 @@
      the system navigation bar. */
   .svj-safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ── Liquid Glass dock (bottom navigation only) ────────────────────
+     The ONE surface in the app allowed a frosted film — a scoped,
+     deliberate exception to the "no glassmorphism" rule, documented in
+     docs/SVJ_PERFORMANCE_OS_DESIGN_SYSTEM.md → "Liquid Glass dock".
+     Optics: a 7% white film over a backdrop blurred 20px, saturated so
+     the colour under the glass survives, and brightness-damped so labels
+     stay legible whether the content behind is obsidian or a bright
+     action photo. Depth uses the shared elevation token, never a glow;
+     the film is static, so nothing here animates (motion system →
+     "no animated backdrop-filter"). */
+  .svj-glass-dock {
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(0.78);
+    backdrop-filter: blur(20px) saturate(180%) brightness(0.78);
+    box-shadow:
+      var(--shadow-svj-3),
+      inset 0 1px 1px rgba(255, 255, 255, 0.22);
+  }
+
+  /* Light-catch: a 1px white gradient across the top edge so the glass
+     reads as a lit surface instead of a flat rounded rectangle. */
+  .svj-glass-dock::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    pointer-events: none;
+  }
+
+  /* Legibility fallback: without backdrop-filter (old WebView, power
+     saving) the dock becomes a near-opaque obsidian surface rather than a
+     see-through film the labels cannot sit on. */
+  @supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+    .svj-glass-dock {
+      background-color: rgba(11, 11, 12, 0.94);
+    }
   }
 
   /* ── Skeleton loading surfaces ───────────────────────────────────── */

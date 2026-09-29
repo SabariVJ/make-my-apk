@@ -87,8 +87,11 @@ describe("radius semantics", () => {
   });
 
   it("nav buttons use button radius, not panel radius", () => {
-    assert.doesNotMatch(nav, /py-1\.5 px-2 sm:px-3 rounded-2xl/);
-    assert.match(nav, /py-1\.5 px-2 sm:px-3 rounded-xl/);
+    // The invariant is the radius: a nav button is a button (rounded-xl), not
+    // a panel. The horizontal padding is incidental to that rule and is what
+    // buys the long labels room when the dock is an equal-width row on phones.
+    assert.doesNotMatch(nav, /py-1\.5 px-1 sm:px-3 rounded-2xl/);
+    assert.match(nav, /py-1\.5 px-1 sm:px-3 rounded-xl/);
   });
 
   it("inputs use input radius", () => {

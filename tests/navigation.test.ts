@@ -55,9 +55,59 @@ describe("primary navigation is five destinations", () => {
     );
   });
 
-  it("keeps the bottom bar typography and background tokens intact", () => {
+  it("keeps the dock anchored to the bottom edge and clear of the gesture bar", () => {
     assert.match(navigation, /fixed bottom-0 left-0 right-0/);
-    assert.match(navigation, /bg-\[#0B0B0C\]\/95/);
+    assert.match(navigation, /svj-safe-bottom/);
+  });
+});
+
+describe("bottom dock is floating liquid glass", () => {
+  it("floats: rounded panel, margin off the edges, no flush bar chrome", () => {
+    assert.match(navigation, /svj-glass-dock/);
+    assert.match(navigation, /rounded-3xl/);
+    assert.match(navigation, /mb-2/);
+    // The old full-bleed bar (opaque background + top border rule) is gone.
+    assert.doesNotMatch(navigation, /bg-\[#0B0B0C\]\/95/);
+    assert.doesNotMatch(navigation, /border-t border-white/);
+  });
+
+  it("lets taps through the gutter around the floating dock", () => {
+    // The wrapper is inert; only the dock itself is interactive.
+    assert.match(navigation, /pointer-events-none/);
+    assert.match(navigation, /pointer-events-auto/);
+  });
+
+  it("keeps one full-width row on phones and a centred pill from sm+", () => {
+    assert.match(navigation, /w-full/);
+    assert.match(navigation, /sm:w-fit/);
+    assert.match(navigation, /max-w-md/);
+  });
+
+  it("keeps the founder's sixth destination inside a 360px phone", () => {
+    // Grid items must be able to shrink below their content size, otherwise a
+    // long label widens its column and the dock overflows the viewport.
+    assert.match(navigation, /flex min-w-0/);
+    // ...and the label drops a point on phones, back to the house size at sm+.
+    assert.match(navigation, /text-\[10px\] leading-tight[^"]*sm:text-\[11px\]/);
+  });
+
+  it("never puts a backdrop-filter on the sliding active pill", () => {
+    // The pill animates between tabs; animating a backdrop-filter is banned
+    // by the motion system (docs/SVJ_UI_MOTION_SYSTEM.md → Performance Rules).
+    const pill = navigation.slice(navigation.indexOf("activeTabGlow"));
+    const pillClass = pill.slice(0, pill.indexOf("transition={{"));
+    assert.doesNotMatch(pillClass, /backdrop/);
+  });
+
+  it("keeps the active signal crimson (brand hue, not a foreign red)", () => {
+    assert.match(navigation, /text-svj-crimson-bright/);
+    assert.doesNotMatch(navigation, /text-\[#F87171\]|red-400/);
+  });
+
+  it("governs the dock optics from one place in styles.css", async () => {
+    const css = await read("../src/styles.css");
+    assert.match(css, /\.svj-glass-dock \{/);
+    assert.match(css, /\.svj-glass-dock::before \{/);
   });
 });
 

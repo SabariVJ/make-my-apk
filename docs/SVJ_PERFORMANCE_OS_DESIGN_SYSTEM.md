@@ -73,7 +73,38 @@ attributes are the data palette.
 
 Hairlines: `white/4%` (inset) · `white/6%` (surface) · `white/8%` (raised).
 Crimson borders at ≤15% opacity. No glassmorphism, no gradients except the
-existing accent-card tints, no glow outside XP level-up moments.
+existing accent-card tints, no glow outside XP level-up moments — **with one
+scoped exception: the bottom dock (§3.1).**
+
+### 3.1 Liquid Glass dock (scoped exception to "no glassmorphism")
+
+The floating bottom dock (`src/app/components/Navigation.tsx` →
+`.svj-glass-dock` in `src/styles.css`) is the **only** surface allowed a frosted
+film. Everything else stays flat and obsidian. The exception is narrow on
+purpose: it is one component, one class, and the optics live in a single place
+so they can be tuned or reverted without touching screens.
+
+| Layer | Value | Why |
+|---|---|---|
+| Film | `rgba(255,255,255,0.07)` | Glass body — visible, never milky |
+| Backdrop | `blur(20px) saturate(180%) brightness(0.78)` | Blur for depth, saturation so the colour under the glass survives, brightness damped so labels stay legible over a bright action photo |
+| Border | `1px solid rgba(255,255,255,0.14)` | Lit rim (brighter than the `white/4–8%` hairlines — deliberate, it is a light-catch, not a divider) |
+| Depth | `var(--shadow-svj-3)` + `inset 0 1px 1px rgba(255,255,255,0.22)` | Shared elevation token + inset refraction highlight; no glow |
+| Top edge | `::before` 1px `linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)` | Glass reads as a lit surface instead of a flat rectangle |
+| Fallback | `@supports not (backdrop-filter…)` → `rgba(11,11,12,0.94)` | Without blur support the dock is opaque obsidian, never a see-through sheet |
+
+Geometry: `rounded-3xl`, inset from the sides (`px-3 sm:px-4`) and lifted off the
+edge (`mb-2 sm:mb-3`) above the `.svj-safe-bottom` gesture-bar clearance, so it
+reads as floating rather than docked. The wrapper is `pointer-events-none` with
+the dock `pointer-events-auto`, so the gutter never eats taps.
+
+Active state: the crimson pill stays in the brand hue but uses
+`--color-svj-crimson-bright` (`#F0566F`, ~5.9:1 on obsidian) instead of
+`--color-svj-crimson` (~3.5:1) — glass costs contrast, and the active tab is the
+one element that must never be dim. The pill carries **no** `backdrop-filter` of
+its own: it slides with a layout animation and the motion system bans animated
+backdrop-filters. Inactive tabs keep `svj-secondary` (`#8C8C90`) ≈ the "white at
+55%" of a typical glass spec, already tokenised.
 
 ### Character Matrix attribute colors (secondary data palette)
 

@@ -61,6 +61,78 @@ describe("Performance OS design tokens (src/styles.css)", () => {
   });
 });
 
+describe("Liquid Glass dock (scoped exception in src/styles.css)", () => {
+  // The bottom dock is the ONE surface allowed a frosted film. These checks
+  // pin the recipe so it cannot rot into a solid bar, a see-through sheet the
+  // labels cannot sit on, or an animated blur.
+  const dockRules = async () => {
+    const css = await read("../src/styles.css");
+    const pick = (re) => {
+      const match = css.match(re);
+      assert.ok(match, `missing dock rule: ${re}`);
+      return match[0];
+    };
+    return {
+      film: pick(/\.svj-glass-dock \{[^}]*\}/),
+      highlight: pick(/\.svj-glass-dock::before \{[^}]*\}/),
+      fallback: pick(/@supports not \([\s\S]*?\n  \}\n/),
+    };
+  };
+
+  it("frosts the dock with a translucent film over a blurred, damped backdrop", async () => {
+    const { film } = await dockRules();
+    assert.match(film, /background-color: rgba\(255, 255, 255, 0\.07\)/);
+    assert.match(film, /border: 1px solid rgba\(255, 255, 255, 0\.14\)/);
+    // Prefixed FIRST, standard LAST: the CSS minifier collapses the two
+    // declarations into whichever comes last, and a browser that supports the
+    // standard property but not the -webkit- alias (Firefox) would otherwise
+    // get no blur at all — with the @supports fallback not triggering either.
+    const blur = "backdrop-filter: blur(20px) saturate(180%) brightness(0.78)";
+    const webkit = film.indexOf(`-webkit-${blur}`);
+    assert.ok(webkit > -1, "missing -webkit-backdrop-filter");
+    assert.ok(
+      film.lastIndexOf(blur) > webkit,
+      "the standard backdrop-filter must be declared after the -webkit- alias",
+    );
+  });
+
+  it("takes depth from the shared elevation token plus an inset light-catch", async () => {
+    const { film } = await dockRules();
+    assert.match(film, /var\(--shadow-svj-3\)/);
+    assert.match(film, /inset 0 1px 1px rgba\(255, 255, 255, 0\.22\)/);
+  });
+
+  it("adds the 1px top highlight line and nothing animated", async () => {
+    const { film, highlight } = await dockRules();
+    assert.match(
+      highlight,
+      /linear-gradient\(90deg, transparent, rgba\(255, 255, 255, 0\.55\), transparent\)/,
+    );
+    // Motion system: no animated backdrop-filter, transition or glow.
+    assert.doesNotMatch(`${film}${highlight}`, /animation:|transition:|@keyframes/);
+  });
+
+  it("falls back to an opaque obsidian surface without backdrop-filter", async () => {
+    const { fallback } = await dockRules();
+    assert.match(
+      fallback,
+      /@supports not \(\(backdrop-filter: blur\(20px\)\) or \(-webkit-backdrop-filter: blur\(20px\)\)\)/,
+    );
+    assert.match(fallback, /\.svj-glass-dock \{/);
+    assert.match(fallback, /background-color: rgba\(11, 11, 12, 0\.94\)/);
+  });
+
+  it("registers a glass-safe crimson for the active tab", async () => {
+    const css = await read("../src/styles.css");
+    assert.match(css, /--color-svj-crimson-bright:\s*#f0566f/);
+  });
+
+  it("records the exception in the design-system doc instead of contradicting it", async () => {
+    const doc = await read("../docs/SVJ_PERFORMANCE_OS_DESIGN_SYSTEM.md");
+    assert.match(doc, /Liquid Glass dock/);
+  });
+});
+
 describe("JS token mirror (src/app/lib/designTokens.ts)", () => {
   it("preserves the original Character Matrix identity exactly", async () => {
     const tokens = await read("../src/app/lib/designTokens.ts");

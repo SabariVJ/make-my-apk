@@ -194,7 +194,9 @@ export const adminGrantPlus = createServerFn({ method: "POST" })
       }
 
       const senderEmail =
-        typeof context.claims?.email === "string" ? context.claims.email.trim().toLowerCase() : "";
+        typeof context.claims["email"] === "string"
+          ? String(context.claims["email"]).trim().toLowerCase()
+          : "";
       const senderLabel = senderEmail === FOUNDER_EMAIL ? "Founder" : "SVJ Admin";
 
       const { data: rows, error } = await supabaseAdmin.rpc("svj_admin_grant_plus", {

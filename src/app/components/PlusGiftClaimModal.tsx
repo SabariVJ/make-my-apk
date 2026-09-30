@@ -9,12 +9,13 @@ function formatGiftDuration(value: number, unit: "week" | "month" | "lifetime"):
   return `${value} ${label}${value === 1 ? "" : "s"} of SVJ Plus`;
 }
 
-export const PlusGiftClaimModal: React.FC = () => {
+export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => {
   const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(false);
 
   const pending = useQuery({
-    queryKey: ["plus-gift-pending"],
+    queryKey: ["plus-gift-pending", userId],
+    enabled: Boolean(userId),
     queryFn: () => getMyPendingPlusGift({ data: undefined }),
     staleTime: 0,
     gcTime: 0,

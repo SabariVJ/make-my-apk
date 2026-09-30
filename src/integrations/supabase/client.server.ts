@@ -5,7 +5,13 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-/** Trim and collapse whitespace-only or empty env values to undefined. */
+// Privileged-key precedence:
+//   1. SUPABASE_SERVICE_ROLE_KEY — Lovable Cloud's managed, reserved secret.
+//   2. SVJ_SUPABASE_SECRET_KEY   — optional project-scoped override for
+//      external deployment environments.
+// Neither value is ever exposed to VITE_ variables or client code. Each
+// candidate is trimmed individually so a whitespace-only key falls through
+// to the next candidate.
 function normalizeKey(value: string | undefined): string | undefined {
   return value?.trim() || undefined;
 }
@@ -38,17 +44,16 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
+  // Lovable Cloud supplies SUPABASE_URL directly (reserved secret). External
+  // environments can set it, or the authoritative SVJ project is used.
   const SUPABASE_URL =
     process.env["SUPABASE_URL"] ||
     process.env["VITE_SUPABASE_URL"] ||
     "https://oltmnrkceodpyqznfhjb.supabase.co";
-  // Prefer the project-scoped secret key; fall back to the legacy service-role key.
-  // Neither value is ever exposed to VITE_ variables or client code.
-  // Each candidate is trimmed individually so a whitespace-only preferred key
-  // correctly falls through to a valid legacy key.
+
   const SUPABASE_ADMIN_KEY =
-    normalizeKey(process.env["SVJ_SUPABASE_SECRET_KEY"]) ||
-    normalizeKey(process.env["SUPABASE_SERVICE_ROLE_KEY"]);
+    normalizeKey(process.env["SUPABASE_SERVICE_ROLE_KEY"]) ||
+    normalizeKey(process.env["SVJ_SUPABASE_SECRET_KEY"]);
 
   if (!SUPABASE_URL) {
     const message = `Missing Supabase environment variable(s): SUPABASE_URL. Connect Supabase in Lovable Cloud.`;
@@ -56,28 +61,16 @@ function createSupabaseAdminClient() {
     throw new Error(message);
   }
 
-  // Use the service-role key when available (bypasses RLS). In environments
-  // like Lovable Cloud where the key is not set (reserved SUPABASE_ prefix),
-  // fall back to the publishable key — queries will respect RLS, which is
-  // acceptable because the auth middleware already attaches the user's own
-  // bearer token. Privileged cross-user writes will fail at the RLS level
-  // rather than crashing the entire server function chain.
-  const serviceKey =
-    SUPABASE_ADMIN_KEY ||
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
-    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    "sb_publishable_JbQU0vfJC2iQsnTg08N3XQ_hVBxK8DR";
-
+  // Privileged clients must never run with a publishable/anon key: RLS would
+  // silently filter the admin's own row out of user_roles and every privileged
+  // check would fail closed. Fail here with a clear server-only error instead.
   if (!SUPABASE_ADMIN_KEY) {
-    console.warn(
-      `[Supabase] Neither SVJ_SUPABASE_SECRET_KEY nor SUPABASE_SERVICE_ROLE_KEY is set. ` +
-        `Using publishable key as fallback. Privileged RLS-bypassing operations will not work.`,
-    );
+    throw new Error("Admin service key not configured");
   }
 
-  return createClient<Database>(SUPABASE_URL, serviceKey, {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ADMIN_KEY, {
     global: {
-      fetch: createSupabaseFetch(serviceKey),
+      fetch: createSupabaseFetch(SUPABASE_ADMIN_KEY),
     },
     auth: {
       storage: undefined,
@@ -97,8 +90,8 @@ function createSupabaseAdminClient() {
  */
 export function hasAdminKey(): boolean {
   return (
-    !!normalizeKey(process.env["SVJ_SUPABASE_SECRET_KEY"]) ||
-    !!normalizeKey(process.env["SUPABASE_SERVICE_ROLE_KEY"])
+    !!normalizeKey(process.env["SUPABASE_SERVICE_ROLE_KEY"]) ||
+    !!normalizeKey(process.env["SVJ_SUPABASE_SECRET_KEY"])
   );
 }
 
@@ -115,8 +108,8 @@ export function hasAdminKey(): boolean {
 export function requireAdminKey(): void {
   if (!hasAdminKey()) {
     throw new Error(
-      "[Supabase] Privileged operation requires SVJ_SUPABASE_SECRET_KEY or " +
-        "SUPABASE_SERVICE_ROLE_KEY. Neither is configured. Operation refused.",
+      "[Supabase] Privileged operation requires SUPABASE_SERVICE_ROLE_KEY (Lovable " +
+        "Cloud managed) or SVJ_SUPABASE_SECRET_KEY. Neither is configured. Operation refused.",
     );
   }
 }

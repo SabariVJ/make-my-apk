@@ -93,7 +93,7 @@ export const adminListSupportTickets = createServerFn({ method: "POST" })
     let query = supabase
       .from("support_tickets")
       .select(
-        "id, user_id, category, message, status, admin_response, created_at, updated_at, resolved_at, profiles!support_tickets_user_id_fkey(username, email)",
+        "id, user_id, category, message, status, admin_response, created_at, updated_at, resolved_at, profiles!support_tickets_user_id_profiles_fkey(username, email)",
       )
       .order("created_at", { ascending: false })
       .limit(limit);

@@ -87,7 +87,8 @@ describe("one shared page container owns padding and nav clearance", () => {
 
   it("keeps the rail and bottom navigation tokens intact", () => {
     assert.match(navigation, /fixed bottom-0 left-0 right-0/);
-    assert.match(navigation, /bg-\[#0B0B0C\]\/95/);
+    // The bottom navigation is now the floating glass dock.
+    assert.match(navigation, /svj-glass-dock/);
     assert.match(utilityNav, /fixed right-0 top-1\/2/);
     assert.match(header, /sticky top-0/);
   });

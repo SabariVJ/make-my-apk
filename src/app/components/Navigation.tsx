@@ -106,13 +106,18 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <nav
       data-testid="primary-navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0B0C]/95 backdrop-blur-xl border-t border-white/[0.06] py-2 sm:py-3"
+      // Floating glass dock: inset from the edges, lifted off the bottom by
+      // the existing env(safe-area-inset-bottom) pattern (the same one the
+      // page container uses in App.tsx) so the gesture bar is always cleared
+      // without a duplicate safe-area utility or negative offsets.
+      className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:px-4 sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
     >
-      {/* Compact centered dock — w-fit + gap keeps tabs grouped as one
-          control instead of spreading across the viewport. Mobile uses
-          full-width grid-cols-5 for maximum touch-target size. */}
+      {/* Liquid Glass dock — one rounded translucent control. 320px fit is
+          guaranteed by the fluid grid: equal columns always fit the width,
+          padding shrinks slightly below 360px, labels truncate instead of
+          clipping, and touch targets keep their 44px+ height. */}
       <div
-        className={`mx-auto w-fit ${dockColumns} gap-1 sm:flex sm:w-fit sm:justify-center sm:gap-1.5 md:gap-2`}
+        className={`svj-glass-dock mx-auto w-full max-w-md ${dockColumns} gap-0.5 px-1 py-1.5 sm:w-fit sm:rounded-2xl sm:px-1.5 sm:py-2 md:gap-1`}
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -125,12 +130,12 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
-              className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-xl transition-colors cursor-pointer group min-w-[64px] md:min-w-[74px] svj-press"
+              className="svj-press relative flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-colors sm:px-3 md:min-w-[64px]"
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTabGlow"
-                  className="absolute inset-0 bg-[#C81E3A]/15 rounded-xl border border-[#C81E3A]/40"
+                  className="svj-dock-active absolute inset-0 rounded-xl"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
@@ -153,7 +158,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
 
               <span
-                className={`text-[11px] font-inter font-medium transition-colors ${
+                className={`w-full truncate text-center text-[10px] leading-tight font-inter font-medium transition-colors sm:text-[11px] ${
                   isActive ? "text-[#F4F2ED] font-semibold" : "text-[#8C8C90]"
                 }`}
               >

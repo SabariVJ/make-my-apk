@@ -2,6 +2,7 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { rateLimitRequestMiddleware } from "./lib/rate-limit-request.middleware";
+import { hmacRequestMiddleware } from "./lib/hmac-request.middleware";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -34,5 +35,6 @@ export const startInstance = createStart(() => ({
   // the cheapest layer and never reaches Supabase or expensive handlers.
   // Rate limiting caps request volume; it never replaces authentication.
   // See docs/SVJ_RATE_LIMITING.md.
-  requestMiddleware: [errorMiddleware, csrfMiddleware, rateLimitRequestMiddleware],
+  // Order: error boundary → CSRF → rate limiting → HMAC integrity → per-function auth.
+  requestMiddleware: [errorMiddleware, csrfMiddleware, rateLimitRequestMiddleware, hmacRequestMiddleware],
 }));

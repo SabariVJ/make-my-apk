@@ -132,8 +132,11 @@ describe("Structured Strength is promoted into Train", () => {
 
 describe("secondary destinations moved to the utility rail", () => {
   it("defines Community, Leaderboard and Profile in rail order", () => {
-    const ids = navIds(utilityModel);
-    assert.deepEqual(ids, ["community", "leaderboard", "profile"]);
+    // The Admin entry is declared separately and appended only for admins, so
+    // the shared base list stays exactly these three destinations.
+    const baseIds = navIds(utilityModel.split("const ADMIN_NAV_ITEM")[0]);
+    assert.deepEqual(baseIds, ["community", "leaderboard", "profile"]);
+    assert.ok(!baseIds.includes("admin"), "non-admins must never be offered an Admin destination");
   });
 
   it("keeps the Android Leaderboard rule in the shared utility model", () => {
@@ -153,7 +156,7 @@ describe("secondary destinations moved to the utility rail", () => {
 
   it("routes every rail item through the existing tab handler", () => {
     assert.match(utilityNav, /onClick=\{\(\) => setActiveTab\(item\.id\)\}/);
-    assert.match(app, /<UtilityRail activeTab=\{activeTab\} setActiveTab=\{handleTabChange\} \/>/);
+    assert.match(app, /<UtilityRail activeTab=\{activeTab\} setActiveTab=\{handleTabChange\}/);
   });
 
   it("keeps Community, Leaderboard and Profile rendering their existing views", () => {

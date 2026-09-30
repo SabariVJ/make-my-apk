@@ -34,6 +34,8 @@ import { StatusScreen } from "./components/StatusScreen";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
+import { useAdminRole } from "./lib/adminRole";
+import { AdminDashboardView } from "./views/AdminDashboardView";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
@@ -89,6 +91,10 @@ const AppContent: React.FC<{
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
+  // Silent admin-role check: renders nothing for everyone else. RLS and the
+  // server-side role checks remain the actual security boundary.
+  const adminRole = useAdminRole();
+  const isAdmin = adminRole.status === "admin";
   // Android Play: prevent stale tabs (community/leaderboard hidden on native)
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     if (locked) return "sixty";
@@ -253,6 +259,7 @@ const AppContent: React.FC<{
             </div>
           )}
           {activeTab === "profile" && <ProfileView />}
+          {isAdmin && activeTab === "admin" && <AdminDashboardView />}
         </main>
 
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
@@ -284,12 +291,13 @@ const AppContent: React.FC<{
       <NotificationCoordinator onNavigate={handleTabChange} />
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
-      <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} />
+      <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} isAdmin={isAdmin} />
       <UtilityDrawer
         open={utilityMenuOpen}
         onClose={() => setUtilityMenuOpen(false)}
         activeTab={activeTab}
         setActiveTab={handleTabChange}
+        isAdmin={isAdmin}
       />
 
       {/* Main View Area — the container reserves desktop width and the rail's
@@ -345,6 +353,7 @@ const AppContent: React.FC<{
             )}
             {activeTab === "transform" && <TransformationReportView />}
             {activeTab === "profile" && <ProfileView />}
+            {isAdmin && activeTab === "admin" && <AdminDashboardView />}
           </motion.div>
         </AnimatePresence>
       </main>

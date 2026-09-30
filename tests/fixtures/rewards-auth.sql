@@ -34,7 +34,8 @@ CREATE TABLE auth.users (
   email_confirmed_at timestamptz,
   phone_confirmed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
-  raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
+  raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  raw_app_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid;

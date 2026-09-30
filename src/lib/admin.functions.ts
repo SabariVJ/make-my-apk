@@ -15,13 +15,22 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Resolve the caller's verified auth uid and assert they hold an admin role. */
 async function requireAdminUserId(userId: string): Promise<string> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { hasAdminKey, supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (!hasAdminKey()) {
+    // Without the service key the admin client silently falls back to the
+    // publishable key, which RLS filters — the check below would then fail
+    // for every caller (even real admins) with a misleading Forbidden error.
+    throw new Error("Admin service key not configured");
+  }
   const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
+  if (error) {
+    console.error("[admin] user_roles query failed", error);
+  }
   if (error || !data) {
     throw new Error("Forbidden: admin role required");
   }

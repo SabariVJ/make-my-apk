@@ -248,7 +248,7 @@ export const TrialGate: React.FC<{
   return (
     <>
       {typeof children === "function" ? children(status) : children}
-      <PlusGiftClaimModal />
+      <PlusGiftClaimModal userId={session?.user.id ?? ""} />
     </>
   );
 };

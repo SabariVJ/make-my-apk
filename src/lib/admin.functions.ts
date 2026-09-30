@@ -12,6 +12,7 @@
 // leaves the server.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { FOUNDER_EMAIL } from "@/app/lib/founderIdentity";
 
 /** Resolve the caller's verified auth uid and assert they hold an admin role. */
 async function requireAdminUserId(userId: string): Promise<string> {
@@ -156,26 +157,65 @@ export const adminListUsers = createServerFn({ method: "POST" })
 // ── Plus grants ─────────────────────────────────────────────────────────────
 
 export const adminGrantPlus = createServerFn({ method: "POST" })
-  .validator((input: { targetUserId: string; expiresAt?: string | null }) => input)
+  .validator(
+    (input: {
+      targetUserId: string;
+      durationValue: number;
+      durationUnit: "week" | "month" | "lifetime";
+    }) => input,
+  )
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context, data }): Promise<{ ok: true }> => {
-    await requireAdminUserId(context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<{ ok: true; grantId: string; expiresAt: string | null }> => {
+      await requireAdminUserId(context.userId);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const targetUserId = String(data.targetUserId || "");
-    if (!/^[0-9a-f-]{36}$/i.test(targetUserId)) {
-      throw new Error("Invalid target user");
-    }
-    const expiresAt =
-      typeof data.expiresAt === "string" && data.expiresAt.length > 0 ? data.expiresAt : null;
+      const targetUserId = String(data.targetUserId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(targetUserId)) {
+        throw new Error("Invalid target user");
+      }
 
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update({ is_plus_member: true, plus_expires_at: expiresAt })
-      .eq("id", targetUserId);
-    if (error) throw new Error("Failed to grant Plus");
-    return { ok: true };
-  });
+      const durationUnit = data.durationUnit;
+      const durationValue = Number(data.durationValue);
+      if (!["week", "month", "lifetime"].includes(durationUnit)) {
+        throw new Error("Invalid Plus duration");
+      }
+      if (
+        durationUnit === "lifetime"
+          ? durationValue !== 0
+          : !Number.isInteger(durationValue) ||
+            durationValue < 1 ||
+            (durationUnit === "week" ? durationValue > 104 : durationValue > 24)
+      ) {
+        throw new Error("Invalid Plus duration");
+      }
+
+      const senderEmail =
+        typeof context.claims?.email === "string" ? context.claims.email.trim().toLowerCase() : "";
+      const senderLabel = senderEmail === FOUNDER_EMAIL ? "Founder" : "SVJ Admin";
+
+      const { data: rows, error } = await supabaseAdmin.rpc("svj_admin_grant_plus", {
+        p_target_user_id: targetUserId,
+        p_granted_by: context.userId,
+        p_duration_value: durationValue,
+        p_duration_unit: durationUnit,
+        p_sender_label: senderLabel,
+      });
+
+      if (error) throw new Error(error.message || "Failed to grant Plus");
+      const row = Array.isArray(rows) ? rows[0] : rows;
+      if (!row?.grant_id) throw new Error("Failed to record Plus gift");
+
+      return {
+        ok: true,
+        grantId: String(row.grant_id),
+        expiresAt: (row.expires_at as string | null) ?? null,
+      };
+    },
+  );
 
 export const adminRevokePlus = createServerFn({ method: "POST" })
   .validator((input: { targetUserId: string }) => input)

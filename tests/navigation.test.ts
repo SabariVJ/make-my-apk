@@ -55,9 +55,12 @@ describe("primary navigation is five destinations", () => {
     );
   });
 
-  it("keeps the bottom bar typography and background tokens intact", () => {
+  it("keeps the floating glass dock positioning and clearance intact", () => {
     assert.match(navigation, /fixed bottom-0 left-0 right-0/);
-    assert.match(navigation, /bg-\[#0B0B0C\]\/95/);
+    // The dock floats inset from the edges and clears the gesture bar using
+    // the same env(safe-area-inset-bottom) pattern as the page container.
+    assert.match(navigation, /svj-glass-dock/);
+    assert.match(navigation, /pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom,0px\)\)\]/);
   });
 });
 
@@ -132,8 +135,11 @@ describe("Structured Strength is promoted into Train", () => {
 
 describe("secondary destinations moved to the utility rail", () => {
   it("defines Community, Leaderboard and Profile in rail order", () => {
-    const ids = navIds(utilityModel);
-    assert.deepEqual(ids, ["community", "leaderboard", "profile"]);
+    // The Admin entry is declared separately and appended only for admins, so
+    // the shared base list stays exactly these three destinations.
+    const baseIds = navIds(utilityModel.split("const ADMIN_NAV_ITEM")[0]);
+    assert.deepEqual(baseIds, ["community", "leaderboard", "profile"]);
+    assert.ok(!baseIds.includes("admin"), "non-admins must never be offered an Admin destination");
   });
 
   it("keeps the Android Leaderboard rule in the shared utility model", () => {
@@ -153,7 +159,7 @@ describe("secondary destinations moved to the utility rail", () => {
 
   it("routes every rail item through the existing tab handler", () => {
     assert.match(utilityNav, /onClick=\{\(\) => setActiveTab\(item\.id\)\}/);
-    assert.match(app, /<UtilityRail activeTab=\{activeTab\} setActiveTab=\{handleTabChange\} \/>/);
+    assert.match(app, /<UtilityRail activeTab=\{activeTab\} setActiveTab=\{handleTabChange\}/);
   });
 
   it("keeps Community, Leaderboard and Profile rendering their existing views", () => {
@@ -182,13 +188,17 @@ describe("primary nav spacing is compact", () => {
     assert.match(navigation, /gap-1/);
   });
 
-  it("keeps a minimum touch target width on each tab", () => {
-    assert.match(navigation, /min-w-\[/);
+  it("keeps an accessible touch target height on each tab", () => {
+    assert.match(navigation, /min-h-\[44px\]/);
   });
 
-  it("uses grid on mobile and flex at sm+ for the compact dock", () => {
+  it("uses an equal-column grid at every width so 5 and 6 tabs always fit", () => {
     assert.match(navigation, /grid grid-cols-5/);
-    assert.match(navigation, /sm:flex/);
+    assert.match(navigation, /grid grid-cols-6/);
+    // The dock never overflows horizontally on the narrowest target (320px):
+    // full-width fluid grid capped at max-w-md, with truncating labels.
+    assert.match(navigation, /w-full max-w-md/);
+    assert.match(navigation, /truncate/);
   });
 });
 

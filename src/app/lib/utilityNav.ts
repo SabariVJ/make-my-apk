@@ -18,7 +18,15 @@ export const UTILITY_NAV_ITEMS: UtilityNavItem[] = [
   { id: "profile", label: "Profile" },
 ];
 
+/**
+ * Admin dashboard entry: appended ONLY when the caller resolved an admin role
+ * row for the current user. For everyone else this list is byte-identical to
+ * before — no trace of the admin surface exists in their UI.
+ */
+const ADMIN_NAV_ITEM: UtilityNavItem = { id: "admin", label: "Admin" };
+
 /** Android Play hides the unfinished Leaderboard claim, exactly as before. */
-export function visibleUtilityItems(isAndroid: boolean): UtilityNavItem[] {
-  return UTILITY_NAV_ITEMS.filter((item) => !(isAndroid && item.id === "leaderboard"));
+export function visibleUtilityItems(isAndroid: boolean, isAdmin = false): UtilityNavItem[] {
+  const items = UTILITY_NAV_ITEMS.filter((item) => !(isAndroid && item.id === "leaderboard"));
+  return isAdmin ? [...items, ADMIN_NAV_ITEM] : items;
 }

@@ -88,8 +88,10 @@ describe("radius semantics", () => {
   });
 
   it("nav buttons use button radius, not panel radius", () => {
-    assert.doesNotMatch(nav, /py-1\.5 px-2 sm:px-3 rounded-2xl/);
-    assert.match(nav, /py-1\.5 px-2 sm:px-3 rounded-xl/);
+    assert.doesNotMatch(nav, /rounded-2xl[^\n]*svj-dock-active/);
+    // Dock buttons keep the button radius (rounded-xl), including the
+    // liquid-glass dock's compact mobile padding.
+    assert.match(nav, /rounded-xl px-1 py-1\.5/);
   });
 
   it("inputs use input radius", () => {

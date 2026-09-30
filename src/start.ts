@@ -29,12 +29,10 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  // Order: error boundary → CSRF (same-origin gate) → rate limiting →
-  // per-function Supabase auth/authorization. Rate limiting runs before
-  // authentication so abusive traffic — authenticated or not — is rejected at
-  // the cheapest layer and never reaches Supabase or expensive handlers.
-  // Rate limiting caps request volume; it never replaces authentication.
-  // See docs/SVJ_RATE_LIMITING.md.
-  // Order: error boundary → CSRF → rate limiting → HMAC integrity → per-function auth.
+  // Order: error boundary → CSRF → rate limiting → HMAC integrity →
+  // per-function Supabase auth/authorization. Rate limiting rejects abusive
+  // traffic at the cheapest layer; HMAC verifies request integrity only and
+  // never replaces authentication. See docs/SVJ_RATE_LIMITING.md and
+  // docs/SVJ_HMAC_REQUEST_SIGNING.md.
   requestMiddleware: [errorMiddleware, csrfMiddleware, rateLimitRequestMiddleware, hmacRequestMiddleware],
 }));

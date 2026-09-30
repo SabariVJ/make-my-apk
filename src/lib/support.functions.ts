@@ -7,7 +7,6 @@
 // column-level GRANT restricts updates to status/admin_response/resolved_at.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabase } from "@/integrations/supabase/client";
 
 export type TicketCategory = "payment" | "bug" | "account" | "other";
 export type TicketStatus = "open" | "in_progress" | "resolved";
@@ -33,7 +32,9 @@ export interface SupportTicketWithReporter extends SupportTicket {
 export const createSupportTicket = createServerFn({ method: "POST" })
   .validator((input: { category: TicketCategory; message: string }) => input)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<{ ok: true; id: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; id: string }> => {
+    const userId = context.userId;
+    const supabase = context.supabase;
     const category = String(data.category || "");
     if (!["payment", "bug", "account", "other"].includes(category)) {
       throw new Error("Invalid category");
@@ -42,10 +43,6 @@ export const createSupportTicket = createServerFn({ method: "POST" })
     if (message.length < 1 || message.length > 5000) {
       throw new Error("Message must be between 1 and 5000 characters");
     }
-
-    const { data: session } = await supabase.auth.getSession();
-    const userId = session.session?.user.id;
-    if (!userId) throw new Error("Unauthorized");
 
     const { data: inserted, error } = await supabase
       .from("support_tickets")
@@ -59,7 +56,8 @@ export const createSupportTicket = createServerFn({ method: "POST" })
 /** List the current user's own tickets (RLS scopes to user_id = auth.uid()). */
 export const listMySupportTickets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<SupportTicket[]> => {
+  .handler(async ({ context }): Promise<SupportTicket[]> => {
+    const supabase = context.supabase;
     const { data, error } = await supabase
       .from("support_tickets")
       .select(
@@ -75,12 +73,13 @@ export const listMySupportTickets = createServerFn({ method: "POST" })
 export const adminListSupportTickets = createServerFn({ method: "POST" })
   .validator((input: { status?: TicketStatus | "all"; limit?: number }) => input)
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<SupportTicketWithReporter[]> => {
+  .handler(async ({ data, context }): Promise<SupportTicketWithReporter[]> => {
     // Defense in depth: assert the caller is an admin before serving the
     // joined reporter identity (RLS already scopes the rows themselves).
-    const { data: session } = await supabase.auth.getSession();
-    const uid = session.session?.user.id;
-    if (!uid) throw new Error("Unauthorized");
+    // The uid comes from the verified session token via requireSupabaseAuth
+    // (never getSession(), which has no persisted session on the server).
+    const uid = context.userId;
+    const supabase = context.supabase;
     const { data: roleRow } = await supabase
       .from("user_roles")
       .select("role")
@@ -140,10 +139,9 @@ export const adminUpdateSupportTicket = createServerFn({ method: "POST" })
     (input: { ticketId: string; status?: TicketStatus; adminResponse?: string | null }) => input,
   )
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data }): Promise<{ ok: true }> => {
-    const { data: session } = await supabase.auth.getSession();
-    const uid = session.session?.user.id;
-    if (!uid) throw new Error("Unauthorized");
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const uid = context.userId;
+    const supabase = context.supabase;
     const { data: roleRow } = await supabase
       .from("user_roles")
       .select("role")

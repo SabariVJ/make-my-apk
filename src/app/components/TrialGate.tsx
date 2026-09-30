@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTrialStatus, type TrialStatus } from "@/lib/trial.functions";
 import { emitOAuthError } from "@/lib/googleAuth";
 import { AuthScreen } from "./AuthScreen";
+import { PlusGiftClaimModal } from "./PlusGiftClaimModal";
 import { StatusScreen } from "./StatusScreen";
 import {
   consumeIntentionalSignOut,
@@ -244,5 +245,10 @@ export const TrialGate: React.FC<{
   // Always pass the server-checked status to children so the app can mirror the
   // authoritative Plus state and conditionally render a restricted shell when
   // locked — never trust localStorage for entitlement.
-  return <>{typeof children === "function" ? children(status) : children}</>;
+  return (
+    <>
+      {typeof children === "function" ? children(status) : children}
+      <PlusGiftClaimModal userId={session?.user.id ?? ""} />
+    </>
+  );
 };

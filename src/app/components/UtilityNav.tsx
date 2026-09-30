@@ -1,7 +1,7 @@
 import React from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
-import { Trophy, User, Users, X } from "lucide-react";
+import { Trophy, User, Users, X, ShieldCheck } from "lucide-react";
 import type { ActiveTab } from "./Navigation";
 import { visibleUtilityItems } from "../lib/utilityNav";
 
@@ -10,6 +10,7 @@ const UTILITY_ICONS: Record<string, typeof Users> = {
   community: Users,
   leaderboard: Trophy,
   profile: User,
+  admin: ShieldCheck,
 };
 
 const isActiveUtility = (itemId: ActiveTab, activeTab: ActiveTab) => activeTab === itemId;
@@ -31,9 +32,11 @@ const railButtonClass = (active: boolean) =>
 export const UtilityRail: React.FC<{
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-}> = ({ activeTab, setActiveTab }) => {
+  /** Rendered only when the current user has an admin role row. */
+  isAdmin?: boolean;
+}> = ({ activeTab, setActiveTab, isAdmin = false }) => {
   const isAndroid = Capacitor.getPlatform() === "android";
-  const items = visibleUtilityItems(isAndroid);
+  const items = visibleUtilityItems(isAndroid, isAdmin);
 
   return (
     <nav
@@ -78,9 +81,11 @@ export const UtilityDrawer: React.FC<{
   onClose: () => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-}> = ({ open, onClose, activeTab, setActiveTab }) => {
+  /** Rendered only when the current user has an admin role row. */
+  isAdmin?: boolean;
+}> = ({ open, onClose, activeTab, setActiveTab, isAdmin = false }) => {
   const isAndroid = Capacitor.getPlatform() === "android";
-  const items = visibleUtilityItems(isAndroid);
+  const items = visibleUtilityItems(isAndroid, isAdmin);
 
   return (
     <AnimatePresence>

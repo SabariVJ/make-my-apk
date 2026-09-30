@@ -24,6 +24,7 @@ import {
   X,
   LogOut,
   AlertCircle,
+  Ticket,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,38 +40,11 @@ import { TransformationReportView } from "./TransformationReportView";
 import { Loader2 } from "lucide-react";
 import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SVJBadge } from "../components/ui-primitives/SVJBadge";
-import {
-  SUPPORT_EMAIL,
-  SUPPORT_SUBJECT,
-  copySupportEmail,
-  openSupportEmail,
-} from "../lib/supportEmail";
+import { MyTicketsList, RaiseTicketForm } from "../components/SupportTickets";
 import { getCurrentWeekXp, getWeekAverageXp } from "../lib/weeklyXp";
 import { markIntentionalSignOut } from "../lib/sessionExpired";
 
 export const ProfileView: React.FC = () => {
-  const [supportState, setSupportState] = useState<"idle" | "opening" | "fallback">("idle");
-  const [copiedEmail, setCopiedEmail] = useState(false);
-
-  const handleEmailSupport = async () => {
-    setCopiedEmail(false);
-    setSupportState("opening");
-    const result = await openSupportEmail(SUPPORT_SUBJECT);
-    if (result.ok && result.method !== "copied") {
-      setSupportState("idle");
-    } else {
-      // Popup blocked / no email app / copy attempted — surface the fallback.
-      setSupportState("fallback");
-    }
-  };
-
-  const handleCopySupportEmail = async () => {
-    const ok = await copySupportEmail();
-    if (ok) {
-      setCopiedEmail(true);
-      window.setTimeout(() => setCopiedEmail(false), 2500);
-    }
-  };
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const weekXp = getCurrentWeekXp(user.xpHistory);
   const [activeTab, setActiveTab] = useState<"analytics">("analytics");
@@ -440,40 +414,14 @@ export const ProfileView: React.FC = () => {
             <LogOut className="h-4 w-4" />
             Log out
           </button>
-          <button
-            type="button"
-            onClick={handleEmailSupport}
-            disabled={supportState === "opening"}
-            aria-busy={supportState === "opening"}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] py-3 font-inter text-xs font-semibold text-[#8C8C90] transition-colors hover:text-white disabled:opacity-60"
-          >
-            {supportState === "opening" ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Mail className="w-4 h-4" />
-            )}
-            {supportState === "opening"
-              ? "Opening email..."
-              : supportState === "fallback"
-                ? "Copy support email"
-                : "Email Us"}
-          </button>
-          {supportState === "fallback" && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-              <p className="text-xs text-[#8C8C90]">Couldn't open an email app. Reach us at:</p>
-              <p className="my-1 font-mono text-sm text-white">sabarivj777@gmail.com</p>
-              <button
-                type="button"
-                onClick={handleCopySupportEmail}
-                className="cursor-pointer rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 font-inter text-[11px] font-semibold text-white hover:bg-white/[0.08]"
-              >
-                {copiedEmail ? "Email copied" : "Copy email"}
-              </button>
-            </div>
-          )}
-          <p className="-mt-1 text-center text-[10px] font-mono text-[#8C8C90]">
-            Opens a draft addressed to SVJ Support. You choose what to paste and send.
-          </p>
+          <RaiseTicketForm />
+          <div className="mt-4">
+            <h3 className="mb-2 flex items-center gap-1.5 px-1 font-inter text-[11px] font-bold uppercase tracking-wide text-[#8C8C90]">
+              <Ticket className="h-3.5 w-3.5" />
+              My Tickets
+            </h3>
+            <MyTicketsList />
+          </div>
           <div className="flex items-center justify-center gap-4 font-inter text-[10px] text-[#8C8C90]">
             <a href="/delete-account" className="text-[#E62846] hover:text-[#A0182E]">
               Delete account

@@ -31,7 +31,8 @@ export type ActiveTab =
   | "signout"
   | "profile"
   | "plan"
-  | "transform";
+  | "transform"
+  | "admin";
 
 interface PrimaryNavItem {
   id: ActiveTab;

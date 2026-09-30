@@ -1,6 +1,7 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { rateLimitRequestMiddleware } from "./lib/rate-limit-request.middleware";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -27,5 +28,11 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  // Order: error boundary → CSRF (same-origin gate) → rate limiting →
+  // per-function Supabase auth/authorization. Rate limiting runs before
+  // authentication so abusive traffic — authenticated or not — is rejected at
+  // the cheapest layer and never reaches Supabase or expensive handlers.
+  // Rate limiting caps request volume; it never replaces authentication.
+  // See docs/SVJ_RATE_LIMITING.md.
+  requestMiddleware: [errorMiddleware, csrfMiddleware, rateLimitRequestMiddleware],
 }));

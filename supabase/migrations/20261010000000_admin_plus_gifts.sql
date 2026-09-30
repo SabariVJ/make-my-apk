@@ -40,6 +40,7 @@ ALTER TABLE public.plus_gifts FORCE ROW LEVEL SECURITY;
 
 REVOKE ALL ON public.plus_gifts FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.plus_gifts TO authenticated;
+GRANT ALL ON public.plus_gifts TO service_role;
 
 DROP POLICY IF EXISTS "Users can view their own Plus gifts" ON public.plus_gifts;
 CREATE POLICY "Users can view their own Plus gifts"

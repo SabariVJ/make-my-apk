@@ -11,7 +11,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.plus_gifts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   recipient_user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  granted_by uuid NOT NULL REFERENCES auth.users (id) ON DELETE RESTRICT,
+  granted_by uuid REFERENCES auth.users (id) ON DELETE SET NULL,
   sender_label text NOT NULL DEFAULT 'SVJ Admin'
     CHECK (char_length(sender_label) BETWEEN 1 AND 32),
   duration_value integer NOT NULL,
@@ -115,6 +115,14 @@ BEGIN
      AND (v_profile.plus_expires_at IS NULL OR v_profile.plus_expires_at > v_now) THEN
     RAISE EXCEPTION 'SVJ_ADMIN_PLUS_ALREADY_ACTIVE';
   END IF;
+
+  -- Expired, unclaimed notices cannot block a fresh gift.
+  UPDATE public.plus_gifts
+     SET claimed_at = v_now
+   WHERE recipient_user_id = p_target_user_id
+     AND claimed_at IS NULL
+     AND expires_at IS NOT NULL
+     AND expires_at <= v_now;
 
   IF EXISTS (
     SELECT 1

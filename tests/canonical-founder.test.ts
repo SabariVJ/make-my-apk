@@ -1,12 +1,15 @@
 /**
  * Canonical founder / lifetime Plus regression tests.
  *
- * Pins the fix for the founder lockout regression:
- *  - sabarivj2008@gmail.com is the canonical founder/admin identity
- *  - the legacy sabarivj777@gmail.com owner fallback is retired (777 remains
- *    the SUPPORT contact and its data is untouched)
+ * Pins the corrective fix for the founder identity regression introduced by
+ * PR #21 (which incorrectly switched the canonical founder to
+ * sabarivj2008@gmail.com):
+ *  - sabarivj777@gmail.com is the canonical founder/admin identity
+ *    (it is BOTH the founder account and the public support address)
+ *  - sabarivj2008@gmail.com is NOT a founder and must never receive
+ *    founder/admin entitlements from app code or migrations
  *  - the DB migration grants lifetime Plus (plus_expires_at = NULL) and the
- *    admin role to the EXISTING 2008 account only, idempotently
+ *    admin role to the EXISTING 777 account only, idempotently
  *  - membership stays server-authoritative (TrialGate -> getTrialStatus ->
  *    svj_get_my_membership); localStorage can never grant Plus
  *  - founder-only Recovery, navigation and Liquid Glass dock are untouched
@@ -19,8 +22,8 @@ import { resolve } from "node:path";
 const repoRoot = resolve(import.meta.dirname ?? ".", "..");
 const read = (rel: string) => readFileSync(resolve(repoRoot, rel), "utf8");
 
-const FOUNDER = "sabarivj2008@gmail.com";
-const LEGACY = "sabarivj777@gmail.com";
+const FOUNDER = "sabarivj777@gmail.com";
+const NOT_FOUNDER = "sabarivj2008@gmail.com";
 
 const context = read("src/app/context/SVJContext.tsx");
 const founderIdentity = read("src/app/lib/founderIdentity.ts");
@@ -38,39 +41,37 @@ const sql = migration
   .join("\n");
 
 describe("canonical founder identity", () => {
-  it("declares sabarivj2008@gmail.com as the single founder constant", () => {
-    assert.match(founderIdentity, /export const FOUNDER_EMAIL = "sabarivj2008@gmail\.com"/);
+  it("declares sabarivj777@gmail.com as the single founder constant", () => {
+    assert.match(founderIdentity, /export const FOUNDER_EMAIL = "sabarivj777@gmail\.com"/);
   });
 
-  it("replaces the stale 777 owner fallback in SVJContext", () => {
+  it("derives owner detection in SVJContext from the founderIdentity module", () => {
     assert.match(context, /cleanEmail === FOUNDER_EMAIL/);
     assert.doesNotMatch(
       context,
-      /===\s*"sabarivj777@gmail\.com"/,
-      "the legacy owner-email comparison must be gone",
-    );
-    assert.doesNotMatch(
-      context,
-      /"sabarivj777@gmail\.com"/,
-      "SVJContext must derive identity from the founderIdentity module, not a literal",
+      /===\s*"sabarivj(777|2008)@gmail\.com"/,
+      "the owner-email comparison must use the shared constant",
     );
   });
 
-  it("retargets the server-side challenge debug flag to the canonical founder", () => {
-    assert.match(challengeFunctions, /FOUNDER_EMAIL = "sabarivj2008@gmail\.com"/);
+  it("retains the server-side challenge debug gate on the canonical founder", () => {
+    assert.match(challengeFunctions, /FOUNDER_EMAIL = "sabarivj777@gmail\.com"/);
   });
 
-  it("keeps 777 as the support contact only (preserved, not deleted)", () => {
+  it("keeps 777 as both founder and the public support contact", () => {
     const supportEmail = read("src/app/lib/supportEmail.ts");
     assert.match(supportEmail, /SUPPORT_EMAIL = "sabarivj777@gmail\.com"/);
-    // The migration never references the legacy account at all.
-    assert.ok(!sql.includes(LEGACY), "the migration must not touch the 777 account");
+  });
+
+  it("explicitly disclaims 2008 as a founder account", () => {
+    assert.match(founderIdentity, /sabarivj2008@gmail\.com/);
+    assert.match(founderIdentity, /NOT a founder/i);
   });
 });
 
 describe("lifetime Plus migration (idempotent, minimal, safe)", () => {
-  it("locates the EXISTING canonical user by email + Google provider, LIMIT 1", () => {
-    assert.match(sql, /lower\(COALESCE\(u\.email, ''\)\) = 'sabarivj2008@gmail\.com'/);
+  it("locates the EXISTING canonical 777 user by email + Google provider, LIMIT 1", () => {
+    assert.match(sql, /lower\(COALESCE\(u\.email, ''\)\) = 'sabarivj777@gmail\.com'/);
     assert.match(sql, /raw_app_meta_data ->> 'provider' = 'google'/);
     assert.match(sql, /LIMIT 1/);
     assert.ok(
@@ -82,6 +83,10 @@ describe("lifetime Plus migration (idempotent, minimal, safe)", () => {
   it("grants lifetime Plus: is_plus_member true, plus_expires_at NULL", () => {
     assert.match(sql, /SET is_plus_member = true/);
     assert.match(sql, /plus_expires_at = NULL/);
+  });
+
+  it("preserves an existing plus_unlocked_at (COALESCE)", () => {
+    assert.match(sql, /plus_unlocked_at = COALESCE\(plus_unlocked_at, now\(\)\)/);
   });
 
   it("uses the audited trusted-server write path and no other columns", () => {
@@ -102,6 +107,11 @@ describe("lifetime Plus migration (idempotent, minimal, safe)", () => {
     assert.match(sql, /INSERT INTO public\.user_roles \(user_id, role\)/);
     assert.match(sql, /ON CONFLICT \(user_id\) DO NOTHING/);
     assert.match(sql, /'admin'/);
+  });
+
+  it("never grants anything to the 2008 account", () => {
+    // The executable SQL body must not target the 2008 address at all.
+    assert.ok(!sql.includes(NOT_FOUNDER), "the migration must not touch the 2008 account");
   });
 
   it("does not create new tables, columns or role systems", () => {

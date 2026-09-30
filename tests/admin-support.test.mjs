@@ -9,6 +9,16 @@ const migration = await readFile(
   new URL("../supabase/migrations/20261006000000_admin_roles_support_tickets.sql", import.meta.url),
   "utf8",
 );
+// Follow-up migrations that make the admin surface correct on the real
+// production project (founder provisioning + the profiles embed FK).
+const founderMigration = await readFile(
+  new URL("../supabase/migrations/20261007000000_founder_admin_access.sql", import.meta.url),
+  "utf8",
+);
+const profilesFkMigration = await readFile(
+  new URL("../supabase/migrations/20261008000000_support_tickets_profiles_fk.sql", import.meta.url),
+  "utf8",
+);
 // Per-table slices so "no X policy" assertions can't leak across sections.
 const userRolesSection = migration.split(
   "-- ============================================================================\n-- 2)",
@@ -23,6 +33,14 @@ const utilityNav = await readSrc("app/lib/utilityNav.ts");
 const profileView = await readSrc("app/views/ProfileView.tsx");
 const supportTickets = await readSrc("app/components/SupportTickets.tsx");
 const adminDashboard = await readSrc("app/views/AdminDashboardView.tsx");
+/** The follow-up migration with `--` comment lines stripped (assert on SQL, not prose). */
+const profilesFkSql = profilesFkMigration
+  .split("\n")
+  .filter((line) => !line.trimStart().startsWith("--"))
+  .join("\n");
+
+const supabaseTypes = await readSrc("integrations/supabase/types.ts");
+const appEntry = await readSrc("app/App.tsx");
 
 describe("user_roles table security model", () => {
   it("creates user_roles with uuid pk, unique user_id FK, admin-only role check", () => {
@@ -238,5 +256,101 @@ describe("frontend integration", () => {
     assert.match(supportTickets, /In Progress/);
     assert.match(supportTickets, /SVJ Support/); // admin response block
     assert.match(supportTickets, /my-tickets-list/);
+  });
+});
+
+describe("support_tickets -> profiles embed (admin ticket list)", () => {
+  it("keeps the auth.users ownership FK exactly as is", () => {
+    assert.match(
+      migration,
+      /user_id uuid NOT NULL UNIQUE REFERENCES auth\.users \(id\) ON DELETE CASCADE|user_id uuid NOT NULL REFERENCES auth\.users \(id\) ON DELETE CASCADE/,
+    );
+    // The follow-up never drops, replaces or alters the ownership FK.
+    assert.doesNotMatch(profilesFkSql, /DROP CONSTRAINT/);
+    assert.doesNotMatch(profilesFkSql, /ALTER COLUMN user_id/);
+  });
+
+  it("adds an explicitly named FK from support_tickets.user_id to public.profiles(id)", () => {
+    assert.match(profilesFkMigration, /ADD CONSTRAINT support_tickets_user_id_profiles_fkey/);
+    assert.match(
+      profilesFkMigration,
+      /FOREIGN KEY \(user_id\) REFERENCES public\.profiles \(id\) ON DELETE CASCADE/,
+    );
+  });
+
+  it("is idempotent and cannot fail on pre-existing data", () => {
+    assert.match(profilesFkMigration, /FROM pg_constraint/);
+    assert.match(profilesFkMigration, /conname = 'support_tickets_user_id_profiles_fkey'/);
+    assert.match(profilesFkSql, /IF EXISTS \([\s\S]*?RETURN;/);
+    // Orphan rows downgrade the constraint instead of failing the migration.
+    assert.match(profilesFkMigration, /NOT VALID/);
+    assert.match(profilesFkMigration, /LEFT JOIN public\.profiles p ON p\.id = t\.user_id/);
+    assert.doesNotMatch(profilesFkSql, /DELETE FROM|TRUNCATE/i);
+  });
+
+  it("changes no policy, grant or provisioning rule", () => {
+    assert.doesNotMatch(
+      profilesFkSql,
+      /CREATE POLICY|GRANT |REVOKE |handle_new_user|is_admin_or_mod/,
+    );
+  });
+
+  it("the admin query embeds profiles through the explicit constraint name", () => {
+    assert.match(
+      supportFunctions,
+      /profiles!support_tickets_user_id_profiles_fkey\(username, email\)/,
+    );
+    assert.doesNotMatch(supportFunctions, /profiles!support_tickets_user_id_fkey\(/);
+  });
+
+  it("generated types describe the same relationship", () => {
+    assert.match(supabaseTypes, /foreignKeyName: "support_tickets_user_id_profiles_fkey"/);
+    assert.match(supabaseTypes, /referencedRelation: "profiles"/);
+    assert.match(supabaseTypes, /referencedColumns: \["id"\]/);
+    assert.doesNotMatch(supabaseTypes, /foreignKeyName: "support_tickets_user_id_fkey"/);
+  });
+});
+
+describe("founder provisioning and role reads (20261007)", () => {
+  it("keeps the founder rule narrow: one email AND the Google provider", () => {
+    assert.match(founderMigration, /lower\(COALESCE\(u\.email, ''\)\) = 'sabarivj777@gmail\.com'/);
+    assert.match(founderMigration, /u\.raw_app_meta_data ->> 'provider' = 'google'/);
+    assert.match(founderMigration, /LIMIT 1/);
+    assert.match(founderMigration, /ON CONFLICT \(user_id\) DO NOTHING/);
+    const emailMatches = founderMigration.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+    const emails = new Set(emailMatches.map((address) => address.toLowerCase()));
+    assert.deepEqual([...emails], ["sabarivj777@gmail.com"]);
+  });
+
+  it("restores the own-row read the admin gate depends on", () => {
+    assert.match(founderMigration, /GRANT SELECT ON public\.user_roles TO authenticated/);
+    assert.match(adminRoleHook, /\.eq\("user_id", uid\)/);
+    assert.match(adminRoleHook, /\.eq\("role", "admin"\)/);
+    // The gate never keys off an email or a profile field.
+    assert.doesNotMatch(adminRoleHook, /sabarivj777/);
+    assert.doesNotMatch(adminRoleHook, /isOwner|isFounder|display_name|username/);
+  });
+
+  it("a normal user is not admin and cannot reach the admin destination", () => {
+    assert.match(appEntry, /const isAdmin = adminRole\.status === "admin"/);
+    const baseList = utilityNav.split("const ADMIN_NAV_ITEM")[0];
+    assert.doesNotMatch(baseList, /"admin"/);
+  });
+
+  it("admin-only surfaces stay behind the DB predicate", () => {
+    // Listing every ticket and updating one are both gated by the admin policy.
+    assert.match(
+      migration,
+      /CREATE POLICY "Admins can view all tickets"[\s\S]*?USING \(public\.is_admin_or_mod\(auth\.uid\(\)\)\)/,
+    );
+    assert.match(
+      migration,
+      /CREATE POLICY "Admins can update tickets"[\s\S]*?USING \(public\.is_admin_or_mod\(auth\.uid\(\)\)\)/,
+    );
+    // And the column-scoped grant still limits what an admin may write.
+    assert.match(migration, /GRANT UPDATE \(status, admin_response, resolved_at, updated_at\)/);
+    // The server-side re-checks remain in place for both admin ticket calls.
+    const forbidden = supportFunctions.match(/Forbidden: admin role required/g) ?? [];
+    assert.ok(forbidden.length >= 2);
   });
 });

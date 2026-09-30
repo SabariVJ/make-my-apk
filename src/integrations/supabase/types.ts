@@ -1141,7 +1141,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "support_tickets_user_id_fkey";
+            foreignKeyName: "support_tickets_user_id_profiles_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

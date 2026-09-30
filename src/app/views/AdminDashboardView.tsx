@@ -87,7 +87,11 @@ const UsersSection: React.FC = () => {
     setActionError(cause instanceof Error ? cause.message : "Action failed");
 
   const grantPlus = useMutation({
-    mutationFn: (input: {\n      targetUserId: string;\n      durationValue: number;\n      durationUnit: "week" | "month" | "lifetime";\n    }) => adminGrantPlus({ data: input }),
+    mutationFn: (input: {
+      targetUserId: string;
+      durationValue: number;
+      durationUnit: "week" | "month" | "lifetime";
+    }) => adminGrantPlus({ data: input }),
     onSuccess: () => {
       setActionError(null);
       invalidate();

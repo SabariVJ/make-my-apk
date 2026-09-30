@@ -23,7 +23,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { TOTAL_DAYS, DAY_MS, getDayDef } from "./challengeDays";
 
-const FOUNDER_EMAIL = "sabarivj777@gmail.com";
+// Canonical founder email for the challenge debug flag (server-side only).
+const FOUNDER_EMAIL = "sabarivj2008@gmail.com";
 
 export type ChallengeRunStatus = "not_started" | "active" | "paused" | "completed";
 export type ChallengeDayStatus = "completed" | "current" | "locked" | "missed";

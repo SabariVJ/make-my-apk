@@ -42,6 +42,7 @@ import {
   toggleTaskCompletion,
 } from "../lib/taskCompletions";
 import { reconcileEngagementProfile } from "../lib/engagementProfile";
+import { FOUNDER_EMAIL } from "../lib/founderIdentity";
 
 interface SVJContextType {
   user: UserProfile;
@@ -1003,7 +1004,8 @@ export const SVJProvider: React.FC<{
     // Idempotency guard: if we already have this email set, skip to avoid
     // redundant confetti / modal-close / state churn.
     if (user.email?.toLowerCase() === cleanEmail) return;
-    const isOwnerEmail = cleanEmail === "sabarivj777@gmail.com";
+    // Canonical founder identity (see src/app/lib/founderIdentity.ts).
+    const isOwnerEmail = cleanEmail === FOUNDER_EMAIL;
 
     // Ensure the ref always points to the real function so the auth-sync
     // listener (which uses loginWithGmailRef) can invoke it even though

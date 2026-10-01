@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
+import { useFriends } from "../hooks/useFriends";
+import { isSelfEntry } from "../lib/memberDirectory";
 import { createRivalry, getRivalries, type RivalryData } from "@/lib/rivalry.functions";
 import { AvatarImage } from "./AvatarImage";
 import { SvjRivalryHero } from "./SvjRivalryHero";
@@ -34,7 +36,17 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
   // Identity is the authenticated account id. A stale modal or direct handler
   // invocation can never compare the user against their own account.
-  const isSelf = member?.id === user.id;
+  const isSelf = member ? isSelfEntry(member.id, user.id) : false;
+
+  // Outperform runs through the rivalry state machine, which requires an
+  // ACCEPTED friendship. The friend list is read only while the modal is open
+  // so the "Lock In & Outperform" action is never offered where the server
+  // would reject it (and so a stranger gets a working Add-friend step instead).
+  const friendsApi = useFriends(Boolean(member));
+  const isFriend = member ? friendsApi.friends.some((friend) => friend.id === member.id) : false;
+  const friendRequestPending = member
+    ? friendsApi.outgoing.some((request) => request.id === member.id)
+    : false;
 
   useEffect(() => {
     if (!member) return;
@@ -88,11 +100,27 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
         ? rivalry.challengerId === user.id
           ? "Request Sent ✓"
           : "Respond in Community"
-        : "Lock In & Outperform";
+        : friendRequestPending
+          ? "Friend Request Sent"
+          : isFriend
+            ? "Lock In & Outperform"
+            : "Add Friend to Compete";
+
+  /** Strangers become friends first — the only path the server accepts. */
+  const handleAddFriend = async () => {
+    if (!member || sending || isSelf) return;
+    setSending(true);
+    setActionError(null);
+    try {
+      await friendsApi.sendRequest(member.id);
+    } finally {
+      setSending(false);
+    }
+  };
 
   // Rank is only displayed when a real ranked entry exists for the signed-in
   // account. There is no invented fallback number.
-  const myRankEntry = leaderboard.find((entry) => entry.id === user.id);
+  const myRankEntry = leaderboard.find((entry) => isSelfEntry(entry.id, user.id));
   const myRankLabel = rivalryLookupFailed
     ? "—"
     : myRankEntry && Number.isFinite(myRankEntry.rank)
@@ -255,28 +283,30 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               <div className="mb-6 space-y-3">
                 <SVJSectionHeader title="Performance breakdown" />
 
+                {/* Only comparisons the directory RPC can back with real numbers:
+                    the previous Weekly/Monthly XP row printed a hard-coded 0 for
+                    every member, which read as real data. */}
                 <div className="svj-radius-row grid grid-cols-3 gap-2 divide-x divide-white/[0.05] border border-white/[0.05] bg-[#08080A] py-3 text-center">
-                  <div className="px-1">
-                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Weekly XP</p>
-                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
-                      {user.weeklyXP}
-                      <span className="text-[#8C8C90]"> vs </span>
-                      {member.weeklyXP}
-                    </p>
-                  </div>
-                  <div className="px-1">
-                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Monthly XP</p>
-                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
-                      {user.monthlyXP}
-                      <span className="text-[#8C8C90]"> vs </span>
-                      {member.monthlyXP}
-                    </p>
-                  </div>
                   <div className="px-1">
                     <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Streak</p>
                     <p className="font-mono text-sm font-bold text-[#F4F2ED]">
                       {user.currentStreak}d<span className="text-[#8C8C90]"> vs </span>
                       {member.streak}d
+                    </p>
+                  </div>
+                  <div className="px-1">
+                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Global rank</p>
+                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
+                      {myRankLabel}
+                      <span className="text-[#8C8C90]"> vs </span>#{member.rank}
+                    </p>
+                  </div>
+                  <div className="px-1">
+                    <p className="mb-1 font-inter text-[10px] text-[#8C8C90]">Lifetime XP</p>
+                    <p className="font-mono text-sm font-bold text-[#F4F2ED]">
+                      {user.totalXP.toLocaleString()}
+                      <span className="text-[#8C8C90]"> vs </span>
+                      {member.totalXP.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -334,9 +364,10 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (rivalry?.status === "active") setShowRivalry(true);
+                  else if (!isFriend) void handleAddFriend();
                   else void handleLockIn();
                 }}
-                disabled={sending || rivalry?.status === "pending"}
+                disabled={sending || rivalry?.status === "pending" || friendRequestPending}
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-inter text-sm font-semibold text-white shadow-lg shadow-[#C81E3A]/20 transition-colors hover:bg-[#A0182E] disabled:opacity-60"
               >
                 <span>{sending ? "Sending…" : actionLabel}</span>
@@ -345,6 +376,17 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               {rivalry?.status === "pending" && rivalry.challengerId === user.id && (
                 <p role="status" className="mt-2 text-center font-inter text-xs text-emerald-400">
                   Request sent — waiting for @{member.username}.
+                </p>
+              )}
+              {friendRequestPending && !rivalry && (
+                <p role="status" className="mt-2 text-center font-inter text-xs text-emerald-400">
+                  Friend request sent — Outperform unlocks once @{member.username} accepts.
+                </p>
+              )}
+              {!isFriend && !friendRequestPending && !rivalry && (
+                <p className="mt-2 text-center font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+                  Outperform rivalries run between accepted friends, so both sides compete on
+                  verified activity only. Send a request to start.
                 </p>
               )}
               {actionError && (

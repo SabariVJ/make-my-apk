@@ -54,7 +54,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
     color: string;
     hexColor: string;
     bgGlow: string;
-    icon: string;
   }[] = [
     {
       key: "physical",
@@ -306,8 +305,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
                     borderColor: `${d.hexColor}50`,
                     color: d.hexColor,
                   }}
-                >
-                </div>
+                ></div>
                 <div>
                   <div className={`text-xs font-bold ${d.color} leading-none`}>{d.label}</div>
                   <div className="text-[9px] text-[#8C8C90] mt-0.5">

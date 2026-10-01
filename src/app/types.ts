@@ -1,12 +1,19 @@
 export type TierLevel =
   "Initiate" | "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond" | "Obsidian";
 
+/**
+ * Semantic tier emblem. Tiers used to carry an emoji glyph that was rendered
+ * verbatim as the achievement badge; the UI now maps one of these keys onto a
+ * real vector icon, so badge art is never a vague emoji.
+ */
+export type TierEmblem = "bolt" | "bronze" | "silver" | "gold" | "gem" | "prism" | "crown";
+
 export interface TierInfo {
   name: TierLevel;
   minXP: number;
   color: string;
   badgeBg: string;
-  icon: string;
+  icon: TierEmblem;
   description: string;
   benefits: string[];
 }

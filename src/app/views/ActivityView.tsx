@@ -9,8 +9,6 @@ import {
   Watch,
   ActivitySquare,
   BarChart3,
-  Cpu,
-  AlertCircle,
 } from "lucide-react";
 import { useActivityOptional, type ActivityContextValue } from "../context/ActivityContext";
 import { CompletedSessionCard, ActivityHistory } from "./ActivityHistory";
@@ -164,13 +162,10 @@ const ActivityViewContent: React.FC<{
     trackingActive,
     startTracking,
     stopTracking,
-    getSensorInfo,
     statusMessage,
     stepSource,
     summary7,
     summary30,
-    debugInfo,
-    showDiagnostics,
   } = activity;
 
   // The provider also serves summary cards, so leaving this screen must stop
@@ -443,120 +438,6 @@ const ActivityViewContent: React.FC<{
             <TrendingUp className="w-3 h-3" />
             XP is granted once per milestone per day and counts toward your streak.
           </div>
-        </div>
-      )}
-
-      {/* Developer diagnostics — only render when the explicit opt-in or a dev/test bundle enables them. */}
-      {showDiagnostics && debugInfo && (
-        <div className="rounded-2xl border border-gold/30 bg-black/60 p-4 mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Cpu className="w-3.5 h-3.5 text-gold" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-gold">
-              ANDROID PEDOMETER DEBUG
-            </span>
-            <span className="text-[9px] font-mono text-[#8C8C90]">
-              {" "}
-              — shown when the native sensor bridge is present
-            </span>
-          </div>
-          <ul className="space-y-1 text-[10px] font-mono leading-relaxed">
-            <li className="text-[#8C8C90]">Platform android, tracking status {trackingStatus}</li>
-            <li className="text-[#8C8C90]">
-              Plugin registered:{" "}
-              {debugInfo.pluginAvailable == null
-                ? "unknown"
-                : debugInfo.pluginAvailable
-                  ? "yes"
-                  : "no"}
-            </li>
-            <li className="text-[#8C8C90]">Sensor mode: {debugInfo.sensorMode ?? "none"}</li>
-            <li className="text-[#8C8C90]">
-              Sensor name: {debugInfo.sensorName ?? "none"}
-              {debugInfo.sensorVendor ? ` (${debugInfo.sensorVendor})` : ""}
-            </li>
-            <li className="text-[#8C8C90]">
-              Sensor available:{" "}
-              {debugInfo.sensorAvailable === true
-                ? "true"
-                : debugInfo.sensorAvailable === false
-                  ? "false"
-                  : "unknown"}
-            </li>
-            <li className="text-[#8C8C90]">Permission: {debugInfo.permission ?? "unknown"}</li>
-            <li className="text-[#8C8C90]">
-              Tracking requested: {debugInfo.trackingRequested ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Tracking active: {debugInfo.trackingActive ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Listener registered: {debugInfo.listenerRegistered ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Listener removed: {debugInfo.listenerRemoved ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Session baseline raw: {debugInfo.sessionBaselineRaw ?? "waiting for first reading"}
-            </li>
-            <li className="text-[#8C8C90]">Session steps: {debugInfo.sessionSteps}</li>
-            <li className="text-[#8C8C90]">
-              Selected sensor mode: {debugInfo.selectedSensorMode ?? "none"}
-            </li>
-            <li className="text-[#8C8C90]">Active calories: {activeKcal} kcal</li>
-            <li className="text-[#8C8C90]">
-              Listener connected: {debugInfo.listenerConnected ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Sensor started: {debugInfo.sensorStarted ? "yes" : "no"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Last raw value: {debugInfo.lastRawSteps != null ? debugInfo.lastRawSteps : "none"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Last daily steps:{" "}
-              {debugInfo.lastDailySteps != null ? debugInfo.lastDailySteps : "none"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Last measurement at:{" "}
-              {debugInfo.lastMeasurementAtMs != null
-                ? new Date(debugInfo.lastMeasurementAtMs).toISOString()
-                : "none"}
-            </li>
-            <li className="text-[#8C8C90]">
-              Last event time:{" "}
-              {debugInfo.lastMeasurementAtMs != null
-                ? new Date(debugInfo.lastMeasurementAtMs).toLocaleTimeString()
-                : "none"}
-            </li>
-            <li className="text-[#8C8C90]">Last error: {debugInfo.lastError ?? "none"}</li>
-          </ul>
-          <button
-            type="button"
-            onClick={() => {
-              void getSensorInfo();
-            }}
-            className="mt-3 text-[10px] font-mono text-gold underline"
-          >
-            Refresh diagnostics
-          </button>
-          {debugInfo.notes && debugInfo.notes.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {debugInfo.notes.slice(0, 40).map((n, i) => (
-                <span
-                  key={i}
-                  className="inline-block rounded-full bg-gold/10 border border-gold/20 px-1.5 py-0.5 text-[9px] font-mono text-gold break-all"
-                >
-                  {n}
-                </span>
-              ))}
-            </div>
-          )}
-          {debugInfo.lastError && (
-            <div className="mt-2 flex items-start gap-2 rounded-full border border-crimson/30 bg-crimson/5 p-2 text-[10px] font-mono text-crimson">
-              <AlertCircle className="mt-0.5 shrink-0" />
-              <span>{debugInfo.lastError}</span>
-            </div>
-          )}
         </div>
       )}
     </div>

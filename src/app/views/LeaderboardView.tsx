@@ -13,32 +13,26 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
-import { LeaderboardEntry } from "../types";
+import { isSelfEntry, memberToLeaderboardEntry } from "../lib/memberDirectory";
 import { AvatarFrame } from "../components/AvatarFrame";
 import { useFriends } from "../hooks/useFriends";
+
+/**
+ * Standings are filtered only by fields the member directory RPC reports:
+ * lifetime XP and current streak. The previous "weekly"/"monthly" tabs sorted
+ * every member by a hard-coded 0 and printed "0 XP", which read as real data
+ * while being guaranteed nonsense.
+ */
+type StandingsFilter = "total" | "streak";
 
 export const LeaderboardView: React.FC = () => {
   const { user, setComparingMember, setSelectedMemberModal } = useSVJ();
   const { members } = useFriends();
-  const [filter, setFilter] = useState<"total" | "weekly" | "monthly" | "streak">("total");
+  const [filter, setFilter] = useState<StandingsFilter>("total");
 
-  const serverLeaderboard: LeaderboardEntry[] = members.map((member) => ({
-    id: member.id,
-    username: member.username || member.display_name || "member",
-    avatar: member.avatar_url || "",
-    totalXP: member.total_xp,
-    weeklyXP: 0,
-    monthlyXP: 0,
-    streak: member.current_streak,
-    rank: member.rank,
-    rankDelta: 0,
-    tier: "Initiate",
-    country: "",
-    bio: "",
-  }));
+  // Real server rows only: identity, lifetime XP, streak and global rank.
+  const serverLeaderboard = members.map(memberToLeaderboardEntry);
   const sortedLeaderboard = [...serverLeaderboard].sort((a, b) => {
-    if (filter === "weekly") return b.weeklyXP - a.weeklyXP;
-    if (filter === "monthly") return b.monthlyXP - a.monthlyXP;
     if (filter === "streak") return b.streak - a.streak;
     return b.totalXP - a.totalXP;
   });
@@ -46,24 +40,15 @@ export const LeaderboardView: React.FC = () => {
   const top3 = sortedLeaderboard.slice(0, 3);
   const rest = sortedLeaderboard.slice(3);
 
-  const myIndexInSorted = sortedLeaderboard.findIndex(
-    (l) => l.id === user.id || l.id === "user-me",
-  );
-  const myRank = myIndexInSorted !== -1 ? myIndexInSorted + 1 : sortedLeaderboard.length;
+  const myIndexInSorted = sortedLeaderboard.findIndex((l) => isSelfEntry(l.id, user.id));
+  // No invented placement: an account with no ranked row shows "Unranked".
+  const myRankLabel = myIndexInSorted !== -1 ? `#${myIndexInSorted + 1}` : "Unranked";
 
-  const myEntry = sortedLeaderboard.find((l) => l.id === user.id || l.id === "user-me") || {
-    rank: myRank,
-    rankDelta: 0,
-    id: user.id,
-    username: user.username,
-    avatar: user.avatar,
-    tier: user.tier,
-    totalXP: user.totalXP,
-    weeklyXP: user.weeklyXP,
-    monthlyXP: user.monthlyXP,
-    streak: user.currentStreak,
-    country: "US",
-    bio: user.bio,
+  /** Opens the rivalries/compare surface — never for the signed-in account. */
+  const openComparison = (entryId: string) => {
+    if (isSelfEntry(entryId, user.id)) return;
+    const entry = sortedLeaderboard.find((l) => l.id === entryId);
+    if (entry) setComparingMember(entry);
   };
 
   return (
@@ -91,7 +76,9 @@ export const LeaderboardView: React.FC = () => {
 
           <div className="p-3 rounded-2xl bg-[#0B0B0C] border border-white/10 text-center shrink-0">
             <div className="text-[10px] font-mono text-[#8C8C90] uppercase">Your Placement</div>
-            <div className="text-2xl font-anton text-[#C81E3A]">Rank #{myRank}</div>
+            <div className="text-2xl font-anton text-[#C81E3A]">
+              {myRankLabel === "Unranked" ? myRankLabel : `Rank ${myRankLabel}`}
+            </div>
             <div className="text-[10px] font-mono text-emerald-400">{user.totalXP} Total XP</div>
           </div>
         </div>
@@ -99,7 +86,7 @@ export const LeaderboardView: React.FC = () => {
 
       {/* Filter Tabs */}
       <div className="p-1 rounded-lg bg-[#17171A] border border-white/10 flex items-center justify-around text-xs font-mono">
-        {(["total", "weekly", "monthly", "streak"] as const).map((tab) => (
+        {(["total", "streak"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
@@ -109,7 +96,7 @@ export const LeaderboardView: React.FC = () => {
                 : "text-[#8C8C90] hover:text-white"
             }`}
           >
-            {tab === "total" ? "All Time" : tab}
+            {tab === "total" ? "All Time" : "Streak"}
           </button>
         ))}
       </div>
@@ -131,7 +118,7 @@ export const LeaderboardView: React.FC = () => {
           {/* 2nd Place — silver */}
           {top3[1] && (
             <motion.div
-              onClick={() => setComparingMember(top3[1])}
+              onClick={() => openComparison(top3[1].id)}
               whileTap={{ scale: 0.97 }}
               className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#C7CBD1]/30 bg-gradient-to-b from-[#1B1D20] to-[#141416] p-3 text-center sm:p-4"
             >
@@ -151,9 +138,7 @@ export const LeaderboardView: React.FC = () => {
                 {top3[1].username}
               </div>
               <div className="text-[10px] font-mono text-slate-300 font-bold mt-0.5">
-                {filter === "weekly"
-                  ? `${top3[1].weeklyXP} XP`
-                  : `${top3[1].totalXP.toLocaleString()} XP`}
+                {`${top3[1].totalXP.toLocaleString()} XP`}
               </div>
               <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
                 {top3[1].tier}
@@ -164,7 +149,7 @@ export const LeaderboardView: React.FC = () => {
           {/* 1st Place (Crown Champion) */}
           {top3[0] && (
             <motion.div
-              onClick={() => setComparingMember(top3[0])}
+              onClick={() => openComparison(top3[0].id)}
               whileTap={{ scale: 0.97 }}
               className="svj-radius-card svj-elev-3 relative -translate-y-2 cursor-pointer border-2 border-[#C9A227] bg-gradient-to-b from-[#241D0C] to-[#15130E] p-4 text-center sm:p-5"
             >
@@ -192,9 +177,7 @@ export const LeaderboardView: React.FC = () => {
                 {top3[0].username}
               </div>
               <div className="mt-0.5 font-mono text-xs font-extrabold text-gold sm:text-sm">
-                {filter === "weekly"
-                  ? `${top3[0].weeklyXP} XP`
-                  : `${top3[0].totalXP.toLocaleString()} XP`}
+                {`${top3[0].totalXP.toLocaleString()} XP`}
               </div>
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#C9A227]/40 bg-[#C9A227]/[0.14] px-2 py-0.5 font-inter text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A227]">
                 <Crown aria-hidden className="h-3 w-3" />
@@ -209,7 +192,7 @@ export const LeaderboardView: React.FC = () => {
           {/* 3rd Place */}
           {top3[2] && (
             <motion.div
-              onClick={() => setComparingMember(top3[2])}
+              onClick={() => openComparison(top3[2].id)}
               whileTap={{ scale: 0.97 }}
               className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#B0713A]/35 bg-gradient-to-b from-[#1F1813] to-[#141416] p-3 text-center sm:p-4"
             >
@@ -229,9 +212,7 @@ export const LeaderboardView: React.FC = () => {
                 {top3[2].username}
               </div>
               <div className="mt-0.5 font-mono text-[10px] font-bold text-gold">
-                {filter === "weekly"
-                  ? `${top3[2].weeklyXP} XP`
-                  : `${top3[2].totalXP.toLocaleString()} XP`}
+                {`${top3[2].totalXP.toLocaleString()} XP`}
               </div>
               <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
                 {top3[2].tier} tier
@@ -256,18 +237,18 @@ export const LeaderboardView: React.FC = () => {
         >
           {rest.map((entry, idx) => {
             const rankNum = idx + 4;
-            const isMe = entry.id === user.id || entry.id === "user-me";
+            const isMe = isSelfEntry(entry.id, user.id);
 
             return (
               <motion.div
                 key={entry.id}
                 variants={svjStaggerItem}
                 whileTap={svjWhileTap}
-                onClick={() => setComparingMember(entry)}
-                className={`svj-radius-row flex cursor-pointer items-center justify-between gap-3 border p-3 transition-colors ${
+                onClick={() => openComparison(entry.id)}
+                className={`svj-radius-row flex items-center justify-between gap-3 border p-3 transition-colors ${
                   isMe
                     ? "border-[#C81E3A]/60 bg-[#C81E3A]/15"
-                    : "border-white/[0.06] bg-[#17171A] hover:border-white/20"
+                    : "cursor-pointer border-white/[0.06] bg-[#17171A] hover:border-white/20"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -307,11 +288,9 @@ export const LeaderboardView: React.FC = () => {
                 <div className="flex shrink-0 items-center gap-3">
                   <div className="text-right">
                     <div className="font-mono text-xs font-bold text-white">
-                      {filter === "weekly"
-                        ? `${entry.weeklyXP} XP`
-                        : filter === "monthly"
-                          ? `${entry.monthlyXP} XP`
-                          : `${entry.totalXP.toLocaleString()} XP`}
+                      {filter === "streak"
+                        ? `${entry.streak}d streak`
+                        : `${entry.totalXP.toLocaleString()} XP`}
                     </div>
                     {/* Only a real, measured movement is ever shown. */}
                     {entry.rankDelta !== 0 && (
@@ -325,9 +304,17 @@ export const LeaderboardView: React.FC = () => {
                     )}
                   </div>
 
-                  <span className="rounded-lg border border-white/10 bg-[#0B0B0C] p-1.5 text-[#8C8C90]">
-                    <Swords aria-hidden className="h-3.5 w-3.5 text-[#C81E3A]" />
-                  </span>
+                  {/* Opponent actions are never offered for the signed-in
+                      account, so an own row is information only. */}
+                  {isMe ? (
+                    <span className="rounded-lg border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-2 py-1 font-inter text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E62846]">
+                      You
+                    </span>
+                  ) : (
+                    <span className="rounded-lg border border-white/10 bg-[#0B0B0C] p-1.5 text-[#8C8C90]">
+                      <Swords aria-hidden className="h-3.5 w-3.5 text-[#C81E3A]" />
+                    </span>
+                  )}
                 </div>
               </motion.div>
             );

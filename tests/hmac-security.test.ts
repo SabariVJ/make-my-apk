@@ -372,14 +372,82 @@ test("authentication interaction: middleware is a function/request layer and doe
 });
 
 test("rate-limiting interaction: HMAC runs as one request middleware and weakens nothing", async () => {
-  // The repo has no rate limiter today; the contract this test pins is that
-  // HMAC is a plain request middleware in src/start.ts and that unauthenticated
-  // unsigned requests are still rejected before any handler runs.
+  // The shipped chain is error boundary → CSRF → rate limiting → HMAC →
+  // per-function Supabase auth. Rate limiting caps request volume at the
+  // cheapest layer; HMAC stays ONE plain request middleware and every
+  // protected function still requires a valid signature before its handler
+  // can run, so the limiter never replaces or weakens verification.
   const startSource = await readFile(new URL("../src/start.ts", import.meta.url), "utf8");
   assert.match(
     startSource,
-    /requestMiddleware: \[errorMiddleware, csrfMiddleware, hmacRequestMiddleware\]/,
+    /requestMiddleware:\s*\[errorMiddleware,\s*csrfMiddleware,\s*rateLimitRequestMiddleware,\s*hmacRequestMiddleware\]/,
   );
+  const chain = startSource.match(/requestMiddleware:\s*\[([^\]]*)\]/)?.[1] ?? "";
+  const rateLimitPos = chain.indexOf("rateLimitRequestMiddleware");
+  const hmacPos = chain.indexOf("hmacRequestMiddleware");
+  assert.ok(rateLimitPos >= 0, "rate limiting must run as a request middleware");
+  assert.ok(
+    rateLimitPos < hmacPos,
+    "rate limiting runs before HMAC so abusive volume is rejected first",
+  );
+  // HMAC is a request-layer concern only: it must never be registered as a
+  // per-function middleware, where it could gate or replace auth checks.
+  assert.doesNotMatch(startSource, /functionMiddleware:\s*\[[^\]]*hmacRequestMiddleware/);
+});
+
+test("malformed signatures never crash the timing-safe comparison", async () => {
+  process.env["HMAC_SECRET"] = SECRET;
+  process.env["HMAC_PROTECTED_SERVER_FN_IDS"] = PROTECTED_ID;
+  const payload = '{"sample":1}';
+  const valid = await signedHeaders(payload);
+  const adversarial = [
+    "", // empty after trim
+    "   ", // whitespace only
+    "zzzzzzzz", // non-hex characters
+    "ab".repeat(32).toUpperCase(), // uppercase hex: normalized, not a crash
+    "ab".repeat(200), // longer than the maximum we will ever compare
+    "x", // single non-hex character
+    "\\u0000", // control character
+    `${valid["x-signature"]}extra`, // correct prefix, wrong length
+  ];
+  // Non-ASCII cannot travel as an HTTP header at all (the Request constructor
+  // rejects it), so it is asserted against the comparator below instead.
+  for (const signature of adversarial) {
+    const { ctx } = makeCtx({
+      body: payload,
+      headers: { "x-signature": signature, "x-timestamp": valid["x-timestamp"]! },
+    });
+    const response = (await hmacRequestMiddleware.options.server(ctx)) as Response;
+    assert.ok(response instanceof Response, `malformed signature must be rejected: ${signature}`);
+    assert.equal(response.status, 401, `malformed signature must 401: ${signature}`);
+  }
+  // Uppercase hex for the CORRECT digest is normalized, not rejected: the
+  // protocol compares hex, and case is not part of the signature.
+  const { ctx, next } = makeCtx({
+    body: payload,
+    headers: {
+      "x-signature": valid["x-signature"]!.toUpperCase(),
+      "x-timestamp": valid["x-timestamp"]!,
+    },
+  });
+  await hmacRequestMiddleware.options.server(ctx);
+  assert.equal(next.context?.["hmacValidated"], true);
+});
+
+test("a length mismatch can never short-circuit into a match", () => {
+  // Different lengths must not be treated as equal even when every compared
+  // byte agrees, and neither input may throw.
+  assert.equal(hmacSignaturesMatch("ab", "abcd"), false);
+  assert.equal(hmacSignaturesMatch("", ""), false);
+  assert.equal(hmacSignaturesMatch("a".repeat(129), "a".repeat(129)), false);
+  assert.equal(hmacSignaturesMatch("ABCD", "abcd"), true);
+  assert.equal(hmacSignaturesMatch("  abcd  ", "abcd"), true);
+  // Characters that can never appear in a header value (multi-byte, control)
+  // are rejected without throwing — the comparator works on hex only.
+  assert.equal(hmacSignaturesMatch("💥".repeat(40), "abcd"), false);
+  assert.equal(hmacSignaturesMatch("\u0000\u0001", "abcd"), false);
+  assert.equal(hmacSignaturesMatch(undefined as unknown as string, "abcd"), false);
+  assert.equal(hmacSignaturesMatch("abcd", null as unknown as string), false);
 });
 
 test("secret is never exposed to client-reachable code", async () => {

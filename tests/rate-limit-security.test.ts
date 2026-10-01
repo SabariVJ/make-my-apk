@@ -317,12 +317,21 @@ test("interaction with authentication: auth headers pass through untouched", asy
 
 test("interaction with other request middleware: rate limiting runs after CSRF, before auth", async () => {
   const start = await readFile(new URL("../src/start.ts", import.meta.url), "utf8");
-  const order =
-    /requestMiddleware:\s*\[[\s\S]*?csrfMiddleware,[\s\S]*?rateLimitRequestMiddleware,?\s*\]/;
-  assert.match(start, order);
+  // The shipped chain is error boundary → CSRF → rate limiting → HMAC →
+  // per-function Supabase auth: throttling happens after the same-origin gate
+  // and before any authenticated handler or HMAC verification.
+  assert.match(
+    start,
+    /requestMiddleware:\s*\[errorMiddleware,\s*csrfMiddleware,\s*rateLimitRequestMiddleware,\s*hmacRequestMiddleware\]/,
+  );
+  const chain = start.match(/requestMiddleware:\s*\[([^\]]*)\]/)?.[1] ?? "";
+  const csrfPos = chain.indexOf("csrfMiddleware");
+  const rateLimitPos = chain.indexOf("rateLimitRequestMiddleware");
+  assert.ok(csrfPos >= 0 && rateLimitPos > csrfPos, "rate limiting runs after CSRF");
   // Rate limiting is a request middleware, never a function middleware: it
   // must not be able to gate or replace the per-function auth checks.
   assert.match(start, /functionMiddleware:\s*\[attachSupabaseAuth\]/);
+  assert.doesNotMatch(start, /functionMiddleware:\s*\[[^\]]*rateLimitRequestMiddleware/);
 });
 
 test("no server-side rate-limit configuration reaches frontend code", async () => {

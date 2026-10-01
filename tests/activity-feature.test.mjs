@@ -50,7 +50,12 @@ test("the app routes the Activity tab and mounts the tracking provider", () => {
     app,
     /\{activeTab === "activity" && \(\s*<ActivityView hideRecoverySection=\{founderRecoveryEnabled\} \/>\s*\)\}/,
   );
-  assert.match(app, /<ActivityProvider userId=\{status\?\.userId \?\? null\}>/);
+  // The provider is keyed by account id so switching accounts remounts it
+  // instead of reusing the previous member's in-memory tracking state.
+  assert.match(
+    app,
+    /<ActivityProvider key=\{status\?\.userId \?\? "signed-out"\} userId=\{status\?\.userId \?\? null\}>/,
+  );
   // The app-local Android plugin is registered natively before the bridge is
   // created, and JS reaches it through Capacitor.registerPlugin (never through
   // the non-existent window.Capacitor.plugins global).
@@ -142,7 +147,10 @@ test("daily counts persist and reset at midnight", () => {
   // (sessionRefSteps/sessionLastSteps keep the live session anchored).
   assert.match(tracker, /sessionRefSteps/);
   assert.match(tracker, /sessionLastSteps/);
-  assert.match(activityContext, /syncNative/);
+  // Native state is read where it is used (vjGetState / the tracking-state
+  // listener) instead of being mirrored into a diagnostics snapshot.
+  assert.match(activityContext, /vjGetState/);
+  assert.doesNotMatch(activityContext, /syncNative/);
   assert.match(activityContext, /startTrackedSession/);
   assert.match(activityContext, /event\.sessionSteps/);
   assert.doesNotMatch(activityContext, /setInterval/);
@@ -169,10 +177,11 @@ test("step-milestone XP cannot be double-awarded on the same day", () => {
     activityContext.indexOf("awardXp(milestone.xp, { physical: 1 })");
   assert.ok(claimFirst, "milestone must be claimed before XP is granted");
   assert.match(activityContext, /paidMilestonesRef/);
-  // Diagnostics stay on by default on Android and are switched off only by the
-  // native release (non-debuggable) flag, never by import.meta.env.DEV.
-  assert.match(activityContext, /showDiagnostics/);
-  assert.match(activityContext, /info\.debug === false/);
+  // The pedometer diagnostics panel is gone from the shipped source: no build
+  // (debug APK, dev server or test bundle) can render native sensor state on a
+  // user-facing screen. Step tracking itself is untouched.
+  assert.doesNotMatch(activityContext, /showDiagnostics|debugInfo|debugRef/);
+  assert.doesNotMatch(activityView, /showDiagnostics|debugInfo|debugRef/);
 });
 
 test("activity XP flows through the existing SVJ XP system", () => {
@@ -189,5 +198,5 @@ test("history provides 7-day and 30-day views with averages and best day", () =>
   assert.match(activityView, /Avg Steps/);
   assert.match(activityView, /Best Day/);
   assert.match(activityView, /Avg KCAL/);
-  assert.match(activityView, /ANDROID PEDOMETER DEBUG/);
+  assert.doesNotMatch(activityView, /ANDROID PEDOMETER DEBUG/);
 });

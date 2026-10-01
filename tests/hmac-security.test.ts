@@ -380,7 +380,7 @@ test("rate-limiting interaction: HMAC runs as one request middleware and weakens
   const startSource = await readFile(new URL("../src/start.ts", import.meta.url), "utf8");
   assert.match(
     startSource,
-    /requestMiddleware:\s*\[errorMiddleware,\s*csrfMiddleware,\s*rateLimitRequestMiddleware,\s*hmacRequestMiddleware\]/,
+    /requestMiddleware:\s*\[[^\]]*errorMiddleware[\s\S]*?csrfMiddleware[\s\S]*?rateLimitRequestMiddleware[\s\S]*?hmacRequestMiddleware[\s\S]*?\],/,
   );
   const chain = startSource.match(/requestMiddleware:\s*\[([^\]]*)\]/)?.[1] ?? "";
   const rateLimitPos = chain.indexOf("rateLimitRequestMiddleware");

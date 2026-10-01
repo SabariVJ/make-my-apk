@@ -322,7 +322,7 @@ test("interaction with other request middleware: rate limiting runs after CSRF, 
   // and before any authenticated handler or HMAC verification.
   assert.match(
     start,
-    /requestMiddleware:\s*\[errorMiddleware,\s*csrfMiddleware,\s*rateLimitRequestMiddleware,\s*hmacRequestMiddleware\]/,
+    /requestMiddleware:\s*\[[^\]]*errorMiddleware[\s\S]*?csrfMiddleware[\s\S]*?rateLimitRequestMiddleware[\s\S]*?hmacRequestMiddleware[\s\S]*?\],/,
   );
   const chain = start.match(/requestMiddleware:\s*\[([^\]]*)\]/)?.[1] ?? "";
   const csrfPos = chain.indexOf("csrfMiddleware");

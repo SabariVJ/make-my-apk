@@ -340,7 +340,7 @@ export const BodyProfileView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-6">
         <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
       </div>
     );
@@ -363,7 +363,7 @@ export const BodyProfileView: React.FC = () => {
       </div>
 
       {/* Input form */}
-      <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4">
+      <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
         <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
           Your details
         </h3>
@@ -523,7 +523,7 @@ export const BodyProfileView: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4"
+          className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4"
         >
           <h3 className="font-inter text-sm font-semibold tracking-tight text-[#F4F2ED]">
             Your results

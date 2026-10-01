@@ -116,7 +116,7 @@ export const LeaderboardView: React.FC = () => {
 
       {/* Empty state */}
       {sortedLeaderboard.length === 0 && (
-        <div className="space-y-3 py-8 text-center">
+        <div className="space-y-3 py-6 text-center">
           <Trophy className="w-10 h-10 text-[#8C8C90] mx-auto" />
           <p className="text-sm font-inter text-[#8C8C90]">
             No leaderboard entries yet. Complete challenges to become the first.

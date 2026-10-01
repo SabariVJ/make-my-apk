@@ -212,7 +212,7 @@ export const ProfileView: React.FC = () => {
             that lived beside it were removed with their tabs. */
         <div className="space-y-4">
           {/* 6 Dynamic Character Stat Attributes Hexagon Radar */}
-          <div className="svj-radius-card svj-lit-top relative space-y-4 overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
+          <div className="svj-radius-card svj-lit-top relative space-y-3 overflow-hidden border border-white/[0.06] bg-[#17171A] p-4">
             <SVJSectionHeader
               title="Character attributes"
               icon={Sparkles}
@@ -288,7 +288,7 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {/* XP Weekly Bar Chart — real per-day XP for the current Mon–Sun week */}
-          <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4">
+          <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4">
             <SVJSectionHeader
               title="This week's XP"
               icon={BarChart3}

@@ -63,7 +63,10 @@ const UsersSection: React.FC = () => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [expiry, setExpiry] = useState<Record<string, string>>({});
+  const [durationValue, setDurationValue] = useState<Record<string, string>>({});
+  const [durationUnit, setDurationUnit] = useState<Record<string, "week" | "month" | "lifetime">>(
+    {},
+  );
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -86,8 +89,11 @@ const UsersSection: React.FC = () => {
     setActionError(cause instanceof Error ? cause.message : "Action failed");
 
   const grantPlus = useMutation({
-    mutationFn: (input: { targetUserId: string; expiresAt: string | null }) =>
-      adminGrantPlus({ data: input }),
+    mutationFn: (input: {
+      targetUserId: string;
+      durationValue: number;
+      durationUnit: "week" | "month" | "lifetime";
+    }) => adminGrantPlus({ data: input }),
     onSuccess: () => {
       setActionError(null);
       invalidate();
@@ -205,13 +211,17 @@ const UsersSection: React.FC = () => {
                     <p className="font-mono text-[10px] text-[#8C8C90]">{user.email ?? user.id}</p>
                   </td>
                   <td className="px-3 py-2.5 font-inter text-xs">
-                    {user.is_plus_member ? (
+                    {user.is_plus_member &&
+                    (!user.plus_expires_at ||
+                      new Date(user.plus_expires_at).getTime() > Date.now()) ? (
                       <span className="text-amber-300">
                         Plus
                         {user.plus_expires_at
                           ? ` → ${new Date(user.plus_expires_at).toLocaleDateString()}`
                           : " (lifetime)"}
                       </span>
+                    ) : user.is_plus_member ? (
+                      <span className="text-[#8C8C90]">Expired</span>
                     ) : (
                       <span className="text-[#8C8C90]">—</span>
                     )}
@@ -227,7 +237,9 @@ const UsersSection: React.FC = () => {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      {user.is_plus_member ? (
+                      {user.is_plus_member &&
+                      (!user.plus_expires_at ||
+                        new Date(user.plus_expires_at).getTime() > Date.now()) ? (
                         <button
                           type="button"
                           className={actionButtonClass}
@@ -239,29 +251,52 @@ const UsersSection: React.FC = () => {
                       ) : (
                         <>
                           <input
-                            type="date"
-                            aria-label={`Plus expiry for ${user.email ?? user.id}`}
-                            value={expiry[user.id] ?? ""}
+                            type="number"
+                            min={1}
+                            max={(durationUnit[user.id] ?? "month") === "week" ? 104 : 24}
+                            step={1}
+                            inputMode="numeric"
+                            aria-label={`Plus duration for ${user.email ?? user.id}`}
+                            value={durationValue[user.id] ?? "1"}
                             onChange={(event) =>
-                              setExpiry((previous) => ({
+                              setDurationValue((previous) => ({
                                 ...previous,
                                 [user.id]: event.target.value,
                               }))
                             }
-                            className={`${inputClass} !px-2 !py-1 text-[11px]`}
+                            disabled={(durationUnit[user.id] ?? "month") === "lifetime"}
+                            className={`${inputClass} !w-16 !px-2 !py-1 text-[11px]`}
                           />
+                          <select
+                            aria-label={`Plus duration unit for ${user.email ?? user.id}`}
+                            value={durationUnit[user.id] ?? "month"}
+                            onChange={(event) =>
+                              setDurationUnit((previous) => ({
+                                ...previous,
+                                [user.id]: event.target.value as "week" | "month" | "lifetime",
+                              }))
+                            }
+                            className={`${inputClass} !w-auto !px-2 !py-1 text-[11px]`}
+                          >
+                            <option value="week">Weeks</option>
+                            <option value="month">Months</option>
+                            <option value="lifetime">Lifetime</option>
+                          </select>
                           <button
                             type="button"
                             className={actionButtonClass}
                             disabled={grantPlus.isPending}
-                            onClick={() =>
+                            onClick={() => {
+                              const unit = durationUnit[user.id] ?? "month";
+                              const value = durationValue[user.id] ?? "1";
                               grantPlus.mutate({
                                 targetUserId: user.id,
-                                expiresAt: expiry[user.id] || null,
-                              })
-                            }
+                                durationValue: unit === "lifetime" ? 0 : Number(value),
+                                durationUnit: unit,
+                              });
+                            }}
                           >
-                            Grant Plus
+                            Give Plus
                           </button>
                         </>
                       )}

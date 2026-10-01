@@ -121,7 +121,9 @@ export const ProfileView: React.FC = () => {
                 <span className="font-inter text-xs text-[#8C8C90]">@{user.username}</span>
                 <SVJBadge variant="crimson">{user.tier} tier</SVJBadge>
               </div>
-              <p className="mt-1.5 font-inter text-xs italic text-[#F4F2ED]/80">{user.bio}</p>
+              {user.bio ? (
+                <p className="mt-1.5 font-inter text-xs italic text-[#F4F2ED]/80">{user.bio}</p>
+              ) : null}
 
               {/* Linked Gmail pill */}
               <div className="mt-2.5 flex items-center gap-2">
@@ -218,11 +220,12 @@ export const ProfileView: React.FC = () => {
               icon={Sparkles}
               trailing={
                 <div className="flex items-center gap-2">
-                  {!isAndroid && (
-                    <span className="font-inter text-[11px] text-[#8C8C90]">
-                      {user.leagueRank || "Apprentice I"}
-                    </span>
-                  )}
+                  {/* A league rank is only shown when the account actually has
+                      one — the previous "|| Apprentice I" fallback printed an
+                      invented rank for every member. */}
+                  {!isAndroid && user.leagueRank ? (
+                    <span className="font-inter text-[11px] text-[#8C8C90]">{user.leagueRank}</span>
+                  ) : null}
                   <SVJBadge variant="emerald">Level {user.level || 1}</SVJBadge>
                 </div>
               }

@@ -63,26 +63,23 @@ import {
   type DayPoint,
 } from "../lib/activityTracker";
 
-const STORAGE_KEY = "svj_activity_v1";
+/**
+ * Device-local activity cache prefix. The key is scoped to the authenticated
+ * account id below so signing out and signing in as a different member can
+ * never inherit the previous user's day (the server stays the source of truth
+ * for saved activities).
+ */
+const STORAGE_KEY_PREFIX = "svj_activity_v1";
+
+function activityStorageKey(userId: string | null): string {
+  return userId ? `${STORAGE_KEY_PREFIX}_${userId}` : STORAGE_KEY_PREFIX;
+}
 const MILESTONE_FEED_PREFIX = "Step Milestone";
 
-/**
- * Developer diagnostics are strictly opt-in and never appear in production.
- * Production bundles never show the pedometer debug panel regardless of the
- * flag. Development/test bundles show it only when
- * VITE_PEDOMETER_DIAGNOSTICS="1" is explicitly set. Never derive this from
- * platform detection alone.
- */
-export function shouldEnableDiagnostics(
-  mode: string | undefined,
-  flag: string | undefined,
-): boolean {
-  return mode !== "production" && flag === "1";
-}
-const DIAGNOSTICS_OPT_IN = shouldEnableDiagnostics(
-  import.meta.env?.MODE as string | undefined,
-  import.meta.env?.VITE_PEDOMETER_DIAGNOSTICS as string | undefined,
-);
+// NOTE: the pedometer diagnostics panel and its opt-in flag were removed. Step
+// tracking, sensor-mode reporting and native listener bookkeeping are
+// unchanged — only the developer debug surface is gone, so no build (debug APK,
+// dev server or test bundle) can render it on a user-facing screen.
 
 type PedometerPlugin = import("@capgo/capacitor-pedometer").CapacitorPedometerPlugin;
 
@@ -127,9 +124,6 @@ export interface ActivityContextValue {
   summary7: ReturnType<typeof summarizeHistory>;
   summary30: ReturnType<typeof summarizeHistory>;
   bodyMetrics: BodyMetrics;
-  debugInfo: ActivityDebugInfo | null;
-  /** Developer-only diagnostics opt-in (off unless explicitly enabled). */
-  showDiagnostics: boolean;
   /** Frozen summary of the most recent completed tracking session. */
   completedSession: CompletedSessionSummary | null;
   /** Dismiss the completion summary card. */
@@ -186,52 +180,6 @@ export interface CompletedSessionSummary {
   caloriesEstimate?: number;
 }
 
-interface ActivityDebugInfo {
-  pluginAvailable: boolean | null;
-  sensorMode: string | null;
-  sensorName: string | null;
-  sensorVendor: string | null;
-  sensorAvailable: boolean | null;
-  permission: string | null;
-  listenerConnected: boolean;
-  sensorStarted: boolean;
-  trackingRequested: boolean;
-  trackingActive: boolean;
-  listenerRegistered: boolean;
-  listenerRemoved: boolean;
-  sessionBaselineRaw: number | null;
-  sessionSteps: number;
-  selectedSensorMode: string | null;
-  lastMeasurementAtMs: number | null;
-  lastRawSteps: number | null;
-  lastDailySteps: number | null;
-  lastError: string | null;
-  notes: string[];
-}
-
-const EMPTY_DEBUG: ActivityDebugInfo = {
-  pluginAvailable: null,
-  sensorMode: null,
-  sensorName: null,
-  sensorVendor: null,
-  sensorAvailable: null,
-  permission: null,
-  listenerConnected: false,
-  sensorStarted: false,
-  trackingRequested: false,
-  trackingActive: false,
-  listenerRegistered: false,
-  listenerRemoved: false,
-  sessionBaselineRaw: null,
-  sessionSteps: 0,
-  selectedSensorMode: null,
-  lastMeasurementAtMs: null,
-  lastRawSteps: null,
-  lastDailySteps: null,
-  lastError: null,
-  notes: [],
-};
-
 const ActivityContext = createContext<ActivityContextValue | null>(null);
 
 /** Safely import the iOS/web pedometer plugin (absent in some bundles). */
@@ -268,13 +216,12 @@ export function ActivityProvider({
   const { awardXp, addActivity } = useSVJ();
   const queryClient = useQueryClient();
   const callGetBodyProfile = useServerFn(getBodyProfile);
+  const storageKey = activityStorageKey(userId);
 
   const [state, setState] = useState<ActivityState>(
     () =>
-      rollActivityDay(
-        normalizeActivityState(readStoredJson<unknown>(STORAGE_KEY, null)),
-        new Date(),
-      ).state,
+      rollActivityDay(normalizeActivityState(readStoredJson<unknown>(storageKey, null)), new Date())
+        .state,
   );
   const [trackingStatus, setTrackingStatus] =
     useState<ActivityContextValue["trackingStatus"]>("stopped");
@@ -282,13 +229,7 @@ export function ActivityProvider({
     "Tracking stopped — press START TRACKING to begin.",
   );
   const [stepSource, setStepSource] = useState<ActivityStepSource>(null);
-  /** Never rely on import.meta.env.DEV: the WebView bundle is production-built
-   * even inside a debug APK, so only the explicit VITE_PEDOMETER_DIAGNOSTICS
-   * opt-in may surface diagnostics. */
-  const [showDiagnostics, setShowDiagnostics] = useState(DIAGNOSTICS_OPT_IN);
-  const [debugTick, setDebugTick] = useState(0);
   const pluginRef = useRef<PedometerPlugin | null>(null);
-  const debugRef = useRef<ActivityDebugInfo>({ ...EMPTY_DEBUG, notes: [] });
   /** StrictMode-safe guard: milestones already paid this instance, "dateKey:threshold". */
   const paidMilestonesRef = useRef<Set<string>>(new Set());
 
@@ -333,19 +274,10 @@ export function ActivityProvider({
   const [manualSaveState, setManualSaveState] = useState<"idle" | "saving" | "error">("idle");
   const [manualSaveError, setManualSaveError] = useState<string | null>(null);
 
-  const note = useCallback((message: string) => {
-    debugRef.current.notes = [message, ...debugRef.current.notes].slice(0, 40);
-    if (mountedRef.current) setDebugTick((t) => t + 1);
-  }, []);
-
-  const refreshDebug = useCallback(() => {
-    if (mountedRef.current) setDebugTick((t) => t + 1);
-  }, []);
-
   // ── Persistence ────────────────────────────────────────────────────────
   useEffect(() => {
-    writeStoredJson(STORAGE_KEY, state);
-  }, [state]);
+    writeStoredJson(storageKey, state);
+  }, [storageKey, state]);
 
   // ── Body metrics for calorie estimation ────────────────────────────────
   const bodyProfileQuery = useQuery({
@@ -394,7 +326,7 @@ export function ActivityProvider({
       const key = `${today.dateKey}:${milestone.steps}`;
       if (paidMilestonesRef.current.has(key)) continue;
       const next = claimMilestone(claimed, new Date(), milestone.steps);
-      if (!writeStoredJson(STORAGE_KEY, next).ok) continue;
+      if (!writeStoredJson(storageKey, next).ok) continue;
       claimed = next;
       paidMilestonesRef.current.add(key);
       setState((prev) => claimMilestone(prev, new Date(), milestone.steps));
@@ -406,36 +338,12 @@ export function ActivityProvider({
         milestone.xp,
       );
     }
-  }, [state.today?.steps, state.today?.dateKey, state.today, awardXp, addActivity]);
+  }, [state.today?.steps, state.today?.dateKey, state.today, storageKey, awardXp, addActivity]);
 
   // Only these explicit commands own sensor registration. Serialized commands
   // plus a generation gate cover STOP during permission/start and StrictMode.
   const metricsRef = useRef<BodyMetrics>({});
   metricsRef.current = { ...bodyMetrics, ageYears };
-
-  const syncNative = useCallback(
-    (native: VjPedometerState) => {
-      Object.assign(debugRef.current, {
-        sensorAvailable: native.sensorAvailable,
-        sensorStarted: native.sensorStarted,
-        sensorMode: native.mode,
-        selectedSensorMode: native.mode,
-        trackingRequested: native.trackingRequested,
-        trackingActive: native.trackingActive,
-        listenerRegistered: native.listenerRegistered,
-        listenerRemoved:
-          native.listenerRemoved === true &&
-          native.listenerRegistered === false &&
-          native.sensorStarted === false,
-        sessionBaselineRaw: native.sessionBaselineRaw >= 0 ? native.sessionBaselineRaw : null,
-        sessionSteps: native.sessionSteps,
-        lastRawSteps: native.lastRaw >= 0 ? native.lastRaw : null,
-        lastError: native.lastError || null,
-      });
-      refreshDebug();
-    },
-    [refreshDebug],
-  );
 
   const removeOwnedListeners = useCallback(async () => {
     const handles = listenerCleanupsRef.current.splice(0);
@@ -443,8 +351,7 @@ export function ActivityProvider({
     results.forEach((result, i) => {
       if (result.status === "rejected") listenerCleanupsRef.current.push(handles[i]);
     });
-    debugRef.current.listenerConnected = listenerCleanupsRef.current.length > 0;
-    if (debugRef.current.listenerConnected)
+    if (listenerCleanupsRef.current.length > 0)
       throw new Error("Unable to remove the step event listener. Try STOP again.");
   }, []);
 
@@ -472,8 +379,6 @@ export function ActivityProvider({
       });
     }
     sessionStartedAtRef.current = null;
-    debugRef.current.trackingRequested = false;
-    debugRef.current.trackingActive = false;
     if (mountedRef.current) setTrackingStatus("stopping");
 
     // Dispatch STOP immediately, even if a START bridge promise has not yet
@@ -495,16 +400,10 @@ export function ActivityProvider({
         const native = wasStarting ? await stopSensor() : result.native;
         if (!wasStarting && result.error) throw result.error;
         if (generation === generationRef.current && native) {
-          syncNative(native);
           if (native.requiresAppUpdate) updateRequiredRef.current = true;
-        } else if (Capacitor.getPlatform() !== "android" && pluginRef.current) {
-          debugRef.current.listenerRegistered = false;
-          debugRef.current.listenerRemoved = true;
-          debugRef.current.sensorStarted = false;
         }
       } catch (error) {
         failure = error;
-        debugRef.current.listenerRemoved = false;
       } finally {
         try {
           await removeOwnedListeners();
@@ -515,11 +414,9 @@ export function ActivityProvider({
       if (generation !== generationRef.current || !mountedRef.current) return;
       if (failure instanceof VjNativeUpdateRequiredError) {
         updateRequiredRef.current = true;
-        debugRef.current.lastError = failure.message;
         setTrackingStatus("update-required");
         setStatusMessage(VJ_NATIVE_UPDATE_MESSAGE);
       } else if (failure) {
-        debugRef.current.lastError = String(failure);
         setTrackingStatus("error");
         const detail = failure instanceof Error ? failure.message : String(failure);
         setStatusMessage(
@@ -532,12 +429,11 @@ export function ActivityProvider({
         setTrackingStatus("stopped");
         setStatusMessage("Tracking stopped — press START TRACKING to begin.");
       }
-      refreshDebug();
     };
     const task = queueRef.current.then(stop, stop);
     queueRef.current = task;
     return task;
-  }, [removeOwnedListeners, syncNative, refreshDebug]);
+  }, [removeOwnedListeners]);
 
   const getSensorInfo = useCallback(async (): Promise<VjSensorInfo | null> => {
     if (Capacitor.getPlatform() !== "android") return null;
@@ -546,23 +442,11 @@ export function ActivityProvider({
     const info = available ? await vjGetSensorInfo() : null;
     const native = available ? await vjGetState() : null;
     if (generation !== generationRef.current || !mountedRef.current) return info;
-    debugRef.current.pluginAvailable = available;
-    if (info) {
-      Object.assign(debugRef.current, {
-        sensorMode: info.mode,
-        selectedSensorMode: info.mode,
-        sensorName: info.name || null,
-        sensorVendor: info.vendor || null,
-        sensorAvailable: info.available,
-        permission: info.permission ?? "unknown",
-      });
-      if (info.debug === false) setShowDiagnostics(DIAGNOSTICS_OPT_IN);
-    }
-    if (native) syncNative(native);
+    // A session the native bridge no longer reports as active must be stopped
+    // here; nothing about the sensor is mirrored anywhere else.
     if (activeRef.current && native && !native.trackingActive) void stopTracking();
-    refreshDebug();
     return info;
-  }, [syncNative, stopTracking, refreshDebug]);
+  }, [stopTracking]);
 
   const startTracking = useCallback((): Promise<void> => {
     if (!userId || !mountedRef.current || requestedRef.current || updateRequiredRef.current)
@@ -578,14 +462,6 @@ export function ActivityProvider({
     sessionStartedAtRef.current = Date.now();
     setTrackingStatus("starting");
     setStatusMessage("Starting step tracking…");
-    Object.assign(debugRef.current, {
-      trackingRequested: true,
-      trackingActive: false,
-      sessionBaselineRaw: null,
-      sessionSteps: 0,
-      lastError: null,
-    });
-    refreshDebug();
 
     const acceptMeasurement = (rawSteps: unknown, atMs: unknown, rawDistance?: unknown) => {
       if (!current() || !activeRef.current) return false;
@@ -598,9 +474,9 @@ export function ActivityProvider({
       let measurement;
       try {
         measurement = vjValidateMeasurement({ numberOfSteps: rawSteps, distance: rawDistance });
-      } catch (error) {
-        debugRef.current.lastError = error instanceof Error ? error.message : String(error);
-        refreshDebug();
+      } catch {
+        // A malformed native payload is dropped; steps, calories and XP never
+        // receive unvalidated data.
         return false;
       }
       const { numberOfSteps: steps, distance: distanceMeters } = measurement;
@@ -645,28 +521,18 @@ export function ActivityProvider({
         const platform = Capacitor.getPlatform();
         let mode: ActivityStepSource = null;
         if (platform === "android") {
-          debugRef.current.pluginAvailable = vjPluginAvailable();
-          if (!debugRef.current.pluginAvailable)
+          if (!vjPluginAvailable())
             throw new Error("Native step bridge is unavailable in this build.");
           const info = await vjGetSensorInfo();
           if (!current()) return;
           if (!info?.available || info.mode === "none")
             throw new Error("No compatible step sensor found on this device.");
           mode = info.mode;
-          Object.assign(debugRef.current, {
-            sensorMode: mode,
-            selectedSensorMode: mode,
-            sensorAvailable: info.available,
-            sensorName: info.name,
-            sensorVendor: info.vendor,
-          });
-          if (info.debug === false) setShowDiagnostics(DIAGNOSTICS_OPT_IN);
           let permission = await vjCheckPermissions();
           if (!current()) return;
           if (permission?.activityRecognition !== "granted")
             permission = await vjRequestPermissions();
           if (!current()) return;
-          debugRef.current.permission = permission?.activityRecognition ?? "unknown";
           if (permission?.activityRecognition !== "granted")
             throw new Error(
               "Motion permission denied. Enable Activity Recognition to track steps.",
@@ -675,7 +541,6 @@ export function ActivityProvider({
           listenerCleanupsRef.current.push(
             await vjAddTrackingStateListener((native) => {
               if (!current() || !native || native.sessionId !== sessionId) return;
-              syncNative(native);
               if (native.trackingActive !== true) {
                 void stopTracking();
                 return;
@@ -696,23 +561,10 @@ export function ActivityProvider({
               )
                 return;
               activeRef.current = true;
-              // Validate before diagnostics, persistence, calories or XP receive the payload.
+              // Validate before persistence, calories or XP receive the payload.
               if (!acceptMeasurement(event.sessionSteps, event.timestamp)) return;
-              Object.assign(debugRef.current, {
-                lastMeasurementAtMs: event.timestamp,
-                lastRawSteps: event.rawValue,
-                lastDailySteps: event.steps,
-                sessionBaselineRaw:
-                  typeof event.sessionBaselineRaw === "number" &&
-                  Number.isSafeInteger(event.sessionBaselineRaw) &&
-                  event.sessionBaselineRaw >= 0
-                    ? event.sessionBaselineRaw
-                    : null,
-                sessionSteps: event.sessionSteps,
-              });
               // Native sessionSteps already excludes pre-START and stopped motion.
               // Never import the device's raw counter or historical all-day total.
-              refreshDebug();
             }),
           );
           if (!current()) return;
@@ -728,7 +580,6 @@ export function ActivityProvider({
               "The native sensor did not confirm this tracking session. Update the native bridge.",
             );
           }
-          syncNative(native);
         } else if (platform === "ios") {
           const plugin = await loadPedometer();
           if (!current()) return;
@@ -739,7 +590,6 @@ export function ActivityProvider({
           if (permission.activityRecognition !== "granted")
             permission = await plugin.requestPermissions();
           if (!current()) return;
-          debugRef.current.permission = permission.activityRecognition;
           if (permission.activityRecognition !== "granted")
             throw new Error("Motion permission denied.");
           const available = await plugin.isAvailable();
@@ -760,23 +610,15 @@ export function ActivityProvider({
           await plugin.startMeasurementUpdates();
           if (!current()) return;
           mode = "ios";
-          Object.assign(debugRef.current, {
-            listenerRegistered: true,
-            listenerRemoved: false,
-            trackingActive: true,
-            sensorStarted: true,
-          });
         } else {
           throw new Error("Live step tracking is available in the native app.");
         }
         activeRef.current = true;
-        debugRef.current.listenerConnected = true;
         setStepSource(mode);
         setTrackingStatus("tracking");
         setStatusMessage(
           mode === "ios" ? "Tracking active." : androidStatusMessage(mode as VjSensorMode),
         );
-        note("Tracking active — native session confirmed.");
       } catch (error) {
         if (!current()) return; // The queued STOP owns cleanup for cancelled starts.
         requestedRef.current = false;
@@ -786,8 +628,7 @@ export function ActivityProvider({
         let cleanupError: unknown;
         try {
           if (Capacitor.getPlatform() === "android") {
-            const native = await vjStopTracking();
-            if (native) syncNative(native);
+            await vjStopTracking();
           } else if (pluginRef.current) await pluginRef.current.stopMeasurementUpdates();
         } catch (failure) {
           cleanupError = failure;
@@ -799,11 +640,8 @@ export function ActivityProvider({
         }
         if (generation !== generationRef.current || !mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
-        debugRef.current.lastError = cleanupError
-          ? `${message}; cleanup: ${cleanupError}`
-          : message;
-        debugRef.current.trackingRequested = false;
-        debugRef.current.trackingActive = false;
+        // Readable, single-source failure detail for the status line below.
+        const detail = cleanupError ? `${message}; cleanup: ${cleanupError}` : message;
         if (
           error instanceof VjNativeUpdateRequiredError ||
           cleanupError instanceof VjNativeUpdateRequiredError
@@ -822,16 +660,14 @@ export function ActivityProvider({
         setStatusMessage(
           updateRequiredRef.current && !retryCleanup
             ? VJ_NATIVE_UPDATE_MESSAGE
-            : `Tracking stopped — ${debugRef.current.lastError}`,
+            : `Tracking stopped — ${detail}`,
         );
-      } finally {
-        refreshDebug();
       }
     };
     const task = queueRef.current.then(start, start);
     queueRef.current = task;
     return task;
-  }, [userId, removeOwnedListeners, syncNative, stopTracking, note, refreshDebug]);
+  }, [userId, removeOwnedListeners, stopTracking]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -903,13 +739,6 @@ export function ActivityProvider({
   const remainingSteps = Math.max(0, STEP_GOAL - todaySteps);
   const kcalGoal = activeKcalGoal(bodyMetrics);
   const kcalPercent = Math.min(100, Math.round((liveCalories.activeKcal / kcalGoal) * 100));
-
-  // `debugTick` keeps the diagnostics snapshot fresh without a polling loop.
-  const debugSnapshot = useMemo<ActivityDebugInfo>(
-    () => ({ ...debugRef.current, lastDailySteps: state.today?.steps ?? null }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [debugTick, state.today?.steps],
-  );
 
   // ── Canonical server activity save (Update 01) ─────────────────────────
   const buildSessionPayload = useCallback(
@@ -1106,8 +935,6 @@ export function ActivityProvider({
     summary7,
     summary30,
     bodyMetrics: { ...bodyMetrics, ageYears },
-    debugInfo: showDiagnostics ? debugSnapshot : null,
-    showDiagnostics,
     completedSession,
     dismissCompletedSession: useCallback(() => setCompletedSession(null), []),
     saveCompletedSession,

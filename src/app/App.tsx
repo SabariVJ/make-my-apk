@@ -476,7 +476,10 @@ function AppRoot() {
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
           <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
-            <ActivityProvider userId={status?.userId ?? null}>
+            {/* Keyed by account like EngagementProvider: signing out and back in
+                as someone else remounts the provider instead of reusing the
+                previous member's in-memory tracking state. */}
+            <ActivityProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
               <AppContent locked={status?.locked} lockEmail={status?.email} />
             </ActivityProvider>
           </EngagementProvider>

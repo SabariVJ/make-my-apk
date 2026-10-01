@@ -1,8 +1,34 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Crown, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  Crown,
+  CheckCircle2,
+  ArrowRight,
+  Zap,
+  Medal,
+  Award,
+  Trophy,
+  Gem,
+  Diamond,
+} from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { TIERS } from "../data/initialData";
+import type { TierEmblem } from "../types";
+
+/**
+ * Tier emblems are real vector icons, one per tier. The modal previously
+ * printed the tier's emoji glyph straight into the emblem slot, which is the
+ * definition of a vague emoji badge.
+ */
+const EMBLEM_ICONS: Record<TierEmblem, React.ComponentType<{ className?: string }>> = {
+  bolt: Zap,
+  bronze: Medal,
+  silver: Award,
+  gold: Trophy,
+  gem: Gem,
+  prism: Diamond,
+  crown: Crown,
+};
 
 /**
  * THE signature motion moment.
@@ -21,6 +47,7 @@ export const LevelUpModal: React.FC = () => {
   if (!levelUpModalData) return null;
 
   const newTierInfo = TIERS.find((t) => t.name === levelUpModalData.newTier) || TIERS[1];
+  const TierEmblemIcon = EMBLEM_ICONS[newTierInfo.icon] ?? Zap;
 
   // Staged reveal: each beat waits for the previous one.
   const beat = (index: number) => ({
@@ -59,9 +86,9 @@ export const LevelUpModal: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.05 }}
-                className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#C9A227]/50 bg-[#0B0B0C] text-4xl shadow-[0_0_34px_-8px_rgba(201,162,39,0.55)]"
+                className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#C9A227]/50 bg-[#0B0B0C] shadow-[0_0_34px_-8px_rgba(201,162,39,0.55)]"
               >
-                {newTierInfo.icon}
+                <TierEmblemIcon className="h-10 w-10 text-[#C9A227]" />
                 <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-[#C9A227]/50 bg-[#17171A]">
                   <Crown aria-hidden className="h-3.5 w-3.5 text-[#C9A227]" />
                 </span>

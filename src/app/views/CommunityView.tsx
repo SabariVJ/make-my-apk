@@ -18,7 +18,8 @@ import {
   Inbox,
 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
-import { FeedActivity, ReactionType, LeaderboardEntry } from "../types";
+import { FeedActivity, ReactionType } from "../types";
+import { isSelfEntry, memberToLeaderboardEntry } from "../lib/memberDirectory";
 import { FriendsPanel } from "../components/FriendsPanel";
 import { AvatarImage } from "../components/AvatarImage";
 import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
@@ -160,25 +161,15 @@ export const CommunityView: React.FC = () => {
     { type: "wolf", emoji: "🐺", label: "Apex" },
   ];
 
-  const directoryMembers: LeaderboardEntry[] = friendsApi.members.map((member) => ({
-    id: member.id,
-    username: member.username || member.display_name || "member",
-    avatar: member.avatar_url || "",
-    totalXP: member.total_xp,
-    weeklyXP: 0,
-    monthlyXP: 0,
-    streak: member.current_streak,
-    rank: member.rank,
-    rankDelta: 0,
-    tier: "Initiate",
-    country: "",
-    bio: "",
-  }));
-  const filteredMembers = directoryMembers.filter(
-    (m) =>
-      m.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.tier.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Canonical server rows only: identity, lifetime XP, streak and rank. Tier is
+  // derived from lifetime XP instead of a hard-coded "Initiate" for everyone.
+  const directoryMembers = friendsApi.members.map(memberToLeaderboardEntry);
+  /** Accepted friends by account id — Outperform requires an accepted friendship. */
+  const friendIds = new Set(friendsApi.friends.map((f) => f.id));
+  const memberQuery = searchQuery.trim().toLowerCase();
+  const filteredMembers = memberQuery
+    ? directoryMembers.filter((m) => m.username.toLowerCase().includes(memberQuery))
+    : directoryMembers;
 
   const handleCommentSubmit = (activityId: string) => {
     const text = commentInputs[activityId];
@@ -497,7 +488,8 @@ export const CommunityView: React.FC = () => {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {filteredMembers.map((m) => {
-              const isSelf = m.id === user.id;
+              const isSelf = isSelfEntry(m.id, user.id);
+              const isFriend = friendIds.has(m.id);
               const rivalryState = isSelf ? "none" : getRivalryState(m.id);
 
               return (
@@ -531,8 +523,29 @@ export const CommunityView: React.FC = () => {
                       #{m.rank}
                     </span>
                     {/* Self accounts never get opponent actions; stale clicks are
-                        resolved against the authenticated id inside the handler. */}
-                    {!isSelf && rivalryState === "none" && (
+                        resolved against the authenticated id inside the handler.
+                        Outperform needs an accepted friendship (the database
+                        state machine enforces the same rule), so a stranger gets
+                        a working "Add friend" step instead of a button that
+                        always fails. */}
+                    {!isSelf && rivalryState === "none" && !isFriend && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void friendsApi.sendRequest(m.id);
+                        }}
+                        disabled={friendsApi.busyId === m.id}
+                        className="flex cursor-pointer items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 font-inter text-[10px] font-semibold text-[#F4F2ED] transition-colors hover:bg-white/[0.12] disabled:opacity-50"
+                      >
+                        {friendsApi.busyId === m.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <UserPlus className="h-3 w-3" />
+                        )}
+                        Add friend
+                      </button>
+                    )}
+                    {!isSelf && isFriend && rivalryState === "none" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -555,7 +568,7 @@ export const CommunityView: React.FC = () => {
                         Wants to compete
                       </span>
                     )}
-                    {rivalryState === "active" && (
+                    {!isSelf && rivalryState === "active" && (
                       <button
                         type="button"
                         onClick={(e) => {

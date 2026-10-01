@@ -63,7 +63,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-emerald-400",
       hexColor: "#10B981",
       bgGlow: "rgba(16,185,129,0.15)",
-      icon: "",
     },
     {
       key: "ambition",
@@ -72,7 +71,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-purple-400",
       hexColor: "#A855F7",
       bgGlow: "rgba(168,85,247,0.15)",
-      icon: "",
     },
     {
       key: "intellect",
@@ -81,7 +79,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-gold",
       hexColor: "#F59E0B",
       bgGlow: "rgba(245,158,11,0.15)",
-      icon: "",
     },
     {
       key: "mental",
@@ -90,7 +87,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-yellow-400",
       hexColor: "#EAB308",
       bgGlow: "rgba(234,179,8,0.15)",
-      icon: "",
     },
     {
       key: "social",
@@ -99,7 +95,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-blue-400",
       hexColor: "#3B82F6",
       bgGlow: "rgba(59,130,246,0.15)",
-      icon: "",
     },
     {
       key: "discipline",
@@ -108,7 +103,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-rose-500",
       hexColor: "#F43F5E",
       bgGlow: "rgba(244,63,94,0.15)",
-      icon: "",
     },
   ];
 

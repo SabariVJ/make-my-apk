@@ -183,10 +183,7 @@ describe("admin server functions verify role server-side", () => {
 
   it("uses the service-role client for privileged writes and never exports it", () => {
     assert.match(adminFunctions, /supabaseAdmin\.auth\.admin\.deleteUser\(targetUserId\)/);
-    assert.match(
-      adminFunctions,
-      /supabaseAdmin[\s\S]*?from\("profiles"\)[\s\S]*?update\(\{ is_plus_member: true/,
-    );
+    assert.match(adminFunctions, /svj_admin_grant_plus/);
     assert.match(adminFunctions, /is_plus_member: false, plus_expires_at: null/);
   });
 
@@ -237,10 +234,13 @@ describe("frontend integration", () => {
   it("renders the dashboard only when admin and includes both sections", () => {
     assert.match(adminDashboard, /admin-users-section/);
     assert.match(adminDashboard, /admin-tickets-section/);
-    assert.match(adminDashboard, /Grant Plus/);
+    assert.match(adminDashboard, /Give Plus/);
     assert.match(adminDashboard, /Revoke Plus/);
     assert.match(adminDashboard, /Confirm delete/);
-    assert.match(adminDashboard, /type="date"/);
+    assert.match(adminDashboard, /type="number"/);
+    assert.match(adminDashboard, /Weeks/);
+    assert.match(adminDashboard, /Months/);
+    assert.match(adminDashboard, /Lifetime/);
     assert.match(adminDashboard, /Admin response/);
   });
 

@@ -53,14 +53,14 @@ import {
  * horizontal padding or its own `pb-24/28/32` — that duplication is what made
  * screens unevenly spaced and pushed actions below the fold.
  *
- * Width: full-bleed on phones, fluid on tablets, and on desktop the content
- * box grows to ~1264px (86rem minus the 7rem utility-rail reservation) so the
- * app stops rendering a narrow mobile column inside a wide window.
+ * Width: full-bleed on phones, then the content box scales progressively and
+ * stays horizontally centered (symmetric margins, never one-sided padding) at
+ * every breakpoint: md caps at 3xl, lg at 5xl with roomier px-8 gutters, xl at
+ * 6xl. The desktop utility rail is a slim floating pill, not a sidebar, so it
+ * lives in the free margin — no reserved gutter needed.
  */
 const PAGE_CONTAINER =
-  "mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4";
-/** Desktop content box + the right-side reservation that keeps the rail off content. */
-const PAGE_CONTAINER_DESKTOP = "lg:max-w-[86rem] lg:pr-28";
+  "mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4 md:max-w-3xl lg:max-w-5xl lg:px-8 xl:max-w-6xl";
 
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
@@ -226,8 +226,8 @@ const AppContent: React.FC<{
           </div>
         )}
 
-        {/* Same container as the main shell, minus the (absent) utility rail. */}
-        <main className={`${PAGE_CONTAINER} max-w-4xl lg:max-w-6xl`}>
+        {/* Same shared container as the main shell. */}
+        <main className={PAGE_CONTAINER}>
           {storageError && (
             <p
               role="alert"
@@ -300,13 +300,13 @@ const AppContent: React.FC<{
         isAdmin={isAdmin}
       />
 
-      {/* Main View Area — the container reserves desktop width and the rail's
-          right gutter so it can never cover content, and it alone owns the
+      {/* Main View Area — the shared container scales and centers content at
+          every breakpoint, and it alone owns the
           bottom-navigation clearance. Tab switches crossfade with a quick
           fade+slide. The animation wrapper is visual only: state lives in
           providers above it, so Activity tracking, workout recorders and
           native listeners are never reset. */}
-      <main className={`${PAGE_CONTAINER} ${PAGE_CONTAINER_DESKTOP}`}>
+      <main className={PAGE_CONTAINER}>
         {storageError && (
           <p
             role="alert"

@@ -60,18 +60,20 @@ const SCREENS = {
 };
 
 describe("one shared page container owns padding and nav clearance", () => {
-  it("defines the container once and gives the desktop box real width", () => {
+  it("defines the container once and scales it symmetrically", () => {
     assert.ok(app.includes("const PAGE_CONTAINER ="));
-    assert.ok(app.includes('const PAGE_CONTAINER_DESKTOP = "lg:max-w-[86rem] lg:pr-28"'));
+    assert.ok(app.includes("md:max-w-3xl"));
+    assert.ok(app.includes("lg:max-w-5xl lg:px-8"));
+    assert.ok(app.includes("xl:max-w-6xl"));
     // A single bottom-navigation clearance that also respects the device safe area.
     assert.ok(app.includes("pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"));
   });
 
-  it("reserves the utility rail exactly once", () => {
+  it("never reserves one-sided desktop padding", () => {
     assert.equal(
-      [...app.matchAll(/lg:pr-28/g)].length,
-      1,
-      "the rail gutter must appear once, on the desktop container only",
+      [...app.matchAll(/pr-28/g)].length,
+      0,
+      "centering must be symmetric (mx-auto); no asymmetric rail gutter",
     );
   });
 

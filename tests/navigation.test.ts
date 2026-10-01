@@ -227,13 +227,18 @@ describe("mobile responsiveness", () => {
 });
 
 describe("layout safety for the rail", () => {
-  it("reserves right-side space so the rail cannot cover content", () => {
-    // One shared container owns the page padding and the rail reservation, and
-    // grows the desktop content box instead of pinning it to a phone width.
+  it("scales and centers content symmetrically at every breakpoint", () => {
+    // One shared container owns the page padding and scales progressively:
+    // phones full-bleed px-4, sm px-6, then symmetric mx-auto caps — no
+    // one-sided reservation anywhere (the rail is a floating pill in the margin).
     assert.match(app, /const PAGE_CONTAINER =/);
     assert.match(app, /sm:px-6/);
-    assert.match(app, /const PAGE_CONTAINER_DESKTOP = "lg:max-w-\[86rem\] lg:pr-28"/);
-    assert.match(app, /\$\{PAGE_CONTAINER\} \$\{PAGE_CONTAINER_DESKTOP\}/);
+    assert.match(app, /md:max-w-3xl/);
+    assert.match(app, /lg:max-w-5xl lg:px-8/);
+    assert.match(app, /xl:max-w-6xl/);
+    assert.match(app, /mx-auto w-full/);
+    assert.doesNotMatch(app, /pr-28/);
+    assert.doesNotMatch(app, /PAGE_CONTAINER_DESKTOP/);
   });
 
   it("keeps the rail out of document flow (no horizontal scroll)", () => {

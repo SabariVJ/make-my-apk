@@ -348,9 +348,9 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
 
   return (
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased">
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-4">
         {/* Progress bar */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-mono text-[#8C8C90] uppercase tracking-wider">
               Step {currentStep + 1} of {STEPS.length}
@@ -377,7 +377,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="space-y-6"
+            className="space-y-4"
           >
             {/* Step header */}
             <div className="text-center space-y-2">
@@ -412,7 +412,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "social" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">
                     How comfortable are you meeting new people?
@@ -481,7 +481,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "confidence" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">General self-confidence</label>
                   <ScaleSlider
@@ -532,7 +532,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "discipline" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">
                     Task completion consistency
@@ -589,7 +589,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "focus" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-white">
                     Ability to focus without checking phone
@@ -643,7 +643,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "fitness" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-white">Current activity level</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -707,7 +707,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "recovery" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-white">
                     Typical sleep duration (hours)
@@ -754,7 +754,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
             )}
 
             {step.section === "nutrition" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-white">Dietary preference</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -815,7 +815,7 @@ export const AssessmentView: React.FC<{ onComplete: () => void }> = ({ onComplet
         )}
 
         {/* Navigation */}
-        <div className="flex items-center gap-3 mt-8">
+        <div className="flex items-center gap-3 mt-6">
           {!isFirst && (
             <button
               type="button"

@@ -148,7 +148,7 @@ export const UPIPaymentModal: React.FC = () => {
             </div>
           ) : !showQR ? (
             /* Prompt: Would you like to pay via UPI? */
-            <div className="space-y-5 text-center py-4">
+            <div className="space-y-3 text-center py-3">
               <div className="relative w-28 h-28 rounded-lg bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
                 <img
                   src={upiQr.url}

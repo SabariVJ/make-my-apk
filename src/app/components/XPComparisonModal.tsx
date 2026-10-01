@@ -140,7 +140,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
 
           {isSelf ? (
             /* Self accounts never expose opponent actions. */
-            <div className="py-8 text-center">
+            <div className="py-6 text-center">
               <Swords className="mx-auto mb-3 h-8 w-8 text-[#8C8C90]" />
               <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
                 This is your own account
@@ -229,7 +229,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
               </div>
 
               {/* Visual XP Progress Dual Bar */}
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 mb-4">
                 <div>
                   <div className="mb-1.5 flex justify-between font-inter text-xs">
                     <span className="text-[#F4F2ED]">You</span>

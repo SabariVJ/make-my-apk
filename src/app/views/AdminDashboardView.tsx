@@ -491,7 +491,7 @@ const TicketsSection: React.FC = () => {
 
   return (
     <section data-testid="admin-tickets-section" aria-label="Support tickets">
-      <h2 className="mb-3 mt-8 font-anton text-lg tracking-wide text-[#F4F2ED]">Tickets</h2>
+      <h2 className="mb-2 mt-6 font-anton text-lg tracking-wide text-[#F4F2ED]">Tickets</h2>
 
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter tickets by status">
         {STATUS_FILTERS.map((filter) => (

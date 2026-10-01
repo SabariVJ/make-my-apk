@@ -444,7 +444,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
       {!isPlus ? (
         /* Upgrade prompt for free users */
-        <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4 text-center">
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center mx-auto">
             <Sparkles className="w-8 h-8 text-[#C81E3A]" />
           </div>

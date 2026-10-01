@@ -129,7 +129,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* ACTIVE LIFETIME PLUS (Founder or non-Founder lifetime)         */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {hasLifetimePlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -201,7 +201,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* ACTIVE TIMED PLUS                                               */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {hasActiveTimedPlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -248,7 +248,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* EXPIRED TIMED PLUS  /  FREE / TRIAL                            */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {!hasLifetimePlus && !hasActiveTimedPlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -308,7 +308,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               </div>
 
               {/* Pricing Display Card */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                 {/* Monthly Card */}
                 <div
                   onClick={() => setBillingCycle("monthly")}
@@ -359,7 +359,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               </div>
 
               {/* Features Grid */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-5">
                 <h3 className="text-xs font-mono text-[#8C8C90] uppercase tracking-wider text-center">
                   What You Get
                 </h3>

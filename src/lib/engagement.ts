@@ -155,6 +155,32 @@ export type RewardReceipt = z.infer<typeof rewardReceiptSchema>;
 export type EngagementReply<T> =
   { ok: true; value: T } | { ok: false; error: string; code: string };
 
+const LOGIN_RECEIPT_KINDS = new Set(["daily_checkin", "streak_milestone"]);
+
+/** Selects only the login receipts from the current uninterrupted seven-day cycle. */
+export function selectCurrentLoginReceipts<T extends { kind: string; policyDay: string }>(
+  ledger: T[],
+  policyDay: string,
+  currentLoginStreak: number,
+  checkedInToday: boolean,
+): T[] {
+  const streak = Math.max(0, Math.floor(currentLoginStreak));
+  if (streak === 0) return [];
+
+  const startsNewCycleToday = !checkedInToday && streak % 7 === 0;
+  const daysBeforeStart = startsNewCycleToday ? 0 : (streak - 1) % 7;
+  const cycleStart = new Date(policyDay + "T00:00:00Z");
+  cycleStart.setUTCDate(cycleStart.getUTCDate() - daysBeforeStart);
+  const cycleStartDay = cycleStart.toISOString().slice(0, 10);
+
+  return ledger.filter(
+    (entry) =>
+      LOGIN_RECEIPT_KINDS.has(entry.kind) &&
+      entry.policyDay >= cycleStartDay &&
+      entry.policyDay <= policyDay,
+  );
+}
+
 export const REWARD_ERRORS: Record<string, string> = {
   SVJ_REWARD_NOT_ENABLED: "Earn Plus is not active yet. Your existing progress is unchanged.",
   SVJ_REWARD_CLAIMS_NOT_ENABLED: "Plus claims have not opened yet. Your Reward XP is safe.",

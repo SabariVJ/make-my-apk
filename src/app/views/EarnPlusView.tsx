@@ -24,6 +24,7 @@ import {
   formatRewardDuration,
   isActiveEngagement,
   rewardSecondsRemaining,
+  selectCurrentLoginReceipts,
   type RewardMission,
 } from "@/lib/engagement";
 import { useEngagement } from "../context/EngagementContext";
@@ -207,6 +208,19 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
       (mission.status === "running" || mission.status === "ready") &&
       rewardSecondsRemaining(mission.expiresAt, serverNowMs) > 0,
   );
+  const visibleReceipts = active
+    ? [
+        ...selectCurrentLoginReceipts(
+          active.ledger,
+          active.policyDay,
+          active.wallet.currentLoginStreak,
+          active.wallet.checkedInToday,
+        ),
+        ...active.ledger.filter(
+          (entry) => entry.kind !== "daily_checkin" && entry.kind !== "streak_milestone",
+        ),
+      ].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    : [];
 
   return (
     <div className="space-y-4">
@@ -467,13 +481,13 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
               <Zap className="h-4 w-4 text-rose-300" /> Recent confirmed receipts
             </h2>
-            {active.ledger.length === 0 ? (
+            {visibleReceipts.length === 0 ? (
               <p className="mt-4 text-sm text-[#A1A1AA]">
                 Your confirmed check-ins and mission receipts will appear here.
               </p>
             ) : (
               <ul className="mt-4 divide-y divide-white/5">
-                {active.ledger.map((entry) => (
+                {visibleReceipts.map((entry) => (
                   <li
                     key={entry.id}
                     className="flex items-start justify-between gap-3 py-3 text-xs"

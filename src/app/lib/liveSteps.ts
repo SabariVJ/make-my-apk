@@ -14,6 +14,17 @@ export interface LiveSteps {
 
 const PUBLISH_INTERVAL_MS = 3000;
 
+/** True when the client supports table writes and Realtime (absent in some test doubles). */
+function liveClientReady(): boolean {
+  const client = supabase as unknown as Record<string, unknown> | null;
+  return (
+    hasSupabaseConfig() &&
+    !!client &&
+    typeof client["from"] === "function" &&
+    typeof client["channel"] === "function"
+  );
+}
+
 /** Phone side: push today's total (throttled) whenever it changes. */
 export function usePublishLiveSteps(
   userId: string | null,
@@ -27,7 +38,7 @@ export function usePublishLiveSteps(
   latest.current = { dateKey, steps, distanceMeters };
 
   useEffect(() => {
-    if (!userId || !dateKey || !Capacitor.isNativePlatform() || !hasSupabaseConfig()) return;
+    if (!userId || !dateKey || !Capacitor.isNativePlatform() || !liveClientReady()) return;
     const sent = lastSent.current;
     if (sent && sent.key === dateKey && sent.steps === steps) return;
     if (timer.current) return; // a send is already scheduled; it reads the latest values
@@ -35,15 +46,19 @@ export function usePublishLiveSteps(
       timer.current = null;
       const v = latest.current;
       if (!v.dateKey) return;
-      const { error } = await supabase.from("svj_live_daily_steps").upsert({
-        user_id: userId,
-        date_key: v.dateKey,
-        steps: Math.max(0, Math.round(v.steps)),
-        distance_meters: Math.max(0, v.distanceMeters),
-        source: Capacitor.getPlatform(),
-        updated_at: new Date().toISOString(),
-      });
-      if (!error) lastSent.current = { key: v.dateKey, steps: v.steps };
+      try {
+        const { error } = await supabase.from("svj_live_daily_steps").upsert({
+          user_id: userId,
+          date_key: v.dateKey,
+          steps: Math.max(0, Math.round(v.steps)),
+          distance_meters: Math.max(0, v.distanceMeters),
+          source: Capacitor.getPlatform(),
+          updated_at: new Date().toISOString(),
+        });
+        if (!error) lastSent.current = { key: v.dateKey, steps: v.steps };
+      } catch {
+        // Display-only mirror: a failed publish is retried on the next change.
+      }
     }, PUBLISH_INTERVAL_MS);
   }, [userId, dateKey, steps, distanceMeters]);
 
@@ -60,10 +75,12 @@ export function useRemoteLiveSteps(userId: string | null): LiveSteps | null {
   const [live, setLive] = useState<LiveSteps | null>(null);
 
   useEffect(() => {
-    if (!userId || Capacitor.isNativePlatform() || !hasSupabaseConfig()) return;
+    if (!userId || Capacitor.isNativePlatform() || !liveClientReady()) return;
     let cancelled = false;
     const today = () => dateKeyOf(new Date());
-    const apply = (row: { date_key: string; steps: number; distance_meters: number; updated_at: string } | null) => {
+    const apply = (
+      row: { date_key: string; steps: number; distance_meters: number; updated_at: string } | null,
+    ) => {
       if (cancelled || !row || row.date_key !== today()) return;
       setLive({
         steps: Number(row.steps) || 0,
@@ -84,7 +101,12 @@ export function useRemoteLiveSteps(userId: string | null): LiveSteps | null {
       .channel(`live-steps-${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "svj_live_daily_steps", filter: `user_id=eq.${userId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "svj_live_daily_steps",
+          filter: `user_id=eq.${userId}`,
+        },
         (payload) => apply(payload.new as Parameters<typeof apply>[0]),
       )
       .subscribe();

@@ -181,7 +181,11 @@ export interface CompletedSessionSummary {
   caloriesEstimate?: number;
 }
 
-const ActivityContext: React.Context<ActivityContextValue | null> = ((globalThis as Record<string, unknown>).__svjActivityContext ??= createContext<ActivityContextValue | null>(null)) as React.Context<ActivityContextValue | null>;
+const ActivityContext: React.Context<ActivityContextValue | null> = ((
+  globalThis as Record<string, unknown>
+).__svjActivityContext ??= createContext<ActivityContextValue | null>(
+  null,
+)) as React.Context<ActivityContextValue | null>;
 
 /** Safely import the iOS/web pedometer plugin (absent in some bundles). */
 async function loadPedometer(): Promise<PedometerPlugin | null> {

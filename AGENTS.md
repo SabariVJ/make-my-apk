@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Live step sync: native app upserts today's total into svj_live_daily_steps (throttled); web sessions read it via Realtime and show max(local, remote). Display-only — never feeds XP or rewards, which stay server-authoritative.

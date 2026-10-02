@@ -20,9 +20,7 @@ const profilesFkMigration = await readFile(
   "utf8",
 );
 // Per-table slices so "no X policy" assertions can't leak across sections.
-const userRolesSection = migration.split(
-  "-- ============================================================================\n-- 2)",
-)[0];
+const userRolesSection = migration.split(/-- =+\r?\n-- 2\)/)[0];
 const ticketsSection = migration.split("-- 4) support_tickets")[1] ?? "";
 const readSrc = async (path) => readFile(new URL(`../src/${path}`, import.meta.url), "utf8");
 

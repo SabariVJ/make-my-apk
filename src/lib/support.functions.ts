@@ -53,7 +53,7 @@ export const createSupportTicket = createServerFn({ method: "POST" })
     return { ok: true, id: inserted.id as string };
   });
 
-/** List the current user's own tickets (RLS scopes to user_id = auth.uid()). */
+/** List the current user's active tickets, explicitly owner-scoped as well as RLS-backed. */
 export const listMySupportTickets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SupportTicket[]> => {
@@ -63,13 +63,15 @@ export const listMySupportTickets = createServerFn({ method: "POST" })
       .select(
         "id, user_id, category, message, status, admin_response, created_at, updated_at, resolved_at",
       )
+      .eq("user_id", context.userId)
+      .neq("status", "resolved")
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw new Error("Failed to load tickets");
     return (data ?? []) as SupportTicket[];
   });
 
-/** Admin: list all tickets with reporter identity, optionally by status. */
+/** Admin: list active tickets with reporter identity, optionally by status. */
 export const adminListSupportTickets = createServerFn({ method: "POST" })
   .validator((input: { status?: TicketStatus | "all"; limit?: number }) => input)
   .middleware([requireSupabaseAuth])
@@ -94,15 +96,16 @@ export const adminListSupportTickets = createServerFn({ method: "POST" })
       .select(
         "id, user_id, category, message, status, admin_response, created_at, updated_at, resolved_at, profiles!support_tickets_user_id_profiles_fkey(username, email)",
       )
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      .neq("status", "resolved");
 
     const status = data.status;
     if (status && status !== "all") {
       query = query.eq("status", status);
     }
 
-    const { data: tickets, error } = await query;
+    const { data: tickets, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(limit);
     if (error) throw new Error("Failed to load tickets");
 
     type RawTicketRow = {

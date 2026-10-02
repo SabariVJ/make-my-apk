@@ -12,7 +12,15 @@
  * `ScreenHero` hides the image (and keeps the screen intact) while it is absent.
  */
 export type HeroScreen =
-  "activity" | "onboarding" | "plus" | "profile" | "rivalry" | "train" | "transformation" | "fuel";
+  | "activity"
+  | "challenges"
+  | "onboarding"
+  | "plus"
+  | "profile"
+  | "rivalry"
+  | "train"
+  | "transformation"
+  | "fuel";
 
 export interface HeroAsset {
   /** Absolute public path, served at the WebView root on Android. */
@@ -28,6 +36,11 @@ export const HERO_ASSETS: Record<HeroScreen, HeroAsset> = {
     src: "/assets/svj-premium/activity/hero.webp",
     alt: "Cyclist riding through the city at night",
     focal: "50% 40%",
+  },
+  challenges: {
+    src: "/assets/svj-premium/challenges/hero.webp",
+    alt: "Hiker overlooking a mountain lake at sunset",
+    focal: "50% 45%",
   },
   onboarding: {
     src: "/assets/svj-premium/onboarding/hero.webp",

@@ -43,6 +43,7 @@ import {
   type AssessmentEntryState,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
+import { ScreenHero } from "@/components/ScreenHero";
 import { formatCompletedAt } from "../lib/dateFormat";
 import { localDayKey } from "../lib/taskCompletions";
 
@@ -357,6 +358,10 @@ export const ChallengesView: React.FC<{
 
   return (
     <div className="space-y-4">
+      {/* Premium Challenges hero — decorative (no copy), so it renders nothing
+          while the art is absent and lights up automatically once
+          public/assets/svj-premium/challenges/hero.webp exists. */}
+      <ScreenHero screen="challenges" height="md" priority />
       {!personalizationQuery.isLoading &&
         !personalizationQuery.data?.personalization?.assessmentCompleted && (
           <button

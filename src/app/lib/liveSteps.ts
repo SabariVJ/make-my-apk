@@ -38,7 +38,7 @@ export function usePublishLiveSteps(
   latest.current = { dateKey, steps, distanceMeters };
 
   useEffect(() => {
-    if (!userId || !dateKey || !Capacitor.isNativePlatform() || !liveClientReady()) return;
+    if (!userId || !dateKey || !(Capacitor.getPlatform() !== "web") || !liveClientReady()) return;
     const sent = lastSent.current;
     if (sent && sent.key === dateKey && sent.steps === steps) return;
     if (timer.current) return; // a send is already scheduled; it reads the latest values
@@ -75,7 +75,7 @@ export function useRemoteLiveSteps(userId: string | null): LiveSteps | null {
   const [live, setLive] = useState<LiveSteps | null>(null);
 
   useEffect(() => {
-    if (!userId || Capacitor.isNativePlatform() || !liveClientReady()) return;
+    if (!userId || Capacitor.getPlatform() !== "web" || !liveClientReady()) return;
     let cancelled = false;
     const today = () => dateKeyOf(new Date());
     const apply = (

@@ -47,6 +47,22 @@ test("gift duration supports weeks, months, and lifetime", () => {
   assert.match(adminDashboard, /Lifetime/);
 });
 
+test("admin Plus grants extend an existing active gift instead of creating a second pending row", () => {
+  assert.doesNotMatch(migration, /SVJ_ADMIN_PLUS_ALREADY_ACTIVE/);
+  assert.doesNotMatch(migration, /SVJ_ADMIN_PLUS_GIFT_PENDING/);
+  assert.match(migration, /v_base_expires_at := CASE/);
+  assert.match(migration, /THEN v_existing_gift\.expires_at/);
+  assert.match(migration, /v_base_expires_at \+ make_interval\(months => p_duration_value\)/);
+  assert.match(migration, /UPDATE public\.plus_gifts\s+SET granted_by = p_granted_by/);
+  assert.match(migration, /WHERE id = v_existing_gift\.id/);
+});
+
+test("admin Plus grants leave lifetime gifts as a single non-expiring grant", () => {
+  assert.match(migration, /v_existing_gift\.duration_unit = 'lifetime'/);
+  assert.match(migration, /RETURN QUERY SELECT v_existing_gift\.id, NULL::timestamptz/);
+  assert.match(migration, /plus_expires_at = NULL/);
+});
+
 test("claim is recipient-scoped and server-authoritative", () => {
   assert.match(migration, /recipient_user_id = auth\.uid\(\)/);
   assert.match(migration, /svj_claim_plus_gift/);

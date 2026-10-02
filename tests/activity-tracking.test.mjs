@@ -83,6 +83,7 @@ function makeNative() {
   const native = {
     state: baseState(),
     permission: "granted",
+    permissionAfterRequest: null,
     mode: "counter",
     calls: { start: 0, stop: 0, legacyStop: 0, request: 0, info: 0, query: 0 },
     handlers: { measurement: new Set(), trackingStateChanged: new Set() },
@@ -135,6 +136,7 @@ function makeNative() {
     async requestPermissions() {
       native.calls.request++;
       if (native.permissionGate) await native.permissionGate.promise;
+      if (native.permissionAfterRequest) native.permission = native.permissionAfterRequest;
       return { activityRecognition: native.permission };
     },
     async startTracking({ sessionId }) {
@@ -278,7 +280,8 @@ before(async () => {
         name: "hardware-and-services",
         setup(builder) {
           const modules = {
-            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isNativePlatform:()=>globalThis.__svjTracking.platform!=='web',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/app": `export const App={addListener:async(_,fn)=>{globalThis.__svjTracking.appHandlers.add(fn);return {remove:async()=>globalThis.__svjTracking.appHandlers.delete(fn)}}};`,
             "@capgo/capacitor-pedometer": `export const CapacitorPedometer=new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
             "./SVJContext": `const awardXp=(xp)=>globalThis.__svjTracking.xp.push(xp);const addActivity=(...args)=>globalThis.__svjTracking.feed.push(args);export const useSVJ=()=>({awardXp,addActivity});`,
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
@@ -310,6 +313,7 @@ beforeEach(() => {
     native: makeNative(),
     available: true,
     platform: "android",
+    appHandlers: new Set(),
     xp: [],
     feed: [],
     profile: { weightKg: 70, heightCm: 170, sex: "male", bmr: 1600 },
@@ -425,6 +429,86 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await receive({ numberOfSteps: 3, distance: 1.5, endDate: Date.now() });
     assert.equal(api.todaySteps, 2503);
     assert.equal(test.native.calls.query, 0, "START/STOP must not import history");
+  });
+  it("starts iPhone tracking only after Motion permission approval, without duplicate listeners", async () => {
+    test.platform = "ios";
+    test.native.permission = "prompt";
+    test.native.permissionAfterRequest = "granted";
+    await mount();
+    assert.equal(test.native.calls.request, 0);
+    await act(async () => {
+      await Promise.all([api.startTracking(), api.startTracking()]);
+    });
+    assert.equal(test.native.calls.request, 1);
+    assert.equal(test.native.calls.start, 1);
+    assert.equal(api.trackingStatus, "tracking");
+    assert.equal(test.native.handlers.measurement.size, 1);
+    assert.equal(
+      test.appHandlers.size,
+      1,
+      "StrictMode removes superseded native lifecycle listeners",
+    );
+    await stop();
+    assert.equal(test.native.handlers.measurement.size, 0);
+  });
+  it("keeps denied iPhone Motion permission stopped without accepting measurements", async () => {
+    test.platform = "ios";
+    test.native.permission = "denied";
+    await mount();
+    await start();
+    assert.equal(api.trackingStatus, "denied");
+    assert.match(api.statusMessage, /Motion permission denied/);
+    assert.equal(test.native.calls.start, 0);
+    assert.equal(test.native.handlers.measurement.size, 0);
+    assert.equal(api.todaySteps, 0);
+    assert.deepEqual(test.xp, []);
+  });
+  it("does not call missing iPhone pedometer plugins", async () => {
+    test.platform = "ios";
+    test.available = false;
+    await mount();
+    await start();
+    assert.equal(api.trackingStatus, "unsupported");
+    assert.equal(test.native.calls.request, 0);
+    assert.equal(test.native.calls.start, 0);
+  });
+  it("stops iPhone native updates on backgrounding and never resumes automatically", async () => {
+    test.platform = "ios";
+    await mount();
+    await start();
+    const late = [...test.native.handlers.measurement][0];
+    await act(async () => {
+      late({ numberOfSteps: 20, distance: 12, endDate: Date.now() });
+    });
+    await act(async () => {
+      for (const handler of test.appHandlers) handler({ isActive: false });
+    });
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+    assert.equal(test.native.handlers.measurement.size, 0);
+    const starts = test.native.calls.start;
+    await act(async () => {
+      late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() });
+      for (const handler of test.appHandlers) handler({ isActive: true });
+    });
+    assert.equal(api.todaySteps, 20);
+    assert.equal(test.native.calls.start, starts);
+    assert.deepEqual(test.xp, []);
+  });
+  it("isolates iPhone sessions and ignores old callbacks when the account changes", async () => {
+    test.platform = "ios";
+    await mount();
+    await start();
+    const late = [...test.native.handlers.measurement][0];
+    await act(async () => late({ numberOfSteps: 50, distance: 30, endDate: Date.now() }));
+    const oldCache = localStorage.getItem(activityKeyFor("test-user"));
+    await act(async () => view.rerender(tree(true, "other-user")));
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+    await start();
+    await act(async () => late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() }));
+    assert.equal(api.todaySteps, 0);
+    assert.equal(localStorage.getItem(activityKeyFor("test-user")), oldCache);
+    assert.deepEqual(test.xp, []);
+    assert.equal(test.native.handlers.measurement.size, 1);
   });
   it("mounts stopped in StrictMode, shows START, and reads sensor info without requesting permission", async () => {
     await mount();

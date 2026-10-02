@@ -60,7 +60,8 @@ export interface WorkoutPlugin {
 
 /** The registered plugin, or null on web / when the native build lacks it. */
 export function workoutPlugin(): WorkoutPlugin | null {
-  if (!Capacitor.isNativePlatform()) return null;
+  if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable(WORKOUT_PLUGIN_NAME))
+    return null;
   try {
     return registerPlugin<WorkoutPlugin>(WORKOUT_PLUGIN_NAME);
   } catch {

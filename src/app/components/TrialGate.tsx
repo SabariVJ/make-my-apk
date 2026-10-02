@@ -3,12 +3,9 @@ import { Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import type { Session } from "@supabase/supabase-js";
-import { Capacitor } from "@capacitor/core";
-import { App as CapApp } from "@capacitor/app";
-import { Browser } from "@capacitor/browser";
 import { supabase } from "@/integrations/supabase/client";
 import { getTrialStatus, type TrialStatus } from "@/lib/trial.functions";
-import { emitOAuthError } from "@/lib/googleAuth";
+import { installNativeAuthCallbacks } from "@/app/lib/nativeAuth";
 import { AuthScreen } from "./AuthScreen";
 import { PlusGiftClaimModal } from "./PlusGiftClaimModal";
 import { StatusScreen } from "./StatusScreen";
@@ -60,78 +57,7 @@ export const TrialGate: React.FC<{
 
   const fetchStatus = useServerFn(getTrialStatus);
 
-  // ── Native deep-link handler ──────────────────────────────────────────────
-  // When Google OAuth completes on Android/iOS it redirects to:
-  //   app.lovable.svj://auth/callback?code=...&state=...   (PKCE, default)
-  //   app.lovable.svj://auth/callback#access_token=...      (legacy implicit)
-  // We extract the PKCE `code` and exchange it on the SAME `supabase` client
-  // that started signInWithOAuth (so the stored PKCE code_verifier matches),
-  // then close the in-app browser opened by the Capacitor Browser plugin.
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) {
-      console.log("[SVJ] deep-link effect skipped (not a native platform)");
-      return;
-    }
-    console.log("[SVJ] deep-link effect mounted; registering appUrlOpen listener (native)");
-
-    const listener = CapApp.addListener("appUrlOpen", async ({ url }) => {
-      // Sanitized: never log raw OAuth URLs which contain codes/tokens
-      console.log("[SVJ] appUrlOpen fired");
-
-      if (!url.includes("app.lovable.svj://auth/callback")) {
-        console.warn("[SVJ] appUrlOpen URL did not match callback scheme/path");
-        return;
-      }
-
-      // Provider/Supabase errors come back as query or fragment params.
-      const query = new URLSearchParams(url.split("?")[1]?.split("#")[0] ?? "");
-      const fragParams = new URLSearchParams(url.split("#")[1] ?? "");
-      const oauthError =
-        query.get("error_description") ||
-        query.get("error") ||
-        fragParams.get("error_description") ||
-        fragParams.get("error");
-
-      if (oauthError) {
-        console.warn("[SVJ] OAuth provider returned an error");
-        emitOAuthError(oauthError);
-        await Browser.close();
-        return;
-      }
-
-      // PKCE: the code can arrive in the query (hosted /auth/callback forwards
-      // window.location.search) or in the fragment — check both.
-      const code = query.get("code") ?? fragParams.get("code");
-      if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          // Log the REAL error object (PKCE verifier mismatch, invalid grant, …)
-          // so native logcat shows the actual failure, not just the UI message.
-          console.error("[SVJ] exchangeCodeForSession failed:", error?.message ?? "unknown");
-          emitOAuthError(error.message);
-        } else {
-          console.info("[SVJ] PKCE exchange succeeded");
-        }
-      } else {
-        // Legacy implicit flow fallback: tokens in the URL fragment.
-        const access_token = fragParams.get("access_token");
-        const refresh_token = fragParams.get("refresh_token");
-        if (access_token && refresh_token) {
-          await supabase.auth.setSession({ access_token, refresh_token });
-        } else {
-          console.warn("[SVJ] OAuth deep link carried no code or tokens");
-          emitOAuthError("Google sign-in did not return a session. Please try again.");
-        }
-      }
-
-      // Dismiss the in-app browser window
-      await Browser.close();
-    });
-
-    return () => {
-      listener.then((l) => l.remove());
-    };
-  }, []);
+  useEffect(installNativeAuthCallbacks, []);
 
   // ── Supabase auth state ───────────────────────────────────────────────────
   useEffect(() => {

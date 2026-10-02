@@ -30,6 +30,7 @@ import {
   type BleDeviceInfo,
 } from "../lib/wearable";
 import { isHeartRateFresh } from "../lib/bleHeartRate";
+import { healthConnectAvailable } from "../lib/healthConnect";
 import {
   WEAR_CAPABILITY_LABELS,
   WEAR_CONNECTION_LABELS,
@@ -221,12 +222,12 @@ export const ConnectedDevicesView: React.FC = () => {
             <p className="font-inter text-sm font-semibold text-[#F4F2ED]">
               {nativeAvailable
                 ? "Sensors are live on this device"
-                : "Sensors need the SVJ Android app"}
+                : "Bluetooth sensors unavailable"}
             </p>
             <p className="mt-1 text-xs font-inter leading-relaxed text-[#8C8C90]">
               {nativeAvailable
                 ? "Pair a BLE heart-rate strap or band and SVJ reads your pulse straight from the sensor while you record."
-                : "This build cannot read Bluetooth sensors directly. Health Connect still syncs authorized workouts, heart rate, steps and distance into your history."}
+                : "Bluetooth heart-rate pairing is not available in this version."}
             </p>
           </div>
         </div>
@@ -345,8 +346,8 @@ export const ConnectedDevicesView: React.FC = () => {
             compact
             variant="coming-soon"
             icon={Bluetooth}
-            title="Pairing needs the Android app"
-            description="Direct Bluetooth heart-rate pairing only works in the SVJ Android build. Health Connect still syncs your authorized workouts and heart rate into SVJ history."
+            title="Bluetooth pairing unavailable"
+            description="This version cannot connect to Bluetooth heart-rate sensors."
           />
         ) : (
           <div className="mt-3">
@@ -404,14 +405,17 @@ export const ConnectedDevicesView: React.FC = () => {
       </div>
 
       {/* Health Connect */}
-      <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4">
-        <SVJSectionHeader title="Health Connect" icon={Watch} />
-        <p className="mt-2 text-[11px] font-inter leading-relaxed text-[#8C8C90]">
-          Syncs authorized workouts, heart rate, steps and distance from supported Android health
-          and watch apps into SVJ — through Android's Health Connect, with the exact permissions you
-          grant. Manage it in <span className="text-white">Profile → Settings → Integrations</span>.
-        </p>
-      </div>
+      {healthConnectAvailable() && (
+        <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4">
+          <SVJSectionHeader title="Health Connect" icon={Watch} />
+          <p className="mt-2 text-[11px] font-inter leading-relaxed text-[#8C8C90]">
+            Syncs authorized workouts, heart rate, steps and distance from supported Android health
+            and watch apps into SVJ — through Android's Health Connect, with the exact permissions
+            you grant. Manage it in{" "}
+            <span className="text-white">Profile → Settings → Integrations</span>.
+          </p>
+        </div>
+      )}
 
       {/* Compatibility notes — honest about what works with what */}
       <div className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-4">

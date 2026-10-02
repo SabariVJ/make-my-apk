@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -189,6 +190,7 @@ const ActivityContext: React.Context<ActivityContextValue | null> = ((
 
 /** Safely import the iOS/web pedometer plugin (absent in some bundles). */
 async function loadPedometer(): Promise<PedometerPlugin | null> {
+  if (!Capacitor.isPluginAvailable("CapacitorPedometer")) return null;
   try {
     const mod = await import("@capgo/capacitor-pedometer");
     return mod.CapacitorPedometer ?? null;
@@ -212,6 +214,20 @@ function androidStatusMessage(mode: VjSensorMode): string {
 }
 
 export function ActivityProvider({
+  children,
+  userId,
+}: {
+  children: React.ReactNode;
+  userId: string | null;
+}) {
+  return (
+    <AccountActivityProvider key={userId ?? "signed-out"} userId={userId}>
+      {children}
+    </AccountActivityProvider>
+  );
+}
+
+function AccountActivityProvider({
   children,
   userId,
 }: {
@@ -286,7 +302,7 @@ export function ActivityProvider({
 
   // ── Body metrics for calorie estimation ────────────────────────────────
   const bodyProfileQuery = useQuery({
-    queryKey: ["activity-body-profile"],
+    queryKey: ["activity-body-profile", userId],
     enabled: Boolean(userId),
     staleTime: 10 * 60_000,
     retry: 1,
@@ -691,10 +707,17 @@ export function ActivityProvider({
     };
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", pagehide);
+    const appListener =
+      Capacitor.getPlatform() === "ios" && Capacitor.isPluginAvailable("App")
+        ? CapApp.addListener("appStateChange", ({ isActive }) => {
+            if (!isActive) void stopTracking();
+          })
+        : null;
     return () => {
       mountedRef.current = false;
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", pagehide);
+      void appListener?.then((handle) => handle.remove()).catch(() => undefined);
       void stopTracking();
     };
   }, [userId, stopTracking, getSensorInfo]);

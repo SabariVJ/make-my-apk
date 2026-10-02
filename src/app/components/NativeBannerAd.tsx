@@ -49,7 +49,7 @@ let _privacyChoicesListeners: Array<() => void> = [];
  * Notifies the currently mounted NativeBannerAd to re-read consent.
  */
 export async function showPrivacyChoices(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (Capacitor.getPlatform() !== "android" || !Capacitor.isPluginAvailable("AdMob")) return false;
   try {
     await AdMob.showPrivacyOptionsForm();
     // Notify all mounted listeners that consent may have changed.
@@ -158,7 +158,7 @@ export function NativeBannerAd({ enabled }: { enabled: boolean }) {
   desiredEnabledRef.current = enabled;
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (Capacitor.getPlatform() !== "android" || !Capacitor.isPluginAvailable("AdMob")) return;
 
     const gen = ++generationRef.current;
     const getGen = () => generationRef.current;

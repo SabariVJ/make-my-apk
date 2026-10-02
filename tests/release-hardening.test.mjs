@@ -7,6 +7,22 @@ async function source(path) {
 }
 
 describe("final release hardening", { concurrency: false }, () => {
+  it("loads the Framer celebration only in the browser with a native fallback", async () => {
+    const [frame, modal] = await Promise.all([
+      source("src/app/components/FramerLevelUp.tsx"),
+      source("src/app/components/LevelUpModal.tsx"),
+    ]);
+    assert.match(frame, /https:\/\/framer\.com\/m\/Forged-gK9Ssu\.js@HF3NoCK8a3lBwTeVSaXp/);
+    assert.doesNotMatch(frame, /import\s+Forged\s+from\s+["']https:/);
+    assert.match(
+      frame,
+      /useEffect\(\(\) => \{[\s\S]*setDocument\(createFramerLevelUpDocument\(level\)\)/,
+    );
+    assert.match(frame, /sandbox="allow-scripts"/);
+    assert.match(frame, /if \(reducedMotion\) return/);
+    assert.match(modal, /fallback={<NativeLevelUp level={levelUpModalData\.newLevel} \/>}/);
+  });
+
   it("keeps account creation and legal terms aligned to an adult-only service", async () => {
     const [auth, terms, checklist] = await Promise.all([
       source("src/app/components/AuthScreen.tsx"),

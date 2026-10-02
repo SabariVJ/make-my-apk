@@ -35,7 +35,8 @@ export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => 
       if (!gift) throw new Error("No Plus gift available");
       return claimMyPlusGift({ data: { grantId: gift.id } });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["trial-status", userId], type: "active" });
       setDismissed(true);
       void queryClient.invalidateQueries({ queryKey: ["plus-gift-pending"] });
       void queryClient.invalidateQueries({ queryKey: ["trial-status"] });

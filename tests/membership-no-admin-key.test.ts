@@ -30,6 +30,10 @@ function readSource(rel: string): string {
   return readFileSync(resolve(repoRoot, rel), "utf8");
 }
 
+const latestMembershipMigration = readSource(
+  "supabase/migrations/20261011000000_membership_latest_plus_expiry.sql",
+);
+
 describe("membership resolution does not require an admin key", () => {
   it("getTrialStatus has no requireAdminKey / admin-client dependency", () => {
     const src = readSource("src/lib/trial.functions.ts");
@@ -102,6 +106,41 @@ describe("membership resolution does not require an admin key", () => {
           "GRANT EXECUTE ON FUNCTION public.svj_get_my_membership() TO authenticated",
         ),
       "svj_get_my_membership must be revoked from PUBLIC/anon and granted to authenticated only",
+    );
+  });
+
+  it("same-email membership merge keeps the strongest Plus entitlement", () => {
+    assert.match(latestMembershipMigration, /CREATE OR REPLACE FUNCTION public\.svj_get_my_membership/);
+    assert.match(latestMembershipMigration, /bool_or\(p\.is_plus_member AND p\.plus_expires_at IS NULL\)/);
+    assert.match(
+      latestMembershipMigration,
+      /max\(p\.plus_expires_at\) FILTER \(WHERE p\.is_plus_member AND p\.plus_expires_at IS NOT NULL\)/,
+    );
+    assert.match(latestMembershipMigration, /WHEN COALESCE\(v_has_lifetime_plus, false\) THEN NULL/);
+    assert.match(latestMembershipMigration, /WHERE p\.email = self\.email/);
+    assert.doesNotMatch(
+      latestMembershipMigration,
+      /self\.plus_expires_at := COALESCE\(self\.plus_expires_at, sibling\.plus_expires_at\)/,
+    );
+  });
+
+  it("latest membership hotfix keeps the self-service RPC security contract", () => {
+    assert.match(latestMembershipMigration, /caller_id uuid := auth\.uid\(\)/);
+    assert.doesNotMatch(latestMembershipMigration, /p_user_id/);
+    const returnsBlock = latestMembershipMigration.slice(
+      latestMembershipMigration.indexOf("RETURNS TABLE"),
+      latestMembershipMigration.indexOf("LANGUAGE plpgsql"),
+    );
+    assert.doesNotMatch(returnsBlock, /\bemail\b/);
+    assert.match(latestMembershipMigration, /SECURITY DEFINER/);
+    assert.match(latestMembershipMigration, /SET search_path = public/);
+    assert.match(
+      latestMembershipMigration,
+      /REVOKE ALL ON FUNCTION public\.svj_get_my_membership\(\) FROM PUBLIC, anon/,
+    );
+    assert.match(
+      latestMembershipMigration,
+      /GRANT EXECUTE ON FUNCTION public\.svj_get_my_membership\(\) TO authenticated/,
     );
   });
 

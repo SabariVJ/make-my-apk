@@ -68,6 +68,7 @@ test("claim is recipient-scoped and server-authoritative", () => {
   assert.match(migration, /svj_claim_plus_gift/);
   assert.match(plusGiftFunctions, /svj_claim_plus_gift/);
   assert.match(claimModal, /Claim Plus/);
+  assert.match(claimModal, /refetchQueries\(\{ queryKey: \["trial-status", userId\]/);
   assert.match(trialGate, /PlusGiftClaimModal/);
 });
 

@@ -1087,8 +1087,8 @@ export const SVJProvider: React.FC<{
       }),
       bio: serverProfile?.bio ?? baseUser.bio,
       location: serverProfile?.location ?? baseUser.location,
-      isFounder: isOwnerEmail || baseUser.isFounder || false,
-      isOwner: isOwnerEmail || baseUser.isOwner || false,
+      isFounder: isOwnerEmail,
+      isOwner: isOwnerEmail,
       isPremium: isOwnerEmail ? true : false, // otherwise server check decides
       verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
       vipIcon: isOwnerEmail ? true : baseUser.vipIcon,

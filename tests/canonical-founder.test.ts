@@ -54,6 +54,20 @@ describe("canonical founder identity", () => {
     );
   });
 
+  it("does not preserve cached founder flags for non-founder Google logins", () => {
+    assert.match(context, /isFounder: isOwnerEmail,\s*isOwner: isOwnerEmail,/);
+    assert.doesNotMatch(
+      context,
+      /isFounder:\s*isOwnerEmail\s*\|\|\s*baseUser\.isFounder/,
+      "a stale cached founder flag must not leak onto a gifted Plus account",
+    );
+    assert.doesNotMatch(
+      context,
+      /isOwner:\s*isOwnerEmail\s*\|\|\s*baseUser\.isOwner/,
+      "a stale cached owner flag must not leak onto a gifted Plus account",
+    );
+  });
+
   it("retains the server-side challenge debug gate on the canonical founder", () => {
     assert.match(challengeFunctions, /FOUNDER_EMAIL = "sabarivj777@gmail\.com"/);
   });

@@ -1322,6 +1322,33 @@ export type Database = {
         }
         Relationships: []
       }
+      svj_live_daily_steps: {
+        Row: {
+          date_key: string
+          distance_meters: number
+          source: string
+          steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date_key: string
+          distance_meters?: number
+          source?: string
+          steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date_key?: string
+          distance_meters?: number
+          source?: string
+          steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       svj_live_share_sessions: {
         Row: {
           activity_id: string

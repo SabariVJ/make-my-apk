@@ -8,6 +8,13 @@
       "when": 1790948242490,
       "tag": "0000_fix_plus_gift_expires_at_ambiguity",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790957609977,
+      "tag": "0001_live_daily_steps",
+      "breakpoints": true
     }
   ]
 }

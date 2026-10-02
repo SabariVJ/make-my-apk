@@ -14,6 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getBodyProfile } from "@/lib/personalization.functions";
 import { useSVJ } from "./SVJContext";
 import { readStoredJson, writeStoredJson } from "../lib/storage";
+import { usePublishLiveSteps, useRemoteLiveSteps } from "../lib/liveSteps";
 import {
   vjCheckPermissions,
   vjRequestPermissions,
@@ -180,7 +181,11 @@ export interface CompletedSessionSummary {
   caloriesEstimate?: number;
 }
 
-const ActivityContext: React.Context<ActivityContextValue | null> = ((globalThis as Record<string, unknown>).__svjActivityContext ??= createContext<ActivityContextValue | null>(null)) as React.Context<ActivityContextValue | null>;
+const ActivityContext: React.Context<ActivityContextValue | null> = ((
+  globalThis as Record<string, unknown>
+).__svjActivityContext ??= createContext<ActivityContextValue | null>(
+  null,
+)) as React.Context<ActivityContextValue | null>;
 
 /** Safely import the iOS/web pedometer plugin (absent in some bundles). */
 async function loadPedometer(): Promise<PedometerPlugin | null> {
@@ -734,7 +739,14 @@ export function ActivityProvider({
   const summary7 = useMemo(() => summarizeHistory(history7), [history7]);
   const summary30 = useMemo(() => summarizeHistory(history30), [history30]);
 
-  const todaySteps = state.today?.steps ?? 0;
+  usePublishLiveSteps(
+    userId,
+    state.today?.dateKey ?? null,
+    state.today?.steps ?? 0,
+    state.today?.distanceMeters ?? 0,
+  );
+  const remoteLive = useRemoteLiveSteps(userId);
+  const todaySteps = Math.max(state.today?.steps ?? 0, remoteLive?.steps ?? 0);
   const stepPercent = Math.min(100, Math.round((todaySteps / STEP_GOAL) * 100));
   const remainingSteps = Math.max(0, STEP_GOAL - todaySteps);
   const kcalGoal = activeKcalGoal(bodyMetrics);
@@ -929,7 +941,10 @@ export function ActivityProvider({
     getSensorInfo,
     statusMessage,
     stepSource,
-    lastSyncedAt: state.lastSyncedAt,
+    lastSyncedAt:
+      remoteLive && remoteLive.steps > (state.today?.steps ?? 0)
+        ? Date.parse(remoteLive.updatedAt)
+        : state.lastSyncedAt,
     history7,
     history30,
     summary7,

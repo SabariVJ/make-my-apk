@@ -50,7 +50,7 @@ export const HERO_ASSETS: Record<HeroScreen, HeroAsset> = {
   plus: {
     src: "/assets/svj-premium/plus/hero.webp",
     alt: "SVJ Plus premium hero",
-    focal: "68% 35%",
+    focal: "70% 16%",
   },
   profile: {
     src: "/assets/svj-premium/profile/hero.webp",

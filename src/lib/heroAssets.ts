@@ -40,7 +40,7 @@ export const HERO_ASSETS: Record<HeroScreen, HeroAsset> = {
   challenges: {
     src: "/assets/svj-premium/challenges/hero.webp",
     alt: "Hiker overlooking a mountain lake at sunset",
-    focal: "50% 45%",
+    focal: "50% 32%",
   },
   onboarding: {
     src: "/assets/svj-premium/onboarding/hero.webp",

@@ -36,7 +36,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto my-6 perspective-1000">
+    <div className="w-full max-w-md mx-auto my-3 perspective-1000">
       <div className="relative flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#C9A227]" />

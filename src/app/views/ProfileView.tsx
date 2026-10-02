@@ -3,28 +3,21 @@ import { Capacitor } from "@capacitor/core";
 import { showPrivacyChoices } from "../components/NativeBannerAd";
 import { motion } from "motion/react";
 import {
-  User,
   Flame,
   Zap,
   Shield,
   Crown,
-  Award,
-  Calendar,
   BarChart3,
-  Settings,
   Edit3,
-  Lock,
-  CheckCircle2,
   Sparkles,
   Mail,
-  Dumbbell,
-  Brain,
   Users,
-  BookOpen,
   X,
   LogOut,
   AlertCircle,
   Ticket,
+  Trophy,
+  TrendingUp,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,10 +37,23 @@ import { MyTicketsList, RaiseTicketForm } from "../components/SupportTickets";
 import { getCurrentWeekXp, getWeekAverageXp } from "../lib/weeklyXp";
 import { markIntentionalSignOut } from "../lib/sessionExpired";
 
+const XP_PER_LEVEL = 500;
+
 export const ProfileView: React.FC = () => {
   const { user, setIsEditProfileOpen, setIsPaywallOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const weekXp = getCurrentWeekXp(user.xpHistory);
-  const [activeTab, setActiveTab] = useState<"analytics">("analytics");
+  const hasWeeklyXp = weekXp.some((item) => item.xp > 0);
+  const weeklyTotal = weekXp.reduce((sum, item) => sum + item.xp, 0);
+  const currentLevelBaseXp = Math.max(0, ((user.level || 1) - 1) * XP_PER_LEVEL);
+  const levelProgressXp = Math.max(0, user.totalXP - currentLevelBaseXp);
+  const levelProgressPercent = Math.min(100, Math.round((levelProgressXp / XP_PER_LEVEL) * 100));
+  const nextLevelXp = Math.max(0, XP_PER_LEVEL - levelProgressXp);
+  const activeStats = Object.values(user.stats).filter((value) => value > 0).length;
+  const strongestStat = Object.entries(user.stats).reduce<[keyof UserStats, number]>(
+    (best, [key, value]) => (value > best[1] ? [key as keyof UserStats, value] : best),
+    ["physical", user.stats.physical],
+  );
+  const strongestLabel = strongestStat[0].replace(/^\w/, (char) => char.toUpperCase());
   const [showTransformation, setShowTransformation] = useState(false);
   const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
@@ -209,7 +215,7 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
-      {activeTab === "analytics" && (
+      {
         /* ANALYTICS TAB — the fabricated emoji badge grid and achievement list
             that lived beside it were removed with their tabs. */
         <div className="space-y-4">
@@ -296,49 +302,77 @@ export const ProfileView: React.FC = () => {
               title="This week's XP"
               icon={BarChart3}
               trailing={
-                <span className="font-inter text-xs text-[#8C8C90]">
-                  Avg {getWeekAverageXp(weekXp)} XP/day
-                </span>
+                <span className="font-inter text-xs text-[#8C8C90]">{weeklyTotal} XP total</span>
               }
             />
 
-            <div className="h-32 flex items-end justify-between gap-2 pt-4 px-1">
-              {weekXp.map((item) => {
-                // Real data only: scale by the week's actual max (never an
-                // artificial floor), so any non-zero day renders visibly.
-                const maxVal = Math.max(...weekXp.map((d) => d.xp));
-                const barHeight =
-                  maxVal > 0 ? Math.max(4, Math.round((item.xp / maxVal) * 100)) : 0;
+            {hasWeeklyXp ? (
+              <div className="h-24 flex items-end justify-between gap-2 pt-2 px-1">
+                {weekXp.map((item) => {
+                  // Real data only: scale by the week's actual max (never an
+                  // artificial floor), so any non-zero day renders visibly.
+                  const maxVal = Math.max(...weekXp.map((d) => d.xp));
+                  const barHeight =
+                    maxVal > 0 ? Math.max(8, Math.round((item.xp / maxVal) * 100)) : 0;
 
-                return (
-                  <div
-                    key={item.dayKey}
-                    className="flex-1 flex flex-col items-center gap-1 group relative"
-                  >
-                    {/* Tooltip on hover */}
-                    <div className="absolute -top-8 bg-black text-[#C81E3A] text-[9px] font-mono px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10">
-                      {item.xp} XP
-                    </div>
-
-                    <div className="w-full h-full flex items-end">
-                      <div
-                        style={{ height: `${barHeight}%` }}
-                        className={
-                          barHeight > 0
-                            ? `w-full rounded-t bg-gradient-to-t from-[#C81E3A]/40 to-[#C81E3A] transition-all ${item.isToday ? "ring-1 ring-[#C81E3A]/50" : ""}`
-                            : "w-full rounded-t bg-white/5"
-                        }
-                      />
-                    </div>
-                    <span
-                      className={`text-[8px] font-mono truncate max-w-[24px] ${item.isToday ? "text-white font-bold" : "text-[#8C8C90]"}`}
+                  return (
+                    <div
+                      key={item.dayKey}
+                      className="flex-1 flex flex-col items-center gap-1 group relative"
                     >
-                      {item.day}
-                    </span>
+                      <div className="absolute -top-8 bg-black text-[#C81E3A] text-[9px] font-mono px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 border border-white/10">
+                        {item.xp} XP
+                      </div>
+
+                      <div className="w-full h-full flex items-end">
+                        <div
+                          style={{ height: `${barHeight}%` }}
+                          className={
+                            barHeight > 0
+                              ? `w-full rounded-t bg-gradient-to-t from-[#C81E3A]/40 to-[#C81E3A] transition-all ${item.isToday ? "ring-1 ring-[#C81E3A]/50" : ""}`
+                              : "w-full rounded-t bg-white/5"
+                          }
+                        />
+                      </div>
+                      <span
+                        className={`text-[8px] font-mono truncate max-w-[24px] ${item.isToday ? "text-white font-bold" : "text-[#8C8C90]"}`}
+                      >
+                        {item.day}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/[0.06] bg-[#08080A] p-3">
+                <div className="grid grid-cols-7 gap-1.5">
+                  {weekXp.map((item) => (
+                    <div
+                      key={item.dayKey}
+                      className={`flex h-12 flex-col items-center justify-center rounded-xl border font-mono text-[9px] ${
+                        item.isToday
+                          ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-white"
+                          : "border-white/[0.06] bg-white/[0.03] text-[#8C8C90]"
+                      }`}
+                    >
+                      <span>{item.day}</span>
+                      <span className="mt-1 h-1 w-1 rounded-full bg-current opacity-70" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[#C81E3A]/20 bg-[#C81E3A]/10 px-3 py-2">
+                  <div>
+                    <p className="font-inter text-xs font-semibold text-[#F4F2ED]">
+                      Start earning XP today
+                    </p>
+                    <p className="mt-0.5 font-inter text-[11px] text-[#8C8C90]">
+                      Complete a challenge or check in to light up this week.
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                  <Zap className="h-4 w-4 shrink-0 text-[#E62846]" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Upgrade Banner */}
@@ -364,13 +398,69 @@ export const ProfileView: React.FC = () => {
             </div>
           )}
         </div>
-      )}
+      }
       {/* Trailing utility cards pair up on desktop width so Profile stops being
           one very long single column. DOM order is unchanged on mobile. */}
-      <div className="grid items-start gap-3 lg:grid-cols-2">
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)]">
         {/* Transformation Report is the sole new personalization intelligence entry in Profile. */}
         <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-3.5">
-          <SVJSectionHeader title="Your progress" />
+          <SVJSectionHeader
+            title="Your progress"
+            trailing={<SVJBadge variant="crimson">{activeStats}/6 active</SVJBadge>}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <Flame className="h-4 w-4 text-gold" />
+                <span className="font-mono text-[10px] text-[#8C8C90]">
+                  Best {user.bestStreak}d
+                </span>
+              </div>
+              <p className="font-mono text-2xl font-bold text-[#F4F2ED]">{user.currentStreak}d</p>
+              <p className="font-inter text-[10px] text-[#8C8C90]">Current streak</p>
+            </div>
+            <div className="svj-radius-row border border-white/[0.05] bg-[#08080A] p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <Zap className="h-4 w-4 text-[#E62846]" />
+                <span className="font-mono text-[10px] text-[#8C8C90]">
+                  Avg {getWeekAverageXp(weekXp)}/day
+                </span>
+              </div>
+              <p className="font-mono text-2xl font-bold text-[#E62846]">+{weeklyTotal}</p>
+              <p className="font-inter text-[10px] text-[#8C8C90]">This week</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/[0.06] bg-[#08080A] p-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-[#C9A227]" />
+                <span className="font-inter text-xs font-semibold text-[#F4F2ED]">
+                  Level {user.level || 1}
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#8C8C90]">{nextLevelXp} XP to next</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#C81E3A] to-[#C9A227]"
+                style={{ width: `${levelProgressPercent}%` }}
+              />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/[0.06] bg-[#08080A] p-3">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-400" />
+                <span className="font-inter text-xs font-semibold text-[#F4F2ED]">
+                  Strongest: {strongestLabel}
+                </span>
+              </div>
+              <span className="font-mono text-xs text-emerald-300">{strongestStat[1]}</span>
+            </div>
+            <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+              Your matrix updates from completed work, habits, training and recovery.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => setShowTransformation(true)}

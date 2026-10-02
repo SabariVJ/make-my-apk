@@ -201,9 +201,18 @@ export const MyTicketsList: React.FC = () => {
   );
   if (tickets.length === 0) {
     return (
-      <p data-testid="no-tickets" className="py-3 text-center font-inter text-xs text-[#8C8C90]">
-        No active tickets.
-      </p>
+      <div
+        data-testid="no-tickets"
+        className="rounded-2xl border border-white/[0.06] bg-[#08080A] px-3 py-4 text-center"
+      >
+        <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10">
+          <Ticket className="h-4 w-4 text-emerald-300" />
+        </div>
+        <p className="font-inter text-xs font-semibold text-[#F4F2ED]">No active tickets</p>
+        <p className="mt-1 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+          Resolved tickets clear from this list automatically.
+        </p>
+      </div>
     );
   }
 

@@ -7,12 +7,20 @@ No Apple password, signing certificate, or paid membership belongs in GitHub.
 ## Download your build
 
 1. Open [iPhone Test Build in GitHub Actions](https://github.com/SabariVJ/make-my-apk/actions/workflows/ios-test.yml).
-2. Select a successful run for `release/play-v1-compliance`. To request a new
-   build, choose **Run workflow** and that branch.
+2. Select a successful run for `release/play-v1-compliance`. Relevant pushes
+   build automatically. Open an existing run and choose **Re-run all jobs** to
+   rebuild the same commit manually.
 3. While signed into GitHub, download the **SVJ-ios-test** artifact at the bottom
    of the run. Extract its ZIP on Windows; inside is `SVJ-ios-test.ipa`.
 4. Transfer the IPA to the iPhone's Files app, for example through iCloud Drive.
    Do not extract the IPA itself.
+
+The workflow also declares **Run workflow**, but GitHub only enables that
+button when the workflow file exists on the default branch (`main`). This work
+does not modify `main`; until that workflow is merged there, use automatic
+release-branch builds or **Re-run all jobs**. Once it is present on `main`, select
+`release/play-v1-compliance` in **Run workflow**. See
+[GitHub's manual-run prerequisite](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
 
 Standard hosted Mac runners are free for public repositories. The workflow
 uses Xcode 26+, Swift Package Manager and iOS 15+. It verifies the arm64 device

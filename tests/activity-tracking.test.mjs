@@ -510,6 +510,33 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.deepEqual(test.xp, []);
     assert.equal(test.native.handlers.measurement.size, 1);
   });
+  it("finishes old iPhone startup cleanup before a switched account starts a new sensor", async () => {
+    test.platform = "ios";
+    await mount();
+    test.native.startGate = deferred();
+    let oldStartup;
+    await act(async () => {
+      oldStartup = api.startTracking();
+    });
+    await waitFor(() => assert.equal(test.native.calls.start, 1));
+    await act(async () => view.rerender(tree(true, "other-user")));
+    let newStartup;
+    await act(async () => {
+      newStartup = api.startTracking();
+    });
+    await act(async () => {
+      test.native.startGate.resolve();
+      await oldStartup;
+      await newStartup;
+    });
+    assert.equal(api.trackingStatus, "tracking");
+    assert.equal(
+      test.native.state.trackingActive,
+      true,
+      "Old STOP cannot disable the new account's sensor",
+    );
+    assert.equal(test.native.handlers.measurement.size, 1);
+  });
   it("mounts stopped in StrictMode, shows START, and reads sensor info without requesting permission", async () => {
     await mount();
     assert.equal(test.native.calls.start, 0);

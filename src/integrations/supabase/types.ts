@@ -1208,6 +1208,19 @@ export type Database = {
           username: string;
         }[];
       };
+      svj_admin_grant_plus: {
+        Args: {
+          p_duration_unit: string;
+          p_duration_value: number;
+          p_granted_by: string;
+          p_sender_label?: string;
+          p_target_user_id: string;
+        };
+        Returns: {
+          expires_at: string | null;
+          grant_id: string;
+        }[];
+      };
       svj_assert_reward_service_role: { Args: never; Returns: undefined };
       svj_cancel_rivalry: { Args: { p_rivalry_id: string }; Returns: Json };
       svj_claim_daily_checkin: {

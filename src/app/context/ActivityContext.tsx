@@ -937,7 +937,10 @@ export function ActivityProvider({
     getSensorInfo,
     statusMessage,
     stepSource,
-    lastSyncedAt: state.lastSyncedAt,
+    lastSyncedAt:
+      remoteLive && remoteLive.steps > (state.today?.steps ?? 0)
+        ? Date.parse(remoteLive.updatedAt)
+        : state.lastSyncedAt,
     history7,
     history30,
     summary7,

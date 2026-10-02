@@ -128,7 +128,14 @@ interface SVJContextType {
   triggerConfetti: () => void;
 }
 
-const SVJContext = createContext<SVJContextType | undefined>(undefined);
+// Keep one context identity across hot reloads so a re-evaluated module never
+// splits providers and consumers onto different context objects.
+const svjGlobal = globalThis as typeof globalThis & {
+  __svjContext?: React.Context<SVJContextType | undefined>;
+};
+const SVJContext =
+  svjGlobal.__svjContext ??
+  (svjGlobal.__svjContext = createContext<SVJContextType | undefined>(undefined));
 
 const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 

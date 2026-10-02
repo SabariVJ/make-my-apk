@@ -50,6 +50,8 @@ interface SVJContextType {
    *  auth — prevents a flash of INITIAL_USER while the session is loading. */
   profileLoaded: boolean;
   storageError: string | null;
+  /** Server-authoritative active Plus entitlement. */
+  plusActive: boolean | null;
   /** Server-authoritative: whether the user has a Plus membership row. */
   isPlusMember: boolean | null;
   /** Server-authoritative: ISO expiry timestamp for timed Plus, null for lifetime. */
@@ -1135,6 +1137,7 @@ export const SVJProvider: React.FC<{
         profileLoaded,
         syncEngagementProfile,
         storageError,
+        plusActive,
         isPlusMember: isPlusMemberProp,
         plusExpiresAt: plusExpiresAtProp,
         challenges,

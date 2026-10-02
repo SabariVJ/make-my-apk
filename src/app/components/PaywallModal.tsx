@@ -23,8 +23,15 @@ function safeFormatDate(iso: string | null): string | null {
 }
 
 export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
-  const { user, isPlusMember, plusExpiresAt, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen } =
-    useSVJ();
+  const {
+    user,
+    plusActive,
+    isPlusMember,
+    plusExpiresAt,
+    isPaywallOpen,
+    setIsPaywallOpen,
+    setIsUPIModalOpen,
+  } = useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [heroFailed, setHeroFailed] = useState(false);
 
@@ -36,7 +43,9 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
   if (!isPaywallOpen) return null;
 
   // ── Server-authoritative membership classification (display only) ──────────
-  const hasActivePlus = user.isPremium === true;
+  const plusExpiryTime = plusExpiresAt ? new Date(plusExpiresAt).getTime() : null;
+  const hasFuturePlusExpiry = plusExpiryTime !== null && plusExpiryTime > Date.now();
+  const hasActivePlus = plusActive === true || (plusActive === null && hasFuturePlusExpiry);
   const hasLifetimePlus = hasActivePlus && isPlusMember === true && plusExpiresAt === null;
   const hasActiveTimedPlus = hasActivePlus && isPlusMember === true && plusExpiresAt !== null;
   const hasExpiredTimedPlus = !hasActivePlus && isPlusMember === true && plusExpiresAt !== null;

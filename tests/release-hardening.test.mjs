@@ -29,6 +29,21 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.doesNotMatch(paywall, /activate your subscription/);
   });
 
+  it("classifies Paywall Plus status from server membership state", async () => {
+    const [context, paywall] = await Promise.all([
+      source("src/app/context/SVJContext.tsx"),
+      source("src/app/components/PaywallModal.tsx"),
+    ]);
+    assert.match(context, /plusActive: boolean \| null/);
+    assert.match(context, /plusActive,/);
+    assert.match(paywall, /plusActive,/);
+    assert.match(paywall, /const hasActivePlus = plusActive === true/);
+    assert.doesNotMatch(paywall, /const hasActivePlus = user\.isPremium === true/);
+    assert.match(paywall, /plusActive === null && hasFuturePlusExpiry/);
+    assert.match(paywall, /SVJ Plus Active/);
+    assert.match(paywall, /Your previous SVJ Plus membership has expired/);
+  });
+
   it("ships a Play Console data-deletion path backed by the real deletion flow", async () => {
     const [route, tree, page, checklist] = await Promise.all([
       source("src/routes/data-deletion.tsx"),

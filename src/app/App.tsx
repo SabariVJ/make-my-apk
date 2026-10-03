@@ -60,7 +60,7 @@ import {
  * lives in the free margin — no reserved gutter needed.
  */
 const PAGE_CONTAINER =
-  "mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4 md:max-w-3xl lg:max-w-5xl lg:px-8 xl:max-w-6xl";
+  "svj-page-gutters mx-auto min-w-0 w-full pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pt-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl";
 
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
@@ -171,7 +171,7 @@ const AppContent: React.FC<{
   if (locked) {
     // ── Restricted post-trial shell ──────────────────────────────────────
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
+      <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
         <Header />
 
         {/* Renders nothing visually — schedules the notification plan. */}
@@ -183,7 +183,7 @@ const AppContent: React.FC<{
             role="dialog"
             aria-modal="true"
             aria-labelledby="trial-expired-title"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
+            className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/95"
           >
             <div className="w-full max-w-sm space-y-5 svj-radius-card svj-elev-3 svj-lit-top border border-white/10 bg-[#17171A] p-6 text-center">
               <h2 id="trial-expired-title" className="font-anton text-xl tracking-wide text-white">
@@ -282,7 +282,7 @@ const AppContent: React.FC<{
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
+    <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
       {/* Top Bar Header */}
       <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
 
@@ -318,6 +318,7 @@ const AppContent: React.FC<{
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
+            className="min-w-0 w-full"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

@@ -188,7 +188,7 @@ export function SVJTimePicker({
 
       {open && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3"
+          className="svj-modal-safe fixed inset-0 z-[100] flex items-center justify-center bg-black/70"
           data-testid={testId ? `${testId}-overlay` : undefined}
         >
           <div

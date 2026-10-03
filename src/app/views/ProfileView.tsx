@@ -472,12 +472,12 @@ export const ProfileView: React.FC = () => {
         </div>
         {/* Transformation Report overlay */}
         {showTransformation && (
-          <div className="fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
+          <div className="svj-fullscreen-safe fixed inset-0 z-50 bg-[#0B0B0C] overflow-y-auto">
             <TransformationReportView />
             <button
               type="button"
               onClick={() => setShowTransformation(false)}
-              className="fixed top-4 right-4 z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
+              className="svj-safe-close fixed z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
             >
               ✕
             </button>
@@ -533,7 +533,7 @@ export const ProfileView: React.FC = () => {
       {/* Log out confirmation dialog (in-app, SVJ-styled) */}
       {showLogoutDialog && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+          className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
           role="presentation"
         >
           <div

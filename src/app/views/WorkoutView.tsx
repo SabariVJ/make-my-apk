@@ -256,7 +256,7 @@ export const WorkoutView: React.FC = () => {
   }
 
   return (
-    <div className="relative space-y-3 lg:space-y-4">
+    <div className="relative min-w-0 w-full space-y-3 lg:space-y-4">
       {/* Hero section — a real, in-flow band with an intentional responsive
           height. The band owns the height (mobile h-20, sm h-28, lg h-36), so
           the cards, tabs, panels and bottom navigation below are pushed down
@@ -310,14 +310,11 @@ export const WorkoutView: React.FC = () => {
         lastSessionLabel={recentStrengthQuery.data ?? null}
       />
 
-      {/* Training modes — one compact control row, pinned below the sticky
-          header on desktop so the working panel never scrolls out of reach.
-          Horizontally scrollable so five destinations fit a narrow phone
-          without shrinking the touch targets. */}
+      {/* All five modes fit the phone width; the sticky offset follows the header. */}
       <div
         role="tablist"
         aria-label="Training sections"
-        className="sticky top-14 z-20 -mx-4 flex gap-1.5 overflow-x-auto bg-[#0B0B0C]/95 px-4 py-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:gap-2"
+        className="sticky top-[var(--svj-header-height)] z-20 grid min-w-0 grid-cols-5 gap-1 bg-[#0B0B0C]/95 py-2 backdrop-blur-md sm:gap-1.5 lg:gap-2"
       >
         {tabs.map((t) => {
           const Icon = t.icon;
@@ -330,14 +327,14 @@ export const WorkoutView: React.FC = () => {
               aria-selected={active}
               aria-controls={`train-panel-${t.id}`}
               data-testid={`train-tab-${t.id}`}
-              className={`flex min-h-[44px] flex-1 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 font-inter text-[13px] font-semibold transition-all cursor-pointer lg:min-h-0 lg:px-3 ${
+              className={`flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 font-inter text-[10px] font-semibold transition-all cursor-pointer sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[13px] lg:px-3 ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
                   : "bg-[#17171A] border-white/8 text-[#8C8C90] hover:text-[#F4F2ED]"
               }`}
             >
-              <Icon className="h-4 w-4" aria-hidden />
-              {t.label}
+              <Icon className="h-4 w-4 shrink-0" aria-hidden />
+              <span className="min-w-0 max-w-full break-words text-center">{t.label}</span>
             </button>
           );
         })}
@@ -396,7 +393,7 @@ export const WorkoutView: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Session name (e.g. Push Day)"
-                className="w-full flex-1 bg-[#17171A] svj-border rounded-xl px-4 py-2.5 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+                className="min-w-0 w-full flex-1 bg-[#17171A] svj-border rounded-xl px-4 py-2.5 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
               />
               <button
                 onClick={() => setExercises((prev) => [...prev, blankExercise()])}
@@ -419,7 +416,7 @@ export const WorkoutView: React.FC = () => {
                       onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
                       placeholder="Exercise name"
                       list="svj-exercise-names"
-                      className="flex-1 bg-transparent border-b border-white/10 pb-1 text-[#F4F2ED] font-inter font-semibold placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+                      className="min-w-0 flex-1 bg-transparent border-b border-white/10 pb-1 text-[#F4F2ED] font-inter font-semibold placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
                     />
                     {exercises.length > 1 && (
                       <button

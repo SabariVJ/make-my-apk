@@ -663,7 +663,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
         </>
       )}
       {selectedMission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+        <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>

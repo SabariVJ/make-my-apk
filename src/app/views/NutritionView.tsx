@@ -990,7 +990,7 @@ export const NutritionView: React.FC = () => {
       </section>
 
       {showBodyProfile && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C] px-4 pb-10 pt-14">
+        <div className="svj-safe-screen fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C]">
           <BodyProfileView />
           <button
             type="button"
@@ -998,7 +998,7 @@ export const NutritionView: React.FC = () => {
               setShowBodyProfile(false);
               void refresh();
             }}
-            className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            className="svj-safe-close fixed z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
             aria-label="Close body profile"
           >
             <X className="h-5 w-5" />

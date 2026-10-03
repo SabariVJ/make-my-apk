@@ -56,7 +56,8 @@ describe("primary navigation is five destinations", () => {
   });
 
   it("keeps the floating glass dock positioning and clearance intact", () => {
-    assert.match(navigation, /fixed bottom-0 left-0 right-0/);
+    assert.match(navigation, /fixed bottom-0 left-0/);
+    assert.match(navigation, /w-full max-w-full overflow-x-clip/);
     // The dock floats inset from the edges and clears the gesture bar using
     // the same env(safe-area-inset-bottom) pattern as the page container.
     assert.match(navigation, /svj-glass-dock/);
@@ -229,14 +230,14 @@ describe("mobile responsiveness", () => {
 describe("layout safety for the rail", () => {
   it("scales and centers content symmetrically at every breakpoint", () => {
     // One shared container owns the page padding and scales progressively:
-    // phones full-bleed px-4, sm px-6, then symmetric mx-auto caps — no
+    // safe-area gutters on phones, then symmetric mx-auto caps — no
     // one-sided reservation anywhere (the rail is a floating pill in the margin).
     assert.match(app, /const PAGE_CONTAINER =/);
-    assert.match(app, /sm:px-6/);
+    assert.match(app, /svj-page-gutters/);
     assert.match(app, /md:max-w-3xl/);
-    assert.match(app, /lg:max-w-5xl lg:px-8/);
+    assert.match(app, /lg:max-w-5xl/);
     assert.match(app, /xl:max-w-6xl/);
-    assert.match(app, /mx-auto w-full/);
+    assert.match(app, /mx-auto min-w-0 w-full/);
     assert.doesNotMatch(app, /pr-28/);
     assert.doesNotMatch(app, /PAGE_CONTAINER_DESKTOP/);
   });

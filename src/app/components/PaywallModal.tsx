@@ -93,7 +93,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-y-auto">
+      <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

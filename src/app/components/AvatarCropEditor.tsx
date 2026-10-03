@@ -194,7 +194,7 @@ export const AvatarCropEditor: React.FC<AvatarCropEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+    <div className="svj-modal-safe fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md">
       <div className="svj-radius-card svj-elev-3 svj-lit-top w-full max-w-md border border-white/10 bg-[#17171A] p-4">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>

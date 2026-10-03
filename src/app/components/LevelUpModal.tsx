@@ -44,7 +44,7 @@ export const LevelUpModal: React.FC = () => {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/90" />
           <Dialog.Content
-            className="fixed inset-0 z-[60] overflow-y-auto bg-[#0B0B0C] font-inter text-[#F5F5F5] outline-none"
+            className="svj-fullscreen-safe fixed inset-0 z-[60] overflow-y-auto bg-[#0B0B0C] font-inter text-[#F5F5F5] outline-none"
             style={{ letterSpacing: 0 }}
           >
             <Dialog.Title className="sr-only">
@@ -58,7 +58,7 @@ export const LevelUpModal: React.FC = () => {
             <Dialog.Close
               aria-label="Close level-up celebration"
               title="Close level-up celebration"
-              className="fixed right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-[#A4A4AA] hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              className="svj-safe-close fixed z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-[#A4A4AA] hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </Dialog.Close>

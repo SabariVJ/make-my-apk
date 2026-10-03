@@ -85,7 +85,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+      <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-lg">
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

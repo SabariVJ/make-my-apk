@@ -63,7 +63,8 @@ describe("one shared page container owns padding and nav clearance", () => {
   it("defines the container once and scales it symmetrically", () => {
     assert.ok(app.includes("const PAGE_CONTAINER ="));
     assert.ok(app.includes("md:max-w-3xl"));
-    assert.ok(app.includes("lg:max-w-5xl lg:px-8"));
+    assert.ok(app.includes("lg:max-w-5xl"));
+    assert.ok(app.includes("svj-page-gutters"));
     assert.ok(app.includes("xl:max-w-6xl"));
     // A single bottom-navigation clearance that also respects the device safe area.
     assert.ok(app.includes("pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"));
@@ -88,7 +89,8 @@ describe("one shared page container owns padding and nav clearance", () => {
   });
 
   it("keeps the rail and bottom navigation tokens intact", () => {
-    assert.match(navigation, /fixed bottom-0 left-0 right-0/);
+    assert.match(navigation, /fixed bottom-0 left-0/);
+    assert.match(navigation, /w-full max-w-full overflow-x-clip/);
     // The bottom navigation is now the floating glass dock.
     assert.match(navigation, /svj-glass-dock/);
     assert.match(utilityNav, /fixed right-0 top-1\/2/);
@@ -157,7 +159,8 @@ describe("Train is dense without losing any ability", () => {
   });
 
   it("keeps the tab row compact and pinned below the sticky header", () => {
-    assert.ok(train.includes('className="sticky top-14 z-20'));
+    assert.ok(train.includes('className="sticky top-[var(--svj-header-height)] z-20'));
+    assert.ok(train.includes("grid-cols-5"));
     assert.ok(train.includes("min-h-[44px]"));
   });
 
@@ -267,7 +270,7 @@ describe("Plus, Profile, Community and Leaderboard use desktop width", () => {
 
   it("keeps Character Matrix in Profile and pairs the trailing cards", () => {
     assert.match(profile, /Character Matrix/i);
-    assert.ok(profile.includes("grid items-start gap-3 lg:grid-cols-2"));
+    assert.ok(profile.includes("grid items-start gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)]"));
   });
 
   it("never reintroduces in-app notification permission controls", () => {

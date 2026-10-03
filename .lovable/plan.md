@@ -1,99 +1,69 @@
-# SVJ detailed upgrade roadmap (stability first, long-term vision)
+# SVJ fix-everything plan (detailed, stability first)
 
-Existing surfaces reviewed: Activity (steps, GPS, routes, history), Train (strength, goals, recovery, plan, templates, records), Fuel (nutrition), Community (friends, rivalry, leaderboard, challenges), 60-Day Challenge, Rewards/Earn Plus, Profile/Body profile, Connected Devices, Wear OS, Admin, Support, Trial/Plus/UPI.
-
-Each item lists: what the user sees, what changes behind it, effort (S=1-2 days, M=3-5, L=1-2 weeks), and done-when.
+Goal: every known problem fixed or clearly handed off, before any new features. Work runs in the order below. Each step says what you will notice, what changes, and how it is checked.
 
 ---
-## PHASE 0 - Stability (weeks 1-2)
+## Step 1 - Known broken items (fix first)
 
-| # | Item | Detail | Effort | Done when |
-|---|------|--------|--------|-----------|
-| 0.1 | App-owned Android step plugin | Native step-counter reader with saved baseline, reboot/midnight/duplicate handling, timeout message "Waiting for step sensor", Activity diagnostics card (permission, sensor, listener, raw, daily, last error). Health Connect as secondary source, never added on top. iOS keeps current plugin. | L | Real tablet shows positive steps after walking. Needs user's Android toolchain. |
-| 0.2 | Live step sync verification | Add "Synced 5s ago" label and offline retry on the website; confirm phone-to-web within 3s on a real phone. Display only, never XP. | S | Walk with phone, web count rises without reload |
-| 0.3 | Fix 2 failing tests | Desktop-width test (Plus/Profile/Community/Leaderboard) and support ticket UI test. | S | Test suite fully green |
-| 0.4 | End-to-end checks of untested flows | Admin grant Plus, Plus gift claim, trial expiry gate, UPI/WhatsApp fallback, Earn Plus mission flow (claims stay off). | M | Each flow run with a real account, results logged |
-| 0.5 | Error and loading consistency | One shared "could not load, retry" and skeleton pattern for every tab; per-tab error boundary so one crash never blanks the app; audit leftover context-crash risk. | M | No tab can blank the whole app |
-| 0.6 | Storage and offline safety | Extend the quota-safe cache to all local state; workout queue retry status visible ("3 sessions waiting to sync"). | S | No storage quota errors |
-| 0.7 | Security pass | Security scan, database linter, RLS and grants review on all svj_* tables (including live steps), admin checks always via role lookup. | S | Scan clean or findings justified |
-| 0.8 | Performance | Lazy-load heavy views (maps, charts), image sizes for hero assets, measure first-load time. | M | Faster first open on mid-range Android |
+| # | Problem | Fix | Checked by |
+|---|---------|-----|-----------|
+| 1.1 | Android tablet does not count steps on its own | Rewrite the phone step reader as SVJ's own code: reads the hardware step counter, remembers a starting point, handles restart, midnight and reboot, never double counts. Shows "Waiting for step sensor" if nothing arrives in 10 s. Health Connect used only as a backup, never added on top. | Code tests here; real proof needs you to install the new app and walk |
+| 1.2 | Step diagnostics are hard to read | One "Step tracking status" card on Activity: permission, sensor found, listening, raw count, today's count, last error, with a "Fix" button for each problem | Screenshot check |
+| 1.3 | Phone-to-website steps sync untested | Add "Synced 5s ago" label, retry when offline, stop syncing when the app closes | Test with a signed-in account; real phone check by you |
+| 1.4 | Two failing checks (desktop width on Plus/Profile/Community/Leaderboard, support ticket screen) | Find why each fails, fix the screen or the outdated check | Full test suite green |
+| 1.5 | Admin "Grant Plus" and "Claim Plus gift" never tried in the app | Run both with a real account, fix anything that breaks | Plus shows as active for the user |
+| 1.6 | Blank screens after live preview refreshes ("must be used within ... provider") | Check every shared data source has the same protection already added to three of them; add a safety screen per tab so one crash never blanks the whole app | Force an error in each tab; only that tab shows "Something went wrong, retry" |
 
 ---
-## PHASE 1 - Upgrade existing features (weeks 3-8)
+## Step 2 - Flows that were never tested end to end
+Each is run signed in, with real data, and results written down:
+- Sign in with Google (website and phone deep link), sign out, sign in again.
+- 7-day trial: start, countdown, expiry screen, Plus unlock.
+- UPI payment screen: QR shows, WhatsApp button, copy number, email fallback.
+- Earn Plus: missions, XP progress, claim stays switched off as decided.
+- Friends: send, accept, remove; rivalry create, cancel; notifications.
+- Workouts: log, template, history, offline queue sends later.
+- Nutrition: add meal, delete, daily totals, photo scan limit.
+- 60-Day Challenge: complete a day, missed day, progress kept.
+- Support ticket: create, admin replies, status updates.
+- Live Share link: start, open link signed out, stop, link shows "Sharing has ended".
 
-### A. Activity and steps
-- A1 Step goal and ring (S): daily goal (default 8,000, adjustable), progress ring on Home/Activity, goal-hit celebration, 7-day streak. Needs a goal field on the profile.
-- A2 Weekly report (M): Monday summary card: steps, active minutes, distance, best day vs. last week.
-- A3 GPS recording polish (M): auto-pause, lap/split times, pace and elevation chart, screen-off reliability tips.
-- A4 Route sharing and segments (L): share a route to friends, segment leaderboards (tables already exist).
-- A5 Wear OS heart rate (M): show live heart rate and zones on phone during a workout; post-workout zone summary.
-- A6 Device hub (S): Connected Devices shows each source, last sync, and a one-tap fix for permission issues.
-
-### B. Training
-- B1 Progressive overload (L): after each session suggest next weight/reps from last performance and effort rating; explain why ("you hit all reps at RPE 7"). Builds on the existing deterministic engine, no AI.
-- B2 Deload and recovery link (M): auto-suggest a lighter week when readiness is low for several days.
-- B3 Workout-in-progress tools (M): rest timer with vibration, plate calculator, superset grouping, per-exercise notes.
-- B4 PR celebrations (S): confetti and share card on a new personal record; PR timeline on Records.
-- B5 Plan flexibility (M): swap exercise for equipment at hand, move/skip a session with reason, reschedule missed sessions.
-- B6 Exercise guidance (M): short cue text and muscle diagram per exercise; optional video links.
-
-### C. Nutrition
-- C1 Fast logging (M): recent and favorite foods, "copy yesterday", meal presets.
-- C2 Barcode scan (M): scan packaged food via camera, look up an open food database.
-- C3 Macros and water (M): protein/carbs/fat targets, water tracker, weekly trend vs. target.
-- C4 Training-aware targets (S): higher calorie/protein suggestion on heavy training days.
-- C5 Scan quota clarity (S): show remaining daily photo scans and what Plus unlocks.
-
-### D. Recovery and body
-- D1 Readiness on Today (S): one score with top reason ("sleep low, soreness high").
-- D2 10-second check-in (S): sleep, soreness, mood sliders with reminders.
-- D3 Body progress (M): weight and measurement trends, progress photos (private), before/after compare inside the Transformation report.
-
-### E. Social and motivation
-- E1 Friend activity feed (M): workouts, PRs, streaks with reactions.
-- E2 Rivalry upgrades (M): head-to-head history, rematch button, lead-change notifications.
-- E3 Group challenges (L): create a challenge with friends (steps, workouts, XP), live board, winner badge.
-- E4 Weekly leagues (M): leaderboard tiers with promotion and relegation each week.
-- E5 60-Day Challenge polish (S): daily recap, missed-day recovery rules, finish certificate card.
-- E6 Reward clarity (S): one "How XP works" screen, XP history by source.
+Anything broken here becomes a fix in this step.
 
 ---
-## PHASE 2 - Growth and monetization (weeks 9-14)
-- G1 Guided onboarding (M): 60-second setup (goal, experience, days, equipment, step goal) ending in a personalized first-week plan and first task.
-- G2 Trial journey (M): day 1, 3, 6 in-app cards showing achievements so far and the Plus benefits; expiry reminder.
-- G3 Plus value page (S): clear comparison, real feature previews, Earn Plus path shown as an alternative.
-- G4 Automated payment (L): replace manual UPI + WhatsApp activation with a payment provider so Plus activates automatically. Provider choice needed at build time (Razorpay for India vs. Stripe/Paddle).
-- G5 Referral program (M): invite link, both get Plus days after friend completes first workout; abuse limits server-side.
-- G6 Smart notifications (M): usual-workout-time reminders, streak-at-risk, friend/rivalry events, quiet hours (builds on existing notification system).
-- G7 Admin analytics (M): funnel (install, signup, trial, activation, paid), retention, support queue, Plus grants log.
-- G8 Support (S): in-app FAQ, ticket status push.
+## Step 3 - Reliability everywhere
+- One shared "Could not load - Retry" message and loading placeholder on every tab.
+- Phone storage safety for all saved data (same protection already used for the leaderboard).
+- Visible "3 workouts waiting to sync" when offline.
+- Clear, friendly messages instead of raw errors (no technical text shown to users).
 
 ---
-## PHASE 3 - Long-term vision (months 4-8)
-- V1 AI coach (L): weekly plain-language review from training, nutrition, sleep and steps; ask-a-question chat; server-side with Lovable AI; never changes XP.
-- V2 Food photo logging with AI estimate and user correction (L).
-- V3 Health platform sync (L): Apple Health and Health Connect two-way; Garmin/Fitbit import.
-- V4 Clubs (L): communities with coach programs, events, club leaderboards.
-- V5 Coach marketplace / paid programs (L).
-- V6 Localization (M): Hindi, Tamil, others; unit and currency settings.
-- V7 Public shareable profile and progress cards (M).
-- V8 Full offline-first mode with background sync (L).
+## Step 4 - Security and data safety
+- Run the security scan and database checks; fix or explain each finding.
+- Confirm every table only lets people see their own private data.
+- Admin powers checked only through the admin role list, never from the device.
+- XP, rewards, memberships, friendships and rivalry history are never reset.
 
 ---
-## Order of delivery
-```text
-Phase 0 (all) -> A1,B4,D1,C1 (quick wins) -> B1,B2,A2 -> E1-E2 -> G1,G2,G6 -> G4,G5 -> E3,E4 -> Phase 3
-```
+## Step 5 - Speed
+- Load maps and charts only when opened.
+- Shrink large pictures.
+- Measure first open time before and after on a mid-range phone size.
 
-## Rules for every item
-- XP, rewards, memberships, friendships, rivalry history are never reset; database changes are additive.
-- XP and rewards stay server-authoritative; synced display data never feeds rewards.
-- Each item ships with tests and a flag or safe fallback where it changes existing behavior.
+---
+## Step 6 - Hand-off for things only you can do
+A short checklist for your computer: build the phone app, install on the tablet, walk 100 steps, send the status card screenshot and step log. Results decide whether 1.1 is fully done.
 
-## Technical notes
-- Native Java/Kotlin work (0.1, A5, V3) cannot be built in this sandbox; user builds with `bun run build`, `bunx cap sync android`, `./gradlew assembleDebug`, `adb logcat`.
-- New server logic via `createServerFn`; every new table gets grants and RLS in the same migration; realtime channels cleaned up on unmount.
-- Payment (G4) and AI (V1, V2) need provider decisions when started.
+---
+## What will not be done here
+- Building the phone app file itself (needs Android tools on your computer).
+- Real-phone walking tests.
+- New features (step goals, weekly reports, coach, payments) wait until Steps 1-5 are green.
 
-## On approval
-Begin Phase 0 items 0.3-0.8 (buildable here) and write the native plugin code for 0.1 for the user to build and test; then quick wins A1, B4, D1, C1.
+## Technical details
+- 1.1: Capacitor plugin `VjPedometerPlugin` reworked around `SensorManager` `TYPE_STEP_COUNTER`, state in SharedPreferences (baseline, lastRaw, dateKey, bootCount), pure-Java state class with unit tests; `ActivityContext` uses it on Android, existing plugin kept for iOS.
+- 1.3: `liveSteps.ts` exposes `updatedAt`; retry on reconnect; channel removed on unmount.
+- 1.6: audit all React contexts for `globalThis` stabilization; per-tab error boundary in `App.tsx`.
+- 2: Playwright with minted session; findings logged in `RELEASE_SPRINT_STATUS.md`.
+- 4: security scan + linter; RLS/grant review on all `svj_*` tables including `svj_live_daily_steps`.
+- Checks each step: `bunx tsgo --noEmit`, `bun run test`, build log.

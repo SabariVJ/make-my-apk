@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>SVJBuildRevision</key>
+    <string>$(SVJ_BUILD_REVISION)</string>
+    <key>SVJNativeCapabilityVersion</key>
+    <integer>2</integer>
     <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -34,7 +38,11 @@
 		</dict>
 	</array>
 	<key>NSMotionUsageDescription</key>
-	<string>SVJ counts your steps and walking distance during an activity tracking session you start.</string>
+	<string>SVJ reads your daily steps and counts steps during workouts when you enable tracking.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SVJ records your route during a workout you start, including while the screen is locked. Finish the workout to stop recording.</string>
+	<key>UIBackgroundModes</key>
+	<array><string>location</string></array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -42,7 +42,9 @@ test("the Activity tab exists between Challenges and Train", () => {
 });
 
 test("the app routes the Activity tab and mounts the tracking provider", () => {
-  assert.match(app, /import \{ ActivityView \} from "\.\/views\/ActivityView"/);
+  assert.match(app, /import\("\.\/views\/ActivityView"\)/);
+  assert.match(app, /default: module\.ActivityView/);
+  assert.match(app, /<Suspense/);
   assert.match(app, /import \{ ActivityProvider \} from "\.\/context\/ActivityContext"/);
   // Routed to the same ActivityView; the founder-only recovery rollout hides
   // the inner Recovery section (the default false keeps everyone else intact).

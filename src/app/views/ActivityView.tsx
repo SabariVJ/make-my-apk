@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { StepTrackingStatus } from "../components/StepTrackingStatus";
 import { motion } from "motion/react";
 import {
   Activity as ActivityIcon,
@@ -196,51 +197,58 @@ const ActivityViewContent: React.FC<{
           </div>
           <h1 className="font-anton text-2xl tracking-wide text-white">Activity</h1>
         </div>
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
-            trackingStatus === "tracking"
-              ? "bg-emerald-500/10 text-emerald-400"
-              : trackingStatus === "starting"
-                ? "bg-gold/10 text-gold"
-                : "bg-white/[0.04] text-[#8C8C90]"
-          }`}
-        >
-          {trackingStatus === "tracking" ? (
-            <Watch className="w-3.5 h-3.5" />
-          ) : (
-            <ActivitySquare className="w-3.5 h-3.5" />
-          )}
-          {trackingActive ? "Tracking active" : "Tracking stopped"}
-        </div>
+        {activity.dailyTracking?.state?.version !== 2 && (
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
+              trackingStatus === "tracking"
+                ? "bg-emerald-500/10 text-emerald-400"
+                : trackingStatus === "starting"
+                  ? "bg-gold/10 text-gold"
+                  : "bg-white/[0.04] text-[#8C8C90]"
+            }`}
+          >
+            {trackingStatus === "tracking" ? (
+              <Watch className="w-3.5 h-3.5" />
+            ) : (
+              <ActivitySquare className="w-3.5 h-3.5" />
+            )}
+            {trackingActive ? "Tracking active" : "Tracking stopped"}
+          </div>
+        )}
       </div>
 
       {/* Always visible: the Activity screen must never be silently stuck. */}
-      <p
-        role="status"
-        className="mb-3 rounded-lg bg-[#0b0b0c] border border-white/[0.04] px-3 py-2 text-[11px] font-inter text-[#8C8C90]"
-      >
-        {statusMessage}
-      </p>
-      <button
-        type="button"
-        disabled={trackingStatus === "stopping" || trackingStatus === "update-required"}
-        onClick={() => {
-          if (trackingRequested || trackingActive || trackingStatus === "error")
-            void stopTracking();
-          else void startTracking();
-        }}
-        className="mb-3 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
-      >
-        {trackingStatus === "update-required"
-          ? "APP UPDATE REQUIRED"
-          : trackingStatus === "error"
-            ? "RETRY STOP"
-            : trackingRequested || trackingActive
-              ? "STOP TRACKING"
-              : "START TRACKING"}
-      </button>
+      {activity.dailyTracking?.state?.version !== 2 && (
+        <>
+          <p
+            role="status"
+            className="mb-3 rounded-lg bg-[#0b0b0c] border border-white/[0.04] px-3 py-2 text-[11px] font-inter text-[#8C8C90]"
+          >
+            {statusMessage}
+          </p>
+          <button
+            type="button"
+            disabled={trackingStatus === "stopping" || trackingStatus === "update-required"}
+            onClick={() => {
+              if (trackingRequested || trackingActive || trackingStatus === "error")
+                void stopTracking();
+              else void startTracking();
+            }}
+            className="mb-3 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
+          >
+            {trackingStatus === "update-required"
+              ? "APP UPDATE REQUIRED"
+              : trackingStatus === "error"
+                ? "RETRY STOP"
+                : trackingRequested || trackingActive
+                  ? "STOP TRACKING"
+                  : "START TRACKING"}
+          </button>
+        </>
+      )}
 
       {/* Train internal navigation: only working sections are exposed. */}
+      <StepTrackingStatus />
       <div className="mb-3 flex flex-wrap gap-2 pb-1" data-testid="train-sections">
         {(
           [

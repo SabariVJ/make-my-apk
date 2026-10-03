@@ -165,12 +165,12 @@ describe("offline workout queue", () => {
     );
   });
 
-  it("is bounded so a corrupt store cannot grow without limit", () => {
+  it("retains every unsynced workout above the former warning threshold", () => {
     let queue: QueuedWorkout[] = [];
     for (let i = 0; i < MAX_QUEUED_WORKOUTS + 5; i += 1) {
       queue = enqueueWorkout(queue, entry(USER_A, `session-${i.toString().padStart(8, "0")}`));
     }
-    assert.equal(queue.length, MAX_QUEUED_WORKOUTS);
+    assert.equal(queue.length, MAX_QUEUED_WORKOUTS + 5);
   });
 
   it("separates a retryable network failure from a permanent validation error", () => {

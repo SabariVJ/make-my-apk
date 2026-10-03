@@ -129,7 +129,8 @@ describe("CI release validation", () => {
 
   it("keeps the debug artifacts alongside the release bundles", () => {
     const y = ci();
-    assert.match(y, /svj-phone-debug-apk/);
+    assert.match(y, /svj-phone-validation-apk/);
+    assert.match(y, /SVJ-validated-phone-artifacts/);
     assert.match(y, /svj-wear-debug-apk/);
     assert.match(y, /svj-phone-release-aab/);
     assert.match(y, /svj-wear-release-aab/);

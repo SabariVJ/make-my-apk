@@ -1,5 +1,47 @@
 # SVJ Android Release-Hardening Sprint
 
+## Android/iPhone tracking repair — 2026-10-04
+
+Work branch: `codex/native-tracking-stability`, based on release commit
+`68195d06d2baabf0565be3e10a847186ce75a6e2`. Native capability version: **2**.
+Validation is in progress; the older sprint results below are historical.
+
+| Known issue             | Repair and current evidence                                                                                                                                                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| iPhone daily steps      | App-owned Core Motion bridge queries today's history on enable/open/resume/day rollover. Daily totals do not become workout rewards. Device walk remains owner verification.                                                                          |
+| Android automatic steps | Independent health foreground service, explicit Enable and notification Stop, per-account atomic counters/history, reboot and midnight handling. Java counter and persistence tests pass locally.                                                     |
+| Background GPS          | iPhone Core Location/background capability added; Android journal persists each point before WebView notification. Recreated UI replays sequences with the same workout identity. Android native tests/build pass; Mac device compilation pending CI. |
+| Diagnostics/sync        | One readable Activity card, delayed-sensor status, measurement time and successful sync time. Offline/foreground retries use account-bound tokens and cancel on background/account changes. Live totals preserve the maximum across devices.          |
+| Pending recordings      | GPS and strength queues retain every pending workout. Wrong-account/ambiguous legacy entries remain on the device. Native completed journals can reconstruct a lost browser queue. Failed storage/commands never report success.                      |
+| Live Share              | Starting sharing no longer finishes the workout. Additive RPC stores a recording reference independently of canonical activities/rewards. Stop confirmation errors remain visible.                                                                    |
+| Screen stability/layout | Tracking coordinators remain outside tab boundaries. Shared Retry boundary covers normal and restricted tabs. Chromium/WebKit geometry checks pass across 9 widths and 2 landscape sizes; admin has no horizontal scrolling.                          |
+| Reported failing checks | Current full web suite: 1606 tests, 1604 passed, 0 failed, 2 pre-existing skips. iPhone regressions: 71 passed. Meaningful assertions retained; static import guards updated for lazy imports.                                                        |
+| Plus/support/security   | New disposable local Supabase browser/API suite exercises real authenticated services, grants/claims, support replies, private reads and canonical retry behavior. CI execution and database lint pending. No writes to the production database.      |
+| Speed                   | Screens load on demand. Before/after route bundle baseline recorded; controlled browser timing and asset review pending.                                                                                                                              |
+
+### Delivery gates and owner-only follow-ups
+
+- `SVJ-validated-phone-artifacts` is uploaded only after web, database, browser,
+  Android phone/watch/release and iPhone checks succeed for the same commit.
+- Package contains APK, AAB, **unsigned IPA**, SHA256SUMS and build metadata.
+  Android production upload identity is used only when existing credentials are
+  available; an ephemeral validation identity is labeled and blocks Play release.
+- No emulator or simulator smoke jobs run.
+- The native wrappers still load `https://savaje-com.lovable.app`. Publish the
+  new web revision separately in Lovable after validation; no hosted publish is
+  performed by this work.
+- Reconcile/apply the two new additive migrations using the normal production
+  change process. Deployed-schema comparison requires owner database access;
+  isolated migration/RLS evidence does not prove production schema parity.
+- Physical verification: enable daily steps, walk 100 steps, lock during an
+  outdoor workout, pause/resume, reopen, finish offline, reconnect, and compare
+  website history. Send the Activity status screenshot if any reading fails.
+- Google provider login/deep-link proof requires the configured provider and
+  an installed signed wrapper. WhatsApp/email/payment handoffs are checked
+  without sending messages or making payments; actual handoff is owner proof.
+
+---
+
 ## Final Status
 
 | Phase                             | Status  | Changed Files                                                                                     |

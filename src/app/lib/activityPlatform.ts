@@ -647,7 +647,11 @@ export interface LiveShare {
 
 export function normalizeLiveShare(raw: unknown): LiveShare {
   if (!isRecord(raw)) return { active: false };
-  if (raw.active !== true) return { active: false };
+  if (
+    raw.active !== true &&
+    !(raw.active == null && raw.ok === true && typeof raw.token === "string")
+  )
+    return { active: false };
   return {
     active: true,
     token: str(raw.token) ?? undefined,
@@ -663,6 +667,23 @@ export function normalizeLiveShare(raw: unknown): LiveShare {
     lastDistanceMeters: num(raw.lastDistanceMeters ?? raw.distanceMeters),
     batteryPercent: num(raw.batteryPercent),
   };
+}
+
+export async function startRecordingLiveShare(
+  client: RpcClient,
+  recordingId: string,
+  activityType: GpsActivityType,
+): Promise<{ ok: boolean; share?: LiveShare; error?: string }> {
+  const result = await call(client, "svj_start_recording_live_share", {
+    p_recording_id: recordingId,
+    p_activity_type: activityType,
+    p_ttl_minutes: 180,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+  const share = normalizeLiveShare(result.data);
+  return share.active && share.token
+    ? { ok: true, share }
+    : { ok: false, error: "Could not start sharing. Update the hosted app and retry." };
 }
 
 export async function startLiveShare(

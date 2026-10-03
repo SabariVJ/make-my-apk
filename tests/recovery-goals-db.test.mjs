@@ -104,9 +104,9 @@ const goalEvents = async (userId) =>
 
 const dayKey = (offset) => {
   const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
+  d.setUTCDate(d.getUTCDate() + offset);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
   ).padStart(2, "0")}`;
 };
 

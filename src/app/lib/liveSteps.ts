@@ -1,6 +1,4 @@
-// Live step mirror: the Android app publishes today's step count, and any
-// web session for the same account receives it instantly over Realtime.
-// Display-only — XP and rewards never read this table.
+// Display-only daily mirror. Never used by reward or XP processing.
 import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase, hasSupabaseConfig } from "@/integrations/supabase/client";
@@ -12,93 +10,138 @@ export interface LiveSteps {
   updatedAt: string;
 }
 
-const PUBLISH_INTERVAL_MS = 3000;
-
-/** True when the client supports table writes and Realtime (absent in some test doubles). */
-function liveClientReady(): boolean {
-  const client = supabase as unknown as Record<string, unknown> | null;
-  return (
-    hasSupabaseConfig() &&
-    !!client &&
-    typeof client["from"] === "function" &&
-    typeof client["channel"] === "function"
-  );
-}
-
-/** Phone side: push today's total (throttled) whenever it changes. */
 export function usePublishLiveSteps(
   userId: string | null,
   dateKey: string | null,
   steps: number,
   distanceMeters: number,
-) {
-  const lastSent = useRef<{ key: string; steps: number } | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ dateKey, steps, distanceMeters });
-  latest.current = { dateKey, steps, distanceMeters };
-
+): number | null {
+  const latest = useRef({ userId, dateKey, steps, distanceMeters });
+  latest.current = { userId, dateKey, steps, distanceMeters };
+  const [lastSuccessfulSyncAt, setLastSuccessfulSyncAt] = useState<number | null>(null);
   useEffect(() => {
-    if (!userId || !dateKey || !(Capacitor.getPlatform() !== "web") || !liveClientReady()) return;
-    const sent = lastSent.current;
-    if (sent && sent.key === dateKey && sent.steps === steps) return;
-    if (timer.current) return; // a send is already scheduled; it reads the latest values
-    timer.current = setTimeout(async () => {
-      timer.current = null;
+    setLastSuccessfulSyncAt(null);
+    if (!userId || !dateKey || !Capacitor.isNativePlatform() || !hasSupabaseConfig()) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let controller: AbortController | null = null;
+    let sent = "";
+    let attempts = 0;
+    const schedule = (delay = 3000) => {
+      if (cancelled || document.hidden || navigator.onLine === false || timer || controller) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void publish();
+      }, delay);
+    };
+    const publish = async () => {
       const v = latest.current;
-      if (!v.dateKey) return;
+      if (
+        cancelled ||
+        document.hidden ||
+        navigator.onLine === false ||
+        v.userId !== userId ||
+        v.dateKey !== dateKey
+      )
+        return;
+      const key = `${userId}:${dateKey}:${v.steps}:${v.distanceMeters}`;
+      if (key === sent) return;
+      controller = new AbortController();
       try {
-        const { error } = await supabase.from("svj_live_daily_steps").upsert({
-          user_id: userId,
-          date_key: v.dateKey,
-          steps: Math.max(0, Math.round(v.steps)),
-          distance_meters: Math.max(0, v.distanceMeters),
-          source: Capacitor.getPlatform(),
-          updated_at: new Date().toISOString(),
-        });
-        if (!error) lastSent.current = { key: v.dateKey, steps: v.steps };
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user.id !== userId || cancelled || document.hidden) return;
+        const { error } = await supabase
+          .from("svj_live_daily_steps")
+          .upsert({
+            user_id: userId,
+            date_key: dateKey,
+            steps: Math.max(0, Math.min(200000, Math.round(v.steps))),
+            distance_meters: Math.max(0, v.distanceMeters),
+            source: Capacitor.getPlatform(),
+            updated_at: new Date().toISOString(),
+          })
+          .setHeader("Authorization", `Bearer ${data.session.access_token}`)
+          .abortSignal(controller.signal);
+        if (error) throw error;
+        if (!cancelled) {
+          sent = key;
+          attempts = 0;
+          setLastSuccessfulSyncAt(Date.now());
+        }
       } catch {
-        // Display-only mirror: a failed publish is retried on the next change.
+        attempts = Math.min(5, attempts + 1);
+      } finally {
+        controller = null;
+        schedule(Math.min(60000, 3000 * 2 ** attempts));
       }
-    }, PUBLISH_INTERVAL_MS);
-  }, [userId, dateKey, steps, distanceMeters]);
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
+    };
+    const wake = () => {
+      if (document.hidden) {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        controller?.abort();
+      } else schedule(0);
+    };
+    const poll = setInterval(() => schedule(), 3000);
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", wake);
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      controller?.abort();
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("online", wake);
+    };
+  }, [userId, dateKey]);
+  return lastSuccessfulSyncAt;
 }
 
-/** Web side: today's live total from the phone, updated in real time. */
 export function useRemoteLiveSteps(userId: string | null): LiveSteps | null {
   const [live, setLive] = useState<LiveSteps | null>(null);
-
+  const [day, setDay] = useState(() => dateKeyOf(new Date()));
   useEffect(() => {
-    if (!userId || Capacitor.getPlatform() !== "web" || !liveClientReady()) return;
+    const checkDay = () => setDay(dateKeyOf(new Date()));
+    const timer = setInterval(checkDay, 10000);
+    document.addEventListener("visibilitychange", checkDay);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", checkDay);
+    };
+  }, []);
+  useEffect(() => {
+    setLive(null);
+    if (!userId || Capacitor.getPlatform() !== "web" || !hasSupabaseConfig()) return;
     let cancelled = false;
-    const today = () => dateKeyOf(new Date());
     const apply = (
       row: { date_key: string; steps: number; distance_meters: number; updated_at: string } | null,
     ) => {
-      if (cancelled || !row || row.date_key !== today()) return;
+      if (cancelled || !row || row.date_key !== day) return;
       setLive({
         steps: Number(row.steps) || 0,
         distanceMeters: Number(row.distance_meters) || 0,
         updatedAt: row.updated_at,
       });
     };
-
-    void supabase
-      .from("svj_live_daily_steps")
-      .select("date_key, steps, distance_meters, updated_at")
-      .eq("user_id", userId)
-      .eq("date_key", today())
-      .maybeSingle()
-      .then(({ data }) => apply(data));
-
+    const read = () => {
+      void supabase
+        .from("svj_live_daily_steps")
+        .select("date_key, steps, distance_meters, updated_at")
+        .eq("user_id", userId)
+        .eq("date_key", day)
+        .maybeSingle()
+        .then(
+          ({ data }) => apply(data),
+          () => undefined,
+        );
+    };
+    const wake = () => {
+      if (!document.hidden) read();
+    };
+    read();
     const channel = supabase
-      .channel(`live-steps-${userId}`)
+      .channel(`live-steps-${userId}-${day}`)
       .on(
         "postgres_changes",
         {
@@ -110,12 +153,14 @@ export function useRemoteLiveSteps(userId: string | null): LiveSteps | null {
         (payload) => apply(payload.new as Parameters<typeof apply>[0]),
       )
       .subscribe();
-
+    window.addEventListener("online", wake);
+    document.addEventListener("visibilitychange", wake);
     return () => {
       cancelled = true;
       void supabase.removeChannel(channel);
+      window.removeEventListener("online", wake);
+      document.removeEventListener("visibilitychange", wake);
     };
-  }, [userId]);
-
+  }, [userId, day]);
   return live;
 }

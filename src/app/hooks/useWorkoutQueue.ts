@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withAccountRpcClient } from "../lib/accountSync";
 import { saveStrengthActivity, type StrengthSaveOutcome } from "../lib/strength";
-import { strengthRpcClient } from "../lib/strengthClient";
-import { recordTrainingContext, trainingRpcClient } from "../lib/trainingClient";
+import { recordTrainingContext } from "../lib/trainingClient";
 import { syncTrainingDecisions } from "../lib/trainingDecisionSync";
 import { TRAINING_POLICY_VERSION } from "../lib/trainingPolicy";
-import { processActivityRewards, rewardsRpcClient } from "../lib/rewards";
+import { processActivityRewards } from "../lib/rewards";
 import {
   dequeueWorkout,
   enqueueWorkout,
@@ -16,6 +16,13 @@ import {
   writeWorkoutQueue,
   type QueuedWorkout,
 } from "../lib/workoutQueue";
+
+const activeDrains = new Set<string>();
+function persistQueue(userId: string, queue: QueuedWorkout[]) {
+  const saved = writeWorkoutQueue(userId, queue);
+  if (!saved.ok) throw new Error(saved.error);
+  window.dispatchEvent(new Event("svj-workout-queue"));
+}
 
 export type QueuedWorkoutInput = Omit<
   QueuedWorkout,
@@ -82,6 +89,8 @@ export function useWorkoutQueue(): WorkoutQueueApi {
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const syncingRef = useRef(false);
+  const owner = useRef(userId);
+  owner.current = userId;
 
   const refresh = useCallback(() => {
     setPending(userId ? pendingWorkoutsFor(readWorkoutQueue(userId), userId) : []);
@@ -89,6 +98,8 @@ export function useWorkoutQueue(): WorkoutQueueApi {
 
   useEffect(() => {
     refresh();
+    window.addEventListener("svj-workout-queue", refresh);
+    return () => window.removeEventListener("svj-workout-queue", refresh);
   }, [refresh]);
 
   const enqueueNow = useCallback(
@@ -105,7 +116,12 @@ export function useWorkoutQueue(): WorkoutQueueApi {
         lastError: null,
         createdAt: new Date().toISOString(),
       });
-      writeWorkoutQueue(userId, next);
+      try {
+        persistQueue(userId, next);
+      } catch {
+        setLastError("Could not keep this workout on your device. Free storage and retry.");
+        throw new Error("Workout has not been saved. Check device storage.");
+      }
       setPending(pendingWorkoutsFor(next, userId));
     },
     [userId],
@@ -115,20 +131,18 @@ export function useWorkoutQueue(): WorkoutQueueApi {
     (clientSessionId: string) => {
       if (!userId) return;
       const next = dequeueWorkout(readWorkoutQueue(userId), clientSessionId);
-      writeWorkoutQueue(userId, next);
+      persistQueue(userId, next);
       setPending(pendingWorkoutsFor(next, userId));
     },
     [userId],
   );
 
   const sync = useCallback(async (): Promise<{ synced: number; failed: number }> => {
-    if (!userId || syncingRef.current) return { synced: 0, failed: 0 };
+    if (!userId || syncingRef.current || activeDrains.has(userId) || document.hidden)
+      return { synced: 0, failed: 0 };
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       return { synced: 0, failed: 0 };
     }
-    const client = strengthRpcClient();
-    if (!client) return { synced: 0, failed: 0 };
-
     const queued = pendingWorkoutsFor(readWorkoutQueue(userId), userId);
     if (queued.length === 0) return { synced: 0, failed: 0 };
 
@@ -136,114 +150,132 @@ export function useWorkoutQueue(): WorkoutQueueApi {
     // leave the queue untouched rather than posting it as someone else.
     const auth = supabase?.auth;
     if (!auth) return { synced: 0, failed: 0 };
-    const { data: sessionData } = await auth.getSession();
-    if (!sessionData.session?.user?.id || sessionData.session.user.id !== userId) {
-      return { synced: 0, failed: 0 };
-    }
-
+    activeDrains.add(userId);
     syncingRef.current = true;
     setSyncing(true);
     setLastError(null);
     let synced = 0;
     let failed = 0;
-
-    for (const entry of queued) {
-      const result: StrengthSaveOutcome = await saveStrengthActivity(
-        (fn, args) => client.rpc(fn, args),
-        {
-          clientSessionId: entry.clientSessionId,
-          startedAtMs: entry.startedAtMs,
-          endedAtMs: entry.endedAtMs,
-          durationSeconds: entry.durationSeconds,
-          drafts: entry.drafts,
-          perceivedEffort: entry.perceivedEffort,
-          notes: entry.notes,
-        },
-      );
-
-      if (result.ok) {
-        synced += 1;
-        // Link the slot (idempotent) — a failure here never loses the workout.
-        const trainingClient = trainingRpcClient();
-        if (
-          trainingClient &&
-          entry.context &&
-          (entry.context.planSessionId || entry.context.templateId)
-        ) {
-          void recordTrainingContext(trainingClient, entry.clientSessionId, {
-            ...entry.context,
-            targets: entry.targets,
-          });
-        }
-        // Progression judgement for the replayed workout — idempotent on the
-        // server (unique per user + exercise + activity) and never blocking.
-        if (trainingClient && entry.targets.length > 0 && result.activity) {
-          const idBySlug = new Map(
-            Object.entries(entry.slugByExerciseId ?? {}).map(([id, slug]) => [slug, id]),
-          );
-          const exercises = entry.targets
-            .map((target) => {
-              const exerciseId =
-                idBySlug.get(target.exerciseSlug) ??
-                entry.drafts.find((draft) => draft.name === target.exerciseName)?.exerciseId ??
-                null;
-              return exerciseId ? { target, exerciseId } : null;
-            })
-            .filter(
-              (item): item is { target: (typeof entry.targets)[number]; exerciseId: string } =>
-                item !== null,
+    try {
+      for (const entry of queued) {
+        const { data: sessionData } = await auth.getSession();
+        if (owner.current !== userId || sessionData.session?.user.id !== userId || document.hidden)
+          break;
+        await withAccountRpcClient(
+          userId,
+          async (client) => {
+            const result: StrengthSaveOutcome = await saveStrengthActivity(
+              (fn, args) => client.rpc(fn, args),
+              {
+                clientSessionId: entry.clientSessionId,
+                startedAtMs: entry.startedAtMs,
+                endedAtMs: entry.endedAtMs,
+                durationSeconds: entry.durationSeconds,
+                drafts: entry.drafts,
+                perceivedEffort: entry.perceivedEffort,
+                notes: entry.notes,
+              },
             );
-          if (exercises.length > 0) {
-            void syncTrainingDecisions({
-              trainingClient,
-              strengthCall: (fn, args) => client.rpc(fn, args),
-              exercises,
-              activityId: result.activity.id,
-              policyVersion: TRAINING_POLICY_VERSION,
-            });
-          }
-        }
-        if (!result.duplicate && result.activity) {
-          const rewards = rewardsRpcClient();
-          if (rewards) {
-            const processed = await processActivityRewards(rewards, result.activity.id);
-            if (processed.ok && processed.rewards) {
-              if (
-                processed.rewards.xpAwarded > 0 ||
-                Object.keys(processed.rewards.statChanges).length > 0
-              ) {
-                void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
-              }
-            }
-          }
-        }
-        const remaining = dequeueWorkout(readWorkoutQueue(userId), entry.clientSessionId);
-        writeWorkoutQueue(userId, remaining);
-        setPending(pendingWorkoutsFor(remaining, userId));
-        setLastSyncedAt(new Date().toISOString());
-      } else {
-        failed += 1;
-        setLastError(result.error ?? null);
-        const marked = markWorkoutAttempt(readWorkoutQueue(userId), entry.clientSessionId, {
-          ok: false,
-          error: result.error ?? null,
-        });
-        writeWorkoutQueue(userId, marked);
-        setPending(pendingWorkoutsFor(marked, userId));
-      }
-    }
 
-    syncingRef.current = false;
-    setSyncing(false);
+            if (owner.current !== userId) return;
+            if (result.ok) {
+              synced += 1;
+              // Link the slot (idempotent) — a failure here never loses the workout.
+              const trainingClient = (fn: string, args?: Record<string, unknown>) =>
+                client.rpc(fn, args);
+              if (entry.context && (entry.context.planSessionId || entry.context.templateId)) {
+                await recordTrainingContext(trainingClient, entry.clientSessionId, {
+                  ...entry.context,
+                  targets: entry.targets,
+                });
+              }
+              // Progression judgement for the replayed workout — idempotent on the
+              // server (unique per user + exercise + activity) and never blocking.
+              if (entry.targets.length > 0 && result.activity) {
+                const idBySlug = new Map(
+                  Object.entries(entry.slugByExerciseId ?? {}).map(([id, slug]) => [slug, id]),
+                );
+                const exercises = entry.targets
+                  .map((target) => {
+                    const exerciseId =
+                      idBySlug.get(target.exerciseSlug) ??
+                      entry.drafts.find((draft) => draft.name === target.exerciseName)
+                        ?.exerciseId ??
+                      null;
+                    return exerciseId ? { target, exerciseId } : null;
+                  })
+                  .filter(
+                    (
+                      item,
+                    ): item is { target: (typeof entry.targets)[number]; exerciseId: string } =>
+                      item !== null,
+                  );
+                if (exercises.length > 0) {
+                  await syncTrainingDecisions({
+                    trainingClient,
+                    strengthCall: (fn, args) => client.rpc(fn, args),
+                    exercises,
+                    activityId: result.activity.id,
+                    policyVersion: TRAINING_POLICY_VERSION,
+                  });
+                }
+              }
+              if (!result.duplicate && result.activity) {
+                const rewards = client;
+                if (rewards) {
+                  const processed = await processActivityRewards(rewards, result.activity.id);
+                  if (processed.ok && processed.rewards) {
+                    if (
+                      processed.rewards.xpAwarded > 0 ||
+                      Object.keys(processed.rewards.statChanges).length > 0
+                    ) {
+                      void queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+                    }
+                  }
+                }
+              }
+              const remaining = dequeueWorkout(readWorkoutQueue(userId), entry.clientSessionId);
+              persistQueue(userId, remaining);
+              setPending(pendingWorkoutsFor(remaining, userId));
+              setLastSyncedAt(new Date().toISOString());
+            } else {
+              failed += 1;
+              setLastError(result.error ?? null);
+              const marked = markWorkoutAttempt(readWorkoutQueue(userId), entry.clientSessionId, {
+                ok: false,
+                error: result.error ?? null,
+              });
+              persistQueue(userId, marked);
+              setPending(pendingWorkoutsFor(marked, userId));
+            }
+          },
+          () => owner.current === userId,
+        );
+      }
+    } catch {
+      failed += 1;
+      setLastError(
+        "Could not sync workouts. Your pending recordings are retained. Retry when connected and device storage is available.",
+      );
+    } finally {
+      activeDrains.delete(userId);
+      syncingRef.current = false;
+      setSyncing(false);
+      if (owner.current === userId) refresh();
+    }
     return { synced, failed };
-  }, [userId, queryClient]);
+  }, [userId, queryClient, refresh]);
 
   // Retry when connectivity returns.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onOnline = () => void sync();
     window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onOnline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onOnline);
+    };
   }, [sync]);
 
   // Drain on mount and keep retrying while anything is pending, so a queue

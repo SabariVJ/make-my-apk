@@ -11,7 +11,7 @@ it("iPhone target registers the custom auth scheme and Motion permission with na
   const entry = (name) =>
     [...document.querySelectorAll("plist > dict > key")].find((key) => key.textContent === name)
       ?.nextElementSibling;
-  assert.match(entry("NSMotionUsageDescription").textContent, /steps.*tracking session/);
+  assert.match(entry("NSMotionUsageDescription").textContent, /steps.*workouts/);
   assert.ok(
     [...entry("CFBundleURLTypes").querySelectorAll("string")].some(
       (value) => value.textContent === "app.lovable.svj",
@@ -71,7 +71,7 @@ it("native assets use SVJ branding and no Android-only permissions or paid entit
   assert.equal(icon.readUInt32BE(20), 1024);
   assert.doesNotMatch(
     read("ios/App/App/Info.plist"),
-    /NSHealth|NSLocation|UIBackgroundModes|GADApplicationIdentifier/,
+    /NSHealth|GADApplicationIdentifier/,
   );
   assert.match(read("capacitor.config.ts"), /includePlugins: \[/);
   assert.match(read("docs/iphone-test-build.md"), /seven days/);

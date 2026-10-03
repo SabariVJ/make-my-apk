@@ -26,7 +26,7 @@ export const WORKOUT_QUEUE_VERSION = 1;
 export const WORKOUT_QUEUE_KEY_PREFIX = "svj_app_state_v5_workout_queue:";
 export const WORKOUT_DRAFT_KEY_PREFIX = "svj_app_state_v5_workout_draft:";
 
-/** Bounded so a corrupt or hostile store cannot grow without limit. */
+/** Retained as a warning threshold; pending workouts are never truncated. */
 export const MAX_QUEUED_WORKOUTS = 20;
 
 export type QueuedWorkoutStatus = "pending" | "syncing" | "failed";
@@ -170,8 +170,7 @@ export function readWorkoutQueue(userId: string | null): QueuedWorkout[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .map((entry) => normalizeQueuedWorkout(entry, userId))
-      .filter((entry): entry is QueuedWorkout => entry !== null)
-      .slice(0, MAX_QUEUED_WORKOUTS);
+      .filter((entry): entry is QueuedWorkout => entry !== null);
   } catch {
     return [];
   }
@@ -179,15 +178,21 @@ export function readWorkoutQueue(userId: string | null): QueuedWorkout[] {
 
 export function writeWorkoutQueue(userId: string | null, entries: QueuedWorkout[]): SaveResult {
   if (!userId) return { ok: false, error: "No signed-in account." };
-  return writeStoredJson(workoutQueueKey(userId), entries.slice(0, MAX_QUEUED_WORKOUTS));
+  try {
+    const previous = appStorage.getItem(workoutQueueKey(userId));
+    const parsed: unknown = previous ? JSON.parse(previous) : [];
+    if (!Array.isArray(parsed))
+      return { ok: false, error: "Saved workouts need recovery. Your original queue is retained." };
+    const unknown = parsed.filter((entry) => normalizeQueuedWorkout(entry, userId) == null);
+    return writeStoredJson(workoutQueueKey(userId), [...entries, ...unknown]);
+  } catch {
+    return { ok: false, error: "Saved workouts need recovery. Your original queue is retained." };
+  }
 }
 
 /** Idempotent by client_session_id: re-queuing the same workout replaces it. */
 export function enqueueWorkout(queue: QueuedWorkout[], entry: QueuedWorkout): QueuedWorkout[] {
-  return [entry, ...queue.filter((e) => e.clientSessionId !== entry.clientSessionId)].slice(
-    0,
-    MAX_QUEUED_WORKOUTS,
-  );
+  return [entry, ...queue.filter((e) => e.clientSessionId !== entry.clientSessionId)];
 }
 
 export function dequeueWorkout(queue: QueuedWorkout[], clientSessionId: string): QueuedWorkout[] {

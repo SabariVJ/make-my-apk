@@ -35,3 +35,11 @@ supabase/.temp/
 *.sln
 *.sw?
 .env
+# Local dependency installation cache.
+.bun-cache/
+dependency-install.log
+test-results/
+*-latest.log
+*-tests.log
+build-*.log
+native-build.log

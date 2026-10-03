@@ -1,0 +1,6 @@
+{
+  "profile": "production build; route bundle before lazy screen loading",
+  "bundle": "routes-Dv5yDT42.js",
+  "bytes": 1549981,
+  "gzipBytes": 400544
+}

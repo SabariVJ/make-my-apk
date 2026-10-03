@@ -280,13 +280,13 @@ before(async () => {
         name: "hardware-and-services",
         setup(builder) {
           const modules = {
-            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isNativePlatform:()=>globalThis.__svjTracking.platform!=='web',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isNativePlatform:()=>globalThis.__svjTracking.platform!=='web',isPluginAvailable:name=>globalThis.__svjTracking.available && (name!=="VjPedometer" || globalThis.__svjTracking.platform!=="ios" || globalThis.__svjTracking.iosVjBridge)};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
             "@capacitor/app": `export const App={addListener:async(_,fn)=>{globalThis.__svjTracking.appHandlers.add(fn);return {remove:async()=>globalThis.__svjTracking.appHandlers.delete(fn)}}};`,
             "@capgo/capacitor-pedometer": `export const CapacitorPedometer=new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
             "./SVJContext": `const awardXp=(xp)=>globalThis.__svjTracking.xp.push(xp);const addActivity=(...args)=>globalThis.__svjTracking.feed.push(args);export const useSVJ=()=>({awardXp,addActivity});`,
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
             "@tanstack/react-start": `export const useServerFn=fn=>fn;`,
-            "@/integrations/supabase/client": `export const supabase={rpc:(...a)=>globalThis.__svjTracking.supabase.rpc(...a)}; export const hasSupabaseConfig=()=>globalThis.__svjTracking.supabase != null;`,
+            "@/integrations/supabase/client": `export const supabase={rpc:(...a)=>globalThis.__svjTracking.supabase.rpc(...a)}; export const hasSupabaseConfig=()=>globalThis.__svjTracking.supabase != null; export const getSupabaseConfig=()=>({});`,
             "motion/react": `import React from 'react';const cache={};export const motion=new Proxy({}, {get:(_,tag)=>cache[tag]??=(props)=>{const {children,initial,animate,transition,whileHover,...rest}=props;return React.createElement(tag,rest,children)}});`,
             // Chart primitives render as null in this lightweight harness. The
             // stub must still name every export the real chart consumers use
@@ -313,6 +313,7 @@ beforeEach(() => {
     native: makeNative(),
     available: true,
     platform: "android",
+    iosVjBridge: false,
     appHandlers: new Set(),
     xp: [],
     feed: [],
@@ -445,11 +446,17 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.equal(test.native.handlers.measurement.size, 1);
     assert.equal(
       test.appHandlers.size,
-      1,
-      "StrictMode removes superseded native lifecycle listeners",
+      2,
+      "StrictMode keeps one daily refresh listener and one session listener",
     );
     await stop();
     assert.equal(test.native.handlers.measurement.size, 0);
+  });
+  it("uses the app-owned iPhone bridge when supplied by the new wrapper", async () => {
+    test.platform = "ios"; test.iosVjBridge = true; await mount(); await start();
+    assert.equal(api.trackingStatus, "tracking");
+    assert.equal(test.native.handlers.measurement.size, 1);
+    await stop(); assert.equal(test.native.handlers.measurement.size, 0);
   });
   it("keeps denied iPhone Motion permission stopped without accepting measurements", async () => {
     test.platform = "ios";

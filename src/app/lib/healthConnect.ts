@@ -53,6 +53,7 @@ export const DEFAULT_HEALTH_CONNECT_TYPES: readonly HealthConnectType[] = [
 ];
 
 export interface HealthConnectPlugin {
+  readDailySteps?: () => Promise<{ steps: number; dateKey: string; measurementAt: number }>;
   isAvailable?: () => Promise<unknown>;
   checkPermissions?: (options: { types: string[] }) => Promise<unknown>;
   requestPermissions?: (options: { types: string[] }) => Promise<unknown>;

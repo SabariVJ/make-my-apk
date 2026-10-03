@@ -65,6 +65,9 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
     JSObject result = new JSObject();
     result.put("available", true);
     result.put("foregroundService", true);
+    result.put("version", 2);
+    result.put("journal", true);
+    result.put("revision", BuildConfig.SVJ_BUILD_REVISION);
     call.resolve(result);
   }
 
@@ -140,8 +143,10 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
     boolean autoPause = Boolean.TRUE.equals(call.getBoolean("autoPause", true));
 
     try {
-      VjWorkoutService.start(getContext(), activityId, activityType, title, autoPause);
-      call.resolve(stateSnapshot());
+      String owner = call.getString("ownerId", "");
+      if (owner.isEmpty()) { call.reject("Sign in first."); return; }
+      VjWorkoutService.start(getContext(), activityId, activityType, title, autoPause, owner,
+          call.getLong("startedAtMs", System.currentTimeMillis()), acknowledgement(call));
     } catch (Exception e) {
       Log.e(TAG, "startWorkout failed", e);
       call.reject("Could not start the workout service: " + e.getMessage());
@@ -150,20 +155,69 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
 
   @PluginMethod
   public void pauseWorkout(PluginCall call) {
-    VjWorkoutService.pause(getContext());
-    call.resolve(stateSnapshot());
+    command(call, VjWorkoutService.ACTION_PAUSE);
   }
 
   @PluginMethod
   public void resumeWorkout(PluginCall call) {
-    VjWorkoutService.resume(getContext());
-    call.resolve(stateSnapshot());
+    command(call, VjWorkoutService.ACTION_RESUME);
   }
 
   @PluginMethod
   public void stopWorkout(PluginCall call) {
-    VjWorkoutService.stop(getContext());
-    call.resolve();
+    command(call, VjWorkoutService.ACTION_STOP);
+  }
+
+  private void command(PluginCall call, String action) {
+    String owner = call.getString("ownerId", ""), id = call.getString("activityId", "");
+    if (owner.isEmpty() || id.isEmpty()) { call.reject("Recording identity required. Reopen SVJ and retry."); return; }
+    try { VjWorkoutService.sendAction(getContext(), action, owner, id, acknowledgement(call)); }
+    catch(Exception e) { call.reject("Could not deliver recording command. Open SVJ and retry."); }
+  }
+
+  private android.os.ResultReceiver acknowledgement(PluginCall call) {
+    final boolean[] completed = {false};
+    main.postDelayed(() -> { if (!completed[0]) { completed[0] = true; call.reject("Recording did not confirm the command. Open SVJ and retry."); } }, 15000);
+    return new android.os.ResultReceiver(main) {
+      @Override protected void onReceiveResult(int code, android.os.Bundle data) {
+        if (completed[0]) return;
+        completed[0] = true;
+        if (code == 0) call.resolve(stateSnapshot());
+        else call.reject(data.getString("error", "Recording command failed."));
+      }
+    };
+  }
+
+  @PluginMethod
+  public void listRecordings(PluginCall call) {
+    String owner = call.getString("ownerId", "");
+    if (owner.isEmpty()) { call.reject("Sign in first."); return; }
+    try (NativeWorkoutJournal journal = new NativeWorkoutJournal(getContext())) {
+      JSObject result = new JSObject(); result.put("recordings", journal.list(owner)); call.resolve(result);
+    } catch(Exception e) { call.reject("Could not read retained recordings."); }
+  }
+
+  @PluginMethod
+  public void readJournal(PluginCall call) {
+    String owner = call.getString("ownerId", ""), activity = call.getString("activityId", "");
+    if (owner.isEmpty() || activity.isEmpty()) { call.reject("Missing workout identity."); return; }
+    try (NativeWorkoutJournal journal = new NativeWorkoutJournal(getContext())) {
+      JSObject result = new JSObject(); result.put("events", journal.read(owner, activity, call.getLong("afterSequence", 0L), call.getInt("limit", 250))); call.resolve(result);
+    } catch (Exception e) { call.reject("Could not read saved recording. Check device storage."); }
+  }
+
+  @PluginMethod
+  public void clearJournal(PluginCall call) {
+    String owner = call.getString("ownerId", ""), activity = call.getString("activityId", "");
+    if (owner.isEmpty() || activity.isEmpty() || !Boolean.TRUE.equals(call.getBoolean("confirmed"))) { call.reject("Save or discard confirmation required."); return; }
+    if (VjWorkoutService.prefs(getContext()).getBoolean("active", false) && activity.equals(VjWorkoutService.prefs(getContext()).getString("activity_id", ""))) { call.reject("Stop recording first."); return; }
+    try (NativeWorkoutJournal journal = new NativeWorkoutJournal(getContext())) {
+      journal.clear(owner, activity);
+      android.content.SharedPreferences store = VjWorkoutService.prefs(getContext());
+      if (owner.equals(store.getString("owner_id", "")) && activity.equals(store.getString("activity_id", ""))) VjWorkoutService.clearState(getContext());
+      call.resolve();
+    }
+    catch (Exception e) { call.reject("Could not clear confirmed recording."); }
   }
 
   @PluginMethod
@@ -191,8 +245,7 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
 
   @PluginMethod
   public void clearWorkout(PluginCall call) {
-    VjWorkoutService.clearState(getContext());
-    call.resolve();
+    call.reject("Use confirmed save or discard to clear a recording.");
   }
 
   // ── Snapshots ───────────────────────────────────────────────────────────
@@ -210,13 +263,16 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
       return result;
     }
     android.content.SharedPreferences store = VjWorkoutService.prefs(context);
-    boolean active = store.getBoolean("active", false);
+    result.put("version", 2);
+    result.put("ownerId", store.getString("owner_id", ""));
+    result.put("error", store.getString("last_error", null));
+    boolean active = store.getBoolean("active", false) && VjWorkoutService.isRunning();
     String id = store.getString("activity_id", "");
     result.put("active", active);
     result.put("activityId", id != null ? id : "");
     result.put("activityType", store.getString("activity_type", ""));
     result.put("startedAtMs", store.getLong("started_at", 0L));
-    result.put("paused", store.getBoolean("paused", false));
+    result.put("paused", store.getBoolean("paused", false) || (!active && store.getBoolean("unfinished", false)));
     result.put("pointCount", store.getInt("point_count", 0));
     result.put("lastFixAtMs", store.getLong("last_fix_at", 0L));
     return result;
@@ -258,6 +314,7 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
   public void onLocationSample(Location location) {
     if (location == null) return;
     main.post(() -> notifyListeners("location", sampleOf(location)));
+    main.post(() -> notifyListeners("journalChanged", stateSnapshot()));
   }
 
   @Override

@@ -1,6 +1,7 @@
 name: iPhone Test Build
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches: [release/play-v1-compliance]
@@ -24,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: iphone-test-${{ github.ref }}
+  group: iphone-test-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -55,6 +56,10 @@ jobs:
         run: bun run build
       - name: Sync iOS Swift packages
         run: bun run cap:sync:ios
+      - name: Native journal persistence tests
+        run: |
+          swiftc -parse-as-library ios/App/App/WorkoutJournal.swift tests/native/WorkoutJournalTests.swift -o "$RUNNER_TEMP/svj-journal-tests"
+          "$RUNNER_TEMP/svj-journal-tests"
       - name: Build unsigned physical-device app
         shell: bash
         run: |
@@ -67,6 +72,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath ios/DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            SVJ_BUILD_REVISION="$GITHUB_SHA" \
             build 2>&1 | tee ios/build.log
       - name: Package and verify IPA
         shell: bash
@@ -81,7 +87,7 @@ jobs:
       - name: Downloadable iPhone build
         uses: actions/upload-artifact@v7
         with:
-          name: SVJ-ios-test
+          name: SVJ-ios-validation
           path: ios/output/SVJ-ios-test.ipa
           if-no-files-found: error
           retention-days: 14

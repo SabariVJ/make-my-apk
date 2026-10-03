@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { validateDailyState, type DailyTrackingState } from "./dailyTracking";
+import { dailyTrackingMessage, validateDailyState, type DailyTrackingState } from "./dailyTracking";
 const owner = "original-account";
 const state: DailyTrackingState = {
   version: 2,
@@ -17,6 +17,25 @@ const state: DailyTrackingState = {
   error: null,
 };
 describe("daily bridge diagnostics", () => {
+  it("shows unsupported hardware instead of enabled or waiting", () => {
+    assert.equal(
+      dailyTrackingMessage({ ...state, available: false }, null, true),
+      "This device has no compatible step sensor.",
+    );
+    assert.equal(dailyTrackingMessage(state, null, true), "Waiting for step sensor");
+    assert.equal(
+      dailyTrackingMessage({ ...state, permission: "denied" }, null, false),
+      "Allow tracking permission in Settings, then retry.",
+    );
+    assert.equal(
+      dailyTrackingMessage(
+        { ...state, source: "Health Connect daily total", listening: false },
+        null,
+        false,
+      ),
+      "Daily tracking enabled",
+    );
+  });
   it("requires matching native capability and original account", () => {
     assert.throws(() => validateDailyState({ ...state, version: 1 }, owner));
     assert.throws(() => validateDailyState({ ...state, ownerId: "new-account" }, owner));

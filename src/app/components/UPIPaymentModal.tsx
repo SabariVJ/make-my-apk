@@ -26,7 +26,7 @@ import {
 } from "@/lib/whatsapp";
 
 export const UPIPaymentModal: React.FC = () => {
-  const { isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
+  const { user, isUPIModalOpen, setIsUPIModalOpen } = useSVJ();
   const [showQR, setShowQR] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentTab, setPaymentTab] = useState<"upi" | "code">("upi");
@@ -34,7 +34,7 @@ export const UPIPaymentModal: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [numberCopied, setNumberCopied] = useState(false);
 
-  const supportMessage = buildPaymentConfirmationMessage();
+  const supportMessage = buildPaymentConfirmationMessage(user.email);
   const isNative = Capacitor.isNativePlatform();
   const supportUrl = resolveWhatsAppUrl(supportMessage, isNative);
   const appUrl = buildWhatsAppAppUrl(supportMessage);
@@ -52,9 +52,9 @@ export const UPIPaymentModal: React.FC = () => {
       setShowContactFallback(true);
       if (isNative) {
         try {
-          void import("@capacitor/browser").then(({ Browser }) =>
-            Browser.open({ url: supportUrl }),
-          );
+          void import("@capacitor/browser")
+            .then(({ Browser }) => Browser.open({ url: supportUrl }))
+            .catch(() => undefined);
         } catch {
           /* fallback panel already shown */
         }

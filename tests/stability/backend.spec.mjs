@@ -223,7 +223,13 @@ test("payment screen offers QR, copy and external handoffs without sending a pay
   );
   await expect(
     page.getByRole("link", { name: "Open in browser instead", exact: true }),
-  ).toHaveAttribute("href", /^https:\/\/wa.me\//);
+  ).toHaveAttribute("href", /^https:\/\/web.whatsapp.com\/send\?/);
+  const browserLink = new URL(
+    await page
+      .getByRole("link", { name: "Open in browser instead", exact: true })
+      .getAttribute("href"),
+  );
+  expect(browserLink.searchParams.get("text")).toContain(bob.email);
   await expect(page.getByRole("link", { name: "Email us instead", exact: true })).toHaveAttribute(
     "href",
     /^mailto:/,

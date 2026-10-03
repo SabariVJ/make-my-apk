@@ -1,5 +1,5 @@
 import { useActivityOptional } from "../context/ActivityContext";
-import { DailyPedometer } from "../lib/dailyTracking";
+import { DailyPedometer, dailyTrackingMessage } from "../lib/dailyTracking";
 import { Capacitor } from "@capacitor/core";
 
 export function StepTrackingStatus() {
@@ -14,12 +14,7 @@ export function StepTrackingStatus() {
     >
       <h2 className="font-semibold">Step tracking status</h2>
       <p className="text-sm text-white/65 break-words" role="status">
-        {daily.error ??
-          (daily.waiting
-            ? "Waiting for step sensor"
-            : state?.enabled
-              ? "Daily tracking enabled"
-              : "Enable automatic daily steps")}
+        {dailyTrackingMessage(state, daily.error, daily.waiting)}
       </p>
       <dl className="grid grid-cols-2 gap-2 text-sm my-3 min-w-0">
         <dt>Permission</dt>

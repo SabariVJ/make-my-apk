@@ -6,6 +6,7 @@ import {
   RECORDER_SESSION_KEY,
   buildClientSessionId,
   createMemoryStorage,
+  canSaveWorkout,
   flushOfflineQueue,
   readQueue,
   writeQueue,
@@ -26,7 +27,9 @@ interface Harness {
   startedCalls: () => number;
 }
 
-function harness(options: { autoPauseEnabled?: boolean; withLocation?: boolean } = {}): Harness {
+function harness(
+  options: { autoPauseEnabled?: boolean; withLocation?: boolean; ownerId?: string } = {},
+): Harness {
   const storage = createMemoryStorage();
   let nowMs = T0;
   let stopCount = 0;
@@ -45,6 +48,7 @@ function harness(options: { autoPauseEnabled?: boolean; withLocation?: boolean }
   };
 
   const recorder = new GpsWorkoutRecorder({
+    ownerId: options.ownerId,
     storage,
     now: () => nowMs,
     genId: () => "11111111-2222-4333-8444-555555555555",
@@ -89,6 +93,42 @@ describe("buildClientSessionId", () => {
 });
 
 describe("workout lifecycle", () => {
+  it("enables Save only after a confirmed Finish with enough real points", async () => {
+    const h = harness();
+    await h.recorder.start("walking");
+    h.emit({ lat: 0, lng: 0 });
+    h.setNow(T0 + 10000);
+    h.emit({ lat: LEG_DEG, lng: 0 });
+    assert.equal(canSaveWorkout(h.recorder.current), false);
+    await h.recorder.finish();
+    assert.equal(canSaveWorkout(h.recorder.current), true);
+    h.recorder.markSyncFailure("Offline");
+    assert.equal(canSaveWorkout(h.recorder.current), true);
+    h.recorder.markSaved();
+    assert.equal(canSaveWorkout(h.recorder.current), false);
+    const empty = harness();
+    await empty.recorder.start("walking");
+    await empty.recorder.finish();
+    assert.equal(canSaveWorkout(empty.recorder.current), false);
+  });
+  it("rolls back an empty rejected start without stopping another native workout", async () => {
+    const h = harness({ withLocation: false, ownerId: "original-account" });
+    const start = await h.recorder.start("walking");
+    const id = start.activityId;
+    assert.equal(await h.recorder.rollbackFailedStart("stale-id"), false);
+    assert.equal(await h.recorder.rollbackFailedStart(id), true);
+    assert.equal(h.recorder.current, null);
+    assert.equal(h.storage.read(RECORDER_SESSION_KEY), null);
+    const second = await h.recorder.start("walking");
+    h.recorder.replayNativeEvent({
+      ownerId: second.ownerId!,
+      activityId: id,
+      sequence: 1,
+      kind: "start",
+      timestampMs: T0,
+    });
+    assert.equal(await h.recorder.rollbackFailedStart(id), false);
+  });
   it("creates a stable activity identity at start", async () => {
     const h = harness();
     const session = await h.recorder.start("running");

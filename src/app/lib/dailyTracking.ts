@@ -53,6 +53,18 @@ export function validateDailyState(raw: DailyTrackingState, ownerId: string): Da
   };
 }
 
+export function dailyTrackingMessage(
+  state: DailyTrackingState | null,
+  error: string | null,
+  waiting: boolean,
+): string {
+  if (state && !state.available) return "This device has no compatible step sensor.";
+  if (error) return error;
+  if (state?.permission === "denied") return "Allow tracking permission in Settings, then retry.";
+  if (waiting) return "Waiting for step sensor";
+  return state?.enabled ? "Daily tracking enabled" : "Enable automatic daily steps";
+}
+
 /** Mounted with the account provider, never with an individual tab. */
 export function useDailyTracking(ownerId: string | null) {
   const [state, setState] = useState<DailyTrackingState | null>(null);
@@ -103,7 +115,12 @@ export function useDailyTracking(ownerId: string | null) {
       if (owner.current !== ownerId) return;
       setState(next);
       setError(next.error);
-      setWaiting(next.enabled && !next.measurementAt && Date.now() - enabledAt.current >= 10_000);
+      setWaiting(
+        next.enabled &&
+          next.available &&
+          !next.measurementAt &&
+          Date.now() - enabledAt.current >= 10_000,
+      );
     } catch {
       if (owner.current === ownerId)
         setError("Update the SVJ app to use daily tracking, then try again.");
@@ -113,6 +130,7 @@ export function useDailyTracking(ownerId: string | null) {
   useEffect(() => {
     setState(null);
     setError(null);
+    setWaiting(false);
     if (!native) return;
     if (!ownerId) {
       void DailyPedometer.disableDailyTracking().catch(() => undefined);
@@ -144,10 +162,14 @@ export function useDailyTracking(ownerId: string | null) {
         await DailyPedometer.enableDailyTracking({ ownerId }),
         ownerId,
       );
-      if (owner.current === ownerId) setState(next);
+      if (owner.current === ownerId) {
+        setState(next);
+        setError(next.error);
+        setWaiting(false);
+      }
     } catch {
       if (owner.current === ownerId)
-        setError("Could not enable daily steps. Check Motion permission in Settings and retry.");
+        setError("Could not enable daily steps. Check tracking permission in Settings and retry.");
     }
   }, [ownerId]);
   const disable = useCallback(async () => {

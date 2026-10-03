@@ -29,6 +29,7 @@ import {
   type WorkoutState,
   type WorkoutSummary,
   canTransition,
+  MIN_GPS_POINTS_TO_SAVE,
   classifyGpsQuality,
   type AutoPauseDetector,
 } from "./gpsActivity";
@@ -118,6 +119,15 @@ export interface WorkoutSession {
 }
 
 export const RECORDER_SESSION_KEY = "svj.workout.active.v1";
+
+export function canSaveWorkout(session: WorkoutSession | null): boolean {
+  return (
+    session != null &&
+    session.state === "stopping" &&
+    session.endedAtMs != null &&
+    session.points.length >= MIN_GPS_POINTS_TO_SAVE
+  );
+}
 export const RECORDER_QUEUE_KEY = "svj.workout.queue.v1";
 const MAX_SESSION_POINTS = 200_000;
 
@@ -488,6 +498,22 @@ export class GpsWorkoutRecorder {
 
   async detach(): Promise<void> {
     await this.location?.detach?.();
+  }
+
+  /** Only after native state confirms this empty start never became a recording. */
+  async rollbackFailedStart(activityId: string): Promise<boolean> {
+    if (
+      !this.session ||
+      this.session.activityId !== activityId ||
+      this.session.points.length > 0 ||
+      (this.session.nativeSequence ?? 0) > 0
+    )
+      return false;
+    await this.detach();
+    this.storage.remove(RECORDER_SESSION_KEY);
+    this.session = null;
+    this.emit();
+    return true;
   }
 
   adoptNative(metadata: {

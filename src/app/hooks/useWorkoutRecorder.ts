@@ -17,17 +17,13 @@ import { Capacitor } from "@capacitor/core";
 import {
   GpsWorkoutRecorder,
   createAccountStorage,
+  canSaveWorkout,
   flushOfflineQueue,
   readQueue,
   type SyncOutcome,
   type WorkoutSession,
 } from "../lib/gpsRecorder";
-import {
-  canTransition,
-  type GpsActivityType,
-  type WorkoutSummary,
-  MIN_GPS_POINTS_TO_SAVE,
-} from "../lib/gpsActivity";
+import { type GpsActivityType, type WorkoutSummary } from "../lib/gpsActivity";
 import { createDefaultLocationAdapter, isNativeRecordingAvailable } from "../lib/locationAdapters";
 import { isNativeWearableAvailable, normalizeWearableHeartRate, VjWearable } from "../lib/wearable";
 import {
@@ -159,6 +155,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     const unsubscribe = recorder.subscribe((next) => {
       setSession(next);
       setSummary(next ? recorder.summary() : null);
+      if (next?.lastSyncError) setError(next.lastSyncError);
     });
 
     // A workout the OS killed comes back PAUSED and unsaved, never silently
@@ -407,8 +404,31 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
             activityType,
           });
           if (!result.ok) {
-            recorder.pause();
-            throw new Error(result.error ?? "Could not start recording.");
+            const native = await getNativeWorkoutState();
+            const id = recorder.current?.activityId;
+            if (
+              native?.version === 2 &&
+              native.ownerId === userId &&
+              native.activityId === id &&
+              native.active &&
+              !native.paused
+            ) {
+              // A lost command response is recovered only from confirmed native state.
+              await recorder.attach();
+            } else {
+              if (
+                native?.version === 2 &&
+                id &&
+                (native.activityId !== id || native.ownerId !== userId)
+              )
+                await recorder.rollbackFailedStart(id);
+              if (recorder.current) recorder.pause();
+              throw new Error(
+                recorder.current
+                  ? "Could not confirm the start. Your recording is retained; reopen SVJ to recover."
+                  : "Could not start recording. Check location permission and try again.",
+              );
+            }
           }
         }
         setSession(recorder.current);
@@ -695,10 +715,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
   const dismissError = useCallback(() => setError(null), []);
   const dismissNotice = useCallback(() => setNotice(null), []);
 
-  const canSave =
-    session != null &&
-    session.points.length >= MIN_GPS_POINTS_TO_SAVE &&
-    canTransition(session.state, "stopping");
+  const canSave = canSaveWorkout(session);
 
   return {
     session,

@@ -257,3 +257,117 @@ jobs:
           name: svj-release-metadata
           path: release-metadata.txt
           if-no-files-found: error
+
+  responsive-browser-geometry:
+    name: Responsive Browser Geometry
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - name: Install Chromium and WebKit
+        run: bunx playwright install --with-deps chromium webkit
+      - name: Typecheck geometry tests
+        run: bun run typecheck:responsive
+      - name: Run built-app viewport geometry tests
+        run: bun run test:responsive
+      - name: Upload browser traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: responsive-browser-traces
+          path: test-results/
+          if-no-files-found: ignore
+
+  android-responsive-webview:
+    name: Android Emulator WebView Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - name: Build deterministic local responsive app
+        run: bun run build:responsive
+      - name: Sync the local test bundle into Capacitor
+        env:
+          SVJ_RESPONSIVE_LOCAL: "1"
+        run: bun run cap:sync
+      - name: Launch and measure the app in an Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          working-directory: android
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
+  ios-responsive-simulator:
+    name: iOS Simulator WebView Smoke
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Build deterministic local responsive app
+        run: bun run build:responsive
+      - name: Sync the local test bundle into Capacitor
+        env:
+          SVJ_RESPONSIVE_LOCAL: "1"
+        run: bun run cap:sync:ios
+      - name: Build, launch, and capture the app in an iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          simulator_id="$(xcrun simctl create 'SVJ Responsive iPhone' 'iPhone 17')"
+          trap 'xcrun simctl delete "$simulator_id" >/dev/null 2>&1 || true' EXIT
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -derivedDataPath "$RUNNER_TEMP/svj-ios-responsive" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          app_path="$RUNNER_TEMP/svj-ios-responsive/Build/Products/Debug-iphonesimulator/App.app"
+          xcrun simctl boot "$simulator_id"
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" "$app_path"
+          xcrun simctl launch "$simulator_id" app.lovable.svj
+          sleep 6
+          xcrun simctl io "$simulator_id" screenshot "$RUNNER_TEMP/svj-responsive.png"
+          test -s "$RUNNER_TEMP/svj-responsive.png"
+      - name: Save simulator smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-responsive-simulator-smoke
+          path: ${{ runner.temp }}/svj-responsive.png
+          if-no-files-found: ignore

@@ -90,7 +90,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
               moment, so it is deliberately richer than an ordinary surface. */}
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,#1B1B20_0%,#101013_38%,#17171B_62%,#0A0A0C_100%)]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.22] bg-[repeating-linear-gradient(105deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.06)_1px,transparent_1px,transparent_4px)]" />
-          <div className="pointer-events-none absolute -left-1/3 top-0 h-full w-2/3 rotate-12 bg-[linear-gradient(90deg,transparent_0%,rgba(201,162,39,0.16)_35%,rgba(240,220,150,0.26)_50%,rgba(201,162,39,0.16)_65%,transparent_100%)] blur-[1px]" />
+          <div className="pointer-events-none absolute left-1/3 top-0 h-full w-1/3 rotate-12 bg-[linear-gradient(90deg,transparent_0%,rgba(201,162,39,0.16)_35%,rgba(240,220,150,0.26)_50%,rgba(201,162,39,0.16)_65%,transparent_100%)] blur-[1px]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#C81E3A]/16 via-transparent to-transparent" />
           <div className="pointer-events-none absolute inset-0 border border-[#C9A227]/15" />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -167,7 +167,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
           }}
         >
           {/* Magnetic Strip */}
-          <div className="w-full h-8 bg-black/90 -mx-5 px-5 flex items-center justify-end text-[9px] font-mono text-zinc-600">
+          <div className="flex h-8 min-w-0 w-full items-center justify-end bg-black/90 px-2 text-right font-mono text-[9px] text-zinc-600">
             MAGNETIC ENCODED 882193-SVJ
           </div>
 

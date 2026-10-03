@@ -239,12 +239,12 @@ export const RewardsView: React.FC = () => {
       />
 
       {/* Category Selector */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2 pb-1">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-lg text-xs font-mono transition-all shrink-0 cursor-pointer ${
+            className={`max-w-full px-4 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
               selectedCategory === cat
                 ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
                 : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"

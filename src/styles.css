@@ -146,14 +146,10 @@
   html {
     background-color: #0b0b0c;
     color-scheme: dark;
-    max-width: 100%;
     min-height: 100%;
     margin: 0;
-    overflow-x: hidden;
-    touch-action: pan-y;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    overscroll-behavior-x: none;
   }
 
   * {
@@ -163,35 +159,23 @@
   body {
     background-color: #0b0b0c;
     color: var(--color-foreground);
-    max-width: 100%;
     min-height: 100%;
     margin: 0;
     min-width: 0;
-    overflow-x: hidden;
-    touch-action: pan-y;
     width: 100%;
   }
 
   #root {
-    max-width: 100%;
     min-width: 0;
-    overflow-x: clip;
-    touch-action: pan-y;
     width: 100%;
-  }
-}
-
-/* Clip page overflow without creating a scroll container above sticky controls. */
-@supports (overflow: clip) {
-  html,
-  body {
-    overflow-x: clip;
   }
 }
 
 /* iOS zooms into small editable fields; keep their text readable at normal scale. */
 @media (max-width: 767px), (hover: none) and (pointer: coarse) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(
+      [type="file"]
+    ):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]),
   textarea,
   select,
   [contenteditable="true"] {
@@ -290,7 +274,9 @@
   }
 
   .svj-modal-safe {
-    --svj-modal-height: calc(100dvh - max(1rem, var(--svj-safe-top)) - max(1rem, var(--svj-safe-bottom)));
+    --svj-modal-height: calc(
+      100dvh - max(1rem, var(--svj-safe-top)) - max(1rem, var(--svj-safe-bottom))
+    );
     padding-top: max(1rem, var(--svj-safe-top));
     padding-bottom: max(1rem, var(--svj-safe-bottom));
     padding-left: max(1rem, var(--svj-safe-left));
@@ -300,8 +286,9 @@
 
   .svj-modal-safe > :first-child {
     max-height: calc(var(--svj-modal-height) - 2px);
+    max-width: 100%;
+    min-width: 0;
     overflow-y: auto;
-    overflow-x: clip;
   }
 
   .svj-fullscreen-safe {
@@ -330,6 +317,82 @@
   @media (min-width: 1024px) {
     main.svj-page-gutters {
       --svj-gutter: 2rem;
+    }
+  }
+
+  /* The admin users table keeps its data and actions readable by turning each
+     narrow-screen row into a labeled card. At desktop widths it remains a
+     semantic table, with no horizontal scroll container at any size. */
+  .svj-admin-users {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  @media (max-width: 1023px) {
+    .svj-admin-users,
+    .svj-admin-users tbody {
+      display: block;
+      min-width: 0;
+    }
+
+    .svj-admin-users thead {
+      display: none;
+    }
+
+    .svj-admin-users tbody tr {
+      display: grid;
+      min-width: 0;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.25rem 0.75rem;
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.875rem;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .svj-admin-users tbody tr:first-child {
+      margin-top: 0;
+    }
+
+    .svj-admin-users td {
+      display: block;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .svj-admin-users td:nth-child(2),
+    .svj-admin-users td:nth-child(3),
+    .svj-admin-users td:nth-child(4),
+    .svj-admin-users td:nth-child(5) {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .svj-admin-users td:nth-child(2)::before,
+    .svj-admin-users td:nth-child(3)::before,
+    .svj-admin-users td:nth-child(4)::before,
+    .svj-admin-users td:nth-child(5)::before {
+      content: attr(data-label);
+      color: #8c8c90;
+      font-family: Inter, sans-serif;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .svj-admin-users td:first-child,
+    .svj-admin-users td:last-child,
+    .svj-admin-users td:only-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .svj-admin-users tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
   }
 

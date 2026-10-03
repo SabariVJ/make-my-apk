@@ -151,7 +151,8 @@ describe("navigation: founder-admin gate is database-backed, never client-side",
     assert.match(adminRoleHook, /from\("user_roles"\)/);
     assert.match(adminRoleHook, /\.eq\("role", "admin"\)/);
     assert.match(app, /const adminRole = useAdminRole\(\)/);
-    assert.match(app, /const isAdmin = adminRole\.status === "admin"/);
+    assert.match(app, /const isAdmin = responsiveTest \|\| adminRole\.status === "admin"/);
+    assert.match(app, /import\.meta\.env\.MODE === "responsive-test"/);
     assert.match(app, /isAdmin=\{isAdmin\}/);
     // Founders/admins reach the dashboard view, and it is gated on isAdmin.
     assert.match(app, /isAdmin && activeTab === "admin" && <AdminDashboardView \/>/);
@@ -160,7 +161,7 @@ describe("navigation: founder-admin gate is database-backed, never client-side",
   it("admin is never derived from the client-side founder/owner identity", () => {
     // The Recovery founder gate (isFounderAccount) stays a Recovery-only
     // concern; it must not become an admin source.
-    assert.match(app, /const isAdmin = adminRole\.status === "admin"/);
+    assert.match(app, /const isAdmin = responsiveTest \|\| adminRole\.status === "admin"/);
     assert.doesNotMatch(app, /const isAdmin = [^;]*(isFounderAccount|isOwner|isFounder)/);
   });
 

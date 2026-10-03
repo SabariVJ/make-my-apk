@@ -129,8 +129,23 @@ describe("SVJDatePicker date maths", { concurrency: false }, () => {
 
   it("renders a readable long date", () => {
     // Locale ordering varies by ICU build; both orderings are readable.
-    assert.match(app.formatLongDate("2026-09-24"), /24 Sep 2026|Sep 24, 2026/);
-    assert.match(app.formatDayLabel(2026, 8, 24), /24 September 2026|September 24, 2026/);
+    assert.equal(
+      app.formatLongDate("2026-09-24"),
+      new Date(2026, 8, 24, 12).toLocaleDateString(undefined, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    );
+    assert.equal(
+      app.formatDayLabel(2026, 8, 24),
+      new Date(2026, 8, 24, 12).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    );
     assert.equal(app.todayDateValue().length, 10);
   });
 
@@ -162,7 +177,10 @@ describe("SVJDatePicker interaction", { concurrency: false }, () => {
     assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
     assert.equal(trigger.getAttribute("aria-expanded"), "true");
     assert.match(trigger.className, /min-h-\[44px\]/);
-    assert.match(screen.getByTestId("move-date-value").textContent, /24 Sep 2026|Sep 24, 2026/);
+    assert.equal(
+      screen.getByTestId("move-date-value").textContent,
+      app.formatLongDate("2026-09-24"),
+    );
     // The page must not contain a native date input that Android could hijack.
     assert.equal(document.querySelectorAll('input[type="date"]').length, 0);
     assert.equal(document.querySelectorAll("input").length, 0);
@@ -238,7 +256,10 @@ describe("SVJDatePicker interaction", { concurrency: false }, () => {
     });
     assert.deepEqual(calls, [], "Cancel never writes a new date");
     assert.equal(screen.queryByRole("dialog"), null);
-    assert.match(screen.getByTestId("move-date-value").textContent, /24 Sep 2026|Sep 24, 2026/);
+    assert.equal(
+      screen.getByTestId("move-date-value").textContent,
+      app.formatLongDate("2026-09-24"),
+    );
 
     // Re-opening must reset the draft back to the committed value.
     await act(async () => {

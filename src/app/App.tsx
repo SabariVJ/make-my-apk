@@ -62,6 +62,22 @@ import {
 const PAGE_CONTAINER =
   "svj-page-gutters mx-auto min-w-0 w-full pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pt-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl";
 
+const RESPONSIVE_TEST_TABS: ActiveTab[] = [
+  "challenges",
+  "activity",
+  "earn",
+  "workouts",
+  "recovery",
+  "nutrition",
+  "community",
+  "leaderboard",
+  "sixty",
+  "profile",
+  "plan",
+  "transform",
+  "admin",
+];
+
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
 // sandbox that has not had VITE_SUPABASE_PUBLISHABLE_KEY set. Lists exactly
@@ -87,17 +103,24 @@ const ConfigMissingScreen: React.FC = () => {
 const AppContent: React.FC<{
   locked?: boolean;
   lockEmail?: string | null;
-}> = ({ locked = false, lockEmail = null }) => {
+  responsiveTest?: boolean;
+}> = ({ locked = false, lockEmail = null, responsiveTest = false }) => {
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   // Silent admin-role check: renders nothing for everyone else. RLS and the
   // server-side role checks remain the actual security boundary.
   const adminRole = useAdminRole();
-  const isAdmin = adminRole.status === "admin";
+  const isAdmin = responsiveTest || adminRole.status === "admin";
   // Android Play: prevent stale tabs (community/leaderboard hidden on native)
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     if (locked) return "sixty";
+    if (responsiveTest && typeof window !== "undefined") {
+      const requested = new URLSearchParams(window.location.search).get("tab");
+      if (requested && RESPONSIVE_TEST_TABS.includes(requested as ActiveTab)) {
+        return requested as ActiveTab;
+      }
+    }
     return "challenges";
   });
 
@@ -288,7 +311,7 @@ const AppContent: React.FC<{
 
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
-      <NotificationCoordinator onNavigate={handleTabChange} />
+      {!responsiveTest && <NotificationCoordinator onNavigate={handleTabChange} />}
 
       {/* Secondary destinations: right rail on desktop, drawer on phones. */}
       <UtilityRail activeTab={activeTab} setActiveTab={handleTabChange} isAdmin={isAdmin} />
@@ -319,6 +342,7 @@ const AppContent: React.FC<{
           <motion.div
             key={activeTab}
             className="min-w-0 w-full"
+            data-responsive-screen={responsiveTest ? activeTab : undefined}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -360,40 +384,44 @@ const AppContent: React.FC<{
       </main>
 
       {/* Global Modals & Overlays */}
-      <MemberProfileModal
-        member={selectedMemberModal}
-        onClose={() => setSelectedMemberModal(null)}
-        onCompare={(member) => {
-          // Never route a self-comparison into the rivalry modal — the modal
-          // also guards, but the shared handler is the primary boundary.
-          if (member.id === user.id) {
-            setSelectedMemberModal(null);
-            return;
-          }
-          setSelectedMemberModal(null);
-          setComparingMember(member);
-        }}
-      />
+      {!responsiveTest && (
+        <>
+          <MemberProfileModal
+            member={selectedMemberModal}
+            onClose={() => setSelectedMemberModal(null)}
+            onCompare={(member) => {
+              // Never route a self-comparison into the rivalry modal — the modal
+              // also guards, but the shared handler is the primary boundary.
+              if (member.id === user.id) {
+                setSelectedMemberModal(null);
+                return;
+              }
+              setSelectedMemberModal(null);
+              setComparingMember(member);
+            }}
+          />
 
-      <XPComparisonModal member={comparingMember} onClose={() => setComparingMember(null)} />
+          <XPComparisonModal member={comparingMember} onClose={() => setComparingMember(null)} />
 
-      <EditProfileModal />
-      <LevelUpModal />
-      {!isAndroid && <UPIPaymentModal />}
-      <PaywallModal
-        onOpenPlan={() => {
-          setIsPaywallOpen(false);
-          setActiveTab("plan");
-        }}
-      />
-      <FirstTimeOnboardingModal />
-      <GoogleAuthModal />
+          <EditProfileModal />
+          <LevelUpModal />
+          {!isAndroid && <UPIPaymentModal />}
+          <PaywallModal
+            onOpenPlan={() => {
+              setIsPaywallOpen(false);
+              setActiveTab("plan");
+            }}
+          />
+          <FirstTimeOnboardingModal />
+          <GoogleAuthModal />
+        </>
+      )}
 
       {/* Bottom Sticky Navigation Bar */}
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* AdMob banner — only for non-premium users after the real UI loads */}
-      <NativeBannerAd enabled={!user.isPremium} />
+      {!responsiveTest && <NativeBannerAd enabled={!user.isPremium} />}
     </div>
   );
 };
@@ -419,6 +447,18 @@ function AppRoot() {
 
   // Catches background auth/401 failures that no component handles directly.
   useEffect(() => installSessionExpiryWatcher(), []);
+
+  if (import.meta.env.MODE === "responsive-test") {
+    return (
+      <SVJProvider plusActive={false} isPlusMember={false} plusExpiresAt={null}>
+        <EngagementProvider key="responsive-test" userId={null}>
+          <ActivityProvider key="responsive-test" userId={null}>
+            <ResponsiveTestRuntime />
+          </ActivityProvider>
+        </EngagementProvider>
+      </SVJProvider>
+    );
+  }
 
   if (!online) {
     return (
@@ -488,4 +528,41 @@ function AppRoot() {
       )}
     </TrialGate>
   );
+}
+
+/** A fixed local test session: no authentication or backend is needed for layout checks. */
+function ResponsiveTestRuntime() {
+  const queryClient = useQueryClient();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    queryClient.setQueryData(["admin-stats"], {
+      totalUsers: 1284,
+      totalPlusMembers: 96,
+      newSignupsLast7Days: 18,
+      openTickets: 7,
+    });
+    queryClient.setQueryData(["admin-users", "", 1], {
+      users: [
+        {
+          id: "responsive-test-user-1",
+          username: "viewport_athlete",
+          display_name: "Viewport Test Athlete",
+          email: "responsive.viewport.test+long-address@example.com",
+          is_plus_member: false,
+          plus_expires_at: null,
+          current_streak: 123,
+          total_xp: 1234567,
+          created_at: "2025-10-05T00:00:00.000Z",
+        },
+      ],
+      page: 1,
+      pageSize: 25,
+      hasMore: false,
+    });
+    queryClient.setQueryData(["admin-tickets", "all"], []);
+    setReady(true);
+  }, [queryClient]);
+
+  return ready ? <AppContent responsiveTest /> : null;
 }

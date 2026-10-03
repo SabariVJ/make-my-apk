@@ -42,7 +42,7 @@ export function SixtyDayProgramCard({
         onClick={onOpen}
         data-testid="sixty-day-chip"
         aria-label="Open 60 Day Transformation"
-        className={`flex w-full items-center gap-3 rounded-xl border bg-[#17171A] px-3.5 py-3 text-left transition-colors svj-press ${
+        className={`flex w-full min-w-0 items-center gap-3 rounded-xl border bg-[#17171A] px-3.5 py-3 text-left transition-colors svj-press ${
           completed
             ? "border-[#C9A227]/30 hover:border-[#C9A227]/50"
             : "border-white/[0.08] hover:border-white/[0.16]"

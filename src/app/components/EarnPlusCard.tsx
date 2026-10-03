@@ -32,7 +32,7 @@ export function EarnPlusCard({
         type="button"
         onClick={onOpen}
         aria-label="Open Earn Plus"
-        className="flex w-full items-center gap-3 rounded-xl border border-[#C81E3A]/20 bg-[#17171A] px-3.5 py-3 text-left transition-colors hover:border-[#C81E3A]/40 svj-press"
+        className="flex w-full min-w-0 items-center gap-3 rounded-xl border border-[#C81E3A]/20 bg-[#17171A] px-3.5 py-3 text-left transition-colors hover:border-[#C81E3A]/40 svj-press"
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#C81E3A]/30 bg-[#C81E3A]/12 text-[#E62846]">
           <ShieldCheck aria-hidden className="h-4 w-4" />
@@ -41,7 +41,9 @@ export function EarnPlusCard({
           <span className="block text-[13px] font-inter font-semibold text-[#F4F2ED]">
             Earn Plus
           </span>
-          <span className="block truncate text-[11px] font-inter text-[#8C8C90]">{summary}</span>
+          <span className="block whitespace-normal break-words text-[11px] font-inter text-[#8C8C90]">
+            {summary}
+          </span>
         </span>
         {active && (
           <span className="shrink-0 font-mono text-[11px] font-semibold text-[#E62846]">

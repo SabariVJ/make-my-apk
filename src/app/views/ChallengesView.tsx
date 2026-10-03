@@ -466,7 +466,7 @@ export const ChallengesView: React.FC<{
           Each chip opens the exact destination it always did. */}
       <section className="space-y-3">
         <SVJSectionHeader title="Your programs" eyebrow="Long-running" />
-        <div className="grid items-start gap-2 lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-2 lg:grid-cols-2">
           {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} compact />}
           {onOpenSixtyDay && !sixtyDayQuery.isError && (
             <SixtyDayProgramCard
@@ -492,13 +492,13 @@ export const ChallengesView: React.FC<{
       <SVJSectionHeader title="Today's tasks" trailing={undefined} />
 
       {/* Categories & Custom Task Button */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2 pb-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-inter font-medium transition-all shrink-0 cursor-pointer ${
+              className={`max-w-full px-3 py-1.5 rounded-lg text-[11px] font-inter font-medium transition-all cursor-pointer ${
                 selectedCategory === cat
                   ? "bg-[#C81E3A] text-white"
                   : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/[0.04]"
@@ -515,7 +515,7 @@ export const ChallengesView: React.FC<{
             setEditingTask(null);
             setIsAddModalOpen(true);
           }}
-          className="px-3 py-1.5 rounded-lg bg-[#17171A] hover:bg-white/[0.06] text-white border border-white/[0.06] text-[11px] font-inter font-medium flex items-center gap-1.5 shrink-0 cursor-pointer"
+          className="ml-auto max-w-full px-3 py-1.5 rounded-lg bg-[#17171A] hover:bg-white/[0.06] text-white border border-white/[0.06] text-[11px] font-inter font-medium flex items-center gap-1.5 shrink-0 cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5 text-[#C81E3A]" />
           <span>Add Task</span>

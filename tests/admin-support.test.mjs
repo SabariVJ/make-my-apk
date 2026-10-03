@@ -330,7 +330,7 @@ describe("founder provisioning and role reads (20261007)", () => {
   });
 
   it("a normal user is not admin and cannot reach the admin destination", () => {
-    assert.match(appEntry, /const isAdmin = adminRole\.status === "admin"/);
+    assert.match(appEntry, /const isAdmin = responsiveTest \|\| adminRole\.status === "admin"/);
     const baseList = utilityNav.split("const ADMIN_NAV_ITEM")[0];
     assert.doesNotMatch(baseList, /"admin"/);
   });

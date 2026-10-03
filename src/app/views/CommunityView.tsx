@@ -338,7 +338,7 @@ export const CommunityView: React.FC = () => {
                 </div>
 
                 {/* Motivational Reactions Bar */}
-                <div className="flex items-center gap-2 pt-1 overflow-x-auto pb-1">
+                <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
                   {reactionEmojis.map((r) => {
                     const count = item.reactions[r.type] || 0;
                     const isSelected = userReaction === r.type;

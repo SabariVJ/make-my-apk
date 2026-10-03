@@ -1126,13 +1126,13 @@ const ExercisePicker: React.FC<{
         />
       </div>
 
-      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+      <div className="mt-2 flex flex-wrap gap-1.5 pb-1">
         {["all", ...EXERCISE_CATEGORIES].map((id) => (
           <button
             key={id}
             type="button"
             onClick={() => setCategory(id)}
-            className={`shrink-0 rounded-lg border px-2 py-1 text-[9px] font-mono uppercase tracking-wider ${
+            className={`max-w-full rounded-lg border px-2 py-1 text-[9px] font-mono uppercase tracking-wider ${
               category === id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90]"

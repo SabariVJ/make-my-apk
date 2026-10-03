@@ -144,7 +144,7 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
           role="dialog"
           aria-modal="true"
           aria-label="XP rivalry and analysis"
-          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] w-full max-w-lg overflow-y-auto overflow-x-hidden border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
+          className="svj-radius-card svj-lit-top svj-elev-3 relative max-h-[90dvh] min-w-0 w-full max-w-lg overflow-y-auto border border-white/[0.06] bg-[#17171A] p-4 text-[#F4F2ED]"
         >
           {/* Decorative rivalry hero — hidden automatically until the asset exists. */}
           <SvjRivalryHero />

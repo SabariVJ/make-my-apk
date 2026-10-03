@@ -521,7 +521,12 @@ export class GpsWorkoutRecorder {
     }
     this.session = {
       ...this.session,
-      state: metadata.active && !metadata.paused ? "recording" : "paused",
+      state: this.session.endedAtMs
+        ? "stopping"
+        : metadata.active && !metadata.paused
+          ? "recording"
+          : "paused",
+      pausedAtMs: metadata.active && !metadata.paused ? null : this.session.pausedAtMs,
     };
     this.persist();
     this.emit();

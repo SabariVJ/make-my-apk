@@ -633,6 +633,7 @@ export interface LiveShare {
   active: boolean;
   token?: string;
   activityId?: string;
+  recordingId?: string;
   activityType?: string | null;
   displayName?: string | null;
   startedAt?: string;
@@ -656,6 +657,7 @@ export function normalizeLiveShare(raw: unknown): LiveShare {
     active: true,
     token: str(raw.token) ?? undefined,
     activityId: str(raw.activityId) ?? undefined,
+    ...(str(raw.recordingId) ? { recordingId: str(raw.recordingId)! } : {}),
     activityType: str(raw.activityType),
     displayName: str(raw.displayName),
     startedAt: str(raw.startedAt) ?? undefined,

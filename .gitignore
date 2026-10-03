@@ -43,3 +43,6 @@ test-results/
 *-tests.log
 build-*.log
 native-build.log
+performance-App-backup.txt
+isolated-migration-manifest.json
+isolated-security-inventory.json

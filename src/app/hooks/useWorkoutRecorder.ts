@@ -56,6 +56,7 @@ import {
   saveGpsWorkout,
   startRecordingLiveShare,
   stopLiveShare,
+  fetchMyLiveShare,
   updateLiveShare,
   type LiveShare,
 } from "../lib/activityPlatform";
@@ -447,10 +448,17 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     setBusy(true);
     try {
       await recorder.finish();
+      setSession(recorder.current ? { ...recorder.current } : null);
+      setSummary(recorder.summary());
       const shareClient = activityRpcClient();
       if (shareClient && sharingRef.current) {
         const stopped = await stopLiveShare(shareClient, sharingRef.current);
-        if (!stopped.ok) throw new Error("Sharing has not confirmed its stop.");
+        if (!stopped.ok) {
+          setError(
+            "Recording stopped. The live link could not confirm its stop; reconnect and tap Stop Sharing.",
+          );
+          return;
+        }
         sharingRef.current = null;
         setLiveShare(null);
       }
@@ -468,6 +476,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
   const discard = useCallback(async () => {
     setBusy(true);
     try {
+      await recorder.finish();
       const shareClient = activityRpcClient();
       if (shareClient && sharingRef.current) {
         const stopped = await stopLiveShare(shareClient, sharingRef.current);
@@ -603,6 +612,48 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       setLiveShareBusy(false);
     }
   }, []);
+
+  // A recreated WebView reattaches to the owner's existing link, never a different recording.
+  useEffect(() => {
+    const activityId = session?.activityId;
+    if (!userId || !activityId) return;
+    let alive = true;
+    const restoreShare = async () => {
+      if (document.hidden || !navigator.onLine) return;
+      try {
+        const result = await withAccountRpcClient(
+          userId,
+          (client) => fetchMyLiveShare(client),
+          () => alive && owner.current === userId,
+        );
+        if (!alive || !result.ok || result.share?.recordingId !== activityId || !result.share.token)
+          return;
+        sharingRef.current = result.share.token;
+        setLiveShare(result.share);
+        if (recorder.current?.endedAtMs) {
+          const stopped = await withAccountRpcClient(
+            userId,
+            (client) => stopLiveShare(client, result.share!.token),
+            () => alive && owner.current === userId,
+          );
+          if (stopped.ok && alive) {
+            sharingRef.current = null;
+            setLiveShare(null);
+          }
+        }
+      } catch {
+        /* Keep the existing link/status until the server confirms a change. */
+      }
+    };
+    void restoreShare();
+    window.addEventListener("online", restoreShare);
+    document.addEventListener("visibilitychange", restoreShare);
+    return () => {
+      alive = false;
+      window.removeEventListener("online", restoreShare);
+      document.removeEventListener("visibilitychange", restoreShare);
+    };
+  }, [userId, session?.activityId, session?.endedAtMs, recorder]);
 
   const dismissError = useCallback(() => setError(null), []);
   const dismissNotice = useCallback(() => setNotice(null), []);

@@ -341,6 +341,18 @@ function AccountActivityProvider({
   }, [bodyProfileQuery.data]);
 
   // ── XP milestones (effect, never inside a state updater — StrictMode safe:
+  // Native daily history updates display fields only. Session reward fields stay separate.
+  useEffect(() => {
+    const daily = dailyTracking.state;
+    if (!daily || daily.ownerId !== userId || daily.dateKey !== localDateKey()) return;
+    setState((previous) => {
+      const rolled = rollActivityDay(previous, new Date()).state;
+      if (!rolled.today || rolled.today.steps >= daily.steps) return rolled;
+      return { ...rolled, today: { ...rolled.today, steps: daily.steps } };
+    });
+  }, [dailyTracking.state, userId]);
+
+  // ── XP milestones (effect, never inside a state updater — StrictMode safe:
   //    claim is persisted first and a ref guard blocks same-instance replays) ─
   useEffect(() => {
     const today = state.today;

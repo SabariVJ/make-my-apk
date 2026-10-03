@@ -74,6 +74,7 @@ jobs:
           name: isolated-backend-evidence
           path: |
             isolated-security-inventory.json
+            isolated-migration-manifest.json
             test-results/
           if-no-files-found: warn
       - name: Stop disposable backend

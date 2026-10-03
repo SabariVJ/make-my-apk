@@ -22,7 +22,7 @@ export function StepTrackingStatus() {
               : "Enable automatic daily steps")}
       </p>
       <dl className="grid grid-cols-2 gap-2 text-sm my-3 min-w-0">
-        <dt>Motion permission</dt>
+        <dt>Permission</dt>
         <dd className="break-words">{state?.permission ?? "Not checked"}</dd>
         <dt>Sensor</dt>
         <dd className="break-words">{state?.available ? state.source : "Unavailable"}</dd>

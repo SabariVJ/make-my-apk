@@ -1,0 +1,50 @@
+{
+  "scope": "Controlled Chromium browser profile; not a physical-phone timing claim",
+  "profile": {
+    "viewport": "390x844",
+    "deviceScaleFactor": 2,
+    "cpuSlowdown": 4,
+    "latencyMs": 150,
+    "downloadMbps": 1.6,
+    "uploadMbps": 0.75,
+    "cache": "disabled",
+    "backend": "deterministic responsive session",
+    "samples": 3
+  },
+  "results": [
+    {
+      "variant": "before: eager screens",
+      "samples": [
+        {
+          "readyMs": 4686,
+          "transferredBytes": 659378
+        },
+        {
+          "readyMs": 4550,
+          "transferredBytes": 659378
+        },
+        {
+          "readyMs": 4537,
+          "transferredBytes": 659380
+        }
+      ]
+    },
+    {
+      "variant": "after: lazy screens",
+      "samples": [
+        {
+          "readyMs": 4121,
+          "transferredBytes": 463330
+        },
+        {
+          "readyMs": 4095,
+          "transferredBytes": 463322
+        },
+        {
+          "readyMs": 4086,
+          "transferredBytes": 463326
+        }
+      ]
+    }
+  ]
+}

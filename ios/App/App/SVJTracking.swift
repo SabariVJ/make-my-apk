@@ -40,7 +40,7 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
         let cached = defaults.dictionary(forKey: "svj.daily.snapshot." + owner) ?? [:]
         let enabled = defaults.bool(forKey: "svj.daily.enabled") && defaults.string(forKey: "svj.daily.owner") == owner
         return ["version": 2, "ownerId": owner, "enabled": enabled, "available": CMPedometer.isStepCountingAvailable(),
-                "listening": enabled && permission() == "granted", "permission": permission(), "dateKey": day(),
+                "listening": false, "permission": permission(), "dateKey": day(),
                 "steps": cached["dateKey"] as? String == day() ? (cached["steps"] as? Int ?? 0) : 0,
                 "raw": NSNull(), "measurementAt": cached["dateKey"] as? String == day() ? (cached["measurementAt"] ?? NSNull()) : NSNull(), "source": "iPhone Motion", "error": lastError as Any? ?? NSNull()]
     }
@@ -86,8 +86,8 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
     @objc func openSettings(_ call: CAPPluginCall) { DispatchQueue.main.async { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!); call.resolve() } }
-    @objc func checkPermissions(_ call: CAPPluginCall) { call.resolve(["activityRecognition": permission()]) }
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc public override func checkPermissions(_ call: CAPPluginCall) { call.resolve(["activityRecognition": permission()]) }
+    @objc public override func requestPermissions(_ call: CAPPluginCall) {
         session.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { _, _ in call.resolve(["activityRecognition": self.permission()]) }
     }
     @objc func isAvailable(_ call: CAPPluginCall) { call.resolve(["stepCounting": CMPedometer.isStepCountingAvailable(), "sensorManager": true]) }
@@ -130,7 +130,7 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
 public final class VjWorkoutPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManagerDelegate {
     public let identifier = "VjWorkoutPlugin"
     public let jsName = "VjWorkout"
-    public let pluginMethods = ["isAvailable", "checkPermissions", "requestPermissions", "startWorkout", "pauseWorkout", "resumeWorkout", "stopWorkout", "getState", "readJournal", "clearJournal", "listRecordings"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    public let pluginMethods: [CAPPluginMethod] = ["isAvailable", "checkPermissions", "requestPermissions", "startWorkout", "pauseWorkout", "resumeWorkout", "stopWorkout", "getState", "readJournal", "clearJournal", "listRecordings"].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     private var manager: CLLocationManager!
     private var journal: WorkoutJournal?
     private var metadata: [String: Any] = [:]
@@ -209,8 +209,8 @@ public final class VjWorkoutPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) { finish(nil) }
     }
     @objc func isAvailable(_ call: CAPPluginCall) { call.resolve(["available": true, "version": 2, "journal": true, "revision": Bundle.main.object(forInfoDictionaryKey: "SVJBuildRevision") ?? "unknown"]) }
-    @objc func checkPermissions(_ call: CAPPluginCall) { call.resolve(permissions()) }
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc public override func checkPermissions(_ call: CAPPluginCall) { call.resolve(permissions()) }
+    @objc public override func requestPermissions(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             if self.permission() != "prompt" { call.resolve(self.permissions()); return }
             if self.permissionCall != nil { call.reject("Permission request already in progress"); return }

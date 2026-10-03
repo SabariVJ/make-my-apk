@@ -114,6 +114,33 @@ describe("durable native journal replay", () => {
     );
     assert.throws(() => recorder.replayNativeEvent(event(2, "start")));
   });
+  it("does not count movement or elapsed pause gaps as recorded exercise", () => {
+    const recorder = recorderFor();
+    adopt(recorder);
+    recorder.replayNativeEvent(event(1, "start"));
+    recorder.replayNativeEvent(event(2, "point", { lat: 12, lng: 77, accuracy: 5 }));
+    recorder.replayNativeEvent(event(3, "point", { lat: 12.0001, lng: 77, accuracy: 5 }));
+    recorder.replayNativeEvent(event(4, "pause"));
+    recorder.replayNativeEvent(event(5, "resume"));
+    recorder.replayNativeEvent(event(6, "point", { lat: 12.001, lng: 77, accuracy: 5 }));
+    recorder.replayNativeEvent(event(7, "point", { lat: 12.0011, lng: 77, accuracy: 5 }));
+    recorder.replayNativeEvent(event(8, "point", { lat: 12.0012, lng: 77, accuracy: 5 }));
+    assert.equal(recorder.current?.points[2]?.moving, false);
+    assert.equal(recorder.current?.pausedTotalSeconds, 5);
+    assert.ok((recorder.summary()?.distanceMeters ?? 0) < 30);
+  });
+  it("reattaching an active native recording does not invent a pause", () => {
+    const storage = createMemoryStorage(),
+      first = recorderFor(storage);
+    adopt(first);
+    first.replayNativeEvent(event(1, "start"));
+    const second = recorderFor(storage);
+    second.recover();
+    adopt(second);
+    second.replayNativeEvent(event(2, "end"));
+    assert.equal(second.current?.pausedTotalSeconds, 0);
+    assert.equal(second.current?.endedAtMs, startedAtMs + 10000);
+  });
   it("keeps the cursor unchanged on storage failure so replay can be retried", () => {
     const base = createMemoryStorage();
     let full = false;

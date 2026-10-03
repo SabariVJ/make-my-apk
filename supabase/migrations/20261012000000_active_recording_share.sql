@@ -20,4 +20,23 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.svj_start_recording_live_share(uuid, text, integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.svj_start_recording_live_share(uuid, text, integer) TO authenticated;
+CREATE OR REPLACE FUNCTION public.svj_get_my_live_share()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
+DECLARE v_user uuid := auth.uid(); v_share public.svj_live_share_sessions;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+  SELECT * INTO v_share FROM public.svj_live_share_sessions
+  WHERE user_id = v_user AND revoked_at IS NULL AND expires_at > now()
+  ORDER BY created_at DESC LIMIT 1;
+  IF NOT FOUND THEN RETURN jsonb_build_object('active', false); END IF;
+  RETURN jsonb_build_object('active', true, 'token', v_share.token,
+    'activityId', v_share.activity_id, 'recordingId', v_share.recording_id,
+    'activityType', v_share.activity_type, 'displayName', v_share.display_name,
+    'startedAt', v_share.started_at, 'expiresAt', v_share.expires_at,
+    'lastLat', v_share.last_lat, 'lastLng', v_share.last_lng,
+    'lastUpdateAt', v_share.last_update_at, 'lastElapsedSeconds', v_share.last_elapsed_seconds,
+    'lastDistanceMeters', v_share.last_distance_meters, 'batteryPercent', v_share.battery_percent);
+END; $$;
+REVOKE ALL ON FUNCTION public.svj_get_my_live_share() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.svj_get_my_live_share() TO authenticated;
 COMMIT;

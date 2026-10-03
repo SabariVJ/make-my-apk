@@ -37,10 +37,20 @@ export function validateDailyState(raw: DailyTrackingState, ownerId: string): Da
     raw.version !== 2 ||
     raw.ownerId !== ownerId ||
     !Number.isSafeInteger(raw.steps) ||
-    raw.steps < 0
+    raw.steps < 0 ||
+    typeof raw.enabled !== "boolean" ||
+    typeof raw.available !== "boolean" ||
+    typeof raw.listening !== "boolean" ||
+    !["granted", "denied", "prompt", "unavailable"].includes(raw.permission) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(raw.dateKey) ||
+    typeof raw.source !== "string" ||
+    (raw.measurementAt != null && (!Number.isFinite(raw.measurementAt) || raw.measurementAt <= 0))
   )
     throw new Error("Update the SVJ app to enable reliable daily tracking.");
-  return raw;
+  return {
+    ...raw,
+    raw: raw.raw != null && Number.isFinite(raw.raw) && raw.raw >= 0 ? raw.raw : null,
+  };
 }
 
 /** Mounted with the account provider, never with an individual tab. */
@@ -80,6 +90,8 @@ export function useDailyTracking(ownerId: string | null) {
             listening: false,
             measurementAt: aggregate.measurementAt,
             raw: null,
+            permission: "granted",
+            error: null,
           });
         }
       }
@@ -135,8 +147,11 @@ export function useDailyTracking(ownerId: string | null) {
   }, [ownerId]);
   const disable = useCallback(async () => {
     try {
-      if (ownerId) appStorage.removeItem(`svj.steps.health.${ownerId}`);
       await DailyPedometer.disableDailyTracking();
+      if (ownerId) {
+        const removed = appStorage.removeItem(`svj.steps.health.${ownerId}`);
+        if (!removed.ok) throw new Error(removed.error);
+      }
       await refresh();
     } catch {
       setError("Could not confirm tracking stopped. Open SVJ and try again.");

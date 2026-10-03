@@ -383,8 +383,7 @@ describe("active support ticket UI", { concurrency: false }, () => {
     fixture.rows = [ticket("closed", "resolved")];
     await mount("RaiseTicketForm", "MyTicketsList", "AdminDashboardView");
     await waitFor(() => {
-      assert.ok(screen.getByText("No active tickets.", { exact: true }));
-      assert.ok(screen.getByText("No active tickets", { exact: true }));
+      assert.equal(screen.getAllByText("No active tickets.", { exact: true }).length, 2);
     });
     const calls = [fixture.mineCalls, fixture.adminCalls, fixture.statsCalls];
     fireEvent.change(screen.getByLabelText("What happened?"), { target: { value: "New issue" } });

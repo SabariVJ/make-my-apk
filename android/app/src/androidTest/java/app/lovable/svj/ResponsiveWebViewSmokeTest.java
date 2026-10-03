@@ -5,7 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -27,12 +29,38 @@ public final class ResponsiveWebViewSmokeTest {
     @Test
     public void localBundleFitsTheAndroidWebViewViewport() throws Exception {
         var instrumentation = InstrumentationRegistry.getInstrumentation();
+        var targetContext = instrumentation.getTargetContext();
+        var application = (Application) targetContext.getApplicationContext();
+        var activityResumed = new CountDownLatch(1);
+        var launchedActivity = new AtomicReference<Activity>();
+        Application.ActivityLifecycleCallbacks callbacks = new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityResumed(Activity activity) {
+                if (activity instanceof MainActivity) {
+                    launchedActivity.set(activity);
+                    activityResumed.countDown();
+                }
+            }
+
+            @Override public void onActivityCreated(Activity activity, Bundle state) {}
+            @Override public void onActivityStarted(Activity activity) {}
+            @Override public void onActivityPaused(Activity activity) {}
+            @Override public void onActivityStopped(Activity activity) {}
+            @Override public void onActivitySaveInstanceState(Activity activity, Bundle state) {}
+            @Override public void onActivityDestroyed(Activity activity) {}
+        };
+        application.registerActivityLifecycleCallbacks(callbacks);
         Intent intent = new Intent(instrumentation.getTargetContext(), MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Activity activity = instrumentation.startActivitySync(intent);
-        assertNotNull("MainActivity should launch", activity);
-
         try {
+            // startActivitySync waits for Espresso's main-thread-idle signal. The app
+            // keeps rendering continuously, so launch asynchronously and wait for
+            // the actual lifecycle callback instead of waiting for UI idleness.
+            targetContext.startActivity(intent);
+            assertTrue("MainActivity should resume", activityResumed.await(45, TimeUnit.SECONDS));
+            Activity activity = launchedActivity.get();
+            assertNotNull("MainActivity should launch", activity);
+
             WebView webView = findWebView(activity.getWindow().getDecorView());
             assertNotNull("Capacitor WebView should exist", webView);
 
@@ -83,7 +111,11 @@ public final class ResponsiveWebViewSmokeTest {
             assertEquals("Visible content should fit the safe viewport: " + metrics, 0, metrics.getInt("outside"));
             assertEquals("Visible controls should not scroll sideways: " + metrics, 0, metrics.getInt("scrollable"));
         } finally {
-            instrumentation.runOnMainSync(activity::finish);
+            Activity activity = launchedActivity.get();
+            if (activity != null) {
+                instrumentation.runOnMainSync(activity::finish);
+            }
+            application.unregisterActivityLifecycleCallbacks(callbacks);
         }
     }
 

@@ -82,9 +82,8 @@ describe("radius semantics", () => {
 
   it("cards keep rounded-2xl", () => {
     assert.match(card, /rounded-2xl/);
-    // The task row keeps its card radius; only its padding was tightened by the
-    // responsive-density pass.
-    assert.match(challenges, /rounded-2xl border bg-\[#17171A\] p-3\.5/);
+    // The task row keeps its card radius and uses a compact phone layout.
+    assert.match(challenges, /rounded-2xl border bg-\[#17171A\] p-3(?:\s|$)/);
   });
 
   it("nav buttons use button radius, not panel radius", () => {

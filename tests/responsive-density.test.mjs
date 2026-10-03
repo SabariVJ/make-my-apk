@@ -136,7 +136,7 @@ describe("Challenges stays compact and action-focused", () => {
   });
 
   it("lays the task list out as a responsive grid", () => {
-    assert.ok(challenges.includes('className="grid gap-2.5 lg:grid-cols-2"'));
+    assert.ok(challenges.includes('className="grid min-w-0 gap-2.5 lg:grid-cols-2"'));
   });
 
   it("never reintroduces the Character Matrix", () => {

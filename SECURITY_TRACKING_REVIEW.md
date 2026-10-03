@@ -40,7 +40,7 @@ and migration content hashes for its commit.
 ## Required owner follow-up
 
 Compare deployed schema and grants to this reviewed migration chain, then apply
-only the four additive `20261012…` repairs through the normal database change
+only the five additive `20261012…` repairs through the normal database change
 process. Hosted asset delivery, Google OAuth/deep links and physical tracking
 require the published site and installed signed app. The isolated evidence does
 not prove production parity or real-device sensor accuracy.

@@ -6,6 +6,12 @@ Work branch: `codex/native-tracking-stability`, based on release commit
 `68195d06d2baabf0565be3e10a847186ce75a6e2`. Native capability version: **2**.
 Validation is in progress; the older sprint results below are historical.
 
+Latest local suite: **1626 tests, 1624 passed, 0 failed, 2 existing skips**.
+All 12 authenticated browser/API flows passed in
+[run 37152253511](https://github.com/SabariVJ/make-my-apk/actions/runs/37152253511).
+That run exposed function-lint findings; five new real-SQL regression cases
+verify their additive repairs. Final database lint and artifact gating rerun next.
+
 | Known issue             | Repair and current evidence                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | iPhone daily steps      | App-owned Core Motion bridge queries today's history on enable/open/resume/day rollover. Daily totals do not become workout rewards. Device walk remains owner verification.                                                                                                                                                                                                                                                                                    |
@@ -33,7 +39,7 @@ Validation is in progress; the older sprint results below are historical.
 - The native wrappers still load `https://savaje-com.lovable.app`. Publish the
   new web revision separately in Lovable after validation; no hosted publish is
   performed by this work.
-- Reconcile/apply the four new additive migrations using the normal production
+- Reconcile/apply the five new additive migrations using the normal production
   change process. Deployed-schema comparison requires owner database access;
   isolated migration/RLS evidence does not prove production schema parity.
 - Physical verification: enable daily steps, walk 100 steps, lock during an

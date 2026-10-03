@@ -532,6 +532,77 @@ test("active Live Share does not finish recording and an ended link is anonymous
   await expect(page.getByText(/Sharing has ended/i)).toBeVisible();
 });
 
+test("function integrity: missing profile, refresh cooldown, personalized rewards and paused GPS", async () => {
+  const identity = await account("Integrity");
+  await db.query("delete from public.profiles where id=$1", [identity.id]);
+  expect((await rpc(identity, "svj_get_my_membership"))[0].id).toBe(identity.id);
+  checked(await admin.from("user_personalization").upsert({ user_id: identity.id }));
+  expect((await rpc(identity, "svj_reserve_personalized_refresh")).ok).toBe(true);
+  const cooldown = await rpc(identity, "svj_reserve_personalized_refresh");
+  expect(cooldown.ok).toBe(false);
+  expect(cooldown.cooldownRemainingMs).toBeGreaterThan(1790000);
+  const assignment = checked(
+    await admin
+      .from("svj_personalized_task_assignments")
+      .insert({
+        user_id: identity.id,
+        template_key: "integrity-task",
+        title: "Verified task",
+        category: "Physical",
+        difficulty: "easy",
+        xp_reward: 50,
+      })
+      .select("id")
+      .single(),
+  );
+  expect(
+    (await rpc(identity, "svj_complete_my_personalized_task", { p_assignment_id: assignment.id }))
+      .xpAwarded,
+  ).toBe(50);
+  expect(
+    (await rpc(identity, "svj_complete_my_personalized_task", { p_assignment_id: assignment.id }))
+      .xpAwarded,
+  ).toBe(0);
+  expect((await rpc(identity, "svj_get_my_membership"))[0].total_xp).toBe(50);
+  const started = Date.now() - 200000;
+  const gps = await rpc(identity, "svj_save_gps_activity", {
+    p_client_session_id: "svj:" + randomUUID(),
+    p_activity_type: "walking",
+    p_started_at: new Date(started).toISOString(),
+    p_ended_at: new Date(started + 130000).toISOString(),
+    p_duration_seconds: 130,
+    p_points: [
+      { lat: 0, lng: 0, t: 0, moving: true },
+      { lat: 0.0001, lng: 0, t: 10000, moving: true },
+      { lat: 0.0001, lng: 0, t: 20000, moving: false },
+      { lat: 0.0001, lng: 0, t: 90000, moving: false },
+      { lat: 0.0002, lng: 0, t: 120000, moving: true },
+      { lat: 0.0003, lng: 0, t: 130000, moving: true },
+    ],
+  });
+  expect(gps.activity.moving_seconds).toBe(20);
+  await rpc(identity, "svj_start_my_challenge");
+  const connection = await db.connect();
+  try {
+    await connection.query("begin");
+    await connection.query("select set_config('request.jwt.claims',$1,true)", [
+      JSON.stringify({ sub: identity.id, role: "service_role" }),
+    ]);
+    const code = (await connection.query("select public.svj_grant_my_completion_code() code"))
+      .rows[0].code;
+    expect(code).toMatch(/^SVJ-[23456789ABCDEFGH]{4}-[23456789ABCDEFGH]{4}$/);
+    expect(
+      (await connection.query("select public.svj_grant_my_completion_code() code")).rows[0].code,
+    ).toBe(code);
+    await connection.query("commit");
+  } catch (error) {
+    await connection.query("rollback");
+    throw error;
+  } finally {
+    connection.release();
+  }
+});
+
 test("database authorization inventory and client secret scan", async () => {
   const clientFiles = await readdir(".output/public", { recursive: true });
   let scanned = 0;

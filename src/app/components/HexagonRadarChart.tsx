@@ -158,9 +158,9 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
   });
 
   return (
-    <div className={`flex flex-col items-center justify-center ${className}`}>
+    <div className={`flex min-w-0 w-full flex-col items-center justify-center ${className}`}>
       {/* Hexagon Radar Chart Canvas */}
-      <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center select-none">
+      <div className="relative w-full min-w-0 max-w-[340px] aspect-square flex items-center justify-center select-none">
         {/* Ambient Backlight Glow */}
         <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-[#C81E3A]/20 via-purple-600/10 to-blue-600/20 blur-2xl pointer-events-none" />
 
@@ -285,18 +285,18 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       </div>
 
       {/* 6 Individual Stat Attribute Cards Grid matching uploaded image style */}
-      <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 font-mono">
+      <div className="grid w-full min-w-0 grid-cols-2 gap-2 mt-2 font-mono sm:grid-cols-3">
         {dimensions.map((d) => {
           const val = safeStats[d.key];
           return (
             <div
               key={d.key}
               onClick={() => onStatClick && onStatClick(d.key)}
-              className={`p-3 rounded-2xl bg-[#121214] border border-white/10 hover:border-white/20 flex items-center justify-between transition-all group ${
+              className={`min-w-0 p-3 rounded-2xl bg-[#121214] border border-white/10 hover:border-white/20 flex items-center justify-between gap-2 transition-all group ${
                 onStatClick ? "cursor-pointer hover:bg-white/5" : ""
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 {/* Hexagon shape icon container */}
                 <div
                   className="w-8 h-8 rounded-2xl flex items-center justify-center text-sm border shadow-sm shrink-0"
@@ -306,16 +306,20 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
                     color: d.hexColor,
                   }}
                 ></div>
-                <div>
-                  <div className={`text-xs font-bold ${d.color} leading-none`}>{d.label}</div>
-                  <div className="text-[9px] text-[#8C8C90] mt-0.5">
+                <div className="min-w-0">
+                  <div className={`break-words text-xs font-bold ${d.color} leading-none`}>
+                    {d.label}
+                  </div>
+                  <div className="break-words text-[9px] text-[#8C8C90] mt-0.5">
                     LEVEL {Math.floor(val / 10) + 1}
                   </div>
                 </div>
               </div>
 
               {/* Numeric Rating */}
-              <div className="font-anton text-xl text-white tracking-tight">{val}</div>
+              <div className="shrink-0 whitespace-nowrap font-anton text-lg text-white tracking-tight sm:text-xl">
+                {val}
+              </div>
             </div>
           );
         })}

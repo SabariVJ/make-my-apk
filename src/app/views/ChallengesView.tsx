@@ -552,7 +552,7 @@ export const ChallengesView: React.FC<{
         variants={svjStaggerContainer}
         initial="hidden"
         animate="show"
-        className="grid gap-2.5 lg:grid-cols-2"
+        className="grid min-w-0 gap-2.5 lg:grid-cols-2"
       >
         <AnimatePresence mode="popLayout">
           {filteredChallenges.map((challenge) => (
@@ -570,7 +570,7 @@ export const ChallengesView: React.FC<{
                 if (challenge.completed) return;
                 handleToggle(challenge.id);
               }}
-              className={`group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border bg-[#17171A] p-3.5 transition-colors ${
+              className={`group flex min-w-0 cursor-pointer flex-col gap-2 rounded-2xl border bg-[#17171A] p-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3.5 ${
                 completingId === challenge.id
                   ? "border-[#C81E3A]/40"
                   : challenge.completed
@@ -578,7 +578,7 @@ export const ChallengesView: React.FC<{
                     : "border-white/[0.06] hover:border-white/[0.12]"
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex min-w-0 items-start gap-3">
                 {/* Custom Checkbox */}
                 <button
                   type="button"
@@ -620,10 +620,10 @@ export const ChallengesView: React.FC<{
                   ) : null}
                 </button>
 
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <h3
-                      className={`font-inter font-medium text-sm ${
+                      className={`min-w-0 break-words font-inter font-medium text-sm ${
                         challenge.completed ? "text-[#8C8C90]" : "text-white"
                       }`}
                     >
@@ -638,7 +638,7 @@ export const ChallengesView: React.FC<{
                     </span>
                   </div>
 
-                  <p className="text-xs font-inter text-[#8C8C90] mt-1 line-clamp-1">
+                  <p className="mt-1 break-words text-xs font-inter text-[#8C8C90] sm:line-clamp-1">
                     {challenge.description}
                   </p>
 
@@ -649,7 +649,7 @@ export const ChallengesView: React.FC<{
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3 text-[11px] font-inter text-[#8C8C90] mt-2">
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-inter text-[#8C8C90]">
                     <span
                       className="font-medium"
                       style={{ color: challengeCategoryColor(challenge.category) }}
@@ -674,7 +674,7 @@ export const ChallengesView: React.FC<{
               </div>
 
               {/* XP Value Pill */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
                 {challenge.isCustom && (
                   <button
                     type="button"

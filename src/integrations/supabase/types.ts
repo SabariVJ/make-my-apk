@@ -1076,6 +1076,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      svj_live_daily_steps: {
+        Row: {
+          user_id: string;
+          date_key: string;
+          steps: number;
+          distance_meters: number;
+          source: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          date_key: string;
+          steps?: number;
+          distance_meters?: number;
+          source?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          date_key?: string;
+          steps?: number;
+          distance_meters?: number;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
           id: string;

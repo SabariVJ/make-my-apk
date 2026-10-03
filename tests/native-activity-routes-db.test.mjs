@@ -63,7 +63,7 @@ const execute = (sql, args = []) => database.query(sql, args);
 const execScript = async (sql) => (native ? database.query(sql) : database.exec(sql));
 
 async function asRole(role, userId, sql, args = []) {
-  assert.ok(["service_role", "authenticated", "anon"].includes(role));
+  assert.ok(["service_role", "authenticated", "anon", "postgres"].includes(role));
   const run = async (client) => {
     await client.query("SET LOCAL ROLE " + role);
     await client.query("SELECT set_config('request.jwt.claims', $1, true)", [
@@ -180,7 +180,9 @@ before(async () => {
   // real production path: auth fixture → shipped migrations → the pending
   // Earn Plus scripts production already has → later migrations in order.
   await execScript(await readFile("tests/fixtures/rewards-auth.sql", "utf8"));
-  const migrations = (await readdir("supabase/migrations")).filter((entry) => entry.endsWith(".sql")).sort();
+  const migrations = (await readdir("supabase/migrations"))
+    .filter((entry) => entry.endsWith(".sql"))
+    .sort();
   for (const name of migrations.filter((entry) => entry < "20260920000000")) {
     await execScript(await readFile("supabase/migrations/" + name, "utf8"));
   }
@@ -390,12 +392,7 @@ describe("route library (real SQL roles)", { concurrency: false }, () => {
       "Owner only",
     ]);
     await assert.rejects(
-      () =>
-        call("svj_update_route", "authenticated", other, [
-          created.route.id,
-          "Hijacked",
-          null,
-        ]),
+      () => call("svj_update_route", "authenticated", other, [created.route.id, "Hijacked", null]),
       (error) => /Route not found/.test(error.message),
     );
     const routes = await callResult("svj_list_routes", "authenticated", owner);
@@ -407,12 +404,15 @@ describe("route library (real SQL roles)", { concurrency: false }, () => {
     const id = await account();
     const saved = await recordWorkout(id);
     await assert.rejects(
-      () =>
-        call("svj_save_route_from_activity", "authenticated", id, [saved.activity.id, "   "]),
+      () => call("svj_save_route_from_activity", "authenticated", id, [saved.activity.id, "   "]),
       (error) => /route name between 1 and 80/.test(error.message),
     );
     await assert.rejects(
-      () => call("svj_save_route_from_activity", "authenticated", id, [saved.activity.id, "x".repeat(81)]),
+      () =>
+        call("svj_save_route_from_activity", "authenticated", id, [
+          saved.activity.id,
+          "x".repeat(81),
+        ]),
       (error) => /route name between 1 and 80/.test(error.message),
     );
   });
@@ -424,10 +424,7 @@ describe("route library (real SQL roles)", { concurrency: false }, () => {
     const saved = await recordWorkout(owner);
     await assert.rejects(
       () =>
-        call("svj_save_route_from_activity", "authenticated", other, [
-          saved.activity.id,
-          "Stolen",
-        ]),
+        call("svj_save_route_from_activity", "authenticated", other, [saved.activity.id, "Stolen"]),
       (error) => /Activity not found/.test(error.message),
     );
   });
@@ -564,5 +561,94 @@ describe("route library SQL surface", { concurrency: false }, () => {
         `${row.proname} must derive identity from auth.uid()`,
       );
     }
+  });
+});
+
+describe("function integrity repairs (real SQL)", { concurrency: false }, () => {
+  it("counts GPS movement in seconds and excludes a paused interval", async () => {
+    if (skipAll) return;
+    const owner = await account();
+    const points = [
+      { lat: 0, lng: 0, t: 0, moving: true },
+      { lat: 0.0001, lng: 0, t: 10000, moving: true },
+      { lat: 0.0001, lng: 0, t: 20000, moving: false },
+      { lat: 0.0001, lng: 0, t: 90000, moving: false },
+      { lat: 0.0002, lng: 0, t: 120000, moving: true },
+      { lat: 0.0003, lng: 0, t: 130000, moving: true },
+    ];
+    const saved = await recordWorkout(owner, { p_points: points });
+    assert.equal(saved.activity.moving_seconds, 20);
+    assert.ok(Number(saved.activity.distance_meters) > 20);
+    assert.ok(Number(saved.activity.distance_meters) < 23);
+  });
+  it("reserves refresh once and reports remaining cooldown", async () => {
+    if (skipAll) return;
+    const owner = await account();
+    await execute(
+      "INSERT INTO public.user_personalization(user_id) VALUES ($1) ON CONFLICT DO NOTHING",
+      [owner],
+    );
+    const first = await callResult("svj_reserve_personalized_refresh", "authenticated", owner);
+    assert.equal(first.ok, true);
+    const retry = await callResult("svj_reserve_personalized_refresh", "authenticated", owner);
+    assert.equal(retry.ok, false);
+    assert.ok(retry.cooldownRemainingMs > 1790000 && retry.cooldownRemainingMs <= 1800000);
+  });
+  it("recovers a missing membership profile without an ambiguous conflict", async () => {
+    if (skipAll) return;
+    const owner = await account();
+    await execute("DELETE FROM public.profiles WHERE id=$1", [owner]);
+    const result = await asRole(
+      "authenticated",
+      owner,
+      "SELECT * FROM public.svj_get_my_membership()",
+    );
+    assert.equal(result.rows[0].id, owner);
+  });
+  it("returns personalized XP from the ledger and retries without another reward", async () => {
+    if (skipAll) return;
+    const owner = await account();
+    const assignment = randomUUID();
+    const baseline = (await execute("SELECT total_xp FROM public.profiles WHERE id=$1", [owner]))
+      .rows[0].total_xp;
+    await execute("INSERT INTO public.user_stats(user_id) VALUES ($1) ON CONFLICT DO NOTHING", [
+      owner,
+    ]);
+    await execute(
+      "INSERT INTO public.svj_personalized_task_assignments(id,user_id,template_key,title,category,difficulty,xp_reward) VALUES ($1,$2,'integrity-test','Test task','Physical','easy',50)",
+      [assignment, owner],
+    );
+    const first = await callResult("svj_complete_my_personalized_task", "authenticated", owner, [
+      assignment,
+    ]);
+    assert.equal(first.ok, true);
+    assert.equal(first.xpAwarded, 50);
+    const retry = await callResult("svj_complete_my_personalized_task", "authenticated", owner, [
+      assignment,
+    ]);
+    assert.equal(retry.alreadyCompleted, true);
+    assert.equal(retry.xpAwarded, 0);
+    assert.equal(
+      (await execute("SELECT total_xp FROM public.profiles WHERE id=$1", [owner])).rows[0].total_xp,
+      baseline + 50,
+    );
+    assert.equal(
+      (
+        await execute(
+          "SELECT count(*)::int AS n FROM public.activity_events WHERE user_id=$1 AND source_class='svj_personalized'",
+          [owner],
+        )
+      ).rows[0].n,
+      1,
+    );
+  });
+  it("generates a stable completion code without an extension search-path dependency", async () => {
+    if (skipAll) return;
+    const owner = await account();
+    await call("svj_start_my_challenge", "authenticated", owner);
+    const code = await callResult("svj_grant_my_completion_code", "postgres", owner);
+    assert.match(code, /^SVJ-[23456789ABCDEFGH]{4}-[23456789ABCDEFGH]{4}$/);
+    const retry = await callResult("svj_grant_my_completion_code", "postgres", owner);
+    assert.equal(retry, code);
   });
 });

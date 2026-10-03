@@ -89,6 +89,9 @@ describe("normalizeNativeSample", () => {
 describe("normalizeWorkoutState", () => {
   it("defaults to inactive and coerces an unknown payload safely", () => {
     assert.deepEqual(normalizeWorkoutState(null), {
+      version: 1,
+      ownerId: "",
+      error: null,
       active: false,
       activityId: null,
       activityType: null,
@@ -206,7 +209,7 @@ describe("reconcileWorkoutStates", () => {
     assert.equal(result?.orphaned, true);
   });
 
-  it("a matched recovery requires an explicit native pause", () => {
+  it("a running native workout reattaches while a terminated workout recovers paused", () => {
     // Contract of the recovery flow in useWorkoutRecorder: when reconciliation
     // reports matchesLocal, the hook must call setNativeWorkoutPaused(true)
     // BEFORE showing the recovery notice, so the native service is really
@@ -216,16 +219,10 @@ describe("reconcileWorkoutStates", () => {
       new URL("../src/app/hooks/useWorkoutRecorder.ts", import.meta.url),
       "utf8",
     );
-    const pauseCall = hook.indexOf("await setNativeWorkoutPaused(true);");
-    const notice = hook.indexOf(
-      "Recovered the active workout. It is paused — tap Resume to continue.",
-    );
-    assert.ok(pauseCall >= 0, "recovery must pause the native recording");
-    assert.ok(notice >= 0, "recovery must show the recovery notice");
-    assert.ok(pauseCall < notice, "native pause must happen BEFORE the recovery notice is shown");
-    // The pause must live inside the matchesLocal branch, not on the orphan path.
-    const matchesBranch = hook.slice(hook.indexOf("if (reconciliation.matchesLocal)"), notice);
-    assert.match(matchesBranch, /setNativeWorkoutPaused\(true\)/);
+    assert.match(hook, /recorder\.adoptNative/);
+    assert.match(hook, /await recorder\.attach\(\)/);
+    assert.match(hook, /!native\.active \|\| native\.paused/);
+    assert.match(hook, /Reconnected to your workout/);
     // Resume flows through the same bridge call with the existing session —
     // the same UUID and points, no new activity is created.
     const resumeFn = hook.slice(
@@ -233,7 +230,9 @@ describe("reconcileWorkoutStates", () => {
       hook.indexOf("const finish = useCallback"),
     );
     assert.match(resumeFn, /recorder\.resume\(\)/);
-    assert.match(resumeFn, /setNativeWorkoutPaused\(false\)/);
+    assert.match(resumeFn, /setNativeWorkoutPaused\(false, \{/);
+    assert.match(resumeFn, /ownerId: current\.ownerId/);
+    assert.match(resumeFn, /activityId: current\.activityId/);
     assert.doesNotMatch(resumeFn, /new GpsWorkoutRecorder|recorder\.start\(/);
   });
 });

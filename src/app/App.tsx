@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { WorkoutRecorderProvider } from "./hooks/useWorkoutRecorder";
+import { installTrackingAccountWatcher, stopTrackingBeforeSignOut } from "./lib/trackingLifecycle";
+import { TabErrorBoundary } from "./components/TabErrorBoundary";
+import { PendingWorkouts } from "./components/PendingWorkouts";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Capacitor } from "@capacitor/core";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { SVJProvider, useSVJ } from "./context/SVJContext";
@@ -8,17 +12,6 @@ import { Header } from "./components/Header";
 import { Navigation, ActiveTab } from "./components/Navigation";
 import { UtilityRail, UtilityDrawer } from "./components/UtilityNav";
 import { ChallengesView } from "./views/ChallengesView";
-import { ActivityView } from "./views/ActivityView";
-import { EarnPlusView } from "./views/EarnPlusView";
-import { WorkoutView } from "./views/WorkoutView";
-import { NutritionView } from "./views/NutritionView";
-import { CommunityView } from "./views/CommunityView";
-import { LeaderboardView } from "./views/LeaderboardView";
-import { SixtyDayChallengeView } from "./views/SixtyDayChallengeView";
-import { SvjPlanView } from "./views/SvjPlanView";
-import { TransformationReportView } from "./views/TransformationReportView";
-import { ProfileView } from "./views/ProfileView";
-import { RecoveryView } from "./components/RecoveryView";
 import { MemberProfileModal } from "./components/MemberProfileModal";
 import { XPComparisonModal } from "./components/XPComparisonModal";
 import { EditProfileModal } from "./components/EditProfileModal";
@@ -35,7 +28,6 @@ import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
 import { useAdminRole } from "./lib/adminRole";
-import { AdminDashboardView } from "./views/AdminDashboardView";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, WifiOff, RotateCw, LogIn } from "lucide-react";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
@@ -59,6 +51,47 @@ import {
  * 6xl. The desktop utility rail is a slim floating pill, not a sidebar, so it
  * lives in the free margin — no reserved gutter needed.
  */
+const ActivityView = lazy(() =>
+  import("./views/ActivityView").then((module) => ({ default: module.ActivityView })),
+);
+const EarnPlusView = lazy(() =>
+  import("./views/EarnPlusView").then((module) => ({ default: module.EarnPlusView })),
+);
+const WorkoutView = lazy(() =>
+  import("./views/WorkoutView").then((module) => ({ default: module.WorkoutView })),
+);
+const NutritionView = lazy(() =>
+  import("./views/NutritionView").then((module) => ({ default: module.NutritionView })),
+);
+const CommunityView = lazy(() =>
+  import("./views/CommunityView").then((module) => ({ default: module.CommunityView })),
+);
+const LeaderboardView = lazy(() =>
+  import("./views/LeaderboardView").then((module) => ({ default: module.LeaderboardView })),
+);
+const SixtyDayChallengeView = lazy(() =>
+  import("./views/SixtyDayChallengeView").then((module) => ({
+    default: module.SixtyDayChallengeView,
+  })),
+);
+const SvjPlanView = lazy(() =>
+  import("./views/SvjPlanView").then((module) => ({ default: module.SvjPlanView })),
+);
+const TransformationReportView = lazy(() =>
+  import("./views/TransformationReportView").then((module) => ({
+    default: module.TransformationReportView,
+  })),
+);
+const ProfileView = lazy(() =>
+  import("./views/ProfileView").then((module) => ({ default: module.ProfileView })),
+);
+const AdminDashboardView = lazy(() =>
+  import("./views/AdminDashboardView").then((module) => ({ default: module.AdminDashboardView })),
+);
+const RecoveryView = lazy(() =>
+  import("./components/RecoveryView").then((module) => ({ default: module.RecoveryView })),
+);
+
 const PAGE_CONTAINER =
   "svj-page-gutters mx-auto min-w-0 w-full pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pt-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl";
 
@@ -106,6 +139,7 @@ const AppContent: React.FC<{
   responsiveTest?: boolean;
 }> = ({ locked = false, lockEmail = null, responsiveTest = false }) => {
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   // Silent admin-role check: renders nothing for everyone else. RLS and the
@@ -168,11 +202,14 @@ const AppContent: React.FC<{
   const handleTabChange = (tab: ActiveTab) => {
     if (tab === "signout") {
       void (async () => {
+        await stopTrackingBeforeSignOut();
         markIntentionalSignOut();
         await queryClient.cancelQueries();
         queryClient.clear();
         await supabase.auth.signOut();
-      })();
+      })().catch(() =>
+        setActionError("Could not confirm tracking stopped. Reopen SVJ and try signing out again."),
+      );
       return;
     }
     if (tab === "plus") {
@@ -251,12 +288,12 @@ const AppContent: React.FC<{
 
         {/* Same shared container as the main shell. */}
         <main className={PAGE_CONTAINER}>
-          {storageError && (
+          {(storageError || actionError) && (
             <p
               role="alert"
               className="mb-3 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
             >
-              {storageError}
+              {storageError || actionError}
             </p>
           )}
           <div className="mb-3 svj-radius-card border border-gold/30 bg-gold/10 p-3.5">
@@ -266,23 +303,33 @@ const AppContent: React.FC<{
               reward code, manage your profile or sign out.
             </p>
           </div>
-          {activeTab === "sixty" && <SixtyDayChallengeView />}
-          {activeTab === "plan" && (
-            <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
-          )}
-          {activeTab === "transform" && <TransformationReportView />}
-          {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
-          {activeTab === "redeem" && (
-            <div className="space-y-4">
-              <h2 className="font-anton text-xl tracking-wide text-white">Redeem Code</h2>
-              <p className="text-xs text-[#8C8C90] font-inter">
-                Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
-              </p>
-              <RedeemPlusCodeForm />
-            </div>
-          )}
-          {activeTab === "profile" && <ProfileView />}
-          {isAdmin && activeTab === "admin" && <AdminDashboardView />}
+          <TabErrorBoundary key={activeTab}>
+            <Suspense
+              fallback={
+                <p role="status" className="py-8 text-center text-sm text-white/60">
+                  Loading your screen…
+                </p>
+              }
+            >
+              {activeTab === "sixty" && <SixtyDayChallengeView />}
+              {activeTab === "plan" && (
+                <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+              )}
+              {activeTab === "transform" && <TransformationReportView />}
+              {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("sixty")} />}
+              {activeTab === "redeem" && (
+                <div className="space-y-4">
+                  <h2 className="font-anton text-xl tracking-wide text-white">Redeem Code</h2>
+                  <p className="text-xs text-[#8C8C90] font-inter">
+                    Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
+                  </p>
+                  <RedeemPlusCodeForm />
+                </div>
+              )}
+              {activeTab === "profile" && <ProfileView />}
+              {isAdmin && activeTab === "admin" && <AdminDashboardView />}
+            </Suspense>
+          </TabErrorBoundary>
         </main>
 
         <Navigation activeTab={activeTab} setActiveTab={handleTabChange} restricted />
@@ -330,12 +377,13 @@ const AppContent: React.FC<{
           providers above it, so Activity tracking, workout recorders and
           native listeners are never reset. */}
       <main className={PAGE_CONTAINER}>
-        {storageError && (
+        {!responsiveTest && <PendingWorkouts />}
+        {(storageError || actionError) && (
           <p
             role="alert"
             className="mb-3 rounded-2xl border border-rose-400/30 bg-rose-950/30 p-3 text-sm text-rose-200"
           >
-            {storageError}
+            {storageError || actionError}
           </p>
         )}
         <AnimatePresence mode="wait" initial={false}>
@@ -353,32 +401,44 @@ const AppContent: React.FC<{
               opacity: { duration: 0.16 },
             }}
           >
-            {activeTab === "challenges" && (
-              <ChallengesView
-                onOpenSixtyDay={() => handleTabChange("sixty")}
-                onOpenEarnPlus={() => handleTabChange("earn")}
-                onOpenActivity={() => handleTabChange("activity")}
-              />
-            )}
-            {activeTab === "activity" && (
-              <ActivityView hideRecoverySection={founderRecoveryEnabled} />
-            )}
-            {activeTab === "earn" && <EarnPlusView onBack={() => handleTabChange("challenges")} />}
-            {activeTab === "workouts" && <WorkoutView />}
-            {/* Founder-only staged rollout: Recovery as its own destination. */}
-            {activeTab === "recovery" && (
-              <RecoveryView onOpenPlan={() => handleTabChange("plan")} />
-            )}
-            {activeTab === "nutrition" && <NutritionView />}
-            {activeTab === "community" && <CommunityView />}
-            {activeTab === "leaderboard" && <LeaderboardView />}
-            {activeTab === "sixty" && <SixtyDayChallengeView />}
-            {activeTab === "plan" && (
-              <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
-            )}
-            {activeTab === "transform" && <TransformationReportView />}
-            {activeTab === "profile" && <ProfileView />}
-            {isAdmin && activeTab === "admin" && <AdminDashboardView />}
+            <TabErrorBoundary key={activeTab}>
+              <Suspense
+                fallback={
+                  <p role="status" className="py-8 text-center text-sm text-white/60">
+                    Loading your screen…
+                  </p>
+                }
+              >
+                {activeTab === "challenges" && (
+                  <ChallengesView
+                    onOpenSixtyDay={() => handleTabChange("sixty")}
+                    onOpenEarnPlus={() => handleTabChange("earn")}
+                    onOpenActivity={() => handleTabChange("activity")}
+                  />
+                )}
+                {activeTab === "activity" && (
+                  <ActivityView hideRecoverySection={founderRecoveryEnabled} />
+                )}
+                {activeTab === "earn" && (
+                  <EarnPlusView onBack={() => handleTabChange("challenges")} />
+                )}
+                {activeTab === "workouts" && <WorkoutView />}
+                {/* Founder-only staged rollout: Recovery as its own destination. */}
+                {activeTab === "recovery" && (
+                  <RecoveryView onOpenPlan={() => handleTabChange("plan")} />
+                )}
+                {activeTab === "nutrition" && <NutritionView />}
+                {activeTab === "community" && <CommunityView />}
+                {activeTab === "leaderboard" && <LeaderboardView />}
+                {activeTab === "sixty" && <SixtyDayChallengeView />}
+                {activeTab === "plan" && (
+                  <SvjPlanView onNavigateToChallenges={() => handleTabChange("challenges")} />
+                )}
+                {activeTab === "transform" && <TransformationReportView />}
+                {activeTab === "profile" && <ProfileView />}
+                {isAdmin && activeTab === "admin" && <AdminDashboardView />}
+              </Suspense>
+            </TabErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>
@@ -447,20 +507,23 @@ function AppRoot() {
 
   // Catches background auth/401 failures that no component handles directly.
   useEffect(() => installSessionExpiryWatcher(), []);
+  useEffect(installTrackingAccountWatcher, []);
 
   if (import.meta.env.MODE === "responsive-test") {
     return (
       <SVJProvider plusActive={false} isPlusMember={false} plusExpiresAt={null}>
         <EngagementProvider key="responsive-test" userId={null}>
           <ActivityProvider key="responsive-test" userId={null}>
-            <ResponsiveTestRuntime />
+            <WorkoutRecorderProvider userId={null}>
+              <ResponsiveTestRuntime />
+            </WorkoutRecorderProvider>
           </ActivityProvider>
         </EngagementProvider>
       </SVJProvider>
     );
   }
 
-  if (!online) {
+  if (!online && !hasSupabaseConfig()) {
     return (
       <StatusScreen
         testId="no-internet-screen"
@@ -521,7 +584,12 @@ function AppRoot() {
                 as someone else remounts the provider instead of reusing the
                 previous member's in-memory tracking state. */}
             <ActivityProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
-              <AppContent locked={status?.locked} lockEmail={status?.email} />
+              <WorkoutRecorderProvider
+                key={status?.userId ?? "signed-out"}
+                userId={status?.userId ?? null}
+              >
+                <AppContent locked={status?.locked} lockEmail={status?.email} />
+              </WorkoutRecorderProvider>
             </ActivityProvider>
           </EngagementProvider>
         </SVJProvider>

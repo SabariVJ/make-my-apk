@@ -32,7 +32,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 // Use import.meta.env for client-side (Vite build-time replacement)
 // Fall back to process.env for SSR (server-side rendering)
-function getSupabaseConfig() {
+export function getSupabaseConfig() {
   return {
     url:
       import.meta.env["VITE_SUPABASE_URL"] ||

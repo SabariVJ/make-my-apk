@@ -29,6 +29,7 @@ import {
   type WorkoutState,
   type WorkoutSummary,
   canTransition,
+  MIN_GPS_POINTS_TO_SAVE,
   classifyGpsQuality,
   type AutoPauseDetector,
 } from "./gpsActivity";
@@ -50,6 +51,7 @@ export interface LocationAdapter {
     onError?: (message: string) => void,
   ): Promise<void>;
   stop(): Promise<void>;
+  detach?(): Promise<void>;
 }
 
 export interface SessionStorage {
@@ -72,30 +74,26 @@ export function createMemoryStorage(seed: Record<string, string> = {}): SessionS
 }
 
 export function createLocalStorageAdapter(): SessionStorage {
-  try {
-    if (typeof localStorage !== "undefined") {
-      const probe = "__svj_probe__";
-      localStorage.setItem(probe, "1");
-      localStorage.removeItem(probe);
-      return {
-        read: (key) => localStorage.getItem(key),
-        write: (key, value) => {
-          localStorage.setItem(key, value);
-        },
-        remove: (key) => {
-          localStorage.removeItem(key);
-        },
-      };
-    }
-  } catch {
-    // Private mode / storage disabled: fall through to memory.
-  }
-  return createMemoryStorage();
+  // A memory fallback would silently lose recordings on the next reopen.
+  const unavailable = () => {
+    throw new Error("Device storage is unavailable. Free some space and reopen SVJ.");
+  };
+  return {
+    read: (key) => (typeof localStorage === "undefined" ? null : localStorage.getItem(key)),
+    write: (key, value) =>
+      typeof localStorage === "undefined" ? unavailable() : localStorage.setItem(key, value),
+    remove: (key) =>
+      typeof localStorage === "undefined" ? unavailable() : localStorage.removeItem(key),
+  };
 }
 
 // ── Session shape ──────────────────────────────────────────────────────────
 
 export interface WorkoutSession {
+  ownerId?: string;
+  nativeSequence?: number;
+  pausedAtMs?: number | null;
+  segmentBreakPending?: boolean;
   /** Stable activity identity created at start, never regenerated. */
   activityId: string;
   /** Stable idempotency key sent to the server on every retry. */
@@ -121,11 +119,20 @@ export interface WorkoutSession {
 }
 
 export const RECORDER_SESSION_KEY = "svj.workout.active.v1";
+
+export function canSaveWorkout(session: WorkoutSession | null): boolean {
+  return (
+    session != null &&
+    session.state === "stopping" &&
+    session.endedAtMs != null &&
+    session.points.length >= MIN_GPS_POINTS_TO_SAVE
+  );
+}
 export const RECORDER_QUEUE_KEY = "svj.workout.queue.v1";
-const MAX_QUEUED_WORKOUTS = 20;
 const MAX_SESSION_POINTS = 200_000;
 
 export interface RecorderOptions {
+  ownerId?: string;
   storage?: SessionStorage;
   now?: () => number;
   genId?: () => string;
@@ -158,6 +165,7 @@ export function defaultSplitMeters(unit: "km" | "mi"): number {
 // ── Recorder ───────────────────────────────────────────────────────────────
 
 export class GpsWorkoutRecorder {
+  private readonly ownerId?: string;
   private readonly storage: SessionStorage;
   private readonly now: () => number;
   private readonly genId: () => string;
@@ -168,6 +176,7 @@ export class GpsWorkoutRecorder {
   private readonly listeners = new Set<(session: WorkoutSession) => void>();
 
   private session: WorkoutSession | null = null;
+  private replaying = false;
 
   /** Current session snapshot (read-only access for bridges/tests). */
   get current(): WorkoutSession | null {
@@ -181,6 +190,7 @@ export class GpsWorkoutRecorder {
   private lastPersistAtMs = 0;
 
   constructor(options: RecorderOptions = {}) {
+    this.ownerId = options.ownerId;
     this.storage = options.storage ?? createLocalStorageAdapter();
     this.now = options.now ?? (() => Date.now());
     this.genId = options.genId ?? randomId;
@@ -199,6 +209,7 @@ export class GpsWorkoutRecorder {
   }
 
   private emit(): void {
+    if (this.replaying) return;
     const snapshot = this.session ? { ...this.session, points: this.session.points } : null;
     for (const listener of this.listeners) {
       try {
@@ -231,9 +242,12 @@ export class GpsWorkoutRecorder {
     activityType: GpsActivityType,
     options: { splitUnit?: "km" | "mi"; autoPauseEnabled?: boolean } = {},
   ): Promise<WorkoutSession> {
+    if (this.session && !["saved", "discarded"].includes(this.session.state))
+      throw new Error("Save or discard your unfinished workout first.");
     const splitUnit = options.splitUnit ?? "km";
     const activityId = this.genId();
     const session: WorkoutSession = {
+      ownerId: this.ownerId,
       activityId,
       clientSessionId: buildClientSessionId(activityId),
       activityType,
@@ -257,7 +271,12 @@ export class GpsWorkoutRecorder {
     this.lastPointAtMs = 0;
     this.lastPersistCount = 0;
     this.lastPersistAtMs = session.startedAtMs;
-    this.persist();
+    try {
+      this.storage.write(RECORDER_SESSION_KEY, JSON.stringify(session));
+    } catch (error) {
+      this.session = null;
+      throw error;
+    }
     this.emit();
     await this.beginLocation();
     return session;
@@ -270,26 +289,27 @@ export class GpsWorkoutRecorder {
     try {
       const parsed = JSON.parse(raw) as WorkoutSession;
       if (!parsed?.activityId || !Array.isArray(parsed.points)) return null;
+      if (this.ownerId && parsed.ownerId !== this.ownerId) return null;
       if (parsed.savedAtMs) return null;
       // A recovered workout always comes back PAUSED: collecting location
       // without the user explicitly resuming would be surveillance.
       this.session = {
         ...parsed,
-        state: "paused",
+        state: parsed.endedAtMs != null ? "stopping" : "paused",
+        pausedAtMs: parsed.pausedAtMs ?? this.now(),
+        segmentBreakPending: parsed.segmentBreakPending ?? !parsed.endedAtMs,
         points: parsed.points.filter(isFinitePoint),
       };
       this.autoPause.reset();
       this.emit();
       return this.session;
     } catch {
-      this.storage.remove(RECORDER_SESSION_KEY);
       return null;
     }
   }
 
   private async beginLocation(): Promise<void> {
     if (this.location == null) return;
-    this.session = { ...(this.session as WorkoutSession), state: "recording" };
     try {
       await this.location.start(
         (sample) => this.ingest(sample),
@@ -302,6 +322,7 @@ export class GpsWorkoutRecorder {
       this.emit();
     } catch (error) {
       this.fail(error instanceof Error ? error.message : "Location unavailable");
+      throw error;
     }
   }
 
@@ -354,7 +375,11 @@ export class GpsWorkoutRecorder {
       this.lastAutoPauseAtMs = sample.timestampMs;
     }
 
-    point = { ...point, moving: !(this.autoPauseEnabled && this.autoPause.paused) };
+    point = {
+      ...point,
+      moving:
+        !this.session.segmentBreakPending && !(this.autoPauseEnabled && this.autoPause.paused),
+    };
 
     const { track, decision } = appendPoint(this.session.points, point, {
       maxSpeedMps: defaultMaxSpeed(this.session.activityType),
@@ -374,6 +399,7 @@ export class GpsWorkoutRecorder {
     this.session = {
       ...this.session,
       points: track,
+      segmentBreakPending: false,
       steps: this.currentSteps(),
       gpsQuality: classifyGpsQuality(sample.accuracy),
     };
@@ -424,7 +450,10 @@ export class GpsWorkoutRecorder {
 
   private refreshDuration(): void {
     if (!this.session) return;
-    const elapsed = Math.max(0, Math.round((this.now() - this.session.startedAtMs) / 1000));
+    const elapsed = Math.max(
+      0,
+      Math.round(((this.session.endedAtMs ?? this.now()) - this.session.startedAtMs) / 1000),
+    );
     this.session = { ...this.session, durationSeconds: elapsed };
   }
 
@@ -435,6 +464,8 @@ export class GpsWorkoutRecorder {
     this.session = {
       ...this.session,
       state: "paused",
+      segmentBreakPending: true,
+      pausedAtMs: this.session.pausedAtMs ?? this.now(),
       autoPaused: manual ? false : this.session.autoPaused,
     };
     this.refreshDuration();
@@ -447,8 +478,153 @@ export class GpsWorkoutRecorder {
     if (!canTransition(this.session.state, "recording")) return;
     this.autoPause.reset();
     this.lastAutoPauseAtMs = this.now();
-    this.session = { ...this.session, state: "recording", autoPaused: false };
+    this.session = {
+      ...this.session,
+      state: "recording",
+      autoPaused: false,
+      pausedAtMs: null,
+      pausedTotalSeconds:
+        this.session.pausedTotalSeconds +
+        (this.session.pausedAtMs ? Math.max(0, (this.now() - this.session.pausedAtMs) / 1000) : 0),
+    };
     this.persist();
+    this.emit();
+  }
+
+  /** Reattach UI listeners without stopping a recording owned by native code. */
+  async attach(): Promise<void> {
+    await this.beginLocation();
+  }
+
+  async detach(): Promise<void> {
+    await this.location?.detach?.();
+  }
+
+  /** Only after native state confirms this empty start never became a recording. */
+  async rollbackFailedStart(activityId: string): Promise<boolean> {
+    if (
+      !this.session ||
+      this.session.activityId !== activityId ||
+      this.session.points.length > 0 ||
+      (this.session.nativeSequence ?? 0) > 0
+    )
+      return false;
+    await this.detach();
+    this.storage.remove(RECORDER_SESSION_KEY);
+    this.session = null;
+    this.emit();
+    return true;
+  }
+
+  adoptNative(metadata: {
+    ownerId: string;
+    activityId: string;
+    activityType: string;
+    startedAtMs: number;
+    active: boolean;
+    paused: boolean;
+  }): void {
+    if (metadata.ownerId !== this.ownerId)
+      throw new Error("Recording belongs to a different account.");
+    if (!this.session || this.session.activityId !== metadata.activityId) {
+      this.session = {
+        ownerId: metadata.ownerId,
+        activityId: metadata.activityId,
+        clientSessionId: buildClientSessionId(metadata.activityId),
+        activityType: metadata.activityType as GpsActivityType,
+        startedAtMs: metadata.startedAtMs,
+        endedAtMs: null,
+        state: "paused",
+        durationSeconds: 0,
+        pausedTotalSeconds: 0,
+        points: [],
+        steps: 0,
+        autoPaused: false,
+        splitUnit: "km",
+        gpsQuality: "searching",
+        devicePlatform: this.devicePlatform,
+      };
+    }
+    this.session = {
+      ...this.session,
+      state: this.session.endedAtMs
+        ? "stopping"
+        : metadata.active && !metadata.paused
+          ? "recording"
+          : "paused",
+      pausedAtMs: metadata.active && !metadata.paused ? null : this.session.pausedAtMs,
+    };
+    this.persist();
+    this.emit();
+  }
+
+  /** Native sequence is durable before the replay cursor advances. */
+  replayNativeEvent(event: NativeWorkoutEvent): void {
+    if (
+      !this.session ||
+      event.ownerId !== this.ownerId ||
+      event.activityId !== this.session.activityId
+    )
+      throw new Error("Unexpected recording identity.");
+    if (event.sequence <= (this.session.nativeSequence ?? 0)) return;
+    if (event.sequence !== (this.session.nativeSequence ?? 0) + 1)
+      throw new Error("Recording replay has a missing event.");
+    const before = this.session;
+    const beforePointAt = this.lastPointAtMs,
+      beforeAutoPauseAt = this.lastAutoPauseAtMs;
+    this.replaying = true;
+    try {
+      if (event.kind === "point") {
+        const state = this.session.state;
+        this.session = { ...this.session, state: "recording" };
+        this.ingest(event as NativeWorkoutEvent & RawLocationSample);
+        this.session = { ...this.session!, state };
+      } else if (event.kind === "pause") {
+        this.session = {
+          ...this.session,
+          state: "paused",
+          pausedAtMs: event.timestampMs,
+          segmentBreakPending: true,
+        };
+      } else if (event.kind === "resume" || event.kind === "start") {
+        const pause = this.session.pausedAtMs;
+        this.session = {
+          ...this.session,
+          state: "recording",
+          pausedAtMs: null,
+          pausedTotalSeconds:
+            this.session.pausedTotalSeconds +
+            (pause ? Math.max(0, (event.timestampMs - pause) / 1000) : 0),
+        };
+      } else if (event.kind === "end") {
+        const pause = this.session.pausedAtMs;
+        this.session = {
+          ...this.session,
+          state: "stopping",
+          endedAtMs: event.timestampMs,
+          pausedAtMs: null,
+          pausedTotalSeconds:
+            this.session.pausedTotalSeconds +
+            (pause ? Math.max(0, (event.timestampMs - pause) / 1000) : 0),
+          durationSeconds: Math.max(
+            0,
+            Math.round((event.timestampMs - this.session.startedAtMs) / 1000),
+          ),
+        };
+      }
+      if (typeof event.steps === "number" && Number.isSafeInteger(event.steps) && event.steps >= 0)
+        this.session = { ...this.session, steps: event.steps };
+      this.session = { ...this.session, nativeSequence: event.sequence };
+      this.storage.write(RECORDER_SESSION_KEY, JSON.stringify(this.session));
+    } catch (error) {
+      this.session = before;
+      this.lastPointAtMs = beforePointAt;
+      this.lastAutoPauseAtMs = beforeAutoPauseAt;
+      this.autoPause.reset();
+      throw error;
+    } finally {
+      this.replaying = false;
+    }
     this.emit();
   }
 
@@ -464,10 +640,8 @@ export class GpsWorkoutRecorder {
     ) {
       return this.session;
     }
-    this.session = { ...this.session, state: "stopping" };
-    this.emit();
     await this.stopLocation();
-    const endedAtMs = this.now();
+    const endedAtMs = this.session.endedAtMs ?? this.now();
     const durationSeconds = Math.max(0, Math.round((endedAtMs - this.session.startedAtMs) / 1000));
     this.session = {
       ...this.session,
@@ -517,7 +691,7 @@ export class GpsWorkoutRecorder {
     const queue = readQueue(this.storage);
     const without = queue.filter((w) => w.clientSessionId !== this.session!.clientSessionId);
     without.unshift(this.session);
-    writeQueue(this.storage, without.slice(0, MAX_QUEUED_WORKOUTS));
+    writeQueue(this.storage, without);
   }
 
   private removeFromQueue(clientSessionId: string): void {
@@ -526,29 +700,21 @@ export class GpsWorkoutRecorder {
   }
 
   private async stopLocation(): Promise<void> {
-    if (this.unsubscribeLocation) {
-      try {
-        this.unsubscribeLocation();
-      } catch {
-        // ignore
-      }
-      this.unsubscribeLocation = null;
-      return;
-    }
-    try {
-      await this.location?.stop();
-    } catch {
-      // ignore
-    }
+    await this.location?.stop();
+    this.unsubscribeLocation = null;
   }
 
   private persist(): void {
+    if (this.replaying) return;
     if (!this.session) return;
     if (this.session.state === "discarded") return;
     try {
       this.storage.write(RECORDER_SESSION_KEY, JSON.stringify(this.session));
     } catch {
-      // Storage full: recording continues in memory rather than aborting.
+      this.session = {
+        ...this.session,
+        lastSyncError: "Device storage is unavailable. This recording is not safely saved yet.",
+      };
     }
   }
 
@@ -610,12 +776,50 @@ export function readQueue(storage: SessionStorage): WorkoutSession[] {
 }
 
 export function writeQueue(storage: SessionStorage, queue: readonly WorkoutSession[]): void {
-  try {
-    storage.write(RECORDER_QUEUE_KEY, JSON.stringify(queue));
-  } catch {
-    // ignore
+  const raw = storage.read(RECORDER_QUEUE_KEY);
+  let unknown: unknown[] = [];
+  if (raw) {
+    const previous: unknown = JSON.parse(raw);
+    if (!Array.isArray(previous))
+      throw new Error("Saved workout queue needs recovery. It has been retained.");
+    unknown = previous.filter(
+      (entry) =>
+        !entry || typeof entry.clientSessionId !== "string" || !Array.isArray(entry.points),
+    );
   }
+  storage.write(RECORDER_QUEUE_KEY, JSON.stringify([...queue, ...unknown]));
 }
+
+export interface NativeWorkoutEvent {
+  ownerId: string;
+  activityId: string;
+  sequence: number;
+  kind: "start" | "point" | "pause" | "resume" | "end" | "steps";
+  timestampMs: number;
+  steps?: number;
+  lat?: number;
+  lng?: number;
+  accuracy?: number | null;
+  elevation?: number | null;
+}
+
+/** Old global keys are retained untouched; only owned v2 keys are read or sent. */
+export function createAccountStorage(
+  ownerId: string | null,
+  base = createLocalStorageAdapter(),
+): SessionStorage {
+  const keyFor = (key: string) => {
+    if (!ownerId) throw new Error("Sign in to save a recording.");
+    return `${key}.account.${ownerId}`;
+  };
+  return {
+    read: (key) => (ownerId ? base.read(keyFor(key)) : null),
+    write: (key, value) => base.write(keyFor(key), value),
+    remove: (key) => base.remove(keyFor(key)),
+  };
+}
+
+const flushing = new WeakMap<SessionStorage, Promise<{ synced: number; failed: number }>>();
 
 export interface SyncOutcome {
   ok: boolean;
@@ -628,6 +832,22 @@ export interface SyncOutcome {
  * explicitly confirms it, so a crash mid-sync never loses a workout.
  */
 export async function flushOfflineQueue(
+  storage: SessionStorage,
+  save: (session: WorkoutSession) => Promise<SyncOutcome>,
+  onProgress?: (session: WorkoutSession, outcome: SyncOutcome) => void,
+): Promise<{ synced: number; failed: number }> {
+  const existing = flushing.get(storage);
+  if (existing) return existing;
+  const task = drainOfflineQueue(storage, save, onProgress);
+  flushing.set(storage, task);
+  try {
+    return await task;
+  } finally {
+    flushing.delete(storage);
+  }
+}
+
+async function drainOfflineQueue(
   storage: SessionStorage,
   save: (session: WorkoutSession) => Promise<SyncOutcome>,
   onProgress?: (session: WorkoutSession, outcome: SyncOutcome) => void,
@@ -649,6 +869,10 @@ export async function flushOfflineQueue(
     }
     if (outcome.ok) {
       synced += 1;
+      writeQueue(
+        storage,
+        readQueue(storage).filter((entry) => entry.clientSessionId !== session.clientSessionId),
+      );
     } else {
       failed += 1;
       remaining.push(session);
@@ -656,6 +880,5 @@ export async function flushOfflineQueue(
     onProgress?.(session, outcome);
   }
 
-  writeQueue(storage, remaining);
   return { synced, failed };
 }

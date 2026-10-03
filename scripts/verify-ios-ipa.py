@@ -1,5 +1,6 @@
 """Validate the unsigned device artifact before offering it for local signing."""
 import json
+import os
 import plistlib
 import struct
 import sys
@@ -17,11 +18,19 @@ def verify(path):
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
         assert float(info["MinimumOSVersion"]) >= 15
         assert info.get("NSMotionUsageDescription")
+        assert info.get("NSLocationWhenInUseUsageDescription")
+        assert "location" in info.get("UIBackgroundModes", [])
+        assert info.get("SVJNativeCapabilityVersion") == 2
+        assert len(info.get("SVJBuildRevision", "")) == 40
+        if os.environ.get("GITHUB_SHA"):
+            assert info["SVJBuildRevision"] == os.environ["GITHUB_SHA"], "IPA revision differs from validated commit"
         assert any("app.lovable.svj" in entry.get("CFBundleURLSchemes", [])
                    for entry in info.get("CFBundleURLTypes", []))
         executable = archive.read(root + info["CFBundleExecutable"])
         # Xcode's generic iphoneos destination must produce arm64, not a simulator binary.
         assert struct.unpack_from("<II", executable) == (0xFEEDFACF, 0x0100000C)
+        assert b"VjWorkoutPlugin" in executable and b"VjPedometerPlugin" in executable
+        assert not any("_CodeSignature" in name or name.endswith("embedded.mobileprovision") for name in archive.namelist()), "IPA must remain labeled unsigned"
         config = json.loads(archive.read(root + "capacitor.config.json"))
         assert config["server"]["url"] == "https://savaje-com.lovable.app"
         assert {"AppPlugin", "CAPBrowserPlugin", "CapacitorPedometerPlugin"}.issubset(

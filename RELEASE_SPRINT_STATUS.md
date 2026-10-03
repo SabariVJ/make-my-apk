@@ -1,4 +1,76 @@
-# SVJ Android Release-Hardening Sprint
+# SVJ stability and native tracking release
+
+## Android/iPhone tracking repair — 2026-10-04
+
+Fix branch: `codex/native-tracking-stability`, from release commit
+`68195d06d2baabf0565be3e10a847186ce75a6e2`. Merge target:
+`release/play-v1-compliance`. Native capability version: **2**.
+
+Implementation validation at `111648e6fd444af036e3a23572cba61e3a6f7fc4`:
+[all required CI jobs passed](https://github.com/SabariVJ/make-my-apk/actions/runs/37153044886).
+That PR run compiled merge-preview revision
+`bad462c34d142ea06669a544a716b52e80860e0a`, recorded in its artifact metadata.
+The final test-runtime configuration and release merge each rerun the same gates.
+Native sensor accuracy and production rollout remain the explicit owner checks below.
+
+| Known issue               | Repair and evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| iPhone daily steps        | App-owned Core Motion bridge queries today's history on enable/open/resume/day rollover. Permission, sensor availability, read time and errors are exposed. Daily totals stay separate from workout rewards.                                                                                                                                                                                                                                                                                                                       |
+| Android automatic steps   | Independent health foreground service with explicit Enable, ongoing notification Stop, per-account atomic counter/history, restart/reboot and midnight handling. Ambiguous cross-day/clock-change deltas are preserved without assigning them to today. Health Connect supplies an aggregate fallback, never an added overlapping source. Counter and journal tests pass.                                                                                                                                                          |
+| Background GPS            | Core Location/background capability added on iPhone. Android preserves every journal point before WebView notification. Native pause/resume/end events, account/workout identity and replay sequences survive UI recreation. Android debug/release tests and builds, Mac journal tests and unsigned arm64 compilation passed. Force-terminated recordings recover paused. Physical locked-screen proof is pending.                                                                                                                 |
+| Diagnostics/sync          | One Activity status card reports permission, source, listening, daily total, latest reading, successful sync and recovery actions. Delayed readings show Waiting; unsupported hardware is identified. Account-bound retries cancel on background/account changes. Server acknowledgments set sync time; totals use the maximum across devices.                                                                                                                                                                                     |
+| Pending recordings        | GPS/strength queues retain all unsynced entries, separate accounts and preserve ambiguous legacy entries. Failed starts clear only confirmed empty recordings; Finish enables Save. Storage failures are visible. Completed native journals reconstruct a missing browser queue; reward evaluation is acknowledged before removal. Duplicate saves create one activity.                                                                                                                                                            |
+| Live Share                | Recording references are independent from canonical activities. Start does not finish a workout; confirmed Finish/Discard/sign-out stops GPS. Share-stop failures remain visible. Anonymous ended-link check passed.                                                                                                                                                                                                                                                                                                               |
+| Blank screens/layout      | Stabilized shared provider identities and per-tab Retry boundaries preserve recording coordinators. Injected failures/retries cover 13 tabs. Chromium/WebKit geometry checks passed at nine widths and two landscape sizes; admin data remains free of horizontal scrolling.                                                                                                                                                                                                                                                       |
+| Reported failures         | Full web suite: **1626 tests, 1624 passed, 0 failed, 2 existing skips**. iOS web regressions: 71 passed. TypeScript, formatting and lint passed with 0 lint errors and 41 existing warnings. Meaningful assertions retained.                                                                                                                                                                                                                                                                                                       |
+| Previously untested flows | **13 authenticated browser/API flows passed against disposable Supabase**, including sign-out/relogin, trial expiry, admin Give Plus, recipient Claim Plus, support create/reply/status, payment controls, templates/strength retry, GPS retry, daily-step isolation, friendships/rivalries, nutrition/quota, challenge completion/missed-day/resume, missions with claiming disabled, and ended sharing. External messages/payments were not sent.                                                                                |
+| Database/security         | Function lint passed with no errors. Five additive migrations repair Live Share, monotonic step sync, challenge completion, private RPC grants, and function integrity. Missing cooldown column, membership recovery ambiguity, scoped personalized XP return, completion-code generation and GPS millisecond/second conversion are repaired. Real SQL regression tests passed. Inventory: 55 tables, 69 policies, 119 SVJ functions; 127 public client files scanned for privileged secrets. No production writes or data resets. |
+| Speed                     | Controlled cold Chromium 390×844 runs, 4× CPU and fixed network: median screen ready 4,550→4,095 ms; initial transfer 659→463 KB. Icon compression 533,169→373,931 bytes with identical pixels. Evidence: performance-loading.json and performance-assets.json. Physical phone timing is unverified.                                                                                                                                                                                                                               |
+
+## Validated downloads
+
+- [Validated implementation package: APK, AAB and unsigned IPA](https://github.com/SabariVJ/make-my-apk/actions/runs/37153044886/artifacts/11284143881).
+- [Release branch builds](https://github.com/SabariVJ/make-my-apk/actions/workflows/ci.yml?query=branch%3Arelease%2Fplay-v1-compliance): select the successful run for the desired release commit, then **SVJ-validated-phone-artifacts**.
+- Each package includes SHA256SUMS, build-metadata.json, exact build revision,
+  expected hosted web revision, native capability version and signing report.
+  The gate requires web, backend authorization, reward transactions, browser
+  geometry, Android phone/watch/release and iOS native/device checks for that build.
+- **IPA is unsigned** and must be signed using the existing sideload service.
+- **Android uses an ephemeral validation identity** because GitHub has no
+  production release key configured. APK is installable as a validation build;
+  APK/AAB cannot update a differently signed installation or publish to Play.
+  Preserve installed app data and supply the existing key for a normal upgrade.
+- No simulator/emulator smoke jobs run. Production website publishing was not performed.
+
+## Owner rollout and physical verification
+
+1. Reconcile the deployed schema and grants, then apply the five additive
+   `20261012…` migrations through the normal production process. Historical
+   migration files remain unchanged; no production reset is needed. CI's
+   temporary migration versions and credentials belong only to its disposable backend.
+2. Publish the merged web revision separately in Lovable. Native wrappers still
+   load `https://savaje-com.lovable.app`; installing the new wrapper alone does
+   not publish web changes. Keep old pending recordings intact.
+3. Configure the existing Android release keystore in the established GitHub
+   secrets for an upgrade/Play-ready package. Sign the IPA with the existing service.
+4. On both platforms, enable daily steps and walk 100 steps. Check permission,
+   sensor/source, count, latest reading and successful website sync in Activity.
+   Verify hardware-free devices report unsupported or use permitted history backup.
+5. Start an outdoor workout in the foreground, lock the screen, walk, pause/resume,
+   reopen, Finish, Save offline, reconnect and confirm one activity on the website.
+   Repeat with daily steps enabled to check the independent controls. Sign-out
+   must stop both collectors; a terminated recording must return paused with its route.
+6. Verify configured Google provider login and phone deep links, real cross-device
+   notification delivery, actual hosted QR image loading, external app handoffs,
+   photo recognition with the configured AI service, and real-phone loading time.
+   Local checks cover payment URLs/copy/QR element and scan quotas without sending
+   WhatsApp/email, making payments or invoking paid recognition.
+
+Deployed-schema parity, production authorization configuration, external provider
+handoffs and physical sensors cannot be proven by isolated CI. These are explicit
+owner follow-ups, not claims of completed hardware testing. See SECURITY_TRACKING_REVIEW.md.
+
+---
 
 ## Final Status
 

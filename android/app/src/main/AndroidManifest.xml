@@ -59,7 +59,7 @@
             android:name=".VjWorkoutService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="location|health" />
 
         <!-- Smart local reminders. The receiver owns alarm delivery and
              restores repeating schedules after reboot, timezone change, clock
@@ -121,7 +121,15 @@
             </intent-filter>
         </activity-alias>
 
+        <service android:name=".DailyStepService" android:exported="false" android:foregroundServiceType="health" />
+        <receiver android:name=".DailyStepService$Restore" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
 
     <!-- Permissions -->
 

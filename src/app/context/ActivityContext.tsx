@@ -16,6 +16,7 @@ import { getBodyProfile } from "@/lib/personalization.functions";
 import { useSVJ } from "./SVJContext";
 import { readStoredJson, writeStoredJson } from "../lib/storage";
 import { usePublishLiveSteps, useRemoteLiveSteps } from "../lib/liveSteps";
+import { useDailyTracking, localDateKey } from "../lib/dailyTracking";
 import {
   vjCheckPermissions,
   vjRequestPermissions,
@@ -88,6 +89,7 @@ type PedometerPlugin = import("@capgo/capacitor-pedometer").CapacitorPedometerPl
 export type ActivityStepSource = VjSensorMode | "ios" | null;
 
 export interface ActivityContextValue {
+  dailyTracking?: ReturnType<typeof useDailyTracking>;
   todaySteps: number;
   stepGoal: number;
   stepPercent: number;
@@ -238,6 +240,7 @@ function AccountActivityProvider({
   const queryClient = useQueryClient();
   const callGetBodyProfile = useServerFn(getBodyProfile);
   const storageKey = activityStorageKey(userId);
+  const dailyTracking = useDailyTracking(userId);
 
   const [state, setState] = useState<ActivityState>(
     () =>
@@ -338,6 +341,18 @@ function AccountActivityProvider({
   }, [bodyProfileQuery.data]);
 
   // ── XP milestones (effect, never inside a state updater — StrictMode safe:
+  // Native daily history updates display fields only. Session reward fields stay separate.
+  useEffect(() => {
+    const daily = dailyTracking.state;
+    if (!daily || daily.ownerId !== userId || daily.dateKey !== localDateKey()) return;
+    setState((previous) => {
+      const rolled = rollActivityDay(previous, new Date()).state;
+      if (!rolled.today || rolled.today.steps >= daily.steps) return rolled;
+      return { ...rolled, today: { ...rolled.today, steps: daily.steps } };
+    });
+  }, [dailyTracking.state, userId]);
+
+  // ── XP milestones (effect, never inside a state updater — StrictMode safe:
   //    claim is persisted first and a ref guard blocks same-instance replays) ─
   useEffect(() => {
     const today = state.today;
@@ -405,7 +420,7 @@ function AccountActivityProvider({
     // Dispatch STOP immediately, even if a START bridge promise has not yet
     // resolved. A second stop after startup settles closes any late register.
     const stopSensor = async () => {
-      if (Capacitor.getPlatform() === "android") return vjStopTracking();
+      if (Capacitor.getPlatform() === "android" || vjPluginAvailable()) return vjStopTracking();
       if (pluginRef.current) await pluginRef.current.stopMeasurementUpdates();
       return null;
     };
@@ -457,7 +472,7 @@ function AccountActivityProvider({
   }, [removeOwnedListeners]);
 
   const getSensorInfo = useCallback(async (): Promise<VjSensorInfo | null> => {
-    if (Capacitor.getPlatform() !== "android") return null;
+    if (Capacitor.getPlatform() !== "android" && !vjPluginAvailable()) return null;
     const generation = generationRef.current;
     const available = vjPluginAvailable();
     const info = available ? await vjGetSensorInfo() : null;
@@ -541,7 +556,7 @@ function AccountActivityProvider({
         if (!current()) return;
         const platform = Capacitor.getPlatform();
         let mode: ActivityStepSource = null;
-        if (platform === "android") {
+        if (platform === "android" || (platform === "ios" && vjPluginAvailable())) {
           if (!vjPluginAvailable())
             throw new Error("Native step bridge is unavailable in this build.");
           const info = await vjGetSensorInfo();
@@ -648,7 +663,7 @@ function AccountActivityProvider({
         // A partial start must never leave a physical sensor or JS listener alive.
         let cleanupError: unknown;
         try {
-          if (Capacitor.getPlatform() === "android") {
+          if (Capacitor.getPlatform() === "android" || vjPluginAvailable()) {
             await vjStopTracking();
           } else if (pluginRef.current) await pluginRef.current.stopMeasurementUpdates();
         } catch (failure) {
@@ -762,14 +777,16 @@ function AccountActivityProvider({
   const summary7 = useMemo(() => summarizeHistory(history7), [history7]);
   const summary30 = useMemo(() => summarizeHistory(history30), [history30]);
 
-  usePublishLiveSteps(
+  const dailySteps =
+    dailyTracking.state?.dateKey === localDateKey() ? dailyTracking.state.steps : 0;
+  const successfulSyncAt = usePublishLiveSteps(
     userId,
     state.today?.dateKey ?? null,
-    state.today?.steps ?? 0,
+    Math.max(state.today?.steps ?? 0, dailySteps),
     state.today?.distanceMeters ?? 0,
   );
   const remoteLive = useRemoteLiveSteps(userId);
-  const todaySteps = Math.max(state.today?.steps ?? 0, remoteLive?.steps ?? 0);
+  const todaySteps = Math.max(state.today?.steps ?? 0, dailySteps, remoteLive?.steps ?? 0);
   const stepPercent = Math.min(100, Math.round((todaySteps / STEP_GOAL) * 100));
   const remainingSteps = Math.max(0, STEP_GOAL - todaySteps);
   const kcalGoal = activeKcalGoal(bodyMetrics);
@@ -940,6 +957,7 @@ function AccountActivityProvider({
   );
 
   const value: ActivityContextValue = {
+    dailyTracking,
     todaySteps,
     stepGoal: STEP_GOAL,
     stepPercent,
@@ -964,10 +982,11 @@ function AccountActivityProvider({
     getSensorInfo,
     statusMessage,
     stepSource,
-    lastSyncedAt:
-      remoteLive && remoteLive.steps > (state.today?.steps ?? 0)
+    lastSyncedAt: Capacitor.isNativePlatform()
+      ? successfulSyncAt
+      : remoteLive
         ? Date.parse(remoteLive.updatedAt)
-        : state.lastSyncedAt,
+        : null,
     history7,
     history30,
     summary7,

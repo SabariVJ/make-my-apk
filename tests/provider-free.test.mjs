@@ -191,7 +191,7 @@ describe("the native SVJ activity platform is wired", () => {
   it("the foreground service is declared with a location type", async () => {
     const manifest = await readFile(join(root, "android/app/src/main/AndroidManifest.xml"), "utf8");
     assert.match(manifest, /android:name="\.VjWorkoutService"/);
-    assert.match(manifest, /foregroundServiceType="location"/);
+    assert.match(manifest, /foregroundServiceType="location\|health"/);
     assert.match(manifest, /android\.permission\.FOREGROUND_SERVICE_LOCATION/);
     assert.match(manifest, /android\.permission\.ACCESS_FINE_LOCATION/);
   });

@@ -19,10 +19,12 @@ import {
   plannedRouteSummary,
   routeToPoints,
   saveRouteFromActivity,
+  saveGpsWorkout,
   updateRoute,
   type RpcClient,
 } from "./activityPlatform";
 import { encodePolyline } from "./gpsActivity";
+import type { WorkoutSession } from "./gpsRecorder";
 
 /** Minimal injected RPC client: records calls, returns scripted responses. */
 function fakeClient(
@@ -57,6 +59,50 @@ const ROUTE_ROW = {
   created_at: "2026-09-01T06:00:00.000Z",
   updated_at: "2026-09-02T06:00:00.000Z",
 };
+
+describe("GPS save acknowledgement", () => {
+  it("retains a canonical save until rewards acknowledge and retries the ledger on duplicates", async () => {
+    const session = {
+      clientSessionId: "svj:original",
+      activityType: "walking",
+      startedAtMs: 1000,
+      endedAtMs: 121000,
+      durationSeconds: 120,
+      steps: 100,
+      devicePlatform: "ios",
+      gpsQuality: "good",
+      splitUnit: "km",
+      points: [
+        { lat: 12.9, lng: 77.6, t: 0 },
+        { lat: 12.901, lng: 77.6, t: 120000 },
+      ],
+    } as WorkoutSession;
+    const responses: Record<string, { data: unknown; error?: { message: string } | null }> = {
+      svj_save_gps_activity: {
+        data: { ok: true, duplicate: false, activity: { id: "canonical" } },
+      },
+      svj_process_activity_rewards: { data: null, error: { message: "Connection lost" } },
+    };
+    const { client, calls } = fakeClient(responses);
+    const first = await saveGpsWorkout(client, session);
+    assert.equal(first.ok, false);
+    assert.equal(first.activityId, "canonical");
+    responses.svj_save_gps_activity = {
+      data: { ok: true, duplicate: true, activity: { id: "canonical" } },
+    };
+    responses.svj_process_activity_rewards = { data: { ok: true, xpGranted: 0 }, error: null };
+    const retry = await saveGpsWorkout(client, session);
+    assert.equal(retry.ok, true);
+    assert.equal(retry.duplicate, true);
+    assert.equal(calls.filter((call) => call.fn === "svj_process_activity_rewards").length, 2);
+    assert.deepEqual(
+      calls
+        .filter((call) => call.fn === "svj_save_gps_activity")
+        .map((call) => call.args?.p_client_session_id),
+      ["svj:original", "svj:original"],
+    );
+  });
+});
 
 describe("routeToPoints", () => {
   it("decodes a stored route polyline into drawable points", () => {

@@ -80,7 +80,7 @@ describe("no-internet state", () => {
 
   it("auto-dismisses when the connection returns", () => {
     // The gate is purely state-driven: restoring `online` re-renders the app.
-    const gateBlock = app.slice(app.indexOf("if (!online)"), app.indexOf("if (sessionExpired"));
+    const gateBlock = app.slice(app.indexOf("if (!online && !hasSupabaseConfig())"), app.indexOf("if (sessionExpired"));
     assert.ok(gateBlock.length > 0);
     assert.doesNotMatch(gateBlock, /sessionExpired = false/);
   });

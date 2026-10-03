@@ -43,6 +43,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * beginning a second one.
  */
 public class VjWorkoutService extends Service {
+  private static VjWorkoutService running;
+  public static boolean isRunning() { return running != null && running.active; }
+  private android.hardware.SensorManager stepManager;
+  private android.hardware.SensorEventListener stepListener;
+  private final WorkoutStepCounter steps = new WorkoutStepCounter();
 
   public static final String TAG = "VjWorkout";
 
@@ -55,6 +60,8 @@ public class VjWorkoutService extends Service {
   public static final String EXTRA_ACTIVITY_TYPE = "activityType";
   public static final String EXTRA_TITLE = "title";
   public static final String EXTRA_AUTO_PAUSE = "autoPause";
+  private String ownerId = "";
+  private NativeWorkoutJournal journal;
 
   private static final String PREFS = "svj_workout";
   private static final String KEY_ACTIVE = "active";
@@ -114,12 +121,20 @@ public class VjWorkoutService extends Service {
 
   public static void start(Context context, String activityId, String activityType,
                            String title, boolean autoPause) {
+    start(context, activityId, activityType, title, autoPause, "", 0L, null);
+  }
+
+  public static void start(Context context, String activityId, String activityType,
+                           String title, boolean autoPause, String ownerId, long startedAtMs, android.os.ResultReceiver callback) {
     Intent intent = new Intent(context, VjWorkoutService.class);
     intent.setAction(ACTION_START);
     intent.putExtra(EXTRA_ACTIVITY_ID, activityId);
     intent.putExtra(EXTRA_ACTIVITY_TYPE, activityType);
     intent.putExtra(EXTRA_TITLE, title);
     intent.putExtra(EXTRA_AUTO_PAUSE, autoPause);
+    intent.putExtra("ownerId", ownerId);
+    intent.putExtra("startedAtMs", startedAtMs);
+    intent.putExtra("callback", callback);
     ContextCompat.startForegroundService(context, intent);
   }
 
@@ -135,15 +150,20 @@ public class VjWorkoutService extends Service {
     sendAction(context, ACTION_STOP);
   }
 
-  private static void sendAction(Context context, String action) {
-    try {
+  public static void sendAction(Context context, String action, android.os.ResultReceiver callback) {
+      sendAction(context, action, prefs(context).getString("owner_id", ""), prefs(context).getString("activity_id", ""), callback);
+  }
+
+  public static void sendAction(Context context, String action, String owner, String id, android.os.ResultReceiver callback) {
       Intent intent = new Intent(context, VjWorkoutService.class);
       intent.setAction(action);
+      intent.putExtra("callback", callback);
+      intent.putExtra("ownerId", owner);
+      intent.putExtra(EXTRA_ACTIVITY_ID, id);
       context.startService(intent);
-    } catch (Exception e) {
-      Log.w(TAG, "Could not deliver action " + action, e);
-    }
   }
+
+  private static void sendAction(Context context, String action) { sendAction(context, action, null); }
 
   /** Persisted snapshot, readable without binding to the service. */
   public static SharedPreferences prefs(Context context) {
@@ -151,7 +171,7 @@ public class VjWorkoutService extends Service {
   }
 
   public static void clearState(Context context) {
-    prefs(context).edit().clear().apply();
+    if (!prefs(context).edit().clear().commit()) throw new IllegalStateException("Device storage unavailable");
   }
 
   /** Last fix retained for WebView/plugin reattachment. Never starts collection. */
@@ -177,18 +197,30 @@ public class VjWorkoutService extends Service {
   public void onCreate() {
     super.onCreate();
     locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    journal = new NativeWorkoutJournal(this);
     // A restarted service (START_STICKY after a process kill) restores the same
     // workout rather than inventing a new one.
     restoreFromPrefs();
-    if (active) {
-      startForegroundNotification();
-      if (!paused) beginLocationUpdates();
-    }
+    // A newly created service is recovered paused. Only a foreground command resumes it.
+    if (active) { active = false; paused = true; }
+    steps.total = prefs(this).getLong("step_total", 0);
+    running = this;
   }
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
+    android.os.ResultReceiver callback = intent == null ? null : (android.os.ResultReceiver)intent.getParcelableExtra("callback");
+    try {
     String action = intent != null ? intent.getAction() : null;
+    if (action != null && !ACTION_START.equals(action) && (!ownerId.equals(intent.getStringExtra("ownerId")) || !activityId.equals(intent.getStringExtra(EXTRA_ACTIVITY_ID)))) {
+      if (callback != null) { Bundle failure = new Bundle(); failure.putString("error", "This command belongs to another recording."); callback.send(1, failure); }
+      if (!active) stopSelf();
+      return active ? START_STICKY : START_NOT_STICKY;
+    }
+    if (ACTION_START.equals(action) && active && (!activityId.equals(intent.getStringExtra(EXTRA_ACTIVITY_ID)) || !ownerId.equals(intent.getStringExtra("ownerId")))) {
+      if (callback != null) { Bundle failure = new Bundle(); failure.putString("error", "Finish the active workout first."); callback.send(1, failure); }
+      return START_STICKY;
+    }
     if (ACTION_START.equals(action)) {
       handleStart(intent);
     } else if (ACTION_PAUSE.equals(action)) {
@@ -197,23 +229,32 @@ public class VjWorkoutService extends Service {
       handleResume();
     } else if (ACTION_STOP.equals(action)) {
       handleStop();
+      if (callback != null) callback.send(0, new Bundle());
       return START_NOT_STICKY;
-    } else if (active) {
-      // Restarted by the system without a command: keep the workout alive.
-      startForegroundNotification();
-      if (!paused) beginLocationUpdates();
+    } else if (action == null) {
+      active = false; paused = true; persist(); stopSelf(); return START_NOT_STICKY;
     }
+    if (callback != null) callback.send(0, new Bundle());
     return START_STICKY;
+    } catch (Exception error) {
+      stopLocationUpdates(); stopStepUpdates(); active = false; paused = true;
+      try { if (!ownerId.isEmpty() && !activityId.isEmpty()) journal.append(ownerId, activityId, "pause", System.currentTimeMillis(), new com.getcapacitor.JSObject()); } catch (Exception ignored) {}
+      prefs(this).edit().putBoolean(KEY_ACTIVE, false).putBoolean(KEY_PAUSED, true).putString("last_error", "Recording paused. Check location permission and device storage.").commit();
+      if (callback != null) { Bundle failure = new Bundle(); failure.putString("error", "Could not confirm recording command. Check location permission and storage."); callback.send(1, failure); }
+      dispatchStateChanged(); ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY;
+    }
   }
 
   private void handleStart(Intent intent) {
-    boolean alreadySame = active && activityId.equals(intent.getStringExtra(EXTRA_ACTIVITY_ID));
+    boolean alreadySame = active && activityId.equals(intent.getStringExtra(EXTRA_ACTIVITY_ID)) && ownerId.equals(intent.getStringExtra("ownerId"));
     if (alreadySame) {
       // Idempotent: a repeated START must not reset the workout or its counter.
       startForegroundNotification();
       dispatchStateChanged();
       return;
     }
+    if (active) throw new IllegalStateException("Finish the active workout first.");
+    if (!activityId.isEmpty() && !activityId.equals(intent.getStringExtra(EXTRA_ACTIVITY_ID)) && prefs(this).getBoolean("unfinished", false)) throw new IllegalStateException("Save or discard the recovered workout first.");
     // A previous workout that was never stopped is replaced, never merged.
     stopLocationUpdates();
 
@@ -224,14 +265,22 @@ public class VjWorkoutService extends Service {
     activityType = type != null ? type : "";
     if (label != null && !label.trim().isEmpty()) title = label;
     autoPause = intent.getBooleanExtra(EXTRA_AUTO_PAUSE, true);
-    startedAtMs = System.currentTimeMillis();
+    ownerId = intent.getStringExtra("ownerId");
+    if (ownerId == null || ownerId.isEmpty()) throw new IllegalArgumentException("Signed-in account required.");
+    startedAtMs = intent.getLongExtra("startedAtMs", System.currentTimeMillis());
     lastFixAtMs = 0L;
     pointCount = 0;
+    steps.total = 0; steps.pause();
     paused = false;
     active = true;
+    com.getcapacitor.JSObject header = new com.getcapacitor.JSObject();
+    header.put("activityType", activityType); header.put("startedAtMs", startedAtMs);
+    journal.append(ownerId, activityId, "start", startedAtMs, header);
+    prefs(this).edit().putString("owner_id", ownerId).remove("last_error").commit();
     persist();
     startForegroundNotification();
     beginLocationUpdates();
+    beginStepUpdates();
     dispatchStateChanged();
   }
 
@@ -239,30 +288,37 @@ public class VjWorkoutService extends Service {
     if (!active || paused) return;
     paused = true;
     stopLocationUpdates();
+    stopStepUpdates();
+    journal.append(ownerId, activityId, "pause", System.currentTimeMillis(), new com.getcapacitor.JSObject());
     persist();
     updateNotification();
     dispatchStateChanged();
   }
 
   private void handleResume() {
-    if (!active || !paused) return;
+    if (active && !paused) return;
+    if (activityId.isEmpty() || ownerId.isEmpty() || !prefs(this).getBoolean("unfinished", false)) throw new IllegalStateException("No unfinished workout to resume.");
+    active = true;
     paused = false;
+    journal.append(ownerId, activityId, "resume", System.currentTimeMillis(), new com.getcapacitor.JSObject());
     persist();
-    updateNotification();
+    startForegroundNotification();
     beginLocationUpdates();
+    beginStepUpdates();
     dispatchStateChanged();
   }
 
   private void handleStop() {
     stopLocationUpdates();
+    stopStepUpdates();
     boolean wasActive = active;
+    if (!activityId.isEmpty() && prefs(this).getBoolean("unfinished", false)) {
+      journal.append(ownerId, activityId, "end", System.currentTimeMillis(), new com.getcapacitor.JSObject());
+      if (!prefs(this).edit().putBoolean("unfinished", false).commit()) throw new IllegalStateException("Device storage unavailable");
+    }
     active = false;
     paused = false;
-    activityId = "";
-    activityType = "";
-    pointCount = 0;
-    startedAtMs = 0L;
-    lastFixAtMs = 0L;
+    // Retain metadata and journal until canonical save or explicit discard.
     persist();
     ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
     // No "active: false" broadcast here: an explicit stop is expected, and the
@@ -274,7 +330,10 @@ public class VjWorkoutService extends Service {
   @Override
   public void onDestroy() {
     stopLocationUpdates();
+    stopStepUpdates();
     if (active) persist();
+    if (running == this) running = null;
+    journal.close();
     super.onDestroy();
   }
 
@@ -339,8 +398,8 @@ public class VjWorkoutService extends Service {
       }
     }
     if (!registered) {
-      Log.w(TAG, "No location provider is enabled");
-      return;
+      locationListener = null;
+      throw new IllegalStateException("Enable location services and allow location permission.");
     }
 
     // LocationManager does not guarantee that the first callback arrives
@@ -348,7 +407,6 @@ public class VjWorkoutService extends Service {
     // acquired, otherwise the map can remain blank for minutes on some OEMs.
     Location seed = newestRecentLastKnownLocation();
     if (seed != null) {
-      seed.setTime(System.currentTimeMillis());
       main.post(() -> onFix(seed));
     }
   }
@@ -387,8 +445,19 @@ public class VjWorkoutService extends Service {
 
   private void onFix(Location location) {
     if (!active || paused || location == null) return;
+    if (location.getTime() < startedAtMs || location.getTime() <= lastFixAtMs) return;
+    try {
+      com.getcapacitor.JSObject point = new com.getcapacitor.JSObject();
+      point.put("lat", location.getLatitude()); point.put("lng", location.getLongitude());
+      if (location.hasAccuracy()) point.put("accuracy", location.getAccuracy());
+      if (location.hasAltitude()) point.put("elevation", location.getAltitude());
+      journal.append(ownerId, activityId, "point", location.getTime(), point);
+    } catch (Exception e) {
+      stopLocationUpdates(); active = false; paused = true;
+      prefs(this).edit().putBoolean(KEY_ACTIVE, false).putBoolean(KEY_PAUSED, true).putString("last_error", "Storage is full. Your recorded route is retained.").commit(); dispatchStateChanged(); return;
+    }
     pointCount += 1;
-    lastFixAtMs = System.currentTimeMillis();
+    lastFixAtMs = location.getTime();
     SharedPreferences.Editor editor = prefs(this).edit()
         .putInt(KEY_POINT_COUNT, pointCount)
         .putLong(KEY_LAST_FIX_AT, location.getTime())
@@ -408,6 +477,32 @@ public class VjWorkoutService extends Service {
     }
   }
 
+  private void beginStepUpdates() {
+    if (stepListener != null || (Build.VERSION.SDK_INT >= 29 && checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED)) return;
+    stepManager = (android.hardware.SensorManager)getSystemService(SENSOR_SERVICE);
+    android.hardware.Sensor sensor = stepManager == null ? null : stepManager.getDefaultSensor(android.hardware.Sensor.TYPE_STEP_COUNTER);
+    if (sensor == null) return;
+    steps.pause();
+    stepListener = new android.hardware.SensorEventListener() {
+      public void onAccuracyChanged(android.hardware.Sensor sensor, int accuracy) {}
+      public void onSensorChanged(android.hardware.SensorEvent event) {
+        if (!active || paused || !Float.isFinite(event.values[0])) return;
+        if (!steps.accept((long)event.values[0], event.timestamp)) return;
+        try {
+          com.getcapacitor.JSObject value = new com.getcapacitor.JSObject(); value.put("steps", steps.total);
+          long at = System.currentTimeMillis() - (android.os.SystemClock.elapsedRealtimeNanos() - event.timestamp) / 1000000;
+          journal.append(ownerId, activityId, "steps", at, value);
+          persist(); dispatchStateChanged();
+        } catch (Exception e) { stopStepUpdates(); prefs(VjWorkoutService.this).edit().putString("last_error", "Workout steps paused: check device storage.").commit(); dispatchStateChanged(); }
+      }
+    };
+    if (!stepManager.registerListener(stepListener, sensor, android.hardware.SensorManager.SENSOR_DELAY_NORMAL)) stepListener = null;
+  }
+  private void stopStepUpdates() {
+    if (stepManager != null && stepListener != null) stepManager.unregisterListener(stepListener);
+    stepListener = null; steps.pause();
+  }
+
   // ── Notification ────────────────────────────────────────────────────────
 
   private void startForegroundNotification() {
@@ -415,11 +510,12 @@ public class VjWorkoutService extends Service {
     int type = 0;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       type = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+      if (Build.VERSION.SDK_INT >= 34 && checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED) type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH;
     }
     try {
       ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), type);
     } catch (Exception e) {
-      Log.e(TAG, "startForeground failed", e);
+      throw new IllegalStateException("Could not start recording notification", e);
     }
   }
 
@@ -478,7 +574,7 @@ public class VjWorkoutService extends Service {
   // ── Persistence + dispatch ──────────────────────────────────────────────
 
   private void persist() {
-    prefs(this).edit()
+    boolean saved = prefs(this).edit()
         .putBoolean(KEY_ACTIVE, active)
         .putString(KEY_ACTIVITY_ID, activityId)
         .putString(KEY_ACTIVITY_TYPE, activityType)
@@ -488,10 +584,15 @@ public class VjWorkoutService extends Service {
         .putLong(KEY_STARTED_AT, startedAtMs)
         .putInt(KEY_POINT_COUNT, pointCount)
         .putLong(KEY_LAST_FIX_AT, lastFixAtMs)
-        .apply();
+        .putLong("step_total", steps.total)
+        .putString("owner_id", ownerId)
+        .putBoolean("unfinished", active || paused || prefs(this).getBoolean("unfinished", false))
+        .commit();
+    if (!saved) throw new IllegalStateException("Device storage is unavailable");
   }
 
   private void restoreFromPrefs() {
+    ownerId = prefs(this).getString("owner_id", "");
     SharedPreferences store = prefs(this);
     active = store.getBoolean(KEY_ACTIVE, false);
     paused = store.getBoolean(KEY_PAUSED, false);

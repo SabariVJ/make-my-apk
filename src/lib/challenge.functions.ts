@@ -263,7 +263,7 @@ export const completeChallengeDay = createServerFn({ method: "POST" })
     const { data: award, error } = await (context.supabase as any).rpc(
       "svj_complete_my_challenge_day",
       {
-        p_task_ids: JSON.stringify(taskIds),
+        p_task_ids: taskIds.map(String),
         p_duration_minutes: durationMinutes,
         p_reflection: reflection,
       },

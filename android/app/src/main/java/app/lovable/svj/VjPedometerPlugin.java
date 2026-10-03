@@ -35,10 +35,73 @@ import com.getcapacitor.annotation.PermissionCallback;
 @CapacitorPlugin(
     name = "VjPedometer",
     permissions = {
-        @Permission(strings = {android.Manifest.permission.ACTIVITY_RECOGNITION}, alias = "activityRecognition")
+        @Permission(strings = {android.Manifest.permission.ACTIVITY_RECOGNITION}, alias = "activityRecognition"),
+        @Permission(strings = {android.Manifest.permission.POST_NOTIFICATIONS}, alias = "notifications")
     }
 )
 public class VjPedometerPlugin extends Plugin implements SensorEventListener {
+    private long dailyGeneration = 0;
+
+    @PluginMethod
+    public void getDailyState(PluginCall call) {
+        String owner = call.getString("ownerId", "");
+        if (!owner.equals(DailyStepService.prefs(getContext()).getString("owner", ""))) {
+            dailyGeneration++; DailyStepService.disable(getContext());
+            if (!DailyStepService.prefs(getContext()).edit().putString("owner", owner).commit()) { call.reject("Device storage unavailable"); return; }
+        }
+        call.resolve(DailyStepService.snapshot(getContext(), owner));
+    }
+
+    @PluginMethod
+    public void enableDailyTracking(PluginCall call) {
+        call.getData().put("dailyGeneration", ++dailyGeneration);
+        if (!DailyStepService.permitted(getContext())) {
+            requestPermissionForAlias("activityRecognition", call, "dailyPermissionResult");
+            return;
+        }
+        dailyPermissionResult(call);
+    }
+
+    @PermissionCallback
+    private void dailyPermissionResult(PluginCall call) {
+        if (call.getData().optLong("dailyGeneration", -1) != dailyGeneration) { call.reject("Tracking request cancelled"); return; }
+        if (Build.VERSION.SDK_INT >= 33 && getPermissionState("notifications") == PermissionState.PROMPT) {
+            requestPermissionForAlias("notifications", call, "dailyPermissionResult"); return;
+        }
+        String owner = call.getString("ownerId", "");
+        try {
+            DailyStepService.enable(getContext(), owner);
+            final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+            final long deadline = System.currentTimeMillis() + 5000;
+            handler.post(new Runnable() {
+                public void run() {
+                    JSObject state = DailyStepService.snapshot(getContext(), owner);
+                    if (Boolean.TRUE.equals(state.optBoolean("listening"))) call.resolve(state);
+                    else if (System.currentTimeMillis() >= deadline) call.reject("Daily tracking could not start. Check permission and retry.");
+                    else handler.postDelayed(this, 100);
+                }
+            });
+        } catch (Exception e) { call.reject("Could not enable daily steps. Check Motion permission and sensor availability."); }
+    }
+
+    @PluginMethod
+    public void disableDailyTracking(PluginCall call) {
+        dailyGeneration++;
+        try {
+            DailyStepService.disable(getContext());
+            call.resolve(DailyStepService.snapshot(getContext(), DailyStepService.prefs(getContext()).getString("owner", "")));
+        } catch (Exception e) { call.reject("Could not stop daily steps."); }
+    }
+
+    @PluginMethod
+    public void openSettings(PluginCall call) {
+        android.content.Intent intent = new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.parse("package:" + getContext().getPackageName()));
+        startActivityForResult(call, intent, "dailySettingsResult");
+    }
+
+    @com.getcapacitor.annotation.ActivityCallback
+    private void dailySettingsResult(PluginCall call, androidx.activity.result.ActivityResult result) { call.resolve(); }
 
     private static final String TAG = "VjPedometer";
     private static final String PREFS = "svj_pedometer";

@@ -167,14 +167,12 @@ export async function saveGpsWorkout(
   if (!activityId) return { ok: false, error: "The server returned an unreadable workout." };
 
   const duplicate = envelope.duplicate === true;
-  // XP is evaluated only for a genuinely new activity; a duplicate is already
-  // fully processed and the ledger would no-op anyway.
-  const rewardResult = duplicate
-    ? { ok: true as const, rewards: undefined }
-    : await processActivityRewards(client, activityId);
+  // A previous save may have succeeded before its reward request lost the
+  // connection. Retry the authoritative ledger even for an existing activity.
+  const rewardResult = await processActivityRewards(client, activityId);
 
   return {
-    ok: true,
+    ok: rewardResult.ok,
     duplicate,
     activityId,
     rewards: rewardResult.rewards,
@@ -633,6 +631,7 @@ export interface LiveShare {
   active: boolean;
   token?: string;
   activityId?: string;
+  recordingId?: string;
   activityType?: string | null;
   displayName?: string | null;
   startedAt?: string;
@@ -647,11 +646,16 @@ export interface LiveShare {
 
 export function normalizeLiveShare(raw: unknown): LiveShare {
   if (!isRecord(raw)) return { active: false };
-  if (raw.active !== true) return { active: false };
+  if (
+    raw.active !== true &&
+    !(raw.active == null && raw.ok === true && typeof raw.token === "string")
+  )
+    return { active: false };
   return {
     active: true,
     token: str(raw.token) ?? undefined,
     activityId: str(raw.activityId) ?? undefined,
+    ...(str(raw.recordingId) ? { recordingId: str(raw.recordingId)! } : {}),
     activityType: str(raw.activityType),
     displayName: str(raw.displayName),
     startedAt: str(raw.startedAt) ?? undefined,
@@ -663,6 +667,23 @@ export function normalizeLiveShare(raw: unknown): LiveShare {
     lastDistanceMeters: num(raw.lastDistanceMeters ?? raw.distanceMeters),
     batteryPercent: num(raw.batteryPercent),
   };
+}
+
+export async function startRecordingLiveShare(
+  client: RpcClient,
+  recordingId: string,
+  activityType: GpsActivityType,
+): Promise<{ ok: boolean; share?: LiveShare; error?: string }> {
+  const result = await call(client, "svj_start_recording_live_share", {
+    p_recording_id: recordingId,
+    p_activity_type: activityType,
+    p_ttl_minutes: 180,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+  const share = normalizeLiveShare(result.data);
+  return share.active && share.token
+    ? { ok: true, share }
+    : { ok: false, error: "Could not start sharing. Update the hosted app and retry." };
 }
 
 export async function startLiveShare(

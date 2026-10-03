@@ -2,14 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, release/*]
+    branches: [main, release/*, codex/native-tracking-*]
   pull_request:
     branches: [main, release/*]
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  ios-device:
+    name: iOS Native Tests and Device Build
+    uses: ./.github/workflows/ios-test.yml
   web-checks:
     name: Web Checks
     runs-on: ubuntu-latest
@@ -35,6 +42,48 @@ jobs:
         run: bun run build
       - name: Git clean
         run: git diff --check
+
+  isolated-backend:
+    name: Authenticated Flows and Database Authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: bun install --frozen-lockfile
+      - name: Create disposable backend configuration
+        run: node scripts/prepare-isolated-backend.mjs
+      - name: Start local backend and apply migration chain
+        run: supabase start
+      - name: Configure local test credentials
+        run: node scripts/isolated-backend-env.mjs
+      - name: Install browser
+        run: bunx playwright install --with-deps chromium
+      - name: Authenticated browser and API flows
+        run: bunx playwright test --config tests/stability/playwright.config.ts
+      - name: Database function lint
+        run: supabase db lint --local --level error --fail-on error
+      - name: Upload isolated evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: isolated-backend-evidence
+          path: |
+            isolated-security-inventory.json
+            isolated-migration-manifest.json
+            test-results/
+          if-no-files-found: warn
+      - name: Stop disposable backend
+        if: always()
+        run: supabase stop --no-backup
 
   reward-database:
     name: Reward Database (native PostgreSQL)
@@ -111,7 +160,7 @@ jobs:
       - name: Upload phone APK
         uses: actions/upload-artifact@v7
         with:
-          name: svj-phone-debug-apk
+          name: svj-phone-validation-apk
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
@@ -189,6 +238,7 @@ jobs:
           if [ -n "$SVJ_KEYSTORE_PATH_B64" ]; then
             echo "$SVJ_KEYSTORE_PATH_B64" | base64 -d > /tmp/svj-release.keystore
             echo "Using provided upload keystore."
+            echo "SVJ_SIGNING_STATUS=production upload identity" >> "$GITHUB_ENV"
           else
             # Ephemeral validation keystore — clearly not the production upload
             # key. Fingerprints of BOTH artifacts are compared against each
@@ -201,17 +251,28 @@ jobs:
             SVJ_KEY_ALIAS=svj-validation
             SVJ_KEY_PASSWORD=svj-validation-only
             echo "No production keystore configured; using an EPHEMERAL VALIDATION key (artifacts are not release-signable)."
+            echo "SVJ_SIGNING_STATUS=ephemeral validation identity; production signing credentials missing" >> "$GITHUB_ENV"
           fi
           echo "SVJ_KEYSTORE_PATH=/tmp/svj-release.keystore" >> "$GITHUB_ENV"
           echo "SVJ_KEYSTORE_PASSWORD=$SVJ_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "SVJ_KEY_ALIAS=$SVJ_KEY_ALIAS" >> "$GITHUB_ENV"
           echo "SVJ_KEY_PASSWORD=$SVJ_KEY_PASSWORD" >> "$GITHUB_ENV"
       - name: Phone release bundle
-        run: cd android && ./gradlew :app:bundleRelease
+        run: cd android && ./gradlew :app:bundleRelease :app:assembleRelease
       - name: Wear release bundle
         run: cd android && ./gradlew :wear:bundleRelease
       - name: Release unit tests
         run: cd android && ./gradlew :app:testReleaseUnitTest :wear:testReleaseUnitTest
+      - name: Release test failure reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-release-test-failures
+          path: |
+            android/app/build/test-results/testReleaseUnitTest/
+            android/app/build/reports/tests/testReleaseUnitTest/
+            android/wear/build/test-results/testReleaseUnitTest/
+          if-no-files-found: warn
       - name: Verify phone and wear share one signing identity
         run: |
           PHONE_AAB=$(ls android/app/build/outputs/bundle/release/*.aab)
@@ -231,6 +292,7 @@ jobs:
           WEAR_AAB=$(ls android/wear/build/outputs/bundle/release/*.aab)
           {
             echo "git SHA:            $(git rev-parse HEAD)"
+            echo "signing:            $SVJ_SIGNING_STATUS"
             echo "phone app id:       app.lovable.svj"
             echo "wear app id:        app.lovable.svj"
             echo "phone versionCode:  100100  versionName: 1.0  targetSdk 36  minSdk 24"
@@ -244,6 +306,12 @@ jobs:
         with:
           name: svj-phone-release-aab
           path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+      - name: Upload phone release or validation APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: svj-phone-release-validation-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
       - name: Upload wear release AAB
         uses: actions/upload-artifact@v7
@@ -286,88 +354,46 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
-  android-responsive-webview:
-    name: Android Emulator WebView Smoke
+  validated-artifacts:
+    name: Validated Android and iPhone Downloads
+    needs:
+      [
+        web-checks,
+        isolated-backend,
+        reward-database,
+        android-phone,
+        wear-os,
+        android-release-validation,
+        ios-device,
+        responsive-browser-geometry,
+      ]
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: 21
-      - uses: actions/cache@v6
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-      - run: bun install --frozen-lockfile
-      - name: Build deterministic local responsive app
-        run: bun run build:responsive
-      - name: Sync the local test bundle into Capacitor
-        env:
-          SVJ_RESPONSIVE_LOCAL: "1"
-        run: bun run cap:sync
-      - name: Launch and measure the app in an Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_5
-          disable-animations: true
-          working-directory: android
-          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
-
-  ios-responsive-simulator:
-    name: iOS Simulator WebView Smoke
-    runs-on: macos-26
-    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/download-artifact@v7
         with:
-          bun-version: "1.4.2"
-      - name: Install locked dependencies
-        run: bun install --frozen-lockfile
-      - name: Build deterministic local responsive app
-        run: bun run build:responsive
-      - name: Sync the local test bundle into Capacitor
-        env:
-          SVJ_RESPONSIVE_LOCAL: "1"
-        run: bun run cap:sync:ios
-      - name: Build, launch, and capture the app in an iPhone simulator
-        shell: bash
-        run: |
-          set -euo pipefail
-          simulator_id="$(xcrun simctl create 'SVJ Responsive iPhone' 'iPhone 17')"
-          trap 'xcrun simctl delete "$simulator_id" >/dev/null 2>&1 || true' EXIT
-          xcodebuild \
-            -project ios/App/App.xcodeproj \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,id=$simulator_id" \
-            -derivedDataPath "$RUNNER_TEMP/svj-ios-responsive" \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-          app_path="$RUNNER_TEMP/svj-ios-responsive/Build/Products/Debug-iphonesimulator/App.app"
-          xcrun simctl boot "$simulator_id"
-          xcrun simctl bootstatus "$simulator_id" -b
-          xcrun simctl install "$simulator_id" "$app_path"
-          xcrun simctl launch "$simulator_id" app.lovable.svj
-          sleep 6
-          xcrun simctl io "$simulator_id" screenshot "$RUNNER_TEMP/svj-responsive.png"
-          test -s "$RUNNER_TEMP/svj-responsive.png"
-      - name: Save simulator smoke screenshot
-        if: always()
+          pattern: SVJ-ios-validation
+          path: validated-artifacts/ios
+      - uses: actions/download-artifact@v7
+        with:
+          name: svj-phone-release-validation-apk
+          path: validated-artifacts/android
+      - uses: actions/download-artifact@v7
+        with:
+          name: svj-phone-release-aab
+          path: validated-artifacts/android
+      - uses: actions/download-artifact@v7
+        with:
+          name: svj-release-metadata
+          path: validated-artifacts
+      - name: Record exact revision and checksums
+        run: node scripts/artifact-metadata.mjs validated-artifacts
+      - name: Publish validated downloads
         uses: actions/upload-artifact@v7
         with:
-          name: ios-responsive-simulator-smoke
-          path: ${{ runner.temp }}/svj-responsive.png
-          if-no-files-found: ignore
+          name: SVJ-validated-phone-artifacts
+          path: validated-artifacts/
+          if-no-files-found: error

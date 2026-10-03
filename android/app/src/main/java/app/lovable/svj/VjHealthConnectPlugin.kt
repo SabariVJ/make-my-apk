@@ -20,6 +20,7 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -225,6 +226,24 @@ class VjHealthConnectPlugin : Plugin() {
     }
 
     // ── Records ─────────────────────────────────────────────────────────────
+
+    @PluginMethod
+    fun readDailySteps(call: PluginCall) {
+        if (Build.VERSION.SDK_INT < 26) { call.reject("Health Connect unavailable"); return }
+        scope.launch {
+            try {
+                val hc = client() ?: throw IllegalStateException("Health Connect unavailable")
+                if (!hc.permissionController.getGrantedPermissions().contains(readPermissions["steps"])) throw SecurityException("Steps permission required")
+                val zone = java.time.ZoneId.systemDefault()
+                val now = java.time.Instant.now()
+                val start = now.atZone(zone).toLocalDate().atStartOfDay(zone).toInstant()
+                val data = hc.aggregate(AggregateRequest(setOf(StepsRecord.COUNT_TOTAL), TimeRangeFilter.between(start, now)))
+                val result = JSObject(); result.put("steps", data[StepsRecord.COUNT_TOTAL] ?: 0L)
+                result.put("dateKey", now.atZone(zone).toLocalDate().toString()); result.put("measurementAt", now.toEpochMilli())
+                call.resolve(result)
+            } catch (e: Exception) { call.reject("Could not read aggregated daily steps. Check Health Connect permissions.") }
+        }
+    }
 
     @PluginMethod
     fun readRecords(call: PluginCall) {

@@ -104,7 +104,8 @@ describe("primary navigation information architecture", () => {
 
 describe("App routing", () => {
   it("routes the recovery destination to the Recovery shell", () => {
-    assert.match(app, /import \{ RecoveryView \} from "\.\/components\/RecoveryView"/);
+    assert.match(app, /import\("\.\/components\/RecoveryView"\)/);
+    assert.match(app, /default: module\.RecoveryView/);
     assert.match(
       app,
       /\{activeTab === "recovery" && \(\s*<RecoveryView [\s\S]*?\/>\s*\)\}/,

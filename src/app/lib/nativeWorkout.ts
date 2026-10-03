@@ -15,7 +15,12 @@
 // ============================================================================
 
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import type { LocationAdapter, RawLocationSample } from "./gpsRecorder";
+import type {
+  GpsWorkoutRecorder,
+  NativeWorkoutEvent,
+  LocationAdapter,
+  RawLocationSample,
+} from "./gpsRecorder";
 import type { GpsActivityType } from "./gpsActivity";
 
 export const WORKOUT_PLUGIN_NAME = "VjWorkout";
@@ -29,6 +34,9 @@ export interface WorkoutPermissions {
 }
 
 export interface WorkoutNativeState {
+  version?: number;
+  ownerId?: string;
+  error?: string | null;
   active: boolean;
   activityId: string | null;
   activityType: string | null;
@@ -38,7 +46,12 @@ export interface WorkoutNativeState {
 }
 
 export interface WorkoutPlugin {
-  isAvailable?: () => Promise<{ available?: boolean; foregroundService?: boolean }>;
+  isAvailable?: () => Promise<{
+    available?: boolean;
+    foregroundService?: boolean;
+    version?: number;
+    journal?: boolean;
+  }>;
   checkPermissions?: () => Promise<unknown>;
   requestPermissions?: () => Promise<unknown>;
   startWorkout?: (options: {
@@ -46,16 +59,43 @@ export interface WorkoutPlugin {
     activityType: string;
     title?: string;
     autoPause?: boolean;
+    ownerId?: string;
+    startedAtMs?: number;
   }) => Promise<unknown>;
-  pauseWorkout?: () => Promise<unknown>;
-  resumeWorkout?: () => Promise<unknown>;
-  stopWorkout?: () => Promise<unknown>;
+  pauseWorkout?: (identity?: WorkoutIdentity) => Promise<unknown>;
+  resumeWorkout?: (identity?: WorkoutIdentity) => Promise<unknown>;
+  stopWorkout?: (identity?: WorkoutIdentity) => Promise<unknown>;
   getState?: () => Promise<unknown>;
   getLastLocation?: () => Promise<unknown>;
+  readJournal?: (options: {
+    ownerId: string;
+    activityId: string;
+    afterSequence: number;
+    limit: number;
+  }) => Promise<{ events: unknown[] }>;
+  listRecordings?: (options: { ownerId: string }) => Promise<{
+    recordings: Array<{
+      ownerId: string;
+      activityId: string;
+      activityType: string;
+      startedAtMs: number;
+      ended: boolean;
+    }>;
+  }>;
+  clearJournal?: (options: {
+    ownerId: string;
+    activityId: string;
+    confirmed: boolean;
+  }) => Promise<void>;
   addListener?: (
     event: string,
     handler: (payload: unknown) => void,
   ) => Promise<{ remove: () => Promise<void> }> | { remove: () => Promise<void> };
+}
+
+export interface WorkoutIdentity {
+  ownerId: string;
+  activityId: string;
 }
 
 /** The registered plugin, or null on web / when the native build lacks it. */
@@ -167,6 +207,9 @@ export function normalizeWorkoutState(raw: unknown): WorkoutNativeState {
   const numOrNull = (value: unknown): number | null =>
     typeof value === "number" && Number.isFinite(value) ? value : null;
   return {
+    version: typeof source.version === "number" ? source.version : 1,
+    ownerId: typeof source.ownerId === "string" ? source.ownerId : "",
+    error: typeof source.error === "string" ? source.error : null,
     active: source.active === true,
     activityId: typeof source.activityId === "string" ? source.activityId : null,
     activityType: typeof source.activityType === "string" ? source.activityType : null,
@@ -187,6 +230,8 @@ export async function getNativeWorkoutState(): Promise<WorkoutNativeState | null
 }
 
 export async function startNativeWorkout(options: {
+  ownerId?: string;
+  startedAtMs?: number;
   activityId: string;
   activityType: GpsActivityType;
   title?: string;
@@ -195,12 +240,25 @@ export async function startNativeWorkout(options: {
   const plugin = workoutPlugin();
   if (!plugin?.startWorkout) return { ok: false, error: "Native workout service unavailable." };
   try {
-    await plugin.startWorkout({
-      activityId: options.activityId,
-      activityType: options.activityType,
-      title: options.title ?? "SVJ is recording your activity",
-      autoPause: options.autoPause ?? true,
-    });
+    const acknowledged = normalizeWorkoutState(
+      await plugin.startWorkout({
+        activityId: options.activityId,
+        activityType: options.activityType,
+        title: options.title ?? "SVJ is recording your activity",
+        autoPause: options.autoPause ?? true,
+        ownerId: options.ownerId,
+        startedAtMs: options.startedAtMs,
+      }),
+    );
+    if (
+      options.ownerId &&
+      (acknowledged.version !== 2 ||
+        !acknowledged.active ||
+        acknowledged.paused ||
+        acknowledged.ownerId !== options.ownerId ||
+        acknowledged.activityId !== options.activityId)
+    )
+      return { ok: false, error: "Recording did not confirm its start. Your workout is retained." };
     return { ok: true };
   } catch (error) {
     return {
@@ -210,25 +268,140 @@ export async function startNativeWorkout(options: {
   }
 }
 
-export async function setNativeWorkoutPaused(paused: boolean): Promise<void> {
+export async function setNativeWorkoutPaused(
+  paused: boolean,
+  identity?: WorkoutIdentity,
+): Promise<void> {
   const plugin = workoutPlugin();
   if (!plugin) return;
-  try {
-    if (paused) await plugin.pauseWorkout?.();
-    else await plugin.resumeWorkout?.();
-  } catch {
-    // The JS recorder still owns pause state; a native hiccup must not break it.
-  }
+  const expected = identity ?? (await currentIdentity(plugin));
+  if (paused) await plugin.pauseWorkout?.(expected);
+  else await plugin.resumeWorkout?.(expected);
 }
 
-export async function stopNativeWorkout(): Promise<void> {
+async function currentIdentity(plugin: WorkoutPlugin): Promise<WorkoutIdentity | undefined> {
+  const state = normalizeWorkoutState(await plugin.getState?.());
+  if (state.version === 2 && state.ownerId && state.activityId)
+    return { ownerId: state.ownerId, activityId: state.activityId };
+  return undefined;
+}
+
+export async function stopNativeWorkout(identity?: WorkoutIdentity): Promise<void> {
   const plugin = workoutPlugin();
   if (!plugin?.stopWorkout) return;
-  try {
-    await plugin.stopWorkout();
-  } catch {
-    // ignore
-  }
+  const expected = identity ?? (await currentIdentity(plugin));
+  if (!expected && plugin.getState && normalizeWorkoutState(await plugin.getState()).version === 2)
+    return;
+  await plugin.stopWorkout(expected);
+}
+
+export function validateJournalEvent(
+  raw: unknown,
+  ownerId: string,
+  activityId: string,
+): NativeWorkoutEvent {
+  if (!raw || typeof raw !== "object") throw new Error("Invalid saved recording.");
+  const event = raw as NativeWorkoutEvent;
+  if (
+    event.ownerId !== ownerId ||
+    event.activityId !== activityId ||
+    !Number.isSafeInteger(event.sequence) ||
+    event.sequence <= 0 ||
+    !Number.isFinite(event.timestampMs) ||
+    event.timestampMs <= 0 ||
+    !["start", "point", "pause", "resume", "end", "steps"].includes(event.kind)
+  )
+    throw new Error("Saved recording identity or sequence is invalid.");
+  if (event.kind === "point" && !normalizeNativeSample(event))
+    throw new Error("Invalid saved GPS point.");
+  return event;
+}
+
+export function createJournalLocationAdapter(
+  plugin: WorkoutPlugin,
+  ownerId: string,
+  recorder: GpsWorkoutRecorder,
+): LocationAdapter {
+  let handles: Array<{ remove: () => Promise<void> }> = [];
+  let draining: Promise<void> | null = null;
+  let dirty = false;
+  let report: ((message: string) => void) | undefined;
+  let generation = 0;
+  let visibleCleanup: (() => void) | undefined;
+  const drain = (): Promise<void> => {
+    dirty = true;
+    if (draining) return draining;
+    const run = async () => {
+      do {
+        dirty = false;
+        const session = recorder.current;
+        if (!session || session.ownerId !== ownerId || !plugin.readJournal) return;
+        while (true) {
+          const page = await plugin.readJournal({
+            ownerId,
+            activityId: session.activityId,
+            afterSequence: recorder.current?.nativeSequence ?? 0,
+            limit: 250,
+          });
+          if (!Array.isArray(page.events)) throw new Error("Update SVJ to recover saved routes.");
+          for (const raw of page.events)
+            recorder.replayNativeEvent(validateJournalEvent(raw, ownerId, session.activityId));
+          if (page.events.length < 250) break;
+        }
+      } while (dirty);
+    };
+    draining = run().finally(() => {
+      draining = null;
+    });
+    return draining;
+  };
+  const detach = async () => {
+    generation += 1;
+    visibleCleanup?.();
+    visibleCleanup = undefined;
+    const owned = handles;
+    handles = [];
+    await Promise.all(owned.map((h) => h.remove()));
+  };
+  return {
+    async start(_onSample, onError) {
+      report = onError;
+      await detach();
+      const attachedGeneration = generation;
+      if (!plugin.addListener) throw new Error("Update SVJ to record routes.");
+      const wake = () => {
+        void drain().catch(() =>
+          report?.("Could not recover route points. Check device storage and retry."),
+        );
+      };
+      const listen = async (event: string, handler: (value: unknown) => void) => {
+        const handle = await plugin.addListener!(event, handler);
+        if (generation !== attachedGeneration) await handle.remove();
+        else handles.push(handle);
+      };
+      await listen("journalChanged", wake);
+      await listen("workoutState", (payload) => {
+        const state = normalizeWorkoutState(payload);
+        if (state.ownerId === ownerId && state.error) report?.(state.error);
+        wake();
+      });
+      const onVisible = () => {
+        if (!document.hidden) wake();
+      };
+      if (typeof document !== "undefined" && generation === attachedGeneration) {
+        document.addEventListener("visibilitychange", onVisible);
+        visibleCleanup = () => document.removeEventListener("visibilitychange", onVisible);
+      }
+      await drain();
+    },
+    async stop() {
+      const activityId = recorder.current?.activityId;
+      if (activityId) await plugin.stopWorkout?.({ ownerId, activityId });
+      await drain();
+      await detach();
+    },
+    detach,
+  };
 }
 
 /** Foreground-service battery/notification state, when the device exposes it. */
@@ -259,13 +432,28 @@ export async function readBatteryPercent(): Promise<number | null> {
  * backgrounded app keeps recording.
  */
 export function createNativeWorkoutLocationAdapter(plugin: WorkoutPlugin | null): LocationAdapter {
+  let handles: Array<{ remove: () => Promise<void> }> = [];
+  let generation = 0;
+  const detach = async () => {
+    generation += 1;
+    const owned = handles;
+    handles = [];
+    await Promise.all(owned.map((handle) => handle.remove()));
+  };
   return {
     async start(onSample, onError) {
+      await detach();
+      const attached = generation;
       if (!plugin?.addListener) {
         onError?.("Native workout service unavailable.");
         return;
       }
-      await plugin.addListener("location", (payload) => {
+      const listen = async (event: string, handler: (payload: unknown) => void) => {
+        const handle = await plugin.addListener!(event, handler);
+        if (generation !== attached) await handle.remove();
+        else handles.push(handle);
+      };
+      await listen("location", (payload) => {
         const sample = normalizeNativeSample(payload);
         if (sample) onSample(sample);
       });
@@ -275,18 +463,20 @@ export function createNativeWorkoutLocationAdapter(plugin: WorkoutPlugin | null)
       // point it has already accepted. Real native/local disagreement is
       // detected by reconcileNativeWorkout() on recovery instead of guessed
       // here, where the local session state is not visible.
-      await plugin.addListener("workoutState", () => {});
+      await listen("workoutState", () => {});
       // A foreground service can receive its first fix before the WebView has
       // attached (or while it is being recreated). Replay the persisted fix so
       // the route UI never waits forever for a second movement callback.
       if (plugin.getLastLocation) {
         const cached = normalizeNativeSample(await plugin.getLastLocation());
-        if (cached) onSample(cached);
+        if (cached && generation === attached) onSample(cached);
       }
     },
     async stop() {
       await stopNativeWorkout();
+      await detach();
     },
+    detach,
   };
 }
 

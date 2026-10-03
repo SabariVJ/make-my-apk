@@ -2,7 +2,16 @@
 // There is no step/session algorithm here. SensorManager records physical
 // register/unregister calls and can deliver late callbacks deliberately.
 export const platformSources = {
-  "android/Manifest.java": `package android; public class Manifest { public static class permission { public static final String ACTIVITY_RECOGNITION="activity"; } }`,
+  "app/lovable/svj/DailyStepService.java": `package app.lovable.svj; import android.content.*; import com.getcapacitor.*;
+    public class DailyStepService { static SharedPreferences prefs(Context c){return c.prefs;} static boolean permitted(Context c){return true;} static void enable(Context c,String owner){} static void disable(Context c){} static JSObject snapshot(Context c,String owner){return new JSObject().put("listening",true);} }`,
+  "android/content/Intent.java": `package android.content; public class Intent { public Intent(String action,android.net.Uri uri){} }`,
+  "android/net/Uri.java": `package android.net; public class Uri { public static Uri parse(String s){return new Uri();} }`,
+  "android/provider/Settings.java": `package android.provider; public class Settings { public static final String ACTION_APPLICATION_DETAILS_SETTINGS="settings"; }`,
+  "android/os/Looper.java": `package android.os; public class Looper { public static Looper getMainLooper(){return new Looper();} }`,
+  "android/os/Handler.java": `package android.os; public class Handler { public Handler(Looper l){} public void post(Runnable r){r.run();} public void postDelayed(Runnable r,long ms){} }`,
+  "androidx/activity/result/ActivityResult.java": `package androidx.activity.result; public class ActivityResult {}`,
+  "com/getcapacitor/annotation/ActivityCallback.java": `package com.getcapacitor.annotation; public @interface ActivityCallback {}`,
+  "android/Manifest.java": `package android; public class Manifest { public static class permission { public static final String ACTIVITY_RECOGNITION="activity",POST_NOTIFICATIONS="notifications"; } }`,
   "android/content/pm/ApplicationInfo.java": `package android.content.pm; public class ApplicationInfo { public static final int FLAG_DEBUGGABLE=2; public int flags=2; }`,
   "android/content/SharedPreferences.java": `package android.content;
     import java.util.*;
@@ -14,7 +23,7 @@ export const platformSources = {
       public class Editor {
         public Editor putLong(String k,long v){data.put(k,v);return this;}
         public Editor putString(String k,String v){data.put(k,v);return this;}
-        public void apply(){}
+        public void apply(){} public boolean commit(){return true;}
       }
     }`,
   "android/content/Context.java": `package android.content;
@@ -23,6 +32,7 @@ export const platformSources = {
       public static final int MODE_PRIVATE=0; public static final String SENSOR_SERVICE="sensor";
       public SensorManager sensors; public SharedPreferences prefs=new SharedPreferences();
       public Context(SensorManager s){sensors=s;}
+      public String getPackageName(){return "app.lovable.svj";}
       public Object getSystemService(String s){return sensors;}
       public ApplicationInfo getApplicationInfo(){return new ApplicationInfo();}
       public SharedPreferences getSharedPreferences(String n,int m){return prefs;}
@@ -60,10 +70,10 @@ export const platformSources = {
       public void unregisterListener(SensorEventListener l){removals++;if(unregisterFails)throw new RuntimeException("removal failed");listeners.remove(l);}
       public void deliver(int type,long time,float... values){for(SensorEventListener l:new ArrayList<>(listeners))l.onSensorChanged(new SensorEvent(sensors.get(type),time,values));}
     }`,
-  "com/getcapacitor/JSObject.java": `package com.getcapacitor; import java.util.*; public class JSObject extends HashMap<String,Object> { @Override public JSObject put(String k,Object v){super.put(k,v);return this;} }`,
+  "com/getcapacitor/JSObject.java": `package com.getcapacitor; import java.util.*; public class JSObject extends HashMap<String,Object> { public long optLong(String k,long fallback){return get(k) instanceof Number?((Number)get(k)).longValue():fallback;} public boolean optBoolean(String k){return Boolean.TRUE.equals(get(k));} @Override public JSObject put(String k,Object v){super.put(k,v);return this;} }`,
   "com/getcapacitor/PermissionState.java": `package com.getcapacitor; public enum PermissionState { GRANTED,DENIED,PROMPT }`,
   "com/getcapacitor/PluginCall.java": `package com.getcapacitor; public class PluginCall {
-    public JSObject value; public String error; public final String id;
+    public JSObject input=new JSObject(); public JSObject getData(){return input;} public JSObject value; public String error; public final String id;
     public PluginCall(){this("test");} public PluginCall(String s){id=s;}
     public String getString(String k,String d){return id==null?d:id;}
     public void resolve(){value=new JSObject();} public void resolve(JSObject v){value=v;}
@@ -77,6 +87,7 @@ export const platformSources = {
       public void checkPermissions(PluginCall c){} public void requestPermissions(PluginCall c){}
       public PermissionState getPermissionState(String n){return permission;}
       public void requestPermissionForAlias(String n,PluginCall c,String m){}
+      public void startActivityForResult(PluginCall c,android.content.Intent i,String callback){}
       public void notifyListeners(String name,JSObject value){if(name.equals("measurement"))measurements.add(value);else states.add(value);}
       public void handleOnPause(){} public void handleOnResume(){} public void handleOnDestroy(){}
     }`,

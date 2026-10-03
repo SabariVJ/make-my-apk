@@ -492,7 +492,7 @@ export const ChallengesView: React.FC<{
       <SVJSectionHeader title="Today's tasks" trailing={undefined} />
 
       {/* Categories & Custom Task Button */}
-      <div className="flex flex-wrap items-center gap-2 pb-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {categories.map((cat) => (
             <button

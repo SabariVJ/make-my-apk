@@ -133,10 +133,15 @@ describe("the mobile shell cannot push content past the viewport", () => {
     }
   });
 
-  it("clamps the root elements and lets the page container fill the phone", () => {
-    assert.match(styles, /html \{[^}]*max-width: 100%/s);
-    assert.match(styles, /body \{[^}]*max-width: 100%/s);
-    assert.match(styles, /#root \{[^}]*max-width: 100%/s);
+  it("keeps root overflow measurable and lets the page container fill the phone", () => {
+    assert.match(styles, /html \{[^}]*min-height: 100%/s);
+    assert.match(styles, /body \{[^}]*width: 100%/s);
+    assert.match(styles, /#root \{[^}]*width: 100%/s);
+    assert.doesNotMatch(
+      styles,
+      /(?:html|body|#root) \{[^}]*overflow-x: (?:hidden|clip)/s,
+      "root elements must not hide horizontal overflow from geometry checks",
+    );
     assert.match(app, /const PAGE_CONTAINER =\s*\n?\s*"svj-page-gutters mx-auto min-w-0 w-full/);
     assert.doesNotMatch(app, /w-screen|100vw/);
   });
@@ -173,13 +178,13 @@ describe("no destination exposes a horizontal scroll strip", () => {
     assert.match(STRIPS["GpsActivityDetail.tsx"], /flex flex-wrap gap-1\.5/);
   });
 
-  it("only the admin data table keeps a contained horizontal scroll", () => {
+  it("keeps every screen, including admin data, free of horizontal scroll containers", () => {
     const offenders = [];
     for (const file of walk("src/app")) {
       const source = read(file);
       if (/overflow-x-(auto|scroll)/.test(source)) offenders.push(file);
     }
-    assert.deepEqual(offenders, ["src/app/views/AdminDashboardView.tsx"]);
+    assert.deepEqual(offenders, []);
   });
 });
 

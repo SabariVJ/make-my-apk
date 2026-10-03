@@ -170,6 +170,64 @@ after(async () => {
 
 // ── Activity metrics keep their exact original rules ────────────────────────
 
+describe("60-Day completion transaction", { concurrency: false }, () => {
+  it("returns saved progress, awards once and preserves it after a missed day", async () => {
+    const id = await account();
+    await asRole("authenticated", id, "SELECT public.svj_start_my_challenge()");
+    const definition = (
+      await execute("SELECT tasks, xp FROM public.challenge_day_definitions WHERE day_number=1")
+    ).rows[0];
+    const tasks = definition.tasks.map((_, i) => String(i));
+    await assert.rejects(
+      asRole(
+        "authenticated",
+        id,
+        "SELECT public.svj_complete_my_challenge_day($1::jsonb,20,'Checked every task')",
+        [JSON.stringify(tasks.map(() => "invalid"))],
+      ),
+    );
+    const result = (
+      await asRole(
+        "authenticated",
+        id,
+        "SELECT public.svj_complete_my_challenge_day($1::jsonb,20,'Checked every task') AS r",
+        [JSON.stringify(tasks)],
+      )
+    ).rows[0].r;
+    assert.equal(result.daysCompleted, 1);
+    assert.equal(result.dayStates["1"].status, "completed");
+    const xp = (await execute("SELECT total_xp FROM public.profiles WHERE id=$1", [id])).rows[0]
+      .total_xp;
+    assert.equal(xp, definition.xp);
+    await assert.rejects(
+      asRole(
+        "authenticated",
+        id,
+        "SELECT public.svj_complete_my_challenge_day($1::jsonb,20,'Retry same task')",
+        [JSON.stringify(tasks)],
+      ),
+    );
+    assert.equal(
+      (await execute("SELECT total_xp FROM public.profiles WHERE id=$1", [id])).rows[0].total_xp,
+      xp,
+    );
+    await execute(
+      "UPDATE public.challenge_enrollments SET started_at=now()-interval '3 days' WHERE user_id=$1",
+      [id],
+    );
+    const missed = (
+      await asRole("authenticated", id, "SELECT public.svj_get_my_challenge_state() AS r")
+    ).rows[0].r;
+    assert.equal(missed.status, "paused");
+    assert.equal(missed.daysCompleted, 1);
+    const resumed = (
+      await asRole("authenticated", id, "SELECT public.svj_resume_my_challenge() AS r")
+    ).rows[0].r;
+    assert.equal(resumed.status, "active");
+    assert.equal(resumed.daysCompleted, 1);
+  });
+});
+
 describe("activity metrics unchanged", { concurrency: false }, () => {
   it("counts workouts from any source as before", async () => {
     const id = await account();

@@ -66,34 +66,39 @@ export function useDailyTracking(ownerId: string | null) {
     if (!native || !ownerId || document.hidden) return;
     try {
       const next = validateDailyState(await DailyPedometer.getDailyState({ ownerId }), ownerId);
-      if (
-        Capacitor.getPlatform() === "android" &&
-        appStorage.getItem(`svj.steps.health.${ownerId}`) === "enabled" &&
-        (!next.available ||
-          !next.listening ||
-          !next.measurementAt ||
-          Date.now() - next.measurementAt > 60_000) &&
-        (await hasGranted("steps"))
-      ) {
-        const aggregate = await healthConnectPlugin()?.readDailySteps?.();
+      try {
         if (
-          aggregate &&
-          aggregate.dateKey === localDateKey() &&
-          Number.isSafeInteger(aggregate.steps) &&
-          aggregate.steps >= 0
+          Capacitor.getPlatform() === "android" &&
+          appStorage.getItem(`svj.steps.health.${ownerId}`) === "enabled" &&
+          (!next.available ||
+            !next.listening ||
+            !next.measurementAt ||
+            Date.now() - next.measurementAt > 60_000) &&
+          (await hasGranted("steps"))
         ) {
-          Object.assign(next, {
-            steps: aggregate.steps,
-            source: "Health Connect daily total",
-            available: true,
-            enabled: true,
-            listening: false,
-            measurementAt: aggregate.measurementAt,
-            raw: null,
-            permission: "granted",
-            error: null,
-          });
+          const aggregate = await healthConnectPlugin()?.readDailySteps?.();
+          if (
+            aggregate &&
+            aggregate.dateKey === localDateKey() &&
+            Number.isSafeInteger(aggregate.steps) &&
+            aggregate.steps >= 0
+          ) {
+            Object.assign(next, {
+              steps: aggregate.steps,
+              source: "Health Connect daily total",
+              available: true,
+              enabled: true,
+              listening: false,
+              measurementAt: aggregate.measurementAt,
+              raw: null,
+              permission: "granted",
+              error: null,
+            });
+          }
         }
+      } catch {
+        next.error ??=
+          "Step history backup is unavailable. Retry or check Health Connect permission.";
       }
       if (owner.current !== ownerId) return;
       setState(next);

@@ -356,16 +356,20 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     if (!last) return;
     if (Date.now() - lastSharePushRef.current < 15_000) return;
     lastSharePushRef.current = Date.now();
-    const client = activityRpcClient();
-    if (!client) return;
-    void updateLiveShare(client, token, {
-      lat: last.lat,
-      lng: last.lng,
-      elapsedSeconds: session.durationSeconds,
-      distanceMeters: summary?.distanceMeters,
-      accuracyMeters: last.accuracy ?? undefined,
-    });
-  }, [session, summary]);
+    if (!userId) return;
+    void withAccountRpcClient(
+      userId,
+      (client) =>
+        updateLiveShare(client, token, {
+          lat: last.lat,
+          lng: last.lng,
+          elapsedSeconds: session.durationSeconds,
+          distanceMeters: summary?.distanceMeters,
+          accuracyMeters: last.accuracy ?? undefined,
+        }),
+      () => owner.current === userId,
+    ).catch(() => undefined);
+  }, [session, summary, userId]);
 
   const start = useCallback(
     async (activityType: GpsActivityType, splitUnit: "km" | "mi" = "km") => {
@@ -450,20 +454,23 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       await recorder.finish();
       setSession(recorder.current ? { ...recorder.current } : null);
       setSummary(recorder.summary());
-      const shareClient = activityRpcClient();
-      if (shareClient && sharingRef.current) {
-        const stopped = await stopLiveShare(shareClient, sharingRef.current);
-        if (!stopped.ok) {
+      const token = sharingRef.current;
+      if (token && userId) {
+        try {
+          const stopped = await withAccountRpcClient(
+            userId,
+            (client) => stopLiveShare(client, token),
+            () => owner.current === userId,
+          );
+          if (!stopped.ok) throw new Error("Stop unconfirmed");
+          sharingRef.current = null;
+          setLiveShare(null);
+        } catch {
           setError(
             "Recording stopped. The live link could not confirm its stop; reconnect and tap Stop Sharing.",
           );
-          return;
         }
-        sharingRef.current = null;
-        setLiveShare(null);
       }
-      setSession(recorder.current ? { ...recorder.current } : null);
-      setSummary(recorder.summary());
     } catch {
       setError(
         "Could not confirm recording stopped. Your workout is retained. Reopen SVJ and retry Finish.",
@@ -471,15 +478,21 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     } finally {
       setBusy(false);
     }
-  }, [recorder]);
+  }, [recorder, userId]);
 
   const discard = useCallback(async () => {
     setBusy(true);
     try {
       await recorder.finish();
-      const shareClient = activityRpcClient();
-      if (shareClient && sharingRef.current) {
-        const stopped = await stopLiveShare(shareClient, sharingRef.current);
+      setSession(recorder.current ? { ...recorder.current } : null);
+      setSummary(recorder.summary());
+      const token = sharingRef.current;
+      if (token && userId) {
+        const stopped = await withAccountRpcClient(
+          userId,
+          (client) => stopLiveShare(client, token),
+          () => owner.current === userId,
+        );
         if (!stopped.ok) throw new Error("Could not stop sharing");
       }
       sharingRef.current = null;
@@ -541,9 +554,22 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       });
       setLastSavedId(result.activityId ?? null);
       setSession(recorder.current);
-      if (sharingRef.current) {
-        sharingRef.current = null;
-        setLiveShare(null);
+      const token = sharingRef.current;
+      if (token) {
+        try {
+          const stopped = await withAccountRpcClient(
+            userId,
+            (client) => stopLiveShare(client, token),
+            () => owner.current === userId,
+          );
+          if (!stopped.ok) throw new Error("Stop unconfirmed");
+          sharingRef.current = null;
+          setLiveShare(null);
+        } catch {
+          setError(
+            "Workout saved. Reconnect and tap Stop Sharing to confirm the live link has ended.",
+          );
+        }
       }
       setNotice(
         result.duplicate
@@ -575,10 +601,11 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
         setError("Start or resume your workout before sharing live.");
         return;
       }
-      const started = await startRecordingLiveShare(
-        client,
-        current.activityId,
-        current.activityType,
+      if (!userId) throw new Error("Sign in first");
+      const started = await withAccountRpcClient(
+        userId,
+        (scoped) => startRecordingLiveShare(scoped, current.activityId, current.activityType),
+        () => owner.current === userId,
       );
       if (!started.ok || !started.share?.token) {
         setError(started.error ?? "Couldn't start live sharing.");
@@ -597,11 +624,15 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
   }, [recorder, userId]);
 
   const stopSharing = useCallback(async () => {
-    const client = activityRpcClient();
     setLiveShareBusy(true);
     try {
-      if (!client) throw new Error("Sign in to stop sharing.");
-      const stopped = await stopLiveShare(client, sharingRef.current ?? undefined);
+      if (!userId) throw new Error("Sign in to stop sharing.");
+      const token = sharingRef.current ?? undefined;
+      const stopped = await withAccountRpcClient(
+        userId,
+        (client) => stopLiveShare(client, token),
+        () => owner.current === userId,
+      );
       if (!stopped.ok) throw new Error("Stop sharing did not succeed.");
       sharingRef.current = null;
       setLiveShare(null);
@@ -611,7 +642,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     } finally {
       setLiveShareBusy(false);
     }
-  }, []);
+  }, [userId]);
 
   // A recreated WebView reattaches to the owner's existing link, never a different recording.
   useEffect(() => {

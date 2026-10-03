@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { writeFile } from "node:fs/promises";
+import { writeFile, readFile, readdir } from "node:fs/promises";
 import pg from "pg";
 
 const url = process.env.SUPABASE_URL;
@@ -281,13 +281,49 @@ test("nutrition meal totals, private data and delete", async () => {
   expect(
     checked(await alice.client.from("svj_nutrition_meals").select("*").eq("id", meal.id)),
   ).toEqual([]);
+  for (let i = 1; i <= 3; i++) {
+    const allowed = await rpc(bob, "svj_claim_nutrition_scan");
+    expect(allowed.allowed).toBe(true);
+    expect(allowed.used).toBe(i);
+    expect(allowed.limit).toBe(3);
+  }
+  const limited = await rpc(bob, "svj_claim_nutrition_scan");
+  expect(limited.allowed).toBe(false);
+  expect(limited.used).toBe(3);
+  expect(
+    (
+      await bob.client
+        .from("svj_nutrition_scan_usage")
+        .update({ scan_count: 0 })
+        .eq("user_id", bob.id)
+    ).error,
+  ).toBeTruthy();
 });
 
 test("challenge start, persisted progress and missions keep claiming disabled", async () => {
   const started = await rpc(bob, "svj_start_my_challenge");
   expect(started).toBeTruthy();
   const state = await rpc(bob, "svj_get_my_challenge_state");
-  expect(state).toBeTruthy();
+  expect(state.status).toBe("active");
+  const day = (
+    await db.query("select tasks,xp from public.challenge_day_definitions where day_number=1")
+  ).rows[0];
+  const completed = await rpc(bob, "svj_complete_my_challenge_day", {
+    p_task_ids: day.tasks.map((_, i) => String(i)),
+    p_duration_minutes: 20,
+    p_reflection: "Completed today's tasks",
+  });
+  expect(completed.daysCompleted).toBe(1);
+  await db.query(
+    "update public.challenge_enrollments set started_at=now()-interval '3 days' where user_id=$1",
+    [bob.id],
+  );
+  const missed = await rpc(bob, "svj_get_my_challenge_state");
+  expect(missed.status).toBe("paused");
+  expect(missed.daysCompleted).toBe(1);
+  const resumed = await rpc(bob, "svj_resume_my_challenge");
+  expect(resumed.status).toBe("active");
+  expect(resumed.daysCompleted).toBe(1);
   const policy = (
     await db.query(
       "select claims_enabled from public.reward_policies where campaign_id='earned-plus-launch-v1'",
@@ -322,6 +358,31 @@ test("active Live Share does not finish recording and an ended link is anonymous
 });
 
 test("database authorization inventory and client secret scan", async () => {
+  const clientFiles = await readdir(".output/public", { recursive: true });
+  let scanned = 0;
+  for (const file of clientFiles.filter((file) => /\.(js|mjs|html|map)$/.test(file))) {
+    const source = await readFile(`.output/public/${file}`, "utf8");
+    expect(
+      source.includes(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      `Privileged key in ${file}`,
+    ).toBe(false);
+    expect(
+      /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----|sb_secret_[A-Za-z0-9_-]{20,}/.test(source),
+      `Private credential in ${file}`,
+    ).toBe(false);
+    for (const token of source.match(/eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g) ??
+      []) {
+      let payload;
+      try {
+        payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
+      } catch {
+        continue;
+      }
+      expect(payload.role, `Privileged JWT in ${file}`).not.toBe("service_role");
+    }
+    scanned++;
+  }
+  expect(scanned).toBeGreaterThan(10);
   const tables = (
     await db.query(
       `select c.relname, c.relrowsecurity, exists(select 1 from information_schema.columns a where a.table_schema='public' and a.table_name=c.relname and a.column_name in ('user_id','owner_id','recipient_user_id')) private_owner from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by c.relname`,
@@ -345,6 +406,7 @@ test("database authorization inventory and client secret scan", async () => {
     JSON.stringify(
       {
         scope: "Disposable local Supabase; deployed schema not accessed",
+        clientFilesScanned: scanned,
         tables,
         policies,
         functions,

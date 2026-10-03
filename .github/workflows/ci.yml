@@ -263,6 +263,16 @@ jobs:
         run: cd android && ./gradlew :wear:bundleRelease
       - name: Release unit tests
         run: cd android && ./gradlew :app:testReleaseUnitTest :wear:testReleaseUnitTest
+      - name: Release test failure reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-release-test-failures
+          path: |
+            android/app/build/test-results/testReleaseUnitTest/
+            android/app/build/reports/tests/testReleaseUnitTest/
+            android/wear/build/test-results/testReleaseUnitTest/
+          if-no-files-found: warn
       - name: Verify phone and wear share one signing identity
         run: |
           PHONE_AAB=$(ls android/app/build/outputs/bundle/release/*.aab)

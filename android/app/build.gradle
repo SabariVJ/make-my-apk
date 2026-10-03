@@ -41,7 +41,14 @@ android {
             }
         }
     }
-    testOptions { unitTests.includeAndroidResources = true }
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            // Use the same Maven Central endpoint as Gradle for Android test
+            // runtimes, rather than downloading from a second mirror at execution time.
+            systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+        }
+    }
     sourceSets { test { manifest.srcFile 'src/test/AndroidManifest.xml' } }
 
     buildTypes {
@@ -63,7 +70,7 @@ android {
                 // `path` / `name` properties instead.
                 def needsReleaseSigning = graph.allTasks.any { task ->
                     task.path.startsWith(':app:') &&
-                    (task.name ==~ /assembleRelease.*/ || task.name ==~ /bundleRelease.*/)
+                    (task.name == 'assembleRelease' || task.name == 'bundleRelease')
                 }
                 if (needsReleaseSigning) {
                     throw new GradleException(

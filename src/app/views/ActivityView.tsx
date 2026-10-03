@@ -241,10 +241,7 @@ const ActivityViewContent: React.FC<{
       </button>
 
       {/* Train internal navigation: only working sections are exposed. */}
-      <div
-        className="mb-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap"
-        data-testid="train-sections"
-      >
+      <div className="mb-3 flex flex-wrap gap-2 pb-1" data-testid="train-sections">
         {(
           [
             { id: "activity", label: "Overview" },

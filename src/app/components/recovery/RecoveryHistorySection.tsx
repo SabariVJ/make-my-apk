@@ -3,7 +3,9 @@
 // Built ONLY from svj_list_my_recovery_history rows (the server date string is
 // the canonical day key). A missing calendar day is NO DATA — never a fabricated
 // zero score. Colour is never the only signal: every cell carries a glyph and a
-// full accessible label, selectable days are real buttons with ≥44px targets.
+// full accessible label. Selectable days are real buttons: they keep a ≥44px
+// target once the calendar has room (sm and up) and shrink below it, so the
+// seven-day grid can never force horizontal overflow on a phone.
 import React, { useCallback, useMemo, useState } from "react";
 import { Loader2, Moon, RefreshCw } from "lucide-react";
 import { SVJEmptyState } from "../ui-primitives/SVJEmptyState";
@@ -244,7 +246,7 @@ const RecoveryHistorySection: React.FC = () => {
                       aria-label={cellAria(cell)}
                       aria-pressed={isSelected}
                       onClick={() => focusCell(cell)}
-                      className={`flex h-10 w-full min-w-[44px] items-center justify-center rounded-lg border text-[10px] font-mono transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C81E3A] ${
+                      className={`flex h-10 w-full min-w-0 items-center justify-center rounded-lg border text-[10px] font-mono transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C81E3A] sm:min-w-[44px] ${
                         isSelected ? "border-[#C81E3A]" : "border-white/5"
                       } ${style.bg}`}
                     >

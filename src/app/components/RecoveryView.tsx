@@ -141,12 +141,16 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
         </div>
       </div>
 
+      {/* Mobile: every section is visible in a wrapping grid so no tab can be
+          clipped off the right edge of a phone — the row never becomes a
+          horizontal scroll strip. From `lg` the row returns to the compact
+          single-line presentation that fits the wider viewport. */}
       <div
         role="tablist"
         aria-label="Recovery sections"
         onKeyDown={handleKeyDown}
         data-testid="recovery-sections"
-        className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap"
+        className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 lg:flex lg:flex-wrap"
       >
         {RECOVERY_SECTIONS.map((item) => {
           const Icon = item.icon;
@@ -165,7 +169,7 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               tabIndex={active ? 0 : -1}
               data-testid={`recovery-section-tab-${item.id}`}
               onClick={() => setSection(item.id)}
-              className={`flex min-h-[44px] min-w-0 cursor-pointer flex-col items-center justify-center gap-1 svj-radius-row border px-1.5 py-2 text-center font-inter text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] sm:flex-row sm:px-2.5 sm:text-[13px] lg:min-h-0 ${
+              className={`flex min-h-[44px] w-full min-w-0 cursor-pointer flex-col items-center justify-center gap-1 svj-radius-row border px-1.5 py-2 text-center font-inter text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C81E3A] sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[13px] lg:min-h-0 lg:w-auto lg:shrink-0 ${
                 active
                   ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-[#F4F2ED]"
                   : "border-white/[0.08] bg-[#17171A] text-[#8C8C90] hover:text-[#F4F2ED]"

@@ -46,3 +46,5 @@ native-build.log
 performance-App-backup.txt
 isolated-migration-manifest.json
 isolated-security-inventory.json
+.*test-*/
+challenge-repair.log

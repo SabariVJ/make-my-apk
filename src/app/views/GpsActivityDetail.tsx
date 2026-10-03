@@ -353,7 +353,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
       )}
 
       {/* Section nav */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1" data-testid="detail-sections">
+      <div className="flex flex-wrap gap-1.5 pb-1" data-testid="detail-sections">
         {SECTIONS.map((entry) => (
           <button
             key={entry.id}

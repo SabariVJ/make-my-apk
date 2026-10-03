@@ -1126,7 +1126,7 @@ const ExercisePicker: React.FC<{
         />
       </div>
 
-      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+      <div className="mt-2 flex flex-wrap gap-1.5 pb-1">
         {["all", ...EXERCISE_CATEGORIES].map((id) => (
           <button
             key={id}

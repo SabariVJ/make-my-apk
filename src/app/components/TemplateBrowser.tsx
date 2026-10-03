@@ -151,7 +151,7 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
       {recentlyUsed.length > 0 && (
         <section>
           <SVJSectionHeader title="Recently used" />
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-2 flex flex-wrap gap-2 pb-1">
             {recentlyUsed.map(({ entry, template }) => (
               <button
                 key={entry.templateId}

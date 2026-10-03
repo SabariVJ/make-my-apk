@@ -239,7 +239,7 @@ export const RewardsView: React.FC = () => {
       />
 
       {/* Category Selector */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2 pb-1 scrollbar-none">
         {categories.map((cat) => (
           <button
             key={cat}

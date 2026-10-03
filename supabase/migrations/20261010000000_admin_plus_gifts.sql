@@ -68,6 +68,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+#variable_conflict use_column
 DECLARE
   v_now timestamptz := clock_timestamp();
   v_base_expires_at timestamptz;
@@ -228,6 +229,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+#variable_conflict use_column
 DECLARE
   v_gift public.plus_gifts%ROWTYPE;
   v_now timestamptz := clock_timestamp();

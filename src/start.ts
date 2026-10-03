@@ -34,5 +34,10 @@ export const startInstance = createStart(() => ({
   // traffic at the cheapest layer; HMAC verifies request integrity only and
   // never replaces authentication. See docs/SVJ_RATE_LIMITING.md and
   // docs/SVJ_HMAC_REQUEST_SIGNING.md.
-  requestMiddleware: [errorMiddleware, csrfMiddleware, rateLimitRequestMiddleware, hmacRequestMiddleware],
+  requestMiddleware: [
+    errorMiddleware,
+    csrfMiddleware,
+    rateLimitRequestMiddleware,
+    hmacRequestMiddleware,
+  ],
 }));

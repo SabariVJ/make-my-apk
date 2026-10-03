@@ -61,7 +61,8 @@ export interface HealthConnectPlugin {
 }
 
 export function healthConnectPlugin(): HealthConnectPlugin | null {
-  if (!Capacitor.isNativePlatform()) return null;
+  if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable(HEALTH_CONNECT_PLUGIN_NAME))
+    return null;
   try {
     return registerPlugin<HealthConnectPlugin>(HEALTH_CONNECT_PLUGIN_NAME);
   } catch {

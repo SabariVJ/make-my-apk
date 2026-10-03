@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -40,7 +41,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -77,7 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "SVJ — Self-Improvement Challenges & Community" },
       {
         name: "description",
@@ -143,7 +144,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <style>{`html,body{background-color:#0B0B0C}`}</style>
         <HeadContent />
       </head>
-      <body className="bg-svj-bg text-svj-text antialiased overflow-x-hidden">
+      <body className="bg-svj-bg text-svj-text antialiased">
         {children}
         <Scripts />
       </body>

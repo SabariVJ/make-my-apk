@@ -53,14 +53,14 @@ import {
  * horizontal padding or its own `pb-24/28/32` — that duplication is what made
  * screens unevenly spaced and pushed actions below the fold.
  *
- * Width: full-bleed on phones, fluid on tablets, and on desktop the content
- * box grows to ~1264px (86rem minus the 7rem utility-rail reservation) so the
- * app stops rendering a narrow mobile column inside a wide window.
+ * Width: full-bleed on phones, then the content box scales progressively and
+ * stays horizontally centered (symmetric margins, never one-sided padding) at
+ * every breakpoint: md caps at 3xl, lg at 5xl with roomier px-8 gutters, xl at
+ * 6xl. The desktop utility rail is a slim floating pill, not a sidebar, so it
+ * lives in the free margin — no reserved gutter needed.
  */
 const PAGE_CONTAINER =
-  "mx-auto w-full px-4 pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-4";
-/** Desktop content box + the right-side reservation that keeps the rail off content. */
-const PAGE_CONTAINER_DESKTOP = "lg:max-w-[86rem] lg:pr-28";
+  "svj-page-gutters mx-auto min-w-0 w-full pt-3 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pt-4 md:max-w-3xl lg:max-w-5xl xl:max-w-6xl";
 
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
@@ -171,7 +171,7 @@ const AppContent: React.FC<{
   if (locked) {
     // ── Restricted post-trial shell ──────────────────────────────────────
     return (
-      <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
+      <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
         <Header />
 
         {/* Renders nothing visually — schedules the notification plan. */}
@@ -183,7 +183,7 @@ const AppContent: React.FC<{
             role="dialog"
             aria-modal="true"
             aria-labelledby="trial-expired-title"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95"
+            className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/95"
           >
             <div className="w-full max-w-sm space-y-5 svj-radius-card svj-elev-3 svj-lit-top border border-white/10 bg-[#17171A] p-6 text-center">
               <h2 id="trial-expired-title" className="font-anton text-xl tracking-wide text-white">
@@ -226,8 +226,8 @@ const AppContent: React.FC<{
           </div>
         )}
 
-        {/* Same container as the main shell, minus the (absent) utility rail. */}
-        <main className={`${PAGE_CONTAINER} max-w-4xl lg:max-w-6xl`}>
+        {/* Same shared container as the main shell. */}
+        <main className={PAGE_CONTAINER}>
           {storageError && (
             <p
               role="alert"
@@ -282,7 +282,7 @@ const AppContent: React.FC<{
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
+    <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
       {/* Top Bar Header */}
       <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
 
@@ -300,13 +300,13 @@ const AppContent: React.FC<{
         isAdmin={isAdmin}
       />
 
-      {/* Main View Area — the container reserves desktop width and the rail's
-          right gutter so it can never cover content, and it alone owns the
+      {/* Main View Area — the shared container scales and centers content at
+          every breakpoint, and it alone owns the
           bottom-navigation clearance. Tab switches crossfade with a quick
           fade+slide. The animation wrapper is visual only: state lives in
           providers above it, so Activity tracking, workout recorders and
           native listeners are never reset. */}
-      <main className={`${PAGE_CONTAINER} ${PAGE_CONTAINER_DESKTOP}`}>
+      <main className={PAGE_CONTAINER}>
         {storageError && (
           <p
             role="alert"
@@ -318,6 +318,7 @@ const AppContent: React.FC<{
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
+            className="min-w-0 w-full"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -476,7 +477,10 @@ function AppRoot() {
           plusExpiresAt={status?.plusExpiresAt ?? null}
         >
           <EngagementProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
-            <ActivityProvider userId={status?.userId ?? null}>
+            {/* Keyed by account like EngagementProvider: signing out and back in
+                as someone else remounts the provider instead of reusing the
+                previous member's in-memory tracking state. */}
+            <ActivityProvider key={status?.userId ?? "signed-out"} userId={status?.userId ?? null}>
               <AppContent locked={status?.locked} lockEmail={status?.email} />
             </ActivityProvider>
           </EngagementProvider>

@@ -613,7 +613,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
       )}
 
       {selectedRivalry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+        <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>

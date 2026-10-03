@@ -32,6 +32,22 @@ describe("activity progress", () => {
     assert.equal(normalizeUserProfile({ isPremium: true }).isPremium, false);
   });
 
+  it("does not trust cached founder flags for non-founder accounts", () => {
+    const user = normalizeUserProfile({
+      email: "gifted@example.com",
+      isFounder: true,
+      isOwner: true,
+    });
+    assert.equal(user.isFounder, false);
+    assert.equal(user.isOwner, false);
+  });
+
+  it("keeps founder flags for the canonical founder account", () => {
+    const user = normalizeUserProfile({ email: "sabarivj777@gmail.com" });
+    assert.equal(user.isFounder, true);
+    assert.equal(user.isOwner, true);
+  });
+
   it("is replayable without mutating the profile, history or stats", () => {
     const user = structuredClone(INITIAL_USER);
     const before = structuredClone(user);

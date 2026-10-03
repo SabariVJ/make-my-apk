@@ -110,7 +110,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       // the existing env(safe-area-inset-bottom) pattern (the same one the
       // page container uses in App.tsx) so the gesture bar is always cleared
       // without a duplicate safe-area utility or negative offsets.
-      className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:px-4 sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
+      className="svj-dock-gutters fixed bottom-0 left-0 z-40 w-full max-w-full overflow-x-clip pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
     >
       {/* Liquid Glass dock — one rounded translucent control. 320px fit is
           guaranteed by the fluid grid: equal columns always fit the width,

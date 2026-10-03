@@ -64,6 +64,36 @@ function rpcFailure(error: any) {
   return error?.message || "That rivalry action could not be completed. Please retry.";
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Business-logic guard that runs BEFORE the database state machine. The
+ * plpgsql RPC validates the same rules again, but a server function is the
+ * layer the client can never bypass: self-comparison is rejected here even
+ * when a stale UI, a replayed request or a hand-crafted payload asks for it.
+ */
+export function validateRivalryOpponent(
+  opponentId: unknown,
+  callerId: string,
+): { ok: true; opponentId: string } | { ok: false; error: string } {
+  if (typeof opponentId !== "string" || !UUID_PATTERN.test(opponentId)) {
+    return { ok: false, error: "That member could not be resolved." };
+  }
+  if (opponentId === callerId) {
+    return { ok: false, error: "You cannot challenge your own account." };
+  }
+  return { ok: true, opponentId };
+}
+
+/** Translate state-machine rejections into messages the UI can act on. */
+export function rivalryFailureMessage(raw: string): string {
+  if (/cannot challenge yourself|challenge your own/i.test(raw))
+    return "You cannot challenge your own account.";
+  if (/become friends/i.test(raw)) return "Become friends before starting an Outperform rivalry.";
+  if (/unavailable/i.test(raw)) return "This member is not available for rivalries yet.";
+  return raw;
+}
+
 /** Create a request through the database state machine. No client-owned XP,
  * status, baseline, recipient or notification fields are accepted. */
 export const createRivalry = createServerFn({ method: "POST" })
@@ -74,12 +104,15 @@ export const createRivalry = createServerFn({ method: "POST" })
       context,
       data,
     }): Promise<{ ok: boolean; rivalry?: RivalryData; existing?: boolean; error?: string }> => {
+      // Self-comparison is refused here, server-side, before the RPC is called.
+      const opponent = validateRivalryOpponent(data.opponentId, context.userId);
+      if (!opponent.ok) return { ok: false, error: opponent.error };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const client = context.supabase as any;
       const { data: result, error } = await client.rpc("svj_create_rivalry", {
-        p_opponent_id: data.opponentId,
+        p_opponent_id: opponent.opponentId,
       });
-      if (error) return { ok: false, error: rpcFailure(error) };
+      if (error) return { ok: false, error: rivalryFailureMessage(rpcFailure(error)) };
       if (!result?.ok || !result.rivalry)
         return { ok: false, error: "The request could not be created." };
       return { ok: true, existing: result.existing === true, rivalry: mapRivalry(result.rivalry) };

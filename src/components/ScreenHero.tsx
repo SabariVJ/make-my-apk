@@ -13,6 +13,9 @@ import { HERO_ASSETS, type HeroScreen } from "@/lib/heroAssets";
  *   bars, sticky nav) — the "Fuel hero overlapping summary and tab controls"
  *   bug came from a hero that did not reserve its own height
  * - the image is `object-cover` with a per-screen focal point from the registry
+ * - each size tier uses a fixed aspect ratio (not a fixed pixel height), so the
+ *   proportion of the source art that stays visible is constant at every
+ *   viewport width, with a max-height cap per tier for very large windows
  *
  * Performance: `loading="lazy"` + `decoding="async"` by default; `priority`
  * switches an above-the-fold hero to eager/high-priority loading.
@@ -37,9 +40,9 @@ export interface ScreenHeroProps {
 }
 
 const HEIGHT_CLASSES: Record<NonNullable<ScreenHeroProps["height"]>, string> = {
-  sm: "h-24 sm:h-28 lg:h-32",
-  md: "h-32 sm:h-40 lg:h-48",
-  lg: "h-40 sm:h-52 lg:h-64",
+  sm: "aspect-[21/9] sm:aspect-[16/9] lg:aspect-[3/2] max-h-40 sm:max-h-48 lg:max-h-56",
+  md: "aspect-[21/9] sm:aspect-[16/9] lg:aspect-[3/2] max-h-52 sm:max-h-64 lg:max-h-80",
+  lg: "aspect-[21/9] sm:aspect-[16/9] lg:aspect-[3/2] max-h-64 sm:max-h-80 lg:max-h-96",
 };
 
 export const ScreenHero: React.FC<ScreenHeroProps> = ({

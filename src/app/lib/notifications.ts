@@ -150,6 +150,10 @@ interface VjNotificationsPlugin {
 }
 
 const VjNotifications = registerPlugin<VjNotificationsPlugin>("VjNotifications");
+
+export function nativeNotificationsAvailable(): boolean {
+  return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("VjNotifications");
+}
 const PREFS_PREFIX = "svj_notification_preferences_v1:";
 const EVENT_NAME = "svj-notification-preferences";
 
@@ -451,7 +455,7 @@ export function buildNotificationPlan(
 }
 
 export async function notificationPermission(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!nativeNotificationsAvailable()) return false;
   try {
     return (await VjNotifications.checkPermission()).granted;
   } catch {
@@ -474,7 +478,7 @@ function permissionPromptedKey(userId: string): string {
 export async function initializeNotificationsAtSignup(userId: string): Promise<boolean> {
   saveNotificationPreferences(userId, { ...DEFAULT_NOTIFICATION_PREFERENCES });
 
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!nativeNotificationsAvailable()) return false;
   if (appStorage.getItem(permissionPromptedKey(userId)) === "1") {
     return notificationPermission();
   }
@@ -491,7 +495,7 @@ export async function initializeNotificationsAtSignup(userId: string): Promise<b
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!nativeNotificationsAvailable()) return false;
   try {
     return (await VjNotifications.requestPermission()).granted;
   } catch {
@@ -502,7 +506,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 export async function replaceNativeNotificationSchedules(
   schedules: NativeNotificationSchedule[],
 ): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!nativeNotificationsAvailable()) return false;
   try {
     await VjNotifications.replaceSchedules({ schedules });
     return true;
@@ -512,7 +516,7 @@ export async function replaceNativeNotificationSchedules(
 }
 
 export async function cancelNativeNotifications(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
+  if (!nativeNotificationsAvailable()) return;
   try {
     await VjNotifications.cancelAll();
   } catch {
@@ -521,7 +525,7 @@ export async function cancelNativeNotifications(): Promise<void> {
 }
 
 export async function sendTestNotification(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!nativeNotificationsAvailable()) return false;
   try {
     await VjNotifications.notifyNow({
       id: 9991,

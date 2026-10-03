@@ -13,6 +13,11 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: "#0B0B0C",
   },
+  ios: {
+    backgroundColor: "#0B0B0C",
+    preferredContentMode: "mobile",
+    includePlugins: ["@capacitor/app", "@capacitor/browser", "@capgo/capacitor-pedometer"],
+  },
 };
 
 export default config;

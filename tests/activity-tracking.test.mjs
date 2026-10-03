@@ -28,6 +28,8 @@ for (const key of [
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const { render, cleanup, fireEvent, screen, waitFor } = await import("@testing-library/react");
+/** Device activity cache is scoped to the authenticated account id. */
+const activityKeyFor = (userId) => `svj_activity_v1_${userId}`;
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 let app, api, temporary, view, client, test;
 const baseState = () => ({
@@ -58,6 +60,20 @@ function deferred() {
   });
   return { promise, resolve };
 }
+
+/**
+ * "The native side confirms the listener is gone": reported removed, nothing
+ * left registered and no started sensor. This is the raw native truth the
+ * removed diagnostics snapshot used to derive (and the app now never mirrors),
+ * so the assertions below read the fake bridge directly.
+ */
+function nativeListenerFullyRemoved() {
+  return Boolean(
+    test.native.state.listenerRemoved &&
+    !test.native.state.listenerRegistered &&
+    !test.native.state.sensorStarted,
+  );
+}
 function missingNativeMethod(name) {
   return Object.assign(new Error(`"VjPedometer.${name}()" is not implemented on android`), {
     code: "UNIMPLEMENTED",
@@ -67,6 +83,7 @@ function makeNative() {
   const native = {
     state: baseState(),
     permission: "granted",
+    permissionAfterRequest: null,
     mode: "counter",
     calls: { start: 0, stop: 0, legacyStop: 0, request: 0, info: 0, query: 0 },
     handlers: { measurement: new Set(), trackingStateChanged: new Set() },
@@ -119,6 +136,7 @@ function makeNative() {
     async requestPermissions() {
       native.calls.request++;
       if (native.permissionGate) await native.permissionGate.promise;
+      if (native.permissionAfterRequest) native.permission = native.permissionAfterRequest;
       return { activityRecognition: native.permission };
     },
     async startTracking({ sessionId }) {
@@ -256,14 +274,14 @@ before(async () => {
     packages: "external",
     define: {
       "import.meta.env.MODE": '"test"',
-      "import.meta.env.VITE_PEDOMETER_DIAGNOSTICS": '"1"',
     },
     plugins: [
       {
         name: "hardware-and-services",
         setup(builder) {
           const modules = {
-            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/core": `export const Capacitor={getPlatform:()=> globalThis.__svjTracking?.platform ?? 'android',isNativePlatform:()=>globalThis.__svjTracking.platform!=='web',isPluginAvailable:()=>globalThis.__svjTracking.available};export const registerPlugin=()=>new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
+            "@capacitor/app": `export const App={addListener:async(_,fn)=>{globalThis.__svjTracking.appHandlers.add(fn);return {remove:async()=>globalThis.__svjTracking.appHandlers.delete(fn)}}};`,
             "@capgo/capacitor-pedometer": `export const CapacitorPedometer=new Proxy({}, {get:(_,key)=>globalThis.__svjTracking.native[key]});`,
             "./SVJContext": `const awardXp=(xp)=>globalThis.__svjTracking.xp.push(xp);const addActivity=(...args)=>globalThis.__svjTracking.feed.push(args);export const useSVJ=()=>({awardXp,addActivity});`,
             "@/lib/personalization.functions": `export const getBodyProfile=async()=>globalThis.__svjTracking.profile;`,
@@ -295,6 +313,7 @@ beforeEach(() => {
     native: makeNative(),
     available: true,
     platform: "android",
+    appHandlers: new Set(),
     xp: [],
     feed: [],
     profile: { weightKg: 70, heightCm: 170, sex: "male", bmr: 1600 },
@@ -332,7 +351,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await mount();
     await start();
     await emit(100);
-    const stored = localStorage.getItem("svj_activity_v1");
+    const stored = localStorage.getItem(activityKeyFor("test-user"));
     const before = { steps: api.todaySteps, kcal: api.activeKcal, xp: [...test.xp] };
     for (const bad of [
       NaN,
@@ -355,7 +374,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await emit(2500, { sessionId: "older-session" });
     await emit(2500, { trackingActive: "true" });
     assert.deepEqual({ steps: api.todaySteps, kcal: api.activeKcal, xp: test.xp }, before);
-    assert.equal(localStorage.getItem("svj_activity_v1"), stored);
+    assert.equal(localStorage.getItem(activityKeyFor("test-user")), stored);
     await emit(2500);
     assert.equal(api.todaySteps, 2500);
     assert.deepEqual(test.xp, [40]);
@@ -411,6 +430,113 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.equal(api.todaySteps, 2503);
     assert.equal(test.native.calls.query, 0, "START/STOP must not import history");
   });
+  it("starts iPhone tracking only after Motion permission approval, without duplicate listeners", async () => {
+    test.platform = "ios";
+    test.native.permission = "prompt";
+    test.native.permissionAfterRequest = "granted";
+    await mount();
+    assert.equal(test.native.calls.request, 0);
+    await act(async () => {
+      await Promise.all([api.startTracking(), api.startTracking()]);
+    });
+    assert.equal(test.native.calls.request, 1);
+    assert.equal(test.native.calls.start, 1);
+    assert.equal(api.trackingStatus, "tracking");
+    assert.equal(test.native.handlers.measurement.size, 1);
+    assert.equal(
+      test.appHandlers.size,
+      1,
+      "StrictMode removes superseded native lifecycle listeners",
+    );
+    await stop();
+    assert.equal(test.native.handlers.measurement.size, 0);
+  });
+  it("keeps denied iPhone Motion permission stopped without accepting measurements", async () => {
+    test.platform = "ios";
+    test.native.permission = "denied";
+    await mount();
+    await start();
+    assert.equal(api.trackingStatus, "denied");
+    assert.match(api.statusMessage, /Motion permission denied/);
+    assert.equal(test.native.calls.start, 0);
+    assert.equal(test.native.handlers.measurement.size, 0);
+    assert.equal(api.todaySteps, 0);
+    assert.deepEqual(test.xp, []);
+  });
+  it("does not call missing iPhone pedometer plugins", async () => {
+    test.platform = "ios";
+    test.available = false;
+    await mount();
+    await start();
+    assert.equal(api.trackingStatus, "unsupported");
+    assert.equal(test.native.calls.request, 0);
+    assert.equal(test.native.calls.start, 0);
+  });
+  it("stops iPhone native updates on backgrounding and never resumes automatically", async () => {
+    test.platform = "ios";
+    await mount();
+    await start();
+    const late = [...test.native.handlers.measurement][0];
+    await act(async () => {
+      late({ numberOfSteps: 20, distance: 12, endDate: Date.now() });
+    });
+    await act(async () => {
+      for (const handler of test.appHandlers) handler({ isActive: false });
+    });
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+    assert.equal(test.native.handlers.measurement.size, 0);
+    const starts = test.native.calls.start;
+    await act(async () => {
+      late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() });
+      for (const handler of test.appHandlers) handler({ isActive: true });
+    });
+    assert.equal(api.todaySteps, 20);
+    assert.equal(test.native.calls.start, starts);
+    assert.deepEqual(test.xp, []);
+  });
+  it("isolates iPhone sessions and ignores old callbacks when the account changes", async () => {
+    test.platform = "ios";
+    await mount();
+    await start();
+    const late = [...test.native.handlers.measurement][0];
+    await act(async () => late({ numberOfSteps: 50, distance: 30, endDate: Date.now() }));
+    const oldCache = localStorage.getItem(activityKeyFor("test-user"));
+    await act(async () => view.rerender(tree(true, "other-user")));
+    await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
+    await start();
+    await act(async () => late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() }));
+    assert.equal(api.todaySteps, 0);
+    assert.equal(localStorage.getItem(activityKeyFor("test-user")), oldCache);
+    assert.deepEqual(test.xp, []);
+    assert.equal(test.native.handlers.measurement.size, 1);
+  });
+  it("finishes old iPhone startup cleanup before a switched account starts a new sensor", async () => {
+    test.platform = "ios";
+    await mount();
+    test.native.startGate = deferred();
+    let oldStartup;
+    await act(async () => {
+      oldStartup = api.startTracking();
+    });
+    await waitFor(() => assert.equal(test.native.calls.start, 1));
+    await act(async () => view.rerender(tree(true, "other-user")));
+    let newStartup;
+    await act(async () => {
+      newStartup = api.startTracking();
+    });
+    await act(async () => {
+      test.native.startGate.resolve();
+      await oldStartup;
+      await newStartup;
+    });
+    assert.equal(api.trackingStatus, "tracking");
+    assert.equal(
+      test.native.state.trackingActive,
+      true,
+      "Old STOP cannot disable the new account's sensor",
+    );
+    assert.equal(test.native.handlers.measurement.size, 1);
+  });
   it("mounts stopped in StrictMode, shows START, and reads sensor info without requesting permission", async () => {
     await mount();
     assert.equal(test.native.calls.start, 0);
@@ -419,9 +545,10 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.ok(screen.getByRole("button", { name: "START TRACKING" }));
     assert.ok(screen.getByText("Tracking stopped", { exact: true }));
     assert.ok(test.native.calls.info > 0);
-    assert.match(document.body.textContent, /Plugin registered: yes/);
+    // Sensor info is read for tracking, never printed on the screen.
+    assert.doesNotMatch(document.body.textContent, /Plugin registered/);
   });
-  it("wires START/STOP buttons, session totals, native status and all required diagnostics", async () => {
+  it("wires START/STOP buttons, session totals and native status with no debug panel", async () => {
     await mount();
     fireEvent.click(screen.getByRole("button", { name: "START TRACKING" }));
     await waitFor(() => assert.equal(api.trackingStatus, "tracking"));
@@ -432,28 +559,26 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await emit(120);
     assert.equal(api.todaySteps, 120);
     assert.ok(screen.getByText("Tracking active", { exact: true }));
-    for (const label of [
+    // The user-facing screen shows the tracking status only — never native
+    // sensor state, listener bookkeeping or a diagnostics panel.
+    for (const debugLabel of [
+      "ANDROID PEDOMETER DEBUG",
       "Plugin registered",
       "Sensor mode",
       "Sensor available",
-      "Permission",
-      "Tracking requested",
-      "Tracking active",
       "Listener registered",
       "Listener removed",
       "Session baseline raw",
-      "Session steps",
       "Selected sensor mode",
-      "Active calories",
+      "Refresh diagnostics",
     ]) {
-      assert.ok(document.body.textContent.includes(label), label);
+      assert.ok(!document.body.textContent.includes(debugLabel), debugLabel);
     }
     fireEvent.click(screen.getByRole("button", { name: "STOP TRACKING" }));
     await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
     assert.equal(test.native.state.listenerRegistered, false);
     assert.equal(test.native.handlers.measurement.size, 0);
     assert.equal(test.native.handlers.trackingStateChanged.size, 0);
-    assert.match(document.body.textContent, /Listener removed: yes/);
   });
   it("never counts native all-day totals, and starts a second session from zero", async () => {
     await mount();
@@ -498,14 +623,14 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await emit(10);
     assert.deepEqual(test.xp, [40]);
     assert.equal(api.todaySteps, 2510);
-    const saved = JSON.parse(localStorage.getItem("svj_activity_v1"));
+    const saved = JSON.parse(localStorage.getItem(activityKeyFor("test-user")));
     assert.deepEqual(saved.today.xpMilestones, [2500]);
   });
   it("preserves legacy calories without importing all-day steps into new calories or XP", async () => {
     const now = new Date();
     const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     localStorage.setItem(
-      "svj_activity_v1",
+      activityKeyFor("test-user"),
       JSON.stringify({
         version: 1,
         days: [],
@@ -621,7 +746,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     test.native.stopFails = true;
     await stop();
     assert.equal(api.trackingStatus, "error");
-    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(nativeListenerFullyRemoved(), false);
     assert.match(document.body.textContent, /native unregister failed/);
     assert.ok(screen.getByRole("button", { name: "RETRY STOP" }));
     const stops = test.native.calls.stop;
@@ -630,7 +755,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
     assert.ok(test.native.calls.stop > stops);
     assert.equal(test.native.calls.legacyStop, 0, "genuine cleanup errors must not use fallback");
-    assert.equal(api.debugInfo.listenerRemoved, true);
+    assert.equal(nativeListenerFullyRemoved(), true);
   });
   it("stops an older installed plugin and explains that an app update is required", async () => {
     test.native.legacyBridge = true;
@@ -645,7 +770,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.ok(test.native.calls.legacyStop > 0);
     assert.equal(test.native.state.listenerRegistered, false);
     assert.equal(api.trackingActive, false);
-    assert.equal(api.debugInfo.listenerRemoved, true);
+    assert.equal(nativeListenerFullyRemoved(), true);
     assert.equal(screen.getByRole("button", { name: "APP UPDATE REQUIRED" }).disabled, true);
     assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
     assert.match(document.body.textContent, /install the latest Android app/i);
@@ -674,7 +799,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     test.native.stopLeavesRegistered = true;
     await stop();
     assert.equal(api.trackingStatus, "error");
-    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(nativeListenerFullyRemoved(), false);
     assert.equal(test.native.state.listenerRegistered, true);
     test.native.stopLeavesRegistered = false;
     fireEvent.click(screen.getByRole("button", { name: "RETRY STOP" }));
@@ -685,7 +810,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     test.native.stopLeavesRegistered = true;
     Object.assign(test.native.state, { listenerRegistered: true, sensorStarted: true });
     await mount(true, "test-user", "error");
-    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(nativeListenerFullyRemoved(), false);
     assert.equal(test.native.state.listenerRegistered, true);
   });
   it("explains an unsupported installed app when neither native Stop method exists", async () => {
@@ -697,7 +822,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
       sensorStarted: true,
     });
     await mount(true, "test-user", "update-required");
-    assert.equal(api.debugInfo.listenerRemoved, false);
+    assert.equal(nativeListenerFullyRemoved(), false);
     assert.equal(
       test.native.state.listenerRegistered,
       true,

@@ -1,5 +1,6 @@
 import type { DailyChallenge, UserProfile, UserStats, WorkoutExercise } from "../types";
 import { INITIAL_USER, TIERS } from "../data/initialData";
+import { FOUNDER_EMAIL } from "./founderIdentity";
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
@@ -29,6 +30,8 @@ export function getTierForXP(xp: number) {
 export function normalizeUserProfile(value: unknown): UserProfile {
   const saved = value && typeof value === "object" ? (value as Partial<UserProfile>) : {};
   const totalXP = nonNegative(saved.totalXP);
+  const isFounderEmail =
+    typeof saved.email === "string" && saved.email.trim().toLowerCase() === FOUNDER_EMAIL;
   const stats = Object.fromEntries(
     Object.entries(INITIAL_USER.stats).map(([key, fallback]) => [
       key,
@@ -48,6 +51,8 @@ export function normalizeUserProfile(value: unknown): UserProfile {
     tier: getTierForXP(totalXP),
     level: Math.floor(totalXP / 500) + 1,
     isPremium: false,
+    isFounder: isFounderEmail,
+    isOwner: isFounderEmail,
     stats,
     xpHistory: Array.isArray(saved.xpHistory)
       ? saved.xpHistory.filter((p) => p && typeof p.date === "string" && Number.isFinite(p.xp))

@@ -70,46 +70,37 @@ describe("no browser dialog APIs in user flows", () => {
   });
 });
 
-describe("diagnostics stay out of the normal user experience", () => {
-  it("Android platform detection alone cannot enable the debug panel", async () => {
-    const context = await read("../src/app/context/ActivityContext.tsx");
-    assert.match(context, /VITE_PEDOMETER_DIAGNOSTICS/);
-    assert.doesNotMatch(
-      context,
-      /useState\(ANDROID_PLATFORM \|\| WEB_DEBUG_BUILD\)/,
-      "diagnostics must default to the explicit opt-in only",
-    );
+describe("pedometer diagnostics are gone from every user-facing screen", () => {
+  it("no debug panel, flag or diagnostics state remains in the activity flow", async () => {
+    for (const path of [
+      "../src/app/context/ActivityContext.tsx",
+      "../src/app/views/ActivityView.tsx",
+    ]) {
+      const source = await read(path);
+      assert.doesNotMatch(source, /ANDROID PEDOMETER DEBUG/, path);
+      assert.doesNotMatch(source, /VITE_PEDOMETER_DIAGNOSTICS/, path);
+      assert.doesNotMatch(source, /showDiagnostics|debugInfo|debugRef|EMPTY_DEBUG/, path);
+      assert.doesNotMatch(source, /shouldEnableDiagnostics/, path);
+    }
   });
 
-  it("the debug panel is gated behind a diagnostics flag in the view", async () => {
-    const view = await read("../src/app/views/ActivityView.tsx");
-    assert.match(view, /ANDROID PEDOMETER DEBUG/);
-    assert.match(view, /showDiagnostics && debugInfo/);
+  it("no screen renders native sensor state", async () => {
+    for (const dir of ["../src/app/views", "../src/app/components"]) {
+      const { readdir } = await import("node:fs/promises");
+      const base = new URL(`${dir}/`, import.meta.url);
+      for (const entry of await readdir(base, { withFileTypes: true })) {
+        if (!entry.isFile() || !/\.tsx?$/.test(entry.name)) continue;
+        const source = await read(`${dir}/${entry.name}`);
+        assert.doesNotMatch(source, /PEDOMETER DEBUG/, entry.name);
+        assert.doesNotMatch(source, /debugInfo/, entry.name);
+        assert.doesNotMatch(source, /Refresh diagnostics/, entry.name);
+      }
+    }
   });
 
-  it("production never renders diagnostics regardless of the explicit flag", async () => {
-    const { shouldEnableDiagnostics } = await import("../src/app/context/ActivityContext.tsx");
-    assert.equal(shouldEnableDiagnostics("production", "1"), false);
-    assert.equal(shouldEnableDiagnostics("production", undefined), false);
-  });
-
-  it("development requires the explicit opt-in", async () => {
-    const { shouldEnableDiagnostics } = await import("../src/app/context/ActivityContext.tsx");
-    assert.equal(shouldEnableDiagnostics("development", undefined), false);
-    assert.equal(shouldEnableDiagnostics("development", "0"), false);
-    assert.equal(shouldEnableDiagnostics("development", "1"), true);
-  });
-
-  it("test mode requires the explicit opt-in", async () => {
-    const { shouldEnableDiagnostics } = await import("../src/app/context/ActivityContext.tsx");
-    assert.equal(shouldEnableDiagnostics("test", undefined), false);
-    assert.equal(shouldEnableDiagnostics("test", "1"), true);
-  });
-
-  it("the diagnostics harness explicitly enables the flag", async () => {
+  it("the diagnostics harness no longer opts into a debug bundle", async () => {
     const source = await read("../tests/activity-tracking.test.mjs");
-    assert.match(source, /VITE_PEDOMETER_DIAGNOSTICS/);
-    assert.match(source, /"1"/);
+    assert.doesNotMatch(source, /VITE_PEDOMETER_DIAGNOSTICS/);
   });
 
   it("seed helpers never delete by appearance heuristics", () => {
@@ -123,8 +114,18 @@ describe("diagnostics stay out of the normal user experience", () => {
 });
 
 describe("real user data is preserved", () => {
-  it("challenges and rewards catalogs are intact", () => {
+  it("the daily challenge catalog stays usable", () => {
     assert.ok(INITIAL_CHALLENGES.length >= 6);
-    assert.ok(INITIAL_REWARDS.length >= 5);
+  });
+
+  it("the rewards catalog only offers what the app can actually grant", () => {
+    assert.ok(INITIAL_REWARDS.length >= 3);
+    // No fabricated redemption codes or real-world voucher promises: those
+    // asked members to spend XP on a deliverable that did not exist.
+    for (const reward of INITIAL_REWARDS) {
+      assert.equal(reward.code, undefined, `${reward.id} must not ship a voucher code`);
+      assert.equal(reward.perkDetails, undefined, `${reward.id} must not promise a perk`);
+      assert.doesNotMatch(reward.description, /voucher|discount/i, reward.id);
+    }
   });
 });

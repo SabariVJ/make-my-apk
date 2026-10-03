@@ -145,7 +145,7 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#0B0B0C] p-4 font-inter text-[#F4F2ED]">
+    <div className="svj-safe-screen flex min-h-[100dvh] min-w-0 items-center justify-center bg-[#0B0B0C] font-inter text-[#F4F2ED]">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -203,7 +203,7 @@ export const AuthScreen: React.FC = () => {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full pl-9 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="min-w-0 w-full pl-9 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-base md:text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
           </div>
           <div className="relative">
@@ -216,7 +216,7 @@ export const AuthScreen: React.FC = () => {
               required
               minLength={6}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              className="w-full pl-9 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="min-w-0 w-full pl-9 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-base md:text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
             />
             <button
               type="button"

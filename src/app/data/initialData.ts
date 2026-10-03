@@ -6,7 +6,7 @@ export const TIERS: TierInfo[] = [
     minXP: 0,
     color: "#8C8C90",
     badgeBg: "bg-zinc-800 text-zinc-300 border-zinc-700",
-    icon: "⚡",
+    icon: "bolt",
     description: "The journey of self-mastery begins here.",
     benefits: ["Daily Challenge Access", "Basic Stats Tracking", "Community Access"],
   },
@@ -15,7 +15,7 @@ export const TIERS: TierInfo[] = [
     minXP: 2500,
     color: "#CD7F32",
     badgeBg: "bg-gold/80 text-gold border-gold",
-    icon: "🥉",
+    icon: "bronze",
     description: "Discipline is taking root. Your foundation is solid.",
     benefits: ["Unlock Tier 2 Rewards", "Custom Daily Challenge slot", "Bronze Profile Border"],
   },
@@ -24,7 +24,7 @@ export const TIERS: TierInfo[] = [
     minXP: 6000,
     color: "#C0C0C0",
     badgeBg: "bg-slate-800 text-slate-200 border-slate-600",
-    icon: "🥈",
+    icon: "silver",
     description: "Unshakable consistency. You are rising above average.",
     benefits: ["Unlock Silver Perks", "Streak Saver (1/mo)", "Silver Identity Badge"],
   },
@@ -33,7 +33,7 @@ export const TIERS: TierInfo[] = [
     minXP: 12000,
     color: "#D4AF37",
     badgeBg: "bg-yellow-950/80 text-yellow-300 border-yellow-700",
-    icon: "🥇",
+    icon: "gold",
     description: "A force to be reckoned with. Elite discipline established.",
     benefits: ["Global Leaderboard Highlight", "Gold VIP Badge", "Exclusive Vault Guides"],
   },
@@ -42,7 +42,7 @@ export const TIERS: TierInfo[] = [
     minXP: 20000,
     color: "#E5E4E2",
     badgeBg: "bg-teal-950/80 text-teal-200 border-teal-600",
-    icon: "💎",
+    icon: "gem",
     description: "Mastery in execution. Top 5% of all SVJ members.",
     benefits: ["Platinum Animated Aura", "Custom Theme unlock", "Priority Community Status"],
   },
@@ -51,7 +51,7 @@ export const TIERS: TierInfo[] = [
     minXP: 35000,
     color: "#00F0FF",
     badgeBg: "bg-cyan-950/80 text-cyan-300 border-cyan-600",
-    icon: "💠",
+    icon: "prism",
     description: "An unstoppable phenomenon. Mind and body forged in iron.",
     benefits: ["Diamond Profile Crown", "Exclusive Diamond Vault", "Direct Founder Line"],
   },
@@ -60,7 +60,7 @@ export const TIERS: TierInfo[] = [
     minXP: 60000,
     color: "#C81E3A",
     badgeBg: "bg-rose-950/90 text-rose-300 border-rose-700",
-    icon: "👑",
+    icon: "crown",
     description: "Apex Predator. Legendary status attained.",
     benefits: ["Obsidian Legend Frame", "Global Top 1% Hall of Fame", "All SVJ Perks Unlocked"],
   },
@@ -129,6 +129,16 @@ export const INITIAL_CHALLENGES: DailyChallenge[] = [
   },
 ];
 
+/**
+ * Default in-app rewards catalog.
+ *
+ * Only rewards the app can actually grant are listed: a profile theme and a
+ * profile frame are real, client-side cosmetic unlocks. The previous catalog
+ * also promised real-world fulfilment (a physical-card discount voucher and a
+ * private founder call) behind fabricated redemption codes, which asked members
+ * to spend XP on something that does not exist. Nothing here carries a
+ * redemption `code` any more.
+ */
 export const INITIAL_REWARDS: RewardItem[] = [
   {
     id: "rew-1",
@@ -154,8 +164,7 @@ export const INITIAL_REWARDS: RewardItem[] = [
     unlocked: false,
     image:
       "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-    code: "GUIDE-APEX-2026",
-    actionLabel: "Read Full Blueprint Guide",
+    actionLabel: "Open the guide",
     guideContent: `# The Apex Discipline Protocol Blueprint (2026 Edition)
 
 ## Module 1: Dopamine Fasting & Receptor Reset
@@ -188,81 +197,52 @@ export const INITIAL_REWARDS: RewardItem[] = [
     cosmeticId: "frame-crimson",
     actionLabel: "Equip Crimson Frame",
   },
-  {
-    id: "rew-4",
-    title: "SVJ Metal Card Physical Discount",
-    category: "VIP Perk",
-    xpCost: 15000,
-    minTier: "Platinum",
-    description:
-      "50% off order voucher for your customized laser-engraved steel SVJ Membership Card.",
-    unlocked: false,
-    image:
-      "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80",
-    code: "STEEL-SVJ-50",
-    actionLabel: "Access Metal Card Voucher",
-    perkDetails:
-      "Voucher Code: STEEL-SVJ-50\nUse this code at checkout to claim your 50% discount on the laser-engraved heavy stainless steel SVJ Genesis Membership Card. Includes custom QR code linking directly to your verified SVJ profile.",
-  },
-  {
-    id: "rew-5",
-    title: "Private Founder Mastermind Access",
-    category: "VIP Perk",
-    xpCost: 30000,
-    minTier: "Diamond",
-    description: "Monthly live voice session with high-performing SVJ founders & athletes.",
-    unlocked: false,
-    image:
-      "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=80",
-    actionLabel: "Access Private Channel",
-    perkDetails:
-      "VIP Mastermind Pass Active!\nJoin Sabari and elite SVJ athletes every first Sunday at 18:00 UTC. Voice channel: #founder-mastermind (Verified SVJ VIPs only).",
-  },
 ];
 
+/**
+ * Neutral, empty starting profile.
+ *
+ * Every value here is a real "nothing recorded yet" state — no stock-photo
+ * avatar, no invented member id / join date / location, no pre-filled stats or
+ * XP history. Real values arrive from the authenticated Supabase account
+ * (profile row, assessment baseline, ledgers); this object only prevents an
+ * undefined before the first server read.
+ */
 export const INITIAL_USER: UserProfile = {
   id: "user-me",
   name: "New Voyager",
   username: "initiate_svj",
-  avatar:
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-  coverImage:
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
+  avatar: "",
   tier: "Initiate",
   totalXP: 0,
   weeklyXP: 0,
   monthlyXP: 0,
   currentStreak: 0,
   bestStreak: 0,
-  joinDate: "July 2026",
-  daysActive: 1,
+  joinDate: "",
+  daysActive: 0,
   totalChallengesCompleted: 0,
-  bio: "Starting my daily journey of discipline and focus.",
-  location: "Earth",
+  bio: "",
+  location: "",
   isPremium: false,
   verifiedIcon: false,
   vipIcon: false,
-  memberId: "SVJ-1001-A",
+  memberId: "",
   level: 1,
-  leagueRank: "APPRENTICE I",
+  leagueRank: "",
   evolutionTheme: "wolf",
   stats: {
-    physical: 12,
-    social: 10,
-    discipline: 8,
-    mental: 15,
-    intellect: 14,
-    ambition: 20,
+    physical: 0,
+    social: 0,
+    discipline: 0,
+    mental: 0,
+    intellect: 0,
+    ambition: 0,
   },
   assessmentCompleted: false,
   habitCompletionRate: 0,
-  xpHistory: [
-    { date: "25 Jul", xp: 0 },
-    { date: "27 Jul", xp: 0 },
-    { date: "29 Jul", xp: 0 },
-    { date: "31 Jul", xp: 0 },
-  ],
-  weeklyHistory: [{ week: "W1", xp: 0 }],
+  xpHistory: [],
+  weeklyHistory: [],
   achievements: [],
   badges: [],
 };

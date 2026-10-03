@@ -47,7 +47,6 @@ const { render, cleanup, screen } = await import("@testing-library/react");
 
 // A stable snapshot object: an Activity provider that re-created its value on
 // every read would loop the view's persist/subscribe effects.
-const EMPTY_DEBUG = {};
 const ACTIVITY = {
   todaySteps: 8123,
   milestoneSteps: 7500,
@@ -76,8 +75,6 @@ const ACTIVITY = {
     bestDay: { label: "Sun", steps: 12980 },
     averageActiveKcal: 355,
   },
-  debugInfo: EMPTY_DEBUG,
-  showDiagnostics: false,
 };
 
 let temporary;

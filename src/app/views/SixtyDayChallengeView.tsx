@@ -157,7 +157,7 @@ export const SixtyDayChallengeView: React.FC = () => {
 
   if (stateQuery.isPending) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+      <div className="flex min-h-[24vh] flex-col items-center justify-center gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
         <p className="font-inter text-[11px] text-[#8C8C90]">Loading the 60-Day Challenge</p>
       </div>
@@ -166,7 +166,7 @@ export const SixtyDayChallengeView: React.FC = () => {
 
   if (stateQuery.isError || !state) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 p-4 text-center">
+      <div className="flex min-h-[28vh] flex-col items-center justify-center gap-3 p-4 text-center">
         <AlertTriangle className="w-8 h-8 text-[#C81E3A]" />
         <p className="font-inter font-semibold tracking-tight text-[#F4F2ED]">
           Could not load the challenge

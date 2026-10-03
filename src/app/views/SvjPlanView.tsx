@@ -444,7 +444,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
 
       {!isPlus ? (
         /* Upgrade prompt for free users */
-        <div className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4 text-center">
+        <div className="svj-radius-card svj-lit-top space-y-3 border border-white/[0.06] bg-[#17171A] p-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/30 flex items-center justify-center mx-auto">
             <Sparkles className="w-8 h-8 text-[#C81E3A]" />
           </div>
@@ -663,7 +663,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
         </>
       )}
       {selectedMission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+        <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#17171A] p-4 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>

@@ -21,9 +21,14 @@ import {
 import {
   adminListSupportTickets,
   adminUpdateSupportTicket,
+  type SupportTicket,
   type SupportTicketWithReporter,
   type TicketStatus,
 } from "@/lib/support.functions";
+import {
+  SUPPORT_TICKET_REFRESH_OPTIONS,
+  useSupportTicketWindowFocus,
+} from "../hooks/useSupportTicketRefresh";
 
 // Utilitarian internal tool: plain tables, dark obsidian/crimson palette,
 // no heavy animation. Security note (UI hiding is cosmetic — RLS and the
@@ -64,7 +69,9 @@ const UsersSection: React.FC = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [durationValue, setDurationValue] = useState<Record<string, string>>({});
-  const [durationUnit, setDurationUnit] = useState<Record<string, "week" | "month" | "lifetime">>({});
+  const [durationUnit, setDurationUnit] = useState<Record<string, "week" | "month" | "lifetime">>(
+    {},
+  );
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -210,7 +217,8 @@ const UsersSection: React.FC = () => {
                   </td>
                   <td className="px-3 py-2.5 font-inter text-xs">
                     {user.is_plus_member &&
-                    (!user.plus_expires_at || new Date(user.plus_expires_at).getTime() > Date.now()) ? (
+                    (!user.plus_expires_at ||
+                      new Date(user.plus_expires_at).getTime() > Date.now()) ? (
                       <span className="text-amber-300">
                         Plus
                         {user.plus_expires_at
@@ -235,7 +243,8 @@ const UsersSection: React.FC = () => {
                   <td className="px-3 py-2.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {user.is_plus_member &&
-                      (!user.plus_expires_at || new Date(user.plus_expires_at).getTime() > Date.now()) ? (
+                      (!user.plus_expires_at ||
+                        new Date(user.plus_expires_at).getTime() > Date.now()) ? (
                         <button
                           type="button"
                           className={actionButtonClass}
@@ -361,11 +370,12 @@ const UsersSection: React.FC = () => {
 
 // ── Tickets section ─────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: Array<{ value: TicketStatus | "all"; label: string }> = [
-  { value: "all", label: "All" },
+type ActiveTicketFilter = Exclude<TicketStatus, "resolved"> | "all";
+
+const STATUS_FILTERS: Array<{ value: ActiveTicketFilter; label: string }> = [
+  { value: "all", label: "All active" },
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In Progress" },
-  { value: "resolved", label: "Resolved" },
 ];
 
 const STATUS_OPTIONS: Array<{ value: TicketStatus; label: string }> = [
@@ -382,18 +392,26 @@ const TicketRow: React.FC<{ ticket: SupportTicketWithReporter }> = ({ ticket }) 
   const [error, setError] = useState<string | null>(null);
 
   const update = useMutation({
-    mutationFn: () =>
-      adminUpdateSupportTicket({
-        data: {
-          ticketId: ticket.id,
-          status,
-          adminResponse: dirty ? response : undefined,
-        },
-      }),
-    onSuccess: () => {
+    mutationFn: (input: { ticketId: string; status: TicketStatus; adminResponse?: string }) =>
+      adminUpdateSupportTicket({ data: input }),
+    onSuccess: async (_result, input) => {
       setError(null);
       setDirty(false);
+      if (input.status === "resolved") {
+        // Cancel older list requests before eviction so they cannot restore the resolved row.
+        await queryClient.cancelQueries({ queryKey: ["admin-tickets"] });
+        await queryClient.cancelQueries({ queryKey: ["my-support-tickets"] });
+        queryClient.setQueriesData<SupportTicketWithReporter[]>(
+          { queryKey: ["admin-tickets"] },
+          (rows) => rows?.filter((row) => row.id !== input.ticketId),
+        );
+        queryClient.setQueriesData<SupportTicket[]>({ queryKey: ["my-support-tickets"] }, (rows) =>
+          rows?.filter((row) => row.id !== input.ticketId),
+        );
+      }
       void queryClient.invalidateQueries({ queryKey: ["admin-tickets"] });
+      void queryClient.invalidateQueries({ queryKey: ["my-support-tickets"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: (cause: unknown) => setError(cause instanceof Error ? cause.message : "Update failed"),
   });
@@ -463,7 +481,13 @@ const TicketRow: React.FC<{ ticket: SupportTicketWithReporter }> = ({ ticket }) 
           type="button"
           className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#C81E3A] px-3 py-1.5 font-inter text-[11px] font-bold uppercase tracking-wide text-white hover:bg-[#A0182E] disabled:opacity-60"
           disabled={update.isPending || (!dirty && status === ticket.status)}
-          onClick={() => update.mutate()}
+          onClick={() =>
+            update.mutate({
+              ticketId: ticket.id,
+              status,
+              adminResponse: dirty ? response : undefined,
+            })
+          }
         >
           {update.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -478,16 +502,19 @@ const TicketRow: React.FC<{ ticket: SupportTicketWithReporter }> = ({ ticket }) 
 };
 
 const TicketsSection: React.FC = () => {
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ActiveTicketFilter>("all");
 
   const tickets = useQuery({
     queryKey: ["admin-tickets", statusFilter],
     queryFn: () => adminListSupportTickets({ data: { status: statusFilter, limit: 100 } }),
+    ...SUPPORT_TICKET_REFRESH_OPTIONS,
   });
+  useSupportTicketWindowFocus(tickets.refetch);
+  const activeTickets = (tickets.data ?? []).filter((ticket) => ticket.status !== "resolved");
 
   return (
     <section data-testid="admin-tickets-section" aria-label="Support tickets">
-      <h2 className="mb-3 mt-8 font-anton text-lg tracking-wide text-[#F4F2ED]">Tickets</h2>
+      <h2 className="mb-2 mt-6 font-anton text-lg tracking-wide text-[#F4F2ED]">Tickets</h2>
 
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter tickets by status">
         {STATUS_FILTERS.map((filter) => (
@@ -514,13 +541,11 @@ const TicketsSection: React.FC = () => {
         </div>
       ) : tickets.error ? (
         <ErrorNote message="Could not load tickets." />
-      ) : (tickets.data?.length ?? 0) === 0 ? (
-        <p className="py-4 text-center font-inter text-xs text-[#8C8C90]">
-          No tickets match this filter.
-        </p>
+      ) : activeTickets.length === 0 ? (
+        <p className="py-4 text-center font-inter text-xs text-[#8C8C90]">No active tickets.</p>
       ) : (
         <ul className="mt-3 space-y-3">
-          {tickets.data!.map((ticket) => (
+          {activeTickets.map((ticket) => (
             <TicketRow key={ticket.id} ticket={ticket} />
           ))}
         </ul>
@@ -532,7 +557,7 @@ const TicketsSection: React.FC = () => {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export const AdminDashboardView: React.FC = () => (
-  <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+  <div className="py-4">
     <header className="mb-6 flex items-center gap-2">
       <ShieldCheck className="h-5 w-5 text-[#C81E3A]" />
       <h1 className="font-anton text-2xl tracking-wide text-[#F4F2ED]">Admin</h1>

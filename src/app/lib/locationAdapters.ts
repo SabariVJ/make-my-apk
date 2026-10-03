@@ -10,6 +10,7 @@
 // fatal permission error.
 // ============================================================================
 
+import { Capacitor } from "@capacitor/core";
 import type { LocationAdapter, RawLocationSample } from "./gpsRecorder";
 import {
   createNativeWorkoutLocationAdapter,
@@ -64,6 +65,14 @@ export function createWebLocationAdapter(
 export function createDefaultLocationAdapter(): LocationAdapter {
   if (workoutPluginAvailable()) {
     return createNativeWorkoutLocationAdapter(workoutPlugin());
+  }
+  if (Capacitor.getPlatform() === "ios") {
+    return {
+      async start(_onSample, onError) {
+        onError?.("GPS recording is unavailable in this iPhone version.");
+      },
+      async stop() {},
+    };
   }
   return createWebLocationAdapter();
 }

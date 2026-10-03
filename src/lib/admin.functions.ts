@@ -166,10 +166,7 @@ export const adminGrantPlus = createServerFn({ method: "POST" })
   )
   .middleware([requireSupabaseAuth])
   .handler(
-    async ({
-      context,
-      data,
-    }): Promise<{ ok: true; grantId: string; expiresAt: string | null }> => {
+    async ({ context, data }): Promise<{ ok: true; grantId: string; expiresAt: string | null }> => {
       await requireAdminUserId(context.userId);
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -199,7 +196,10 @@ export const adminGrantPlus = createServerFn({ method: "POST" })
           : "";
       const senderLabel = senderEmail === FOUNDER_EMAIL ? "Founder" : "SVJ Admin";
 
-      const { data: rows, error } = await supabaseAdmin.rpc("svj_admin_grant_plus", {
+      // The gift RPCs postdate the generated Supabase types; use the
+      // untyped client, same as the membership RPC in trial.functions.ts.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: rows, error } = await (supabaseAdmin as any).rpc("svj_admin_grant_plus", {
         p_target_user_id: targetUserId,
         p_granted_by: context.userId,
         p_duration_value: durationValue,

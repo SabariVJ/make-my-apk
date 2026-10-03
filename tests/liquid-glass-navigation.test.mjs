@@ -42,7 +42,8 @@ describe("glass dock CSS treatment", () => {
       styles,
       /@supports \(\(-webkit-backdrop-filter: blur\(1px\)\) or \(backdrop-filter: blur\(1px\)\)\)/,
     );
-    const base = styles.slice(styles.indexOf(".svj-glass-dock {"), styles.indexOf("@supports"));
+    const dockStart = styles.indexOf(".svj-glass-dock {");
+    const base = styles.slice(dockStart, styles.indexOf("@supports", dockStart));
     assert.match(base, /rgba\(11, 11, 12, 0\.97\)/);
   });
 
@@ -57,8 +58,9 @@ describe("glass dock CSS treatment", () => {
 
 describe("floating dock layout + safe area", () => {
   it("floats inset from the edges instead of edge-to-edge", () => {
-    assert.match(navCode, /fixed bottom-0 left-0 right-0/);
-    assert.match(navCode, /px-3/);
+    assert.match(navCode, /fixed bottom-0 left-0/);
+    assert.match(navCode, /w-full max-w-full overflow-x-clip/);
+    assert.match(navCode, /svj-dock-gutters/);
   });
 
   it("clears the gesture bar via the existing env(safe-area-inset-bottom) pattern", () => {

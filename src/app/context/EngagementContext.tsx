@@ -63,7 +63,7 @@ interface EngagementContextValue {
   completeMission: (assignmentId: string, confirmation: string) => Promise<boolean>;
   redeemPlus: () => Promise<boolean>;
 }
-const EngagementContext = createContext<EngagementContextValue | null>(null);
+const EngagementContext: React.Context<EngagementContextValue | null> = ((globalThis as Record<string, unknown>).__svjEngagementContext ??= createContext<EngagementContextValue | null>(null)) as React.Context<EngagementContextValue | null>;
 
 function receiptNotice(receipt: RewardReceipt, replayed: boolean): string {
   if (replayed) return "Your existing receipt is confirmed. No duplicate XP was awarded.";

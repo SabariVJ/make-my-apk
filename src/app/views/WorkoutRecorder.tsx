@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Capacitor } from "@capacitor/core";
 import { motion } from "motion/react";
 import {
   AlertCircle,
@@ -18,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ActivityMap } from "../components/ActivityMap";
+import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
 import { useWorkoutRecorder } from "../hooks/useWorkoutRecorder";
 import {
   GPS_ACTIVITY_LABELS,
@@ -127,6 +129,17 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
   const state = session?.state ?? "idle";
   const active = state === "recording" || state === "paused";
   const finished = state === "stopping";
+
+  if (Capacitor.getPlatform() === "ios" && !nativeRecording) {
+    return (
+      <SVJEmptyState
+        compact
+        icon={Mountain}
+        title="GPS recording unavailable"
+        description="Outdoor route recording is not available in this iPhone version."
+      />
+    );
+  }
 
   return (
     <div className="space-y-4 pb-6">

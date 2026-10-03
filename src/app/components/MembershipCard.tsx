@@ -7,20 +7,36 @@ interface MembershipCardProps {
   user: UserProfile;
 }
 
+/**
+ * Stable, account-derived card serial. Only the account's own id is used, so
+ * two members can never share a serial and no serial is invented for one.
+ */
+function accountSerial(userId: string | null | undefined): string {
+  const compact = (userId ?? "").replace(/[^0-9a-zA-Z]/g, "").toUpperCase();
+  return compact ? `SVJ-${compact.slice(0, 8)}` : "SVJ-UNASSIGNED";
+}
+
 export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // The serial and join date are derived from the authenticated account, never
+  // invented: the card previously printed the same fabricated "SVJ-1001-A" and
+  // "July 2026" for every member. A brand-new account whose server row has not
+  // reported a date yet shows an explicit placeholder instead of a fake one.
+  const memberSerial = user.memberId || accountSerial(user.id);
+  const joinLabel = user.joinDate || "—";
+
   const handleShare = () => {
     navigator.clipboard.writeText(
-      `SVJ Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${user.memberId}`,
+      `SVJ Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${memberSerial}`,
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="w-full max-w-md mx-auto my-6 perspective-1000">
+    <div className="w-full max-w-md mx-auto my-3 perspective-1000">
       <div className="relative flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#C9A227]" />
@@ -126,7 +142,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
             <div>
               <div className="text-[8px] font-mono text-[#8C8C90] uppercase">Member Serial</div>
               <div className="text-xs font-mono font-bold tracking-widest text-white">
-                {user.memberId}
+                {memberSerial}
               </div>
             </div>
             <div>
@@ -137,7 +153,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
             </div>
             <div>
               <div className="text-[8px] font-mono text-[#8C8C90] uppercase">Since</div>
-              <div className="text-xs font-mono text-white">{user.joinDate}</div>
+              <div className="text-xs font-mono text-white">{joinLabel}</div>
             </div>
           </div>
         </div>

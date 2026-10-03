@@ -704,7 +704,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
   if (fullscreen) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 p-3 backdrop-blur"
+        className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur"
         data-testid="map-fullscreen"
       >
         <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-[#C81E3A]/30 bg-[#0B0B0C]">

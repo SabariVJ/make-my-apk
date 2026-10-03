@@ -7,6 +7,22 @@ async function source(path) {
 }
 
 describe("final release hardening", { concurrency: false }, () => {
+  it("loads the Framer celebration only in the browser with a native fallback", async () => {
+    const [frame, modal] = await Promise.all([
+      source("src/app/components/FramerLevelUp.tsx"),
+      source("src/app/components/LevelUpModal.tsx"),
+    ]);
+    assert.match(frame, /https:\/\/framer\.com\/m\/Forged-gK9Ssu\.js@HF3NoCK8a3lBwTeVSaXp/);
+    assert.doesNotMatch(frame, /import\s+Forged\s+from\s+["']https:/);
+    assert.match(
+      frame,
+      /useEffect\(\(\) => \{[\s\S]*setDocument\(createFramerLevelUpDocument\(level\)\)/,
+    );
+    assert.match(frame, /sandbox="allow-scripts"/);
+    assert.match(frame, /if \(reducedMotion\) return/);
+    assert.match(modal, /fallback={<NativeLevelUp level={levelUpModalData\.newLevel} \/>}/);
+  });
+
   it("keeps account creation and legal terms aligned to an adult-only service", async () => {
     const [auth, terms, checklist] = await Promise.all([
       source("src/app/components/AuthScreen.tsx"),
@@ -27,6 +43,21 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(paywall, /turned\s*on manually after the payment is verified/);
     assert.match(paywall, /activate your SVJ Plus access/);
     assert.doesNotMatch(paywall, /activate your subscription/);
+  });
+
+  it("classifies Paywall Plus status from server membership state", async () => {
+    const [context, paywall] = await Promise.all([
+      source("src/app/context/SVJContext.tsx"),
+      source("src/app/components/PaywallModal.tsx"),
+    ]);
+    assert.match(context, /plusActive: boolean \| null/);
+    assert.match(context, /plusActive,/);
+    assert.match(paywall, /plusActive,/);
+    assert.match(paywall, /const hasActivePlus = plusActive === true/);
+    assert.doesNotMatch(paywall, /const hasActivePlus = user\.isPremium === true/);
+    assert.match(paywall, /plusActive === null && hasFuturePlusExpiry/);
+    assert.match(paywall, /SVJ Plus Active/);
+    assert.match(paywall, /Your previous SVJ Plus membership has expired/);
   });
 
   it("ships a Play Console data-deletion path backed by the real deletion flow", async () => {

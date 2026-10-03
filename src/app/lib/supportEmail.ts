@@ -71,7 +71,7 @@ export async function openSupportEmail(
   subject: string = SUPPORT_SUBJECT,
 ): Promise<SupportEmailResult> {
   // 1. Native Android: real ACTION_SENDTO email intent via VjSupport plugin.
-  if (Capacitor.isNativePlatform()) {
+  if (Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("VjSupport")) {
     try {
       await VjSupport.openEmail({ to: SUPPORT_EMAIL, subject });
       return { ok: true, method: "native" };

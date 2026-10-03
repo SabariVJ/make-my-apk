@@ -35,7 +35,8 @@ export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => 
       if (!gift) throw new Error("No Plus gift available");
       return claimMyPlusGift({ data: { grantId: gift.id } });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["trial-status", userId], type: "active" });
       setDismissed(true);
       void queryClient.invalidateQueries({ queryKey: ["plus-gift-pending"] });
       void queryClient.invalidateQueries({ queryKey: ["trial-status"] });
@@ -49,7 +50,7 @@ export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => 
       role="dialog"
       aria-modal="true"
       aria-labelledby="plus-gift-title"
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-[2px]"
+      className="svj-modal-safe fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-[2px]"
     >
       <div className="relative w-full max-w-[360px] rounded-2xl border border-[#C81E3A]/35 bg-[#17171A] p-5 text-center shadow-2xl">
         <button

@@ -1,19 +1,9 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  Shield,
-  Crown,
-  Flame,
-  Zap,
-  Swords,
-  Calendar,
-  Award,
-  ThumbsUp,
-  Heart,
-} from "lucide-react";
+import { X, Shield, Crown, Flame, Zap, Swords, Award } from "lucide-react";
 import { LeaderboardEntry } from "../types";
 import { useSVJ } from "../context/SVJContext";
+import { isSelfEntry } from "../lib/memberDirectory";
 import { AvatarImage } from "./AvatarImage";
 
 interface MemberProfileModalProps {
@@ -27,17 +17,17 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
   onClose,
   onCompare,
 }) => {
-  const { triggerConfetti, user } = useSVJ();
+  const { user } = useSVJ();
 
   if (!member) return null;
 
   // Identity authority is the authenticated account id — never display names,
   // handles or avatars. Own profile shows information only: no opponent actions.
-  const isSelf = member.id === user.id;
+  const isSelf = isSelfEntry(member.id, user.id);
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -102,12 +92,14 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 <span>•</span>
                 <span className="text-[#C81E3A] font-semibold">{member.tier} Tier</span>
               </div>
-              <p className="text-xs text-[#F4F2ED]/80 mt-2 font-inter leading-relaxed italic">
-                "
-                {member.bio ||
-                  "Discipline is doing what needs to be done, even when you don't feel like it."}
-                "
-              </p>
+              {/* Only the member's own bio is shown. The previous fallback
+                  attributed a fabricated quote to every member who had not
+                  written one. */}
+              {member.bio ? (
+                <p className="text-xs text-[#F4F2ED]/80 mt-2 font-inter leading-relaxed italic">
+                  &ldquo;{member.bio}&rdquo;
+                </p>
+              ) : null}
             </div>
 
             {/* Stats Overview Grid */}
@@ -134,21 +126,6 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Quick Celebrate Action */}
-            {!isSelf && (
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    triggerConfetti();
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-[#0B0B0C] hover:bg-white/5 border border-white/10 text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-                  <span>Send Respect &amp; Celebration 🔥</span>
-                </button>
-              </div>
-            )}
           </div>
         </motion.div>
       </div>

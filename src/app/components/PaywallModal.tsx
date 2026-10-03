@@ -23,8 +23,15 @@ function safeFormatDate(iso: string | null): string | null {
 }
 
 export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan }) => {
-  const { user, isPlusMember, plusExpiresAt, isPaywallOpen, setIsPaywallOpen, setIsUPIModalOpen } =
-    useSVJ();
+  const {
+    user,
+    plusActive,
+    isPlusMember,
+    plusExpiresAt,
+    isPaywallOpen,
+    setIsPaywallOpen,
+    setIsUPIModalOpen,
+  } = useSVJ();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [heroFailed, setHeroFailed] = useState(false);
 
@@ -36,7 +43,9 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
   if (!isPaywallOpen) return null;
 
   // ── Server-authoritative membership classification (display only) ──────────
-  const hasActivePlus = user.isPremium === true;
+  const plusExpiryTime = plusExpiresAt ? new Date(plusExpiresAt).getTime() : null;
+  const hasFuturePlusExpiry = plusExpiryTime !== null && plusExpiryTime > Date.now();
+  const hasActivePlus = plusActive === true || (plusActive === null && hasFuturePlusExpiry);
   const hasLifetimePlus = hasActivePlus && isPlusMember === true && plusExpiresAt === null;
   const hasActiveTimedPlus = hasActivePlus && isPlusMember === true && plusExpiresAt !== null;
   const hasExpiredTimedPlus = !hasActivePlus && isPlusMember === true && plusExpiresAt !== null;
@@ -84,13 +93,13 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-y-auto">
+      <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 30 }}
           transition={{ duration: 0.25 }}
-          className="relative my-auto max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#C81E3A]/40 bg-[#0B0B0C] p-4 text-[#F4F2ED] shadow-2xl sm:p-5"
+          className="relative my-auto max-h-[92dvh] w-full max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl border border-[#C81E3A]/40 bg-[#0B0B0C] p-4 text-[#F4F2ED] shadow-2xl sm:p-5"
         >
           {/* Ambient Lighting Background */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#C81E3A]/15 blur-3xl rounded-full pointer-events-none" />
@@ -129,7 +138,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* ACTIVE LIFETIME PLUS (Founder or non-Founder lifetime)         */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {hasLifetimePlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -201,7 +210,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* ACTIVE TIMED PLUS                                               */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {hasActiveTimedPlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -248,7 +257,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           {/* EXPIRED TIMED PLUS  /  FREE / TRIAL                            */}
           {/* ════════════════════════════════════════════════════════════════ */}
           {!hasLifetimePlus && !hasActiveTimedPlus && (
-            <div className="relative z-10 space-y-6">
+            <div className="relative z-10 space-y-4">
               {/* Hero Branding */}
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold tracking-widest uppercase">
@@ -308,7 +317,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               </div>
 
               {/* Pricing Display Card */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                 {/* Monthly Card */}
                 <div
                   onClick={() => setBillingCycle("monthly")}
@@ -359,7 +368,7 @@ export const PaywallModal: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
               </div>
 
               {/* Features Grid */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-5">
                 <h3 className="text-xs font-mono text-[#8C8C90] uppercase tracking-wider text-center">
                   What You Get
                 </h3>

@@ -74,6 +74,8 @@ before(async () => {
       export { WorkoutView } from './src/app/views/WorkoutView';
       export { NutritionView } from './src/app/views/NutritionView';
       export { ChallengesView } from './src/app/views/ChallengesView';
+      export { LevelUpModal } from './src/app/components/LevelUpModal';
+      export { FramerLevelUp, createFramerLevelUpDocument } from './src/app/components/FramerLevelUp';
       export { INITIAL_USER, INITIAL_CHALLENGES } from './src/app/data/initialData';
     `,
       resolveDir: process.cwd(),
@@ -226,8 +228,166 @@ describe("real activity components", { concurrency: false }, () => {
     );
     await mount();
     await act(async () => api.logMeal("Lunch", 450, "Lunch"));
-    assert.deepEqual(api.levelUpModalData, { oldTier: "Initiate", newTier: "Bronze" });
+    assert.deepEqual(api.levelUpModalData, {
+      oldLevel: 5,
+      newLevel: 6,
+      oldTier: "Initiate",
+      newTier: "Bronze",
+    });
     assert.equal(api.user.totalXP, 2550);
+  });
+
+  it("celebrates a level increase within the same tier and shows the final level for a large grant", async () => {
+    await mount();
+    assert.equal(api.levelUpModalData, null);
+    await act(async () => api.awardXp(600));
+    assert.deepEqual(api.levelUpModalData, {
+      oldLevel: 1,
+      newLevel: 2,
+      oldTier: "Initiate",
+      newTier: "Initiate",
+    });
+    await act(async () => api.setLevelUpModalData(null));
+    await act(async () => api.awardXp(1600));
+    assert.deepEqual(api.levelUpModalData, {
+      oldLevel: 2,
+      newLevel: 5,
+      oldTier: "Initiate",
+      newTier: "Initiate",
+    });
+  });
+
+  it("does not celebrate below a threshold or after undo, and does not replay on reload", async () => {
+    localStorage.setItem(
+      "svj_app_state_v5_user",
+      JSON.stringify({ ...app.INITIAL_USER, totalXP: 430 }),
+    );
+    await mount();
+    await act(async () => api.logMeal("Lunch", 450, "Lunch"));
+    assert.equal(api.user.totalXP, 490);
+    assert.equal(api.levelUpModalData, null);
+    const task = api.challenges[0];
+    await act(async () => api.toggleChallenge(task.id));
+    assert.equal(api.levelUpModalData.newLevel, 2);
+    await act(async () => api.toggleChallenge(task.id));
+    assert.equal(api.user.totalXP, 490);
+    assert.equal(api.levelUpModalData, null);
+    await act(async () => api.awardXp(600));
+    await act(async () => view.unmount());
+    await mount();
+    assert.equal(api.user.level, 3);
+    assert.equal(api.levelUpModalData, null);
+  });
+
+  it("does not celebrate restoration of a cached account with a higher level", async () => {
+    localStorage.setItem(
+      "svj_user_account_member@example.test",
+      JSON.stringify({
+        ...app.INITIAL_USER,
+        email: "member@example.test",
+        totalXP: 6200,
+      }),
+    );
+    await mount();
+    await act(async () => api.loginWithGmail("member@example.test"));
+    assert.equal(api.user.level, 13);
+    assert.equal(api.levelUpModalData, null);
+    await act(async () => api.awardXp(400));
+    assert.equal(api.levelUpModalData.newLevel, 14);
+    await act(async () =>
+      api.updateUserProfile({ id: "other-account", totalXP: 12000, level: 25, tier: "Gold" }),
+    );
+    assert.equal(api.levelUpModalData, null);
+  });
+
+  it("does not replay when the active account cache has newer XP than the general cache", async () => {
+    const email = "member@example.test";
+    localStorage.setItem(
+      "svj_app_state_v5_user",
+      JSON.stringify({ ...app.INITIAL_USER, email, totalXP: 490 }),
+    );
+    localStorage.setItem("svj_app_state_v5_active_email", email);
+    localStorage.setItem(
+      `svj_user_account_${email}`,
+      JSON.stringify({ ...app.INITIAL_USER, email, totalXP: 6500 }),
+    );
+    await mount();
+    assert.equal(api.user.level, 14);
+    assert.equal(api.levelUpModalData, null);
+    await act(async () => api.awardXp(500));
+    assert.equal(api.levelUpModalData.newLevel, 15);
+  });
+
+  it("keeps the reached level and dismiss controls when Framer fails", async () => {
+    await mount(app.LevelUpModal);
+    await act(async () => api.awardXp(600));
+    assert.ok(screen.getByRole("dialog", { name: "Level 2 reached" }));
+    assert.equal(screen.queryByRole("region", { name: "New tier perks" }), null);
+    const frame = document.querySelector('iframe[title="Level-up animation"]');
+    assert.ok(frame);
+    assert.match(frame.srcdoc, /level: String\(2\)/);
+    await act(async () =>
+      window.dispatchEvent(
+        new dom.window.MessageEvent("message", {
+          source: frame.contentWindow,
+          data: { type: "svj-level-up", level: 2, status: "failed" },
+        }),
+      ),
+    );
+    assert.equal(document.querySelector("[data-animation-state]").dataset.animationState, "failed");
+    assert.match(screen.getByTestId("level-up-fallback").textContent, /LEVEL UP2/);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    assert.equal(api.levelUpModalData, null);
+    assert.equal(screen.queryByRole("dialog"), null);
+  });
+
+  it("keeps tier perks alongside the celebration and rejects unrelated frame messages", async () => {
+    localStorage.setItem(
+      "svj_app_state_v5_user",
+      JSON.stringify({ ...app.INITIAL_USER, totalXP: 2490 }),
+    );
+    await mount(app.LevelUpModal);
+    await act(async () => api.logMeal("Lunch", 450, "Lunch"));
+    assert.ok(screen.getByRole("heading", { name: "Bronze Tier" }));
+    const frame = document.querySelector("iframe");
+    await act(async () =>
+      window.dispatchEvent(
+        new dom.window.MessageEvent("message", {
+          source: window,
+          data: { type: "svj-level-up", level: 6, status: "ready" },
+        }),
+      ),
+    );
+    assert.equal(
+      document.querySelector("[data-animation-state]").dataset.animationState,
+      "loading",
+    );
+    await act(async () =>
+      window.dispatchEvent(
+        new dom.window.MessageEvent("message", {
+          source: frame.contentWindow,
+          data: { type: "svj-level-up", level: 6, status: "ready" },
+        }),
+      ),
+    );
+    assert.equal(
+      document.querySelector("[data-animation-state]").dataset.animationState,
+      "playing",
+    );
+    await act(async () =>
+      window.dispatchEvent(
+        new dom.window.MessageEvent("message", {
+          source: frame.contentWindow,
+          data: { type: "svj-level-up", level: 6, status: "complete" },
+        }),
+      ),
+    );
+    assert.equal(
+      document.querySelector("[data-animation-state]").dataset.animationState,
+      "complete",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Close level-up celebration" }));
+    assert.equal(api.levelUpModalData, null);
   });
 
   it("keeps a failed legacy meal ledger unchanged and can retry without duplicate XP", async () => {

@@ -15,7 +15,7 @@ import {
   WorkoutExercise,
   MealEntry,
 } from "../types";
-import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_REWARDS, TIERS } from "../data/initialData";
+import { INITIAL_USER, INITIAL_CHALLENGES, INITIAL_REWARDS } from "../data/initialData";
 import { stripSeedFeedPosts, stripSeedMembers } from "../lib/seedData";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginAvatar } from "@/lib/avatar";
@@ -44,12 +44,21 @@ import {
 import { reconcileEngagementProfile } from "../lib/engagementProfile";
 import { FOUNDER_EMAIL } from "../lib/founderIdentity";
 
+export interface LevelUpData {
+  oldLevel: number;
+  newLevel: number;
+  oldTier: TierLevel;
+  newTier: TierLevel;
+}
+
 interface SVJContextType {
   user: UserProfile;
   /** True once the user profile has been synced from localStorage or Supabase
    *  auth — prevents a flash of INITIAL_USER while the session is loading. */
   profileLoaded: boolean;
   storageError: string | null;
+  /** Server-authoritative active Plus entitlement. */
+  plusActive: boolean | null;
   /** Server-authoritative: whether the user has a Plus membership row. */
   isPlusMember: boolean | null;
   /** Server-authoritative: ISO expiry timestamp for timed Plus, null for lifetime. */
@@ -64,7 +73,7 @@ interface SVJContextType {
   calorieGoal: number;
   comparingMember: LeaderboardEntry | null;
   selectedMemberModal: LeaderboardEntry | null;
-  levelUpModalData: { oldTier: TierLevel; newTier: TierLevel } | null;
+  levelUpModalData: LevelUpData | null;
   isPaywallOpen: boolean;
   isEditProfileOpen: boolean;
   isUPIModalOpen: boolean;
@@ -117,7 +126,7 @@ interface SVJContextType {
   logoutGmail: () => void;
   setComparingMember: (member: LeaderboardEntry | null) => void;
   setSelectedMemberModal: (member: LeaderboardEntry | null) => void;
-  setLevelUpModalData: (data: { oldTier: TierLevel; newTier: TierLevel } | null) => void;
+  setLevelUpModalData: (data: LevelUpData | null) => void;
   setIsPaywallOpen: (open: boolean) => void;
   setIsEditProfileOpen: (open: boolean) => void;
   setIsUPIModalOpen: (open: boolean) => void;
@@ -126,7 +135,14 @@ interface SVJContextType {
   triggerConfetti: () => void;
 }
 
-const SVJContext = createContext<SVJContextType | undefined>(undefined);
+// Keep one context identity across hot reloads so a re-evaluated module never
+// splits providers and consumers onto different context objects.
+const svjGlobal = globalThis as typeof globalThis & {
+  __svjContext?: React.Context<SVJContextType | undefined>;
+};
+const SVJContext =
+  svjGlobal.__svjContext ??
+  (svjGlobal.__svjContext = createContext<SVJContextType | undefined>(undefined));
 
 const LOCAL_STORAGE_KEY = "svj_app_state_v5";
 
@@ -280,10 +296,8 @@ export const SVJProvider: React.FC<{
 
   const [comparingMember, setComparingMember] = useState<LeaderboardEntry | null>(null);
   const [selectedMemberModal, setSelectedMemberModal] = useState<LeaderboardEntry | null>(null);
-  const [levelUpModalData, setLevelUpModalData] = useState<{
-    oldTier: TierLevel;
-    newTier: TierLevel;
-  } | null>(null);
+  const [levelUpModalData, setLevelUpModalData] = useState<LevelUpData | null>(null);
+  const previousProgress = useRef(user);
   const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState<boolean>(false);
   const [isUPIModalOpen, setIsUPIModalOpen] = useState<boolean>(false);
@@ -305,6 +319,7 @@ export const SVJProvider: React.FC<{
       if (savedAcc) {
         try {
           const parsed = normalizeUserProfile(JSON.parse(savedAcc));
+          previousProgress.current = parsed;
           setUser(parsed);
           setProfileLoaded(true);
         } catch (e) {
@@ -371,6 +386,8 @@ export const SVJProvider: React.FC<{
         // account) re-fetches the server profile instead of trusting memory
         // or stale cache — the avatar must restore from the server.
         syncedEmailRef.current = null;
+        previousProgress.current = INITIAL_USER;
+        setLevelUpModalData(null);
         setUser(INITIAL_USER);
         return;
       }
@@ -439,6 +456,8 @@ export const SVJProvider: React.FC<{
 
   // Sync user state to local storage and sync user entry on the global leaderboard
   useEffect(() => {
+    // Finish restoration before older in-memory XP can overwrite the account cache.
+    if (!profileLoaded) return;
     // Persist everything EXCEPT Plus status: isPremium is only ever derived from
     // the server-side check (plusActive), so localStorage can never keep an
     // expired user looking Premium.
@@ -493,7 +512,7 @@ export const SVJProvider: React.FC<{
         ];
       }
     });
-  }, [user, persist]);
+  }, [user, profileLoaded, persist]);
 
   useEffect(() => {
     safeSetItem(`${LOCAL_STORAGE_KEY}_challenges`, JSON.stringify(challenges));
@@ -547,20 +566,24 @@ export const SVJProvider: React.FC<{
     }
   };
 
-  // React may replay state updaters. Notify only after a committed tier change.
-  const previousTier = useRef({ id: user.id, tier: user.tier, xp: user.totalXP });
+  // Celebrate committed XP gains once; profile restoration resets this baseline.
   useEffect(() => {
-    const previous = previousTier.current;
-    previousTier.current = { id: user.id, tier: user.tier, xp: user.totalXP };
-    if (
-      previous.id === user.id &&
-      user.totalXP > previous.xp &&
-      TIERS.findIndex((t) => t.name === user.tier) >
-        TIERS.findIndex((t) => t.name === previous.tier)
-    ) {
-      setLevelUpModalData({ oldTier: previous.tier, newTier: user.tier });
+    if (!profileLoaded) return;
+    const previous = previousProgress.current;
+    previousProgress.current = user;
+    if (previous.id !== user.id || previous.email !== user.email || user.level < previous.level) {
+      setLevelUpModalData(null);
+      return;
     }
-  }, [user.id, user.tier, user.totalXP]);
+    if (user.totalXP > previous.totalXP && user.level > previous.level) {
+      setLevelUpModalData({
+        oldLevel: previous.level,
+        newLevel: user.level,
+        oldTier: previous.tier,
+        newTier: user.tier,
+      });
+    }
+  }, [profileLoaded, user.id, user.email, user.level, user.tier, user.totalXP]);
 
   // This only mirrors grants already confirmed by the 60-day server endpoint.
   // Ordinary device-only activity XP is not eligible for membership redemption.
@@ -1078,8 +1101,8 @@ export const SVJProvider: React.FC<{
       }),
       bio: serverProfile?.bio ?? baseUser.bio,
       location: serverProfile?.location ?? baseUser.location,
-      isFounder: isOwnerEmail || baseUser.isFounder || false,
-      isOwner: isOwnerEmail || baseUser.isOwner || false,
+      isFounder: isOwnerEmail,
+      isOwner: isOwnerEmail,
       isPremium: isOwnerEmail ? true : false, // otherwise server check decides
       verifiedIcon: isOwnerEmail ? true : baseUser.verifiedIcon,
       vipIcon: isOwnerEmail ? true : baseUser.vipIcon,
@@ -1098,6 +1121,8 @@ export const SVJProvider: React.FC<{
       achievements: baseUser.achievements,
     };
 
+    previousProgress.current = updatedUser;
+    setLevelUpModalData(null);
     setUser(updatedUser);
     // Persist everything EXCEPT Plus status (same rule as the sync effect):
     // localStorage must never hold isPremium=true, only the server check decides.
@@ -1135,6 +1160,7 @@ export const SVJProvider: React.FC<{
         profileLoaded,
         syncEngagementProfile,
         storageError,
+        plusActive,
         isPlusMember: isPlusMemberProp,
         plusExpiresAt: plusExpiresAtProp,
         challenges,

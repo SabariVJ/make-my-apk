@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Loader2, MessageSquarePlus, Ticket } from "lucide-react";
 
 import {
@@ -8,6 +8,11 @@ import {
   type SupportTicket,
   type TicketCategory,
 } from "@/lib/support.functions";
+import { useAuthUserId } from "../hooks/useWorkoutQueue";
+import {
+  SUPPORT_TICKET_REFRESH_OPTIONS,
+  useSupportTicketWindowFocus,
+} from "../hooks/useSupportTicketRefresh";
 
 const CATEGORY_OPTIONS: Array<{ value: TicketCategory; label: string }> = [
   { value: "payment", label: "Payment issue" },
@@ -49,6 +54,7 @@ function formatDate(iso: string): string {
 
 /** Raise-a-Ticket form: category dropdown + message, submitted via RLS-guarded insert. */
 export const RaiseTicketForm: React.FC = () => {
+  const queryClient = useQueryClient();
   const [category, setCategory] = useState<TicketCategory>("bug");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +73,9 @@ export const RaiseTicketForm: React.FC = () => {
     setError(null);
     try {
       await createSupportTicket({ data: { category, message: trimmed } });
+      void queryClient.invalidateQueries({ queryKey: ["my-support-tickets"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-tickets"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
       setSubmitted(true);
       setMessage("");
     } catch (cause) {
@@ -162,11 +171,14 @@ export const RaiseTicketForm: React.FC = () => {
 
 /** My Tickets: the current user's own tickets with status badge and admin response. */
 export const MyTicketsList: React.FC = () => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["my-support-tickets"],
+  const userId = useAuthUserId();
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["my-support-tickets", userId],
     queryFn: () => listMySupportTickets({ data: undefined }),
-    staleTime: 30_000,
+    enabled: userId !== null,
+    ...SUPPORT_TICKET_REFRESH_OPTIONS,
   });
+  useSupportTicketWindowFocus(refetch, userId !== null);
 
   if (isLoading) {
     return (
@@ -184,12 +196,23 @@ export const MyTicketsList: React.FC = () => {
     );
   }
 
-  const tickets = data ?? [];
+  const tickets = (data ?? []).filter(
+    (ticket) => ticket.status !== "resolved" && ticket.user_id === userId,
+  );
   if (tickets.length === 0) {
     return (
-      <p data-testid="no-tickets" className="py-3 text-center font-inter text-xs text-[#8C8C90]">
-        No tickets yet. Raise one above and we'll answer here.
-      </p>
+      <div
+        data-testid="no-tickets"
+        className="rounded-2xl border border-white/[0.06] bg-[#08080A] px-3 py-4 text-center"
+      >
+        <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10">
+          <Ticket className="h-4 w-4 text-emerald-300" />
+        </div>
+        <p className="font-inter text-xs font-semibold text-[#F4F2ED]">No active tickets</p>
+        <p className="mt-1 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
+          Resolved tickets clear from this list automatically.
+        </p>
+      </div>
     );
   }
 

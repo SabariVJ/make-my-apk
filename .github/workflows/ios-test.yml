@@ -1,0 +1,94 @@
+name: iPhone Test Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [release/play-v1-compliance]
+    paths:
+      - "ios/**"
+      - "src/**"
+      - "public/**"
+      - "tests/ios-*.test.mjs"
+      - "tests/activity-tracking.test.mjs"
+      - "scripts/verify-ios-ipa.py"
+      - "scripts/prepare-ios-assets.mjs"
+      - "scripts/normalize-ios-spm.mjs"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "bun.lock"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/ios-test.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iphone-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iphone:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Check Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          test "$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)" -ge 26
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: iPhone regressions and TypeScript
+        run: |
+          bun run test:ios
+          bunx tsc -b --noEmit
+      - name: Build web assets
+        run: bun run build
+      - name: Sync iOS Swift packages
+        run: bun run cap:sync:ios
+      - name: Build unsigned physical-device app
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee ios/build.log
+      - name: Package and verify IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ios/output/Payload
+          ditto ios/DerivedData/Build/Products/Release-iphoneos/App.app ios/output/Payload/App.app
+          cd ios/output
+          ditto -c -k --keepParent Payload SVJ-ios-test.ipa
+          cd ../..
+          python3 scripts/verify-ios-ipa.py ios/output/SVJ-ios-test.ipa
+      - name: Downloadable iPhone build
+        uses: actions/upload-artifact@v7
+        with:
+          name: SVJ-ios-test
+          path: ios/output/SVJ-ios-test.ipa
+          if-no-files-found: error
+          retention-days: 14
+      - name: Native build log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: iphone-build-log
+          path: ios/build.log
+          if-no-files-found: ignore

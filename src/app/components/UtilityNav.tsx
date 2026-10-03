@@ -91,7 +91,7 @@ export const UtilityDrawer: React.FC<{
     <AnimatePresence>
       {open && (
         <div
-          className="fixed inset-0 z-50 lg:hidden"
+          className="fixed inset-0 z-50 overflow-x-clip lg:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="SVJ menu"
@@ -108,7 +108,7 @@ export const UtilityDrawer: React.FC<{
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="absolute right-0 top-0 h-full w-64 max-w-[80vw] border-l border-white/[0.06] bg-[#0B0B0C] p-4"
+            className="svj-safe-screen absolute right-0 top-0 h-full w-64 max-w-[80vw] overflow-y-auto border-l border-white/[0.06] bg-[#0B0B0C]"
           >
             <div className="mb-4 flex items-center justify-between">
               <span className="font-anton text-sm uppercase tracking-wider text-[#F4F2ED]">

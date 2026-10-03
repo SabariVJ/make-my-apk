@@ -391,7 +391,7 @@ export const TrainingToday: React.FC<TrainingTodayProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-8 text-xs font-inter text-[#8C8C90]">
+      <div className="flex items-center justify-center gap-2 py-6 text-xs font-inter text-[#8C8C90]">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading your training plan…
       </div>
     );

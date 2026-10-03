@@ -54,7 +54,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
     color: string;
     hexColor: string;
     bgGlow: string;
-    icon: React.ElementType;
   }[] = [
     {
       key: "physical",
@@ -63,7 +62,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-emerald-400",
       hexColor: "#10B981",
       bgGlow: "rgba(16,185,129,0.15)",
-      icon: Dumbbell,
     },
     {
       key: "ambition",
@@ -72,7 +70,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-purple-400",
       hexColor: "#A855F7",
       bgGlow: "rgba(168,85,247,0.15)",
-      icon: Sparkles,
     },
     {
       key: "intellect",
@@ -81,7 +78,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-gold",
       hexColor: "#F59E0B",
       bgGlow: "rgba(245,158,11,0.15)",
-      icon: BookOpen,
     },
     {
       key: "mental",
@@ -90,7 +86,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-yellow-400",
       hexColor: "#EAB308",
       bgGlow: "rgba(234,179,8,0.15)",
-      icon: Brain,
     },
     {
       key: "social",
@@ -99,7 +94,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-blue-400",
       hexColor: "#3B82F6",
       bgGlow: "rgba(59,130,246,0.15)",
-      icon: Users,
     },
     {
       key: "discipline",
@@ -108,7 +102,6 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
       color: "text-rose-500",
       hexColor: "#F43F5E",
       bgGlow: "rgba(244,63,94,0.15)",
-      icon: Shield,
     },
   ];
 
@@ -312,9 +305,7 @@ export const HexagonRadarChart: React.FC<HexagonRadarChartProps> = ({
                     borderColor: `${d.hexColor}50`,
                     color: d.hexColor,
                   }}
-                >
-                  <d.icon className="h-4 w-4" strokeWidth={2} />
-                </div>
+                ></div>
                 <div>
                   <div className={`text-xs font-bold ${d.color} leading-none`}>{d.label}</div>
                   <div className="text-[9px] text-[#8C8C90] mt-0.5">

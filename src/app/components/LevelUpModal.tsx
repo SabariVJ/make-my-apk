@@ -1,122 +1,109 @@
 import React from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Crown, CheckCircle2, ArrowRight } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowRight, CheckCircle2, X } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
 import { TIERS } from "../data/initialData";
+import { FramerLevelUp } from "./FramerLevelUp";
 
-/**
- * THE signature motion moment.
- *
- * SVJ gets exactly one deliberate, choreographed animation and this is it: a
- * level-up sequence built as staged beats (emblem → tier name → perks →
- * action). Everything else in the app stays a short functional transition, so
- * the reward moment never competes with ordinary UI motion.
- *
- * Respects reduced motion through MotionConfig's `reducedMotion="user"` at the
- * app root, which collapses the variant transitions to instant state changes.
- */
+const NativeLevelUp: React.FC<{ level: number }> = ({ level }) => {
+  const reducedMotion = useReducedMotion();
+  const digits = String(level).length;
+  return (
+    <motion.div
+      data-testid="level-up-fallback"
+      initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reducedMotion ? 0 : 0.4 }}
+      className="flex h-full flex-col items-center justify-center text-center"
+      aria-hidden="true"
+    >
+      <p className="font-anton text-[56px] leading-none text-[#F5F5F5]">LEVEL UP</p>
+      <p
+        className="mt-3 max-w-full font-anton leading-none text-[#C81E3A]"
+        style={{ fontSize: Math.min(144, Math.floor(260 / (digits * 0.65))) }}
+      >
+        {level}
+      </p>
+      <p className="mt-8 text-sm text-[#A4A4AA]">New rewards unlocked.</p>
+    </motion.div>
+  );
+};
+
 export const LevelUpModal: React.FC = () => {
   const { levelUpModalData, setLevelUpModalData } = useSVJ();
-
-  if (!levelUpModalData) return null;
-
-  const newTierInfo = TIERS.find((t) => t.name === levelUpModalData.newTier) || TIERS[1];
-
-  // Staged reveal: each beat waits for the previous one.
-  const beat = (index: number) => ({
-    delay: 0.12 + index * 0.11,
-    duration: 0.42,
-    ease: "easeOut" as const,
-  });
+  const tier =
+    levelUpModalData && levelUpModalData.newTier !== levelUpModalData.oldTier
+      ? TIERS.find((entry) => entry.name === levelUpModalData.newTier)
+      : undefined;
+  const close = () => setLevelUpModalData(null);
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.94 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="svj-radius-card svj-elev-3 relative w-full max-w-sm overflow-hidden border border-[#C9A227]/35 bg-gradient-to-b from-[#1C1710] via-[#141416] to-[#101012] p-5 text-center text-[#F4F2ED]"
-        >
-          {/* Premium-only ambience: a bronze halo + a single emissive ring. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[#C9A227] opacity-20 blur-3xl"
-          />
-
-          <div className="relative">
-            {/* Beat 1 — emblem lands, ring expands once, then settles. */}
-            <div className="relative mx-auto mb-5 h-24 w-24">
-              <motion.span
-                aria-hidden
-                initial={{ opacity: 0.55, scale: 0.6 }}
-                animate={{ opacity: 0, scale: 1.5 }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
-                className="absolute inset-0 rounded-full border border-[#C9A227]/50"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.05 }}
-                className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#C9A227]/50 bg-[#0B0B0C] text-4xl shadow-[0_0_34px_-8px_rgba(201,162,39,0.55)]"
-              >
-                {newTierInfo.icon}
-                <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-[#C9A227]/50 bg-[#17171A]">
-                  <Crown aria-hidden className="h-3.5 w-3.5 text-[#C9A227]" />
-                </span>
-              </motion.div>
-            </div>
-
-            {/* Beat 2 — the tier is named. */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={beat(1)}
+    <Dialog.Root open={Boolean(levelUpModalData)} onOpenChange={(open) => !open && close()}>
+      {levelUpModalData && (
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/90" />
+          <Dialog.Content
+            className="svj-fullscreen-safe fixed inset-0 z-[60] overflow-y-auto bg-[#0B0B0C] font-inter text-[#F5F5F5] outline-none"
+            style={{ letterSpacing: 0 }}
+          >
+            <Dialog.Title className="sr-only">
+              Level {levelUpModalData.newLevel} reached
+            </Dialog.Title>
+            <Dialog.Description className="sr-only">
+              You advanced from level {levelUpModalData.oldLevel} to level{" "}
+              {levelUpModalData.newLevel}.
+              {tier ? ` ${tier.name} tier unlocked.` : " New rewards unlocked."}
+            </Dialog.Description>
+            <Dialog.Close
+              aria-label="Close level-up celebration"
+              title="Close level-up celebration"
+              className="svj-safe-close fixed z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-[#A4A4AA] hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
             >
-              <span className="inline-block rounded-full border border-[#C9A227]/35 bg-[#C9A227]/12 px-3 py-1 font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C9A227]">
-                Tier reached
-              </span>
-              <h2 className="mt-2 font-anton text-3xl leading-none tracking-wide text-white">
-                {newTierInfo.name} Tier
-              </h2>
-              <p className="mt-1.5 text-xs font-inter text-[#8C8C90]">{newTierInfo.description}</p>
-            </motion.div>
-
-            {/* Beat 3 — perks arrive one after another. */}
-            <div className="mt-5 space-y-2 rounded-2xl border border-white/[0.06] bg-[#0B0B0C] p-4 text-left">
-              <p className="font-inter text-[11px] font-semibold text-[#F4F2ED]">
-                New perks unlocked
+              <X className="h-5 w-5" aria-hidden="true" />
+            </Dialog.Close>
+            <div
+              className="mx-auto flex min-h-full w-full max-w-[440px] flex-col justify-center px-6 pt-16"
+              style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+            >
+              <div className="relative h-[min(55dvh,460px)] min-h-[280px] w-full">
+                <FramerLevelUp
+                  key={levelUpModalData.newLevel}
+                  level={levelUpModalData.newLevel}
+                  fallback={<NativeLevelUp level={levelUpModalData.newLevel} />}
+                />
+              </div>
+              <p className="mb-6 text-center text-sm font-semibold text-[#A4A4AA]">
+                Level {levelUpModalData.newLevel}
               </p>
-              {newTierInfo.benefits.map((benefit, index) => (
-                <motion.div
-                  key={benefit}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={beat(2 + index)}
-                  className="flex items-center gap-2 text-xs font-inter text-zinc-200"
-                >
-                  <CheckCircle2 aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C9A227]" />
-                  <span>{benefit}</span>
-                </motion.div>
-              ))}
+              {tier && (
+                <section className="mb-6 border-t border-white/10 pt-5" aria-label="New tier perks">
+                  <h3 className="font-anton text-xl text-[#D4AF37]">{tier.name} Tier</h3>
+                  <p className="mt-1 text-sm text-[#A4A4AA]">{tier.description}</p>
+                  <ul className="mt-4 space-y-2">
+                    {tier.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2
+                          className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]"
+                          aria-hidden="true"
+                        />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              <button
+                onClick={close}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#C81E3A] px-4 py-3 text-sm font-semibold text-white hover:bg-[#A0182E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              >
+                Continue
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
-
-            {/* Beat 4 — the single call to action. */}
-            <motion.button
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={beat(3)}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setLevelUpModalData(null)}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C81E3A] py-3 font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] svj-press"
-            >
-              <span>Claim tier honour</span>
-              <ArrowRight aria-hidden className="h-4 w-4" />
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+          </Dialog.Content>
+        </Dialog.Portal>
+      )}
+    </Dialog.Root>
   );
 };

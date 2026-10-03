@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Check, Crown, User, MapPin, Camera, Upload, Trash2, Mail, Loader2 } from "lucide-react";
 import { useSVJ } from "../context/SVJContext";
-import { INITIAL_USER } from "../data/initialData";
 import { AvatarCropEditor } from "./AvatarCropEditor";
 import { AvatarImage } from "./AvatarImage";
 import { bumpAvatarRevision } from "../hooks/useAvatarUrl";
@@ -133,9 +132,10 @@ export const EditProfileModal: React.FC = () => {
         },
       });
       // The server's confirmed reference is the authority. An empty string or
-      // null means the avatar was removed; fall back to the placeholder only
-      // for display.
-      const nextAvatar = saved.avatarUrl || INITIAL_USER.avatar;
+      // null means the avatar was deliberately removed, so the profile keeps no
+      // photo (AvatarImage then renders the account monogram) instead of
+      // falling back to a stock portrait that is not this user.
+      const nextAvatar = saved.avatarUrl || "";
       updateUserProfile({
         name: saved.displayName,
         username: saved.username,
@@ -168,7 +168,7 @@ export const EditProfileModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
+      <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

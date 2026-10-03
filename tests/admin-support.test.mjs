@@ -20,9 +20,7 @@ const profilesFkMigration = await readFile(
   "utf8",
 );
 // Per-table slices so "no X policy" assertions can't leak across sections.
-const userRolesSection = migration.split(
-  "-- ============================================================================\n-- 2)",
-)[0];
+const userRolesSection = migration.split(/-- =+\r?\n-- 2\)/)[0];
 const ticketsSection = migration.split("-- 4) support_tickets")[1] ?? "";
 const readSrc = async (path) => readFile(new URL(`../src/${path}`, import.meta.url), "utf8");
 
@@ -237,7 +235,10 @@ describe("frontend integration", () => {
     assert.match(adminDashboard, /Give Plus/);
     assert.match(adminDashboard, /Revoke Plus/);
     assert.match(adminDashboard, /Confirm delete/);
-    assert.match(adminDashboard, /type="number"/);\n    assert.match(adminDashboard, /Weeks/);\n    assert.match(adminDashboard, /Months/);\n    assert.match(adminDashboard, /Lifetime/);
+    assert.match(adminDashboard, /type="number"/);
+    assert.match(adminDashboard, /Weeks/);
+    assert.match(adminDashboard, /Months/);
+    assert.match(adminDashboard, /Lifetime/);
     assert.match(adminDashboard, /Admin response/);
   });
 

@@ -73,7 +73,11 @@ describe("rivalry state machine (database-owned)", () => {
 
   test("no client-owned XP, status or baseline inputs", () => {
     assert.doesNotMatch(rivalryFns, /p_xp|p_status|p_baseline/);
-    assert.match(rivalryFns, /p_opponent_id: data\.opponentId/);
+    // Only the VALIDATED opponent id reaches the state machine, and the
+    // validation itself runs server-side against the authenticated caller.
+    assert.match(rivalryFns, /validateRivalryOpponent\(data\.opponentId, context\.userId\)/);
+    assert.match(rivalryFns, /p_opponent_id: opponent\.opponentId/);
+    assert.doesNotMatch(rivalryFns, /p_opponent_id: data\.opponentId/);
   });
 
   test("expiry + winner resolution happens server-side on list", () => {

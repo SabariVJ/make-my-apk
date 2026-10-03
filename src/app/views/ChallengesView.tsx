@@ -43,6 +43,7 @@ import {
   type AssessmentEntryState,
 } from "@/lib/personalization.functions";
 import { AssessmentView } from "./AssessmentView";
+import { ScreenHero } from "@/components/ScreenHero";
 import { formatCompletedAt } from "../lib/dateFormat";
 import { localDayKey } from "../lib/taskCompletions";
 
@@ -357,6 +358,10 @@ export const ChallengesView: React.FC<{
 
   return (
     <div className="space-y-4">
+      {/* Premium Challenges hero — decorative (no copy), so it renders nothing
+          while the art is absent and lights up automatically once
+          public/assets/svj-premium/challenges/hero.webp exists. */}
+      <ScreenHero screen="challenges" height="md" priority />
       {!personalizationQuery.isLoading &&
         !personalizationQuery.data?.personalization?.assessmentCompleted && (
           <button
@@ -373,7 +378,7 @@ export const ChallengesView: React.FC<{
           </button>
         )}
       {showAssessment && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C]">
+        <div className="svj-fullscreen-safe fixed inset-0 z-50 overflow-y-auto bg-[#0B0B0C]">
           <AssessmentView
             onComplete={() => {
               setShowAssessment(false);
@@ -384,7 +389,7 @@ export const ChallengesView: React.FC<{
           <button
             type="button"
             onClick={() => setShowAssessment(false)}
-            className="fixed right-4 top-4 z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            className="svj-safe-close fixed z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
             aria-label="Close assessment"
           >
             <X className="h-5 w-5" />

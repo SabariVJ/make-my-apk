@@ -3,6 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { writeFile, readFile, readdir } from "node:fs/promises";
 import pg from "pg";
+import { saveStrengthActivity } from "../../src/app/lib/strength.ts";
+import {
+  readWorkoutQueue,
+  writeWorkoutQueue,
+  dequeueWorkout,
+} from "../../src/app/lib/workoutQueue.ts";
+
+// These flows share accounts and server history; stop on the first broken flow.
+test.describe.configure({ mode: "serial" });
 
 const url = process.env.SUPABASE_URL;
 if (!url || !["127.0.0.1", "localhost", "[::1]"].includes(new URL(url).hostname))
@@ -37,7 +46,7 @@ async function account(label, role = false) {
   const session = checked(await client.auth.signInWithPassword({ email, password })).session;
   return { id: user.id, email, password, client, session };
 }
-async function openSignedIn(browser, identity) {
+async function openSignedIn(browser, identity, dismissAssessment = true) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     reducedMotion: "reduce",
@@ -50,6 +59,8 @@ async function openSignedIn(browser, identity) {
   const page = await context.newPage();
   await page.goto("/");
   await expect(page.getByTestId("utility-rail")).toBeVisible();
+  if (dismissAssessment)
+    await page.getByRole("button", { name: "Close assessment", exact: true }).click();
   return { context, page };
 }
 test.beforeAll(async () => {
@@ -68,8 +79,8 @@ test.beforeAll(async () => {
   );
 });
 test.afterAll(async () => {
-  for (const identity of [alice, bob, operator, expired])
-    if (identity) checked(await admin.auth.admin.deleteUser(identity.id));
+  // The job destroys the entire disposable database with --no-backup. Deleting
+  // auth users individually cannot clean up retained workout histories safely.
   await db.end();
 });
 
@@ -80,7 +91,9 @@ test("real authentication, sign out, sign in and seven-day membership expiry", a
   expect(membership.id).toBe(alice.id);
   expect(Date.now() - Date.parse(membership.signup_date)).toBeLessThan(86400000);
   checked(await bob.client.auth.signOut());
-  checked(await bob.client.auth.signInWithPassword({ email: bob.email, password: bob.password }));
+  bob.session = checked(
+    await bob.client.auth.signInWithPassword({ email: bob.email, password: bob.password }),
+  ).session;
   const context = await browser.newContext();
   const key = `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
   await context.addInitScript(
@@ -107,7 +120,7 @@ test("admin Give Plus and recipient Claim Plus use real server services", async 
     )
     .toBe(1);
   await context.close();
-  const recipient = await openSignedIn(browser, alice);
+  const recipient = await openSignedIn(browser, alice, false);
   await recipient.page.getByRole("button", { name: "Claim Plus", exact: true }).click();
   await expect
     .poll(
@@ -159,6 +172,7 @@ test("support create, administrator reply, private read and resolved status", as
       .eq("id", ticket.id),
   );
   await own.page.reload();
+  await own.page.getByRole("button", { name: "Close assessment", exact: true }).click();
   await own.page.getByTestId("utility-rail-profile").click();
   await expect(own.page.getByText("Tracking test reply", { exact: true })).toBeVisible();
   checked(
@@ -172,6 +186,154 @@ test("support create, administrator reply, private read and resolved status", as
       .status,
   ).toBe("resolved");
   await own.context.close();
+});
+
+test("payment screen offers QR, copy and external handoffs without sending a payment", async ({
+  browser,
+}) => {
+  const { page, context } = await openSignedIn(browser, bob);
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (text) => {
+          window.__svjCopied = text;
+        },
+      },
+    }),
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Close assessment", exact: true }).click();
+  await page.getByTestId("utility-rail-profile").click();
+  await page.getByText("See plans", { exact: true }).click();
+  await page.getByRole("button", { name: "Upgrade to SVJ Plus", exact: true }).click();
+  await page.getByRole("button", { name: "Show the QR code", exact: true }).click();
+  await expect(page.getByAltText("SVJ Official Payment QR Code")).toBeVisible();
+  await expect(page.getByAltText("SVJ Official Payment QR Code")).toHaveAttribute(
+    "src",
+    /__l5e\/assets-v1\//,
+  );
+  await page.getByRole("button", { name: "I've Paid — Contact Support", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Open WhatsApp", exact: true })).toHaveAttribute(
+    "href",
+    /^whatsapp:\/\/send\?/,
+  );
+  await expect(
+    page.getByRole("link", { name: "Open in browser instead", exact: true }),
+  ).toHaveAttribute("href", /^https:\/\/wa.me\//);
+  await expect(page.getByRole("link", { name: "Email us instead", exact: true })).toHaveAttribute(
+    "href",
+    /^mailto:/,
+  );
+  await page.getByRole("button", { name: /^Copy number / }).click();
+  await expect(page.getByRole("button", { name: "Number copied", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.__svjCopied)).toMatch(/^\+\d+$/);
+  await context.close();
+});
+
+test("strength templates, persistent offline queue, canonical retry and private history", async () => {
+  const template = (await rpc(alice, "svj_list_workout_templates")).templates[0];
+  expect(template.id).toBeTruthy();
+  expect(
+    (
+      await rpc(alice, "svj_save_my_template", {
+        p_template_id: template.id,
+        p_custom_name: "Isolated template",
+        p_pinned: true,
+      })
+    ).ok,
+  ).toBe(true);
+  expect(
+    (await rpc(alice, "svj_list_my_template_library")).library.some(
+      (row) => row.templateId === template.id,
+    ),
+  ).toBe(true);
+  const exercise = (
+    await db.query(
+      "select id from public.svj_exercises where slug='bench_press' and owner_user_id is null limit 1",
+    )
+  ).rows[0];
+  const drafts = [
+    {
+      id: randomUUID(),
+      exerciseId: exercise.id,
+      name: "Bench Press",
+      exerciseType: "weighted_reps",
+      primaryMuscle: "chest",
+      secondaryMuscles: ["triceps"],
+      sets: [{ id: randomUUID(), reps: 10, weightKg: 40, durationSeconds: null, isWarmup: false }],
+    },
+  ];
+  const stored = new Map();
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key) => stored.get(key) ?? null,
+      setItem: (key, value) => stored.set(key, value),
+      removeItem: (key) => stored.delete(key),
+    },
+  });
+  try {
+    const entry = {
+      version: 1,
+      userId: alice.id,
+      clientSessionId: "strength:" + randomUUID(),
+      startedAtMs: Date.now() - 600000,
+      endedAtMs: Date.now() - 1000,
+      durationSeconds: 599,
+      drafts,
+      context: null,
+      targets: [],
+      status: "pending",
+      attempts: 0,
+      lastAttemptAt: null,
+      lastError: null,
+      createdAt: new Date().toISOString(),
+    };
+    expect(writeWorkoutQueue(alice.id, [entry]).ok).toBe(true);
+    expect(readWorkoutQueue(bob.id)).toEqual([]);
+    const offline = await saveStrengthActivity(
+      async () => ({ data: null, error: { message: "Offline" } }),
+      entry,
+    );
+    expect(offline.ok).toBe(false);
+    expect(readWorkoutQueue(alice.id)).toHaveLength(1);
+    const saved = await saveStrengthActivity(
+      (fn, args) => alice.client.rpc(fn, args),
+      readWorkoutQueue(alice.id)[0],
+    );
+    expect(saved.ok, saved.error).toBe(true);
+    const replay = await saveStrengthActivity(
+      (fn, args) => alice.client.rpc(fn, args),
+      readWorkoutQueue(alice.id)[0],
+    );
+    expect(replay.ok, replay.error).toBe(true);
+    expect(replay.duplicate).toBe(true);
+    expect(replay.activity.id).toBe(saved.activity.id);
+    expect(
+      checked(
+        await alice.client
+          .from("svj_activities")
+          .select("id")
+          .eq("client_session_id", entry.clientSessionId),
+      ),
+    ).toHaveLength(1);
+    expect(
+      checked(await bob.client.from("svj_strength_sets").select("*").eq("user_id", alice.id)),
+    ).toEqual([]);
+    expect(
+      (await rpc(alice, "svj_get_strength_detail", { p_activity_id: saved.activity.id })).ok,
+    ).toBe(true);
+    expect(
+      writeWorkoutQueue(alice.id, dequeueWorkout(readWorkoutQueue(alice.id), entry.clientSessionId))
+        .ok,
+    ).toBe(true);
+    expect(readWorkoutQueue(alice.id)).toEqual([]);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, "localStorage", previous);
+    else delete globalThis.localStorage;
+  }
+  await rpc(alice, "svj_remove_my_template", { p_template_id: template.id });
 });
 
 test("GPS offline retry produces one activity and one reward evaluation", async () => {
@@ -205,7 +367,10 @@ test("GPS offline retry produces one activity and one reward evaluation", async 
   expect(again.ok).toBe(true);
   expect(
     checked(
-      await bob.client.from("svj_activity_tracks").select("*").eq("activity_id", first.activity.id),
+      await bob.client
+        .from("svj_activity_track_points")
+        .select("*")
+        .eq("activity_id", first.activity.id),
     ),
   ).toEqual([]);
 });
@@ -385,11 +550,24 @@ test("database authorization inventory and client secret scan", async () => {
   expect(scanned).toBeGreaterThan(10);
   const tables = (
     await db.query(
-      `select c.relname, c.relrowsecurity, exists(select 1 from information_schema.columns a where a.table_schema='public' and a.table_name=c.relname and a.column_name in ('user_id','owner_id','recipient_user_id')) private_owner from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by c.relname`,
+      `select c.relname, c.relrowsecurity, exists(select 1 from information_schema.columns a where a.table_schema='public' and a.table_name=c.relname and a.column_name in ('user_id','owner_id','owner_user_id','recipient_user_id')) private_owner from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by c.relname`,
     )
   ).rows;
   for (const table of tables.filter((t) => t.private_owner))
     expect(table.relrowsecurity, table.relname).toBe(true);
+  expect(tables.filter((table) => !table.relrowsecurity).map((table) => table.relname)).toEqual([
+    "challenge_day_definitions",
+    "svj_activity_reward_policy",
+  ]);
+  for (const table of tables.filter((table) => !table.relrowsecurity))
+    expect(
+      (
+        await db.query("select has_table_privilege('authenticated',$1,'select') allowed", [
+          table.relname,
+        ])
+      ).rows[0].allowed,
+      table.relname,
+    ).toBe(false);
   const policies = (
     await db.query(
       "select schemaname,tablename,policyname,roles,cmd,qual,with_check from pg_policies where schemaname in ('public','storage') order by schemaname,tablename,policyname",
@@ -401,6 +579,30 @@ test("database authorization inventory and client secret scan", async () => {
     )
   ).rows;
   expect(functions.length).toBeGreaterThan(30);
+  const anonymousDefiners = (
+    await db.query(
+      "select proname from pg_proc join pg_namespace n on n.oid=pronamespace where n.nspname='public' and proname like 'svj_%' and prosecdef and has_function_privilege('anon',pg_proc.oid,'execute')",
+    )
+  ).rows;
+  expect(anonymousDefiners.map((row) => row.proname)).toEqual(["svj_get_public_live_share"]);
+  for (const fn of [
+    "svj_training_load_points(uuid,integer)",
+    "svj_activity_xp_earned_today(uuid)",
+    "svj_record_verified_60_day_completion(uuid,uuid,integer,integer,text)",
+    "svj_admin_grant_plus(uuid,uuid,integer,text,text)",
+  ]) {
+    expect(
+      (await db.query("select has_function_privilege('authenticated',$1,'execute') allowed", [fn]))
+        .rows[0].allowed,
+      fn,
+    ).toBe(false);
+  }
+  expect(
+    checked(await bob.client.from("user_roles").select("*").eq("user_id", operator.id)),
+  ).toEqual([]);
+  expect(
+    (await bob.client.from("user_roles").insert({ user_id: bob.id, role: "admin" })).error,
+  ).toBeTruthy();
   await writeFile(
     "isolated-security-inventory.json",
     JSON.stringify(

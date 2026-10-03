@@ -12,6 +12,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4174",
     viewport: { width: 1280, height: 800 },
     reducedMotion: "reduce",
+    actionTimeout: 25_000,
     trace: "retain-on-failure",
   },
   webServer: {

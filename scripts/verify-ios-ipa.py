@@ -1,5 +1,6 @@
 """Validate the unsigned device artifact before offering it for local signing."""
 import json
+import os
 import plistlib
 import struct
 import sys
@@ -21,6 +22,8 @@ def verify(path):
         assert "location" in info.get("UIBackgroundModes", [])
         assert info.get("SVJNativeCapabilityVersion") == 2
         assert len(info.get("SVJBuildRevision", "")) == 40
+        if os.environ.get("GITHUB_SHA"):
+            assert info["SVJBuildRevision"] == os.environ["GITHUB_SHA"], "IPA revision differs from validated commit"
         assert any("app.lovable.svj" in entry.get("CFBundleURLSchemes", [])
                    for entry in info.get("CFBundleURLTypes", []))
         executable = archive.read(root + info["CFBundleExecutable"])

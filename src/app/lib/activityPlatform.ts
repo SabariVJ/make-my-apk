@@ -167,14 +167,12 @@ export async function saveGpsWorkout(
   if (!activityId) return { ok: false, error: "The server returned an unreadable workout." };
 
   const duplicate = envelope.duplicate === true;
-  // XP is evaluated only for a genuinely new activity; a duplicate is already
-  // fully processed and the ledger would no-op anyway.
-  const rewardResult = duplicate
-    ? { ok: true as const, rewards: undefined }
-    : await processActivityRewards(client, activityId);
+  // A previous save may have succeeded before its reward request lost the
+  // connection. Retry the authoritative ledger even for an existing activity.
+  const rewardResult = await processActivityRewards(client, activityId);
 
   return {
-    ok: true,
+    ok: rewardResult.ok,
     duplicate,
     activityId,
     rewards: rewardResult.rewards,

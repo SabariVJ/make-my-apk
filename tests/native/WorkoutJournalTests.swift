@@ -9,11 +9,13 @@ import Foundation
         for index in 0..<301 { try journal.append(["ownerId": owner, "activityId": activity, "kind": index == 0 ? "start" : "point", "timestampMs": 1000 + index, "lat": 1, "lng": 2]) }
         let recovered = try WorkoutJournal(owner: owner, activity: activity, directory: dir)
         precondition(recovered.events.count == 301 && recovered.events.last?["sequence"] as? Int == 301)
+        precondition(journal.pointCount == 300 && recovered.pointCount == 300)
         let h = try FileHandle(forWritingTo: journal.url); try h.seekToEnd(); try h.write(contentsOf: Data("{\"torn\":".utf8)); try h.close()
         let repaired = try WorkoutJournal(owner: owner, activity: activity, directory: dir)
         precondition(repaired.events.count == 301)
         try repaired.append(["ownerId": owner, "activityId": activity, "kind": "end", "timestampMs": 5000])
         precondition(repaired.events.last?["sequence"] as? Int == 302)
+        precondition(repaired.pointCount == 300)
         let corrupt = Data("{broken}\n".utf8); try corrupt.write(to: journal.url)
         do { _ = try WorkoutJournal(owner: owner, activity: activity, directory: dir); preconditionFailure("Corruption must remain visible") }
         catch { let retained = try Data(contentsOf: journal.url); precondition(retained == corrupt) }

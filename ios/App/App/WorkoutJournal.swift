@@ -4,6 +4,7 @@ import Foundation
 final class WorkoutJournal {
     let url: URL
     private(set) var events: [[String: Any]] = []
+    private(set) var pointCount = 0
     init(owner: String, activity: String, directory: URL? = nil) throws {
         guard UUID(uuidString: owner) != nil, UUID(uuidString: activity) != nil else { throw NSError(domain: "SVJJournalIdentity", code: 1) }
         let dir = try directory ?? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("SVJWorkouts", isDirectory: true)
@@ -21,6 +22,7 @@ final class WorkoutJournal {
                 }
                 guard event["sequence"] as? Int == events.count + 1, event["ownerId"] as? String == owner, event["activityId"] as? String == activity else { throw NSError(domain: "SVJJournalCorruption", code: 4) }
                 events.append(event)
+                if event["kind"] as? String == "point" { pointCount += 1 }
             }
             if !text.isEmpty && !text.hasSuffix("\n") {
                 var clean = Data()
@@ -39,5 +41,6 @@ final class WorkoutJournal {
         let handle = try FileHandle(forWritingTo: url); defer { try? handle.close() }
         try handle.seekToEnd(); try handle.write(contentsOf: data); try handle.synchronize()
         events.append(event)
+        if event["kind"] as? String == "point" { pointCount += 1 }
     }
 }

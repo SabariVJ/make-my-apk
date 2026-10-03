@@ -171,6 +171,22 @@ after(async () => {
 // ── Activity metrics keep their exact original rules ────────────────────────
 
 describe("60-Day completion transaction", { concurrency: false }, () => {
+  it("denies anonymous definer calls and private helper access across accounts", async () => {
+    const id = await account();
+    await assert.rejects(
+      asRole("authenticated", id, "SELECT public.svj_training_load_points($1,7)", [id]),
+    );
+    await assert.rejects(
+      asRole("authenticated", id, "SELECT public.svj_activity_xp_earned_today($1)", [id]),
+    );
+    await assert.rejects(asRole("anon", null, "SELECT public.svj_get_my_training_profile()"));
+    const allowed = (
+      await execute(
+        "SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND proname LIKE 'svj_%' AND prosecdef AND has_function_privilege('anon',p.oid,'execute')",
+      )
+    ).rows.map((row) => row.proname);
+    assert.deepEqual(allowed, ["svj_get_public_live_share"]);
+  });
   it("returns saved progress, awards once and preserves it after a missed day", async () => {
     const id = await account();
     await asRole("authenticated", id, "SELECT public.svj_start_my_challenge()");

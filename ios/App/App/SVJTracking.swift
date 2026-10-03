@@ -157,7 +157,7 @@ public final class VjWorkoutPlugin: CAPPlugin, CAPBridgedPlugin, CLLocationManag
         }
     }
     private func permissions() -> [String: Any] { return ["location": permission(), "backgroundLocation": permission(), "notifications": "unavailable"] }
-    private func state() -> [String: Any] { var s = metadata; s["version"] = 2; s["active"] = active; s["paused"] = paused; s["pointCount"] = journal?.events.filter { $0["kind"] as? String == "point" }.count ?? 0; return s }
+    private func state() -> [String: Any] { var s = metadata; s["version"] = 2; s["active"] = active; s["paused"] = paused; s["pointCount"] = journal?.pointCount ?? 0; return s }
     private func accepts(_ call: CAPPluginCall) -> Bool {
         guard let owner = call.getString("ownerId"), let id = call.getString("activityId"), metadata["ownerId"] as? String == owner, metadata["activityId"] as? String == id else { call.reject("This command belongs to another recording. Reopen SVJ."); return false }
         return true

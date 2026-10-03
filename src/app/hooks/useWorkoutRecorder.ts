@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type Context,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { withAccountRpcClient } from "../lib/accountSync";
@@ -97,7 +98,12 @@ export interface UseWorkoutRecorder {
   dismissNotice: () => void;
 }
 
-const RecorderContext = createContext<UseWorkoutRecorder | null>(null);
+// Keep provider/consumer identity together when Lovable refreshes this module.
+const recorderGlobal = globalThis as typeof globalThis & {
+  __svjWorkoutRecorderContext?: Context<UseWorkoutRecorder | null>;
+};
+const RecorderContext = (recorderGlobal.__svjWorkoutRecorderContext ??=
+  createContext<UseWorkoutRecorder | null>(null));
 export function WorkoutRecorderProvider({
   children,
   userId,

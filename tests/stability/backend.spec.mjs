@@ -43,8 +43,11 @@ async function account(label, role = false) {
   );
   if (role) checked(await admin.from("user_roles").insert({ user_id: user.id, role: "admin" }));
   const client = createClient(url, process.env.SUPABASE_PUBLISHABLE_KEY, opts);
-  const session = checked(await client.auth.signInWithPassword({ email, password })).session;
-  return { id: user.id, email, password, client, session };
+  const address = user.email ?? email;
+  const session = checked(
+    await client.auth.signInWithPassword({ email: address, password }),
+  ).session;
+  return { id: user.id, email: address, password, client, session };
 }
 async function openSignedIn(browser, identity, dismissAssessment = true) {
   const context = await browser.newContext({
@@ -110,6 +113,7 @@ test("admin Give Plus and recipient Claim Plus use real server services", async 
   const { page, context } = await openSignedIn(browser, operator);
   await page.getByTestId("utility-rail-admin").click();
   await page.getByPlaceholder("Search username, name or email").fill(alice.email);
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByLabel(`Plus duration for ${alice.email}`, { exact: true }).fill("1");
   await page.getByRole("button", { name: "Give Plus", exact: true }).click();
   await expect

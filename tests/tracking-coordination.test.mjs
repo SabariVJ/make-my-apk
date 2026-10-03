@@ -1,6 +1,6 @@
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
@@ -62,6 +62,24 @@ after(async () => {
   delete globalThis.__svjSyncFixture;
   await rm(temporary, { recursive: true, force: true });
   dom.window.close();
+});
+
+test("all shared provider contexts preserve their identity across preview refreshes", async () => {
+  for (const file of [
+    "src/app/context/SVJContext.tsx",
+    "src/app/context/ActivityContext.tsx",
+    "src/app/context/EngagementContext.tsx",
+    "src/app/hooks/useWorkoutRecorder.ts",
+  ]) {
+    const source = await readFile(file, "utf8");
+    assert.match(source, /globalThis/, file);
+    assert.match(
+      source,
+      /__svj(?:Context|ActivityContext|EngagementContext|WorkoutRecorderContext)/,
+      file,
+    );
+    assert.match(source, /\?\?=?/, file);
+  }
 });
 
 test("sync binds the original account token and removes listeners after exceptions", async () => {

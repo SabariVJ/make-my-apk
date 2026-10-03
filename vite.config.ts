@@ -6,12 +6,31 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { loadEnv } from "vite";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { execFileSync } from "node:child_process";
 
 // ── Production Supabase project (authoritative SVJ backend) ─────────────────
 // The ONLY Supabase project the app is allowed to talk to. A URL/project ID is
 // public information, so a fallback here is safe.
 const PROD_SUPABASE_URL = "https://oltmnrkceodpyqznfhjb.supabase.co";
 const PROD_SUPABASE_PROJECT_ID = "oltmnrkceodpyqznfhjb";
+
+const buildRevision = (() => {
+  const configured = process.env.GITHUB_SHA ?? process.env.VITE_APP_REVISION;
+  if (configured) return configured.slice(0, 12);
+  try {
+    const revision = execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    const dirty = execFileSync("git", ["status", "--porcelain"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return dirty ? `${revision}-dirty` : revision;
+  } catch {
+    return "local-unknown";
+  }
+})();
 
 // Load .env* files (dev/preview) AND the real process environment (build
 // servers inject VITE_* here). Precedence: process env > .env files >
@@ -30,6 +49,7 @@ export default defineConfig({
   },
   vite: {
     define: {
+      "import.meta.env.VITE_APP_REVISION": JSON.stringify(buildRevision),
       // Publishable backend config, baked in at build time.
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
         process.env["VITE_SUPABASE_URL"] ?? env.VITE_SUPABASE_URL ?? PROD_SUPABASE_URL,

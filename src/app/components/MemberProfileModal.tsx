@@ -33,7 +33,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto overflow-x-hidden rounded-2xl border border-white/10 bg-[#17171A] text-[#F4F2ED] shadow-2xl"
+          className="relative max-h-[90dvh] min-w-0 w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#17171A] text-[#F4F2ED] shadow-2xl"
         >
           {/* Cover Header */}
           <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-gold/20 relative p-4 flex justify-between items-start">
@@ -78,8 +78,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
 
             {/* Name & Handles */}
             <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="font-inter text-xl font-semibold tracking-tight text-[#F4F2ED]">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h2 className="min-w-0 break-words font-inter text-xl font-semibold tracking-tight text-[#F4F2ED]">
                   {member.username}
                 </h2>
                 {member.isVerified && (
@@ -87,8 +87,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 )}
                 {member.isVIP && <Crown className="w-4 h-4 text-gold fill-gold/20" />}
               </div>
-              <div className="text-xs font-mono text-[#8C8C90] flex items-center gap-2 mt-0.5">
-                <span>@{member.username}</span>
+              <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2 text-xs font-mono text-[#8C8C90]">
+                <span className="break-all">@{member.username}</span>
                 <span>•</span>
                 <span className="text-[#C81E3A] font-semibold">{member.tier} Tier</span>
               </div>

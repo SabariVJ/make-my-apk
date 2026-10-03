@@ -168,8 +168,8 @@ const UsersSection: React.FC = () => {
 
       {actionError && <ErrorNote message={actionError} />}
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-white/10">
-        <table data-testid="admin-users-table" className="w-full min-w-[720px] text-left">
+      <div className="mt-3 min-w-0 rounded-xl border border-white/10 p-2 sm:p-3">
+        <table data-testid="admin-users-table" className="svj-admin-users text-left">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.04] font-inter text-[10px] uppercase tracking-wide text-[#8C8C90]">
               <th scope="col" className="px-3 py-2 font-semibold">
@@ -209,13 +209,13 @@ const UsersSection: React.FC = () => {
             ) : (
               users.data!.users.map((user) => (
                 <tr key={user.id} className="border-b border-white/[0.06] last:border-0">
-                  <td className="px-3 py-2.5">
+                  <td data-label="User" className="min-w-0 px-3 py-2.5">
                     <p className="font-inter text-xs font-semibold text-[#F4F2ED]">
                       {user.display_name || user.username || "—"}
                     </p>
                     <p className="font-mono text-[10px] text-[#8C8C90]">{user.email ?? user.id}</p>
                   </td>
-                  <td className="px-3 py-2.5 font-inter text-xs">
+                  <td data-label="Plus" className="px-3 py-2.5 font-inter text-xs">
                     {user.is_plus_member &&
                     (!user.plus_expires_at ||
                       new Date(user.plus_expires_at).getTime() > Date.now()) ? (
@@ -231,16 +231,16 @@ const UsersSection: React.FC = () => {
                       <span className="text-[#8C8C90]">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-[#F4F2ED]">
+                  <td data-label="Streak" className="px-3 py-2.5 font-mono text-xs text-[#F4F2ED]">
                     {user.current_streak}
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-xs text-[#F4F2ED]">
+                  <td data-label="XP" className="px-3 py-2.5 font-mono text-xs text-[#F4F2ED]">
                     {user.total_xp.toLocaleString()}
                   </td>
-                  <td className="px-3 py-2.5 font-inter text-xs text-[#8C8C90]">
+                  <td data-label="Joined" className="px-3 py-2.5 font-inter text-xs text-[#8C8C90]">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td data-label="Actions" className="min-w-0 px-3 py-2.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {user.is_plus_member &&
                       (!user.plus_expires_at ||

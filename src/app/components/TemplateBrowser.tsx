@@ -157,9 +157,9 @@ export const TemplateBrowser: React.FC<TemplateBrowserProps> = ({
                 key={entry.templateId}
                 type="button"
                 onClick={() => template && onStartTemplate(template)}
-                className="shrink-0 svj-radius-row border border-white/10 bg-[#17171A] px-3 py-2 text-left"
+                className="min-w-0 max-w-full svj-radius-row border border-white/10 bg-[#17171A] px-3 py-2 text-left"
               >
-                <span className="block font-inter text-[11px] text-[#F4F2ED]">
+                <span className="block break-words font-inter text-[11px] text-[#F4F2ED]">
                   {entry.customName ?? template?.name}
                 </span>
                 <span className="block font-mono text-[10px] text-[#8C8C90]">

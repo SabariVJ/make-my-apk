@@ -110,12 +110,12 @@ export const Navigation: React.FC<NavigationProps> = ({
       // the existing env(safe-area-inset-bottom) pattern (the same one the
       // page container uses in App.tsx) so the gesture bar is always cleared
       // without a duplicate safe-area utility or negative offsets.
-      className="svj-dock-gutters fixed bottom-0 left-0 z-40 w-full max-w-full overflow-x-clip pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
+      className="svj-dock-gutters fixed bottom-0 left-0 z-40 w-full max-w-full pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
     >
       {/* Liquid Glass dock — one rounded translucent control. 320px fit is
           guaranteed by the fluid grid: equal columns always fit the width,
-          padding shrinks slightly below 360px, labels truncate instead of
-          clipping, and touch targets keep their 44px+ height. */}
+          padding shrinks slightly below 360px, labels wrap, and touch targets
+          keep their 44px+ height. */}
       <div
         className={`svj-glass-dock mx-auto w-full max-w-md ${dockColumns} gap-0.5 px-1 py-1.5 sm:w-fit sm:rounded-2xl sm:px-1.5 sm:py-2 md:gap-1`}
       >
@@ -158,7 +158,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
 
               <span
-                className={`w-full truncate text-center text-[10px] leading-tight font-inter font-medium transition-colors sm:text-[11px] ${
+                className={`w-full min-w-0 whitespace-normal break-words text-center text-[10px] leading-tight font-inter font-medium transition-colors sm:text-[11px] ${
                   isActive ? "text-[#F4F2ED] font-semibold" : "text-[#8C8C90]"
                 }`}
               >

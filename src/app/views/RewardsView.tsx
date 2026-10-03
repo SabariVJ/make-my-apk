@@ -244,7 +244,7 @@ export const RewardsView: React.FC = () => {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-lg text-xs font-mono transition-all shrink-0 cursor-pointer ${
+            className={`max-w-full px-4 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
               selectedCategory === cat
                 ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
                 : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"

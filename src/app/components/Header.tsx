@@ -72,9 +72,13 @@ export const Header: React.FC<{
                 }`}
               >
                 {user.isFounder && <Crown className="w-2.5 h-2.5" aria-hidden />}
-                <span className="truncate">{user.isFounder ? "Founder" : `${user.tier} Tier`}</span>
+                <span className="break-words text-center leading-tight">
+                  {user.isFounder ? "Founder" : `${user.tier} Tier`}
+                </span>
               </span>
-              <span className="hidden truncate font-mono text-[10px] text-[#5C5C60] lg:inline">{user.memberId}</span>
+              <span className="hidden truncate font-mono text-[10px] text-[#5C5C60] lg:inline">
+                {user.memberId}
+              </span>
             </div>
           </div>
         </div>
@@ -132,46 +136,46 @@ export const Header: React.FC<{
           </motion.button>
 
           <div className="col-span-4 row-start-2 flex min-w-0 items-center gap-2 md:contents">
-          {/* Streak Counter */}
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            data-testid="header-streak"
-            className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-gold/20 text-[11px] font-mono font-medium"
-          >
-            <Flame className="w-4 h-4 text-gold fill-gold/30" />
-            <span className="text-[#F4F2ED]">{user.currentStreak}d</span>
-          </motion.div>
-
-          {/* XP Pill */}
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            data-testid="header-xp"
-            className="flex min-w-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-[#C81E3A]/20 text-[11px] font-mono font-medium text-[#F4F2ED]"
-          >
-            <Zap className="w-4 h-4 shrink-0 text-[#C81E3A] fill-[#C81E3A]/20" />
-            <span className="min-w-0 break-words">{user.totalXP.toLocaleString()} XP</span>
-          </motion.div>
-
-          {/* SVJ Plus Upgrade Button */}
-          {!user.isPremium && (
-            <motion.button
+            {/* Streak Counter */}
+            <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => setIsPaywallOpen(true)}
-              className="hidden md:flex shrink-0 items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#C81E3A] hover:bg-[#A0182E] text-white text-[11px] font-inter font-semibold transition-colors cursor-pointer"
+              data-testid="header-streak"
+              className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-gold/20 text-[11px] font-mono font-medium"
             >
-              <Crown className="w-3.5 h-3.5" />
-              <span>Plus</span>
-            </motion.button>
-          )}
-          {user.isPremium && (
-            <div className="hidden md:flex shrink-0 items-center gap-1 px-3 py-1 rounded-full bg-[#d4af37]/10 text-[#d4af37] text-[11px] font-inter font-medium">
-              <Crown className="w-3 h-3" />
-              <span>{user.isFounder ? "Founder" : "Plus active"}</span>
-            </div>
-          )}
+              <Flame className="w-4 h-4 text-gold fill-gold/30" />
+              <span className="text-[#F4F2ED]">{user.currentStreak}d</span>
+            </motion.div>
+
+            {/* XP Pill */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              data-testid="header-xp"
+              className="flex min-w-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#17171A] border border-[#C81E3A]/20 text-[11px] font-mono font-medium text-[#F4F2ED]"
+            >
+              <Zap className="w-4 h-4 shrink-0 text-[#C81E3A] fill-[#C81E3A]/20" />
+              <span className="min-w-0 break-words">{user.totalXP.toLocaleString()} XP</span>
+            </motion.div>
+
+            {/* SVJ Plus Upgrade Button */}
+            {!user.isPremium && (
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setIsPaywallOpen(true)}
+                className="hidden md:flex shrink-0 items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#C81E3A] hover:bg-[#A0182E] text-white text-[11px] font-inter font-semibold transition-colors cursor-pointer"
+              >
+                <Crown className="w-3.5 h-3.5" />
+                <span>Plus</span>
+              </motion.button>
+            )}
+            {user.isPremium && (
+              <div className="hidden md:flex shrink-0 items-center gap-1 px-3 py-1 rounded-full bg-[#d4af37]/10 text-[#d4af37] text-[11px] font-inter font-medium">
+                <Crown className="w-3 h-3" />
+                <span>{user.isFounder ? "Founder" : "Plus active"}</span>
+              </div>
+            )}
           </div>
 
           {/* Utility menu — phones get Community / Leaderboard / Profile here. */}

@@ -57,7 +57,8 @@ describe("primary navigation is five destinations", () => {
 
   it("keeps the floating glass dock positioning and clearance intact", () => {
     assert.match(navigation, /fixed bottom-0 left-0/);
-    assert.match(navigation, /w-full max-w-full overflow-x-clip/);
+    assert.match(navigation, /w-full max-w-full/);
+    assert.doesNotMatch(navigation, /overflow-x-(clip|hidden|auto|scroll)/);
     // The dock floats inset from the edges and clears the gesture bar using
     // the same env(safe-area-inset-bottom) pattern as the page container.
     assert.match(navigation, /svj-glass-dock/);
@@ -199,7 +200,7 @@ describe("primary nav spacing is compact", () => {
     // The dock never overflows horizontally on the narrowest target (320px):
     // full-width fluid grid capped at max-w-md, with truncating labels.
     assert.match(navigation, /w-full max-w-md/);
-    assert.match(navigation, /truncate/);
+    assert.match(navigation, /whitespace-normal\s+break-words/);
   });
 });
 

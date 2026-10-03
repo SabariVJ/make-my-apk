@@ -91,7 +91,7 @@ export const UtilityDrawer: React.FC<{
     <AnimatePresence>
       {open && (
         <div
-          className="fixed inset-0 z-50 overflow-x-clip lg:hidden"
+          className="fixed inset-0 z-50 min-w-0 lg:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="SVJ menu"

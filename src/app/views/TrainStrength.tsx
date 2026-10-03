@@ -1132,7 +1132,7 @@ const ExercisePicker: React.FC<{
             key={id}
             type="button"
             onClick={() => setCategory(id)}
-            className={`shrink-0 rounded-lg border px-2 py-1 text-[9px] font-mono uppercase tracking-wider ${
+            className={`max-w-full rounded-lg border px-2 py-1 text-[9px] font-mono uppercase tracking-wider ${
               category === id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90]"

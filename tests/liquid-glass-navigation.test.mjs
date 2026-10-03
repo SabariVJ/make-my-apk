@@ -59,7 +59,8 @@ describe("glass dock CSS treatment", () => {
 describe("floating dock layout + safe area", () => {
   it("floats inset from the edges instead of edge-to-edge", () => {
     assert.match(navCode, /fixed bottom-0 left-0/);
-    assert.match(navCode, /w-full max-w-full overflow-x-clip/);
+    assert.match(navCode, /w-full max-w-full/);
+    assert.doesNotMatch(navCode, /overflow-x-(clip|hidden|auto|scroll)/);
     assert.match(navCode, /svj-dock-gutters/);
   });
 
@@ -76,7 +77,7 @@ describe("floating dock layout + safe area", () => {
   it("fits 320px: fluid full-width grid capped at max-w-md", () => {
     assert.match(navCode, /w-full max-w-md/);
     assert.match(navCode, /min-w-0/, "tabs must be allowed to shrink");
-    assert.match(navCode, /truncate/, "labels truncate instead of clipping");
+    assert.match(navCode, /whitespace-normal\s+break-words/, "labels wrap instead of clipping");
   });
 
   it("keeps accessible touch targets", () => {

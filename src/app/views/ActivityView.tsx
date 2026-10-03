@@ -261,7 +261,7 @@ const ActivityViewContent: React.FC<{
               key={s.id}
               type="button"
               onClick={() => setSection(s.id)}
-              className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-inter font-medium transition-colors ${
+              className={`min-w-0 max-w-full rounded-lg px-2.5 py-1.5 text-center text-[11px] font-inter font-medium transition-colors ${
                 section === s.id
                   ? "bg-[#C81E3A]/15 text-white"
                   : "bg-white/[0.04] text-[#8C8C90] hover:text-white"

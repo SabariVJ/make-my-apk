@@ -79,6 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "svj-build-revision", content: import.meta.env.VITE_APP_REVISION },
       { title: "SVJ — Self-Improvement Challenges & Community" },
       {
         name: "description",

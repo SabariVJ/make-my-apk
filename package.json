@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:responsive": "vite build --mode responsive-test",
+    "preview:responsive": "wrangler --config .output/server/wrangler.json dev --ip 127.0.0.1 --port 4173 --show-interactive-dev-session=false",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -15,10 +17,12 @@
     "test:support": "tsx --test tests/admin-support.test.mjs tests/admin-serverfn-auth.test.ts tests/support-email.test.ts tests/founder-admin-access.test.mjs tests/support-ticket-functions.test.mjs tests/support-tickets-ui.test.mjs",
     "test:rewards": "tsx --test tests/engagement-db.test.mjs",
     "test:rewards:postgres": "node scripts/test-rewards-postgres.mjs",
-    "cap:sync": "bun -e \"require('fs').mkdirSync('android/app/src/main/assets',{recursive:true})\" && cap sync android",
+    "cap:sync": "node scripts/prepare-responsive-capacitor.mjs && bun -e \"require('fs').mkdirSync('android/app/src/main/assets',{recursive:true})\" && cap sync android",
     "cap:sync:ios": "node scripts/prepare-ios-assets.mjs && cap sync ios && node scripts/normalize-ios-spm.mjs",
     "cap:open:ios": "cap open ios",
-    "test:ios": "tsx --test tests/ios-build.test.mjs tests/ios-compatibility.test.mjs tests/ios-layout.test.mjs tests/ios-responsive-layout.test.mjs tests/activity-tracking.test.mjs"
+    "test:ios": "tsx --test tests/ios-build.test.mjs tests/ios-compatibility.test.mjs tests/ios-layout.test.mjs tests/ios-responsive-layout.test.mjs tests/activity-tracking.test.mjs",
+    "typecheck:responsive": "tsc --noEmit -p tests/responsive/tsconfig.json",
+    "test:responsive": "playwright test --config tests/responsive/playwright.config.ts"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -91,6 +95,7 @@
     "@electric-sql/pglite": "0.5.8",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.23.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/react": "16.3.3",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
@@ -113,6 +118,7 @@
     "tsx": "4.23.13",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "wrangler": "^4.145.0"
   }
 }

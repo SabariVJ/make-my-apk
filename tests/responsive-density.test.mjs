@@ -42,6 +42,7 @@ const earnPlus = read("src/app/views/EarnPlusView.tsx");
 const sixtyDay = read("src/app/views/SixtyDayChallengeView.tsx");
 const planView = read("src/app/views/SvjPlanView.tsx");
 const transformation = read("src/app/views/TransformationReportView.tsx");
+const styles = read("src/styles.css");
 
 /** Screens rendered inside the shared page container. */
 const SCREENS = {
@@ -90,11 +91,39 @@ describe("one shared page container owns padding and nav clearance", () => {
 
   it("keeps the rail and bottom navigation tokens intact", () => {
     assert.match(navigation, /fixed bottom-0 left-0/);
-    assert.match(navigation, /w-full max-w-full overflow-x-clip/);
+    assert.match(navigation, /w-full max-w-full/);
+    assert.doesNotMatch(navigation, /overflow-x-(clip|hidden|auto|scroll)/);
     // The bottom navigation is now the floating glass dock.
     assert.match(navigation, /svj-glass-dock/);
     assert.match(utilityNav, /fixed right-0 top-1\/2/);
     assert.match(header, /sticky top-0/);
+  });
+});
+
+describe("horizontal overflow remains measurable at the document root", () => {
+  it("does not hide or clip horizontal overflow on html, body, or the app root", () => {
+    assert.doesNotMatch(styles, /html\s*,\s*body\s*\{[^}]*overflow-x\s*:/s);
+    assert.doesNotMatch(styles, /#root\s*\{[^}]*overflow-x\s*:/s);
+    assert.doesNotMatch(styles, /html\s*,\s*body\s*\{[^}]*touch-action\s*:/s);
+  });
+
+  it("keeps screen control rows wrapping and removes the scrolling admin table", () => {
+    const noSideScrollScreens = [
+      recoverySections,
+      activity,
+      community,
+      train,
+      challenges,
+      read("src/app/views/TrainStrength.tsx"),
+      read("src/app/views/GpsActivityDetail.tsx"),
+      read("src/app/views/RewardsView.tsx"),
+      templates,
+    ].join("\n");
+    assert.doesNotMatch(noSideScrollScreens, /overflow-x-(auto|scroll)/);
+    const admin = read("src/app/views/AdminDashboardView.tsx");
+    assert.doesNotMatch(admin, /overflow-x-(auto|scroll)|min-w-\[720px\]/);
+    assert.ok(admin.includes('data-label="Streak"'));
+    assert.ok(styles.includes(".svj-admin-users tbody tr"));
   });
 });
 
@@ -107,7 +136,7 @@ describe("Challenges stays compact and action-focused", () => {
   });
 
   it("lays the task list out as a responsive grid", () => {
-    assert.ok(challenges.includes('className="grid gap-2.5 lg:grid-cols-2"'));
+    assert.ok(challenges.includes('className="grid min-w-0 gap-2.5 lg:grid-cols-2"'));
   });
 
   it("never reintroduces the Character Matrix", () => {
@@ -270,7 +299,9 @@ describe("Plus, Profile, Community and Leaderboard use desktop width", () => {
 
   it("keeps Character Matrix in Profile and pairs the trailing cards", () => {
     assert.match(profile, /Character Matrix/i);
-    assert.ok(profile.includes("grid items-start gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)]"));
+    assert.ok(
+      profile.includes("grid items-start gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)]"),
+    );
   });
 
   it("never reintroduces in-app notification permission controls", () => {

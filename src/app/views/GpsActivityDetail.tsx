@@ -359,7 +359,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
             key={entry.id}
             type="button"
             onClick={() => setSection(entry.id)}
-            className={`shrink-0 rounded-full border px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
+            className={`max-w-full rounded-full border px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors ${
               section === entry.id
                 ? "border-[#C81E3A]/50 bg-[#C81E3A]/15 text-white"
                 : "border-white/10 bg-black/40 text-[#8C8C90] hover:text-white"

@@ -382,7 +382,9 @@ describe("active support ticket UI", { concurrency: false }, () => {
   it("ticket creation refreshes user/admin lists and statistics, and empty lists say No active tickets", async () => {
     fixture.rows = [ticket("closed", "resolved")];
     await mount("RaiseTicketForm", "MyTicketsList", "AdminDashboardView");
-    await waitFor(() => assert.equal(screen.getAllByText("No active tickets.").length, 2));
+    await waitFor(() => {
+      assert.equal(screen.getAllByText("No active tickets.", { exact: true }).length, 2);
+    });
     const calls = [fixture.mineCalls, fixture.adminCalls, fixture.statsCalls];
     fireEvent.change(screen.getByLabelText("What happened?"), { target: { value: "New issue" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit ticket" }));

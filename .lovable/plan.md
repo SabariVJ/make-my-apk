@@ -1,69 +1,20 @@
-# SVJ fix-everything plan (detailed, stability first)
+# Repair native iPhone activity tracking
 
-Goal: every known problem fixed or clearly handed off, before any new features. Work runs in the order below. Each step says what you will notice, what changes, and how it is checked.
+## Finding
+The exact “Live step tracking is available in the native app.” message is thrown by `ActivityContext` when `Capacitor.getPlatform()` is neither `ios` nor `android`. The project already has a Core Motion bridge in `SVJTracking.swift`, registered in the iOS storyboard and included in the Xcode target. The Activity flow therefore falls back before calling that bridge when Capacitor reports the runtime as `web` or otherwise fails the platform branch.
 
----
-## Step 1 - Known broken items (fix first)
+## What will change
+- Use Capacitor's native-runtime/platform APIs to distinguish an installed iPhone app from Safari/PWA, and log native platform, bridge availability, Motion availability, permission/query results, live readings, lifecycle changes, and sync failures without logging account identifiers.
+- Repair and extend the existing `VjPedometer` Core Motion bridge rather than adding another pedometer integration. Query today's local-day total on Activity open and app resume; support historical date-range queries, distance, and available floor counts; make START request Motion permission and attach one live listener, and make STOP remove it.
+- Persist the user's tracking choice and last synchronized day/step/timestamp locally. Keep app/web fallback behavior; resynchronize from Core Motion after foregrounding instead of relying on background JavaScript timers. Surface accurate permission, unsupported-device, unavailable-bridge, and retry/Settings states in the existing Activity styling.
+- Merge native daily totals monotonically into today's record and history, refreshing calories and the existing goal/progress/record views without duplicate step deltas. Preserve existing XP milestones and persisted claims; only newly crossed eligible milestones can award, while remote live-step display remains display-only and never grants XP.
+- Keep the current screen design and native build configuration, updating only the necessary iOS permission copy, bridge methods, platform flow, and tests.
 
-| # | Problem | Fix | Checked by |
-|---|---------|-----|-----------|
-| 1.1 | Android tablet does not count steps on its own | Rewrite the phone step reader as SVJ's own code: reads the hardware step counter, remembers a starting point, handles restart, midnight and reboot, never double counts. Shows "Waiting for step sensor" if nothing arrives in 10 s. Health Connect used only as a backup, never added on top. | Code tests here; real proof needs you to install the new app and walk |
-| 1.2 | Step diagnostics are hard to read | One "Step tracking status" card on Activity: permission, sensor found, listening, raw count, today's count, last error, with a "Fix" button for each problem | Screenshot check |
-| 1.3 | Phone-to-website steps sync untested | Add "Synced 5s ago" label, retry when offline, stop syncing when the app closes | Test with a signed-in account; real phone check by you |
-| 1.4 | Two failing checks (desktop width on Plus/Profile/Community/Leaderboard, support ticket screen) | Find why each fails, fix the screen or the outdated check | Full test suite green |
-| 1.5 | Admin "Grant Plus" and "Claim Plus gift" never tried in the app | Run both with a real account, fix anything that breaks | Plus shows as active for the user |
-| 1.6 | Blank screens after live preview refreshes ("must be used within ... provider") | Check every shared data source has the same protection already added to three of them; add a safety screen per tab so one crash never blanks the whole app | Force an error in each tab; only that tab shows "Something went wrong, retry" |
-
----
-## Step 2 - Flows that were never tested end to end
-Each is run signed in, with real data, and results written down:
-- Sign in with Google (website and phone deep link), sign out, sign in again.
-- 7-day trial: start, countdown, expiry screen, Plus unlock.
-- UPI payment screen: QR shows, WhatsApp button, copy number, email fallback.
-- Earn Plus: missions, XP progress, claim stays switched off as decided.
-- Friends: send, accept, remove; rivalry create, cancel; notifications.
-- Workouts: log, template, history, offline queue sends later.
-- Nutrition: add meal, delete, daily totals, photo scan limit.
-- 60-Day Challenge: complete a day, missed day, progress kept.
-- Support ticket: create, admin replies, status updates.
-- Live Share link: start, open link signed out, stop, link shows "Sharing has ended".
-
-Anything broken here becomes a fix in this step.
-
----
-## Step 3 - Reliability everywhere
-- One shared "Could not load - Retry" message and loading placeholder on every tab.
-- Phone storage safety for all saved data (same protection already used for the leaderboard).
-- Visible "3 workouts waiting to sync" when offline.
-- Clear, friendly messages instead of raw errors (no technical text shown to users).
-
----
-## Step 4 - Security and data safety
-- Run the security scan and database checks; fix or explain each finding.
-- Confirm every table only lets people see their own private data.
-- Admin powers checked only through the admin role list, never from the device.
-- XP, rewards, memberships, friendships and rivalry history are never reset.
-
----
-## Step 5 - Speed
-- Load maps and charts only when opened.
-- Shrink large pictures.
-- Measure first open time before and after on a mid-range phone size.
-
----
-## Step 6 - Hand-off for things only you can do
-A short checklist for your computer: build the phone app, install on the tablet, walk 100 steps, send the status card screenshot and step log. Results decide whether 1.1 is fully done.
-
----
-## What will not be done here
-- Building the phone app file itself (needs Android tools on your computer).
-- Real-phone walking tests.
-- New features (step goals, weekly reports, coach, payments) wait until Steps 1-5 are green.
+## Verification
+- Add regression coverage for the `web` fallback versus Capacitor-native iOS path, first-use permission and denial, listener de-duplication/cleanup, daily-history catch-up after resume, midnight/history merging, and no duplicate XP on repeated queries.
+- Run the focused activity/iOS tests, TypeScript check, and app build; inspect the preview build log. A physical iPhone/AltStore IPA walk test cannot be performed in this environment, so that last device-only check will be clearly reported rather than claimed.
 
 ## Technical details
-- 1.1: Capacitor plugin `VjPedometerPlugin` reworked around `SensorManager` `TYPE_STEP_COUNTER`, state in SharedPreferences (baseline, lastRaw, dateKey, bootCount), pure-Java state class with unit tests; `ActivityContext` uses it on Android, existing plugin kept for iOS.
-- 1.3: `liveSteps.ts` exposes `updatedAt`; retry on reconnect; channel removed on unmount.
-- 1.6: audit all React contexts for `globalThis` stabilization; per-tab error boundary in `App.tsx`.
-- 2: Playwright with minted session; findings logged in `RELEASE_SPRINT_STATUS.md`.
-- 4: security scan + linter; RLS/grant review on all `svj_*` tables including `svj_live_daily_steps`.
-- Checks each step: `bunx tsgo --noEmit`, `bun run test`, build log.
+- Extend the existing Swift `VjPedometerPlugin` API and TypeScript bridge types; leave Android behavior and the unrelated legacy pedometer integration intact.
+- Reuse the persisted `ActivityState` day/history and existing XP milestone claim list. Treat Core Motion's day query as an authoritative daily total and use max/monotonic merges to prevent double-counting.
+- Core Motion does not require HealthKit or a HealthKit entitlement for basic pedometer queries. Motion permission still requires the existing `NSMotionUsageDescription`; no new paid capability is planned.

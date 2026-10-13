@@ -61,7 +61,7 @@ export function StepTrackingStatus() {
           className="rounded-xl border border-white/20 px-3 py-2"
           onClick={() => void DailyPedometer.openSettings().catch(() => undefined)}
         >
-          Permissions
+          {state?.permission === "denied" ? "Open Settings" : "Permissions"}
         </button>
       </div>
       <details className="mt-3 text-xs text-white/60">

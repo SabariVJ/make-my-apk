@@ -267,6 +267,7 @@ export function applyDailyTotal(
   now: Date,
   totalSteps: number,
   atMs?: number,
+  totalDistanceMeters?: number,
 ): ActivityState {
   const { state: rolled } = rollActivityDay(state, now);
   const today = rolled.today ?? freshDayRecord(dateKeyOf(now));
@@ -279,9 +280,13 @@ export function applyDailyTotal(
     : 0;
   const activeSeconds =
     added > 0 ? today.activeSeconds + Math.max(0, elapsedSinceSync) : today.activeSeconds;
+  const distance =
+    typeof totalDistanceMeters === "number" && Number.isFinite(totalDistanceMeters)
+      ? Math.max(today.distanceMeters, Math.max(0, totalDistanceMeters))
+      : today.distanceMeters;
   return {
     ...rolled,
-    today: { ...today, steps, activeSeconds },
+    today: { ...today, steps, distanceMeters: distance, activeSeconds },
     sessionLastSteps: total,
     lastSyncedAt: timestamp,
   };

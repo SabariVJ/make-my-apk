@@ -24,6 +24,8 @@ import {
   vjStopTracking,
   vjGetState,
   vjGetSensorInfo,
+  vjGetMeasurement,
+  vjOpenSettings,
   vjPluginAvailable,
   vjAddMeasurementListener,
   vjAddTrackingStateListener,
@@ -51,6 +53,7 @@ import {
 import {
   activeKcalGoal,
   applyTrackedMeasurement,
+  applyDailyTotal,
   buildHistory,
   claimMilestone,
   estimateCalories,
@@ -83,8 +86,6 @@ const MILESTONE_FEED_PREFIX = "Step Milestone";
 // tracking, sensor-mode reporting and native listener bookkeeping are
 // unchanged — only the developer debug surface is gone, so no build (debug APK,
 // dev server or test bundle) can render it on a user-facing screen.
-
-type PedometerPlugin = import("@capgo/capacitor-pedometer").CapacitorPedometerPlugin;
 
 export type ActivityStepSource = VjSensorMode | "ios" | null;
 
@@ -119,6 +120,8 @@ export interface ActivityContextValue {
   startTracking: () => Promise<void>;
   stopTracking: () => Promise<void>;
   getSensorInfo: () => Promise<VjSensorInfo | null>;
+  refreshDailySteps: () => Promise<void>;
+  openMotionSettings: () => Promise<void>;
   statusMessage: string;
   /** Which sensor supplied today's steps (null on web/unsupported). */
   stepSource: ActivityStepSource;
@@ -190,17 +193,6 @@ const ActivityContext: React.Context<ActivityContextValue | null> = ((
   null,
 )) as React.Context<ActivityContextValue | null>;
 
-/** Safely import the iOS/web pedometer plugin (absent in some bundles). */
-async function loadPedometer(): Promise<PedometerPlugin | null> {
-  if (!Capacitor.isPluginAvailable("CapacitorPedometer")) return null;
-  try {
-    const mod = await import("@capgo/capacitor-pedometer");
-    return mod.CapacitorPedometer ?? null;
-  } catch {
-    return null;
-  }
-}
-
 /** Activity status line per selected Android sensor mode. */
 function androidStatusMessage(mode: VjSensorMode): string {
   switch (mode) {
@@ -253,7 +245,6 @@ function AccountActivityProvider({
     "Tracking stopped — press START TRACKING to begin.",
   );
   const [stepSource, setStepSource] = useState<ActivityStepSource>(null);
-  const pluginRef = useRef<PedometerPlugin | null>(null);
   /** StrictMode-safe guard: milestones already paid this instance, "dateKey:threshold". */
   const paidMilestonesRef = useRef<Set<string>>(new Set());
 
@@ -420,8 +411,8 @@ function AccountActivityProvider({
     // Dispatch STOP immediately, even if a START bridge promise has not yet
     // resolved. A second stop after startup settles closes any late register.
     const stopSensor = async () => {
-      if (Capacitor.getPlatform() === "android" || vjPluginAvailable()) return vjStopTracking();
-      if (pluginRef.current) await pluginRef.current.stopMeasurementUpdates();
+      if (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios")
+        return vjStopTracking();
       return null;
     };
     const immediateStop = stopSensor().then(
@@ -472,7 +463,8 @@ function AccountActivityProvider({
   }, [removeOwnedListeners]);
 
   const getSensorInfo = useCallback(async (): Promise<VjSensorInfo | null> => {
-    if (Capacitor.getPlatform() !== "android" && !vjPluginAvailable()) return null;
+    const platform = Capacitor.getPlatform();
+    if ((platform !== "android" && platform !== "ios") || !vjPluginAvailable()) return null;
     const generation = generationRef.current;
     const available = vjPluginAvailable();
     const info = available ? await vjGetSensorInfo() : null;
@@ -483,6 +475,60 @@ function AccountActivityProvider({
     if (activeRef.current && native && !native.trackingActive) void stopTracking();
     return info;
   }, [stopTracking]);
+
+  const refreshDailySteps = useCallback(async () => {
+    const platform = Capacitor.getPlatform();
+    if (platform !== "ios" || !Capacitor.isNativePlatform()) return;
+    if (!vjPluginAvailable()) {
+      console.error("[SVJ.Activity] iOS runtime detected but VjPedometer bridge is unavailable.");
+      setStatusMessage("iPhone step tracking is unavailable in this app build. Install the latest SVJ app.");
+      return;
+    }
+    const generation = generationRef.current;
+    try {
+      const permission = await vjCheckPermissions();
+      console.info("[SVJ.Activity] iOS Motion permission:", permission?.activityRecognition ?? "unavailable");
+      if (permission?.activityRecognition !== "granted") {
+        if (permission?.activityRecognition === "denied")
+          setStatusMessage("Motion permission denied. Open Settings to allow Motion & Fitness, then retry.");
+        return;
+      }
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      console.info("[SVJ.Activity] Querying Core Motion daily steps:", { start, end: now.getTime() });
+      const measurement = await vjGetMeasurement(undefined, { start, end: now.getTime() });
+      if (!mountedRef.current || generation !== generationRef.current || userId !== owner.current) return;
+      console.info("[SVJ.Activity] Core Motion daily result:", {
+        steps: measurement.numberOfSteps,
+        distanceAvailable: measurement.distance !== undefined,
+        floorsAscended: measurement.floorsAscended,
+        floorsDescended: measurement.floorsDescended,
+      });
+      setState((previous) => {
+        const next = applyDailyTotal(
+          previous,
+          now,
+          measurement.numberOfSteps,
+          now.getTime(),
+          measurement.distance,
+        );
+        if (!next.today) return next;
+        const calories = estimateCalories(next.today, metricsRef.current, now);
+        return {
+          ...next,
+          today: {
+            ...next.today,
+            activeKcal: Math.max(next.today.activeKcal, calories.activeKcal),
+            totalKcal: Math.max(next.today.totalKcal, calories.totalKcal),
+          },
+        };
+      });
+    } catch (error) {
+      console.error("[SVJ.Activity] Core Motion daily sync failed:", error);
+      if (mountedRef.current && generation === generationRef.current)
+        setStatusMessage("Could not refresh today's iPhone steps. Tap Retry or reopen Activity.");
+    }
+  }, [userId]);
 
   const startTracking = useCallback((): Promise<void> => {
     if (!userId || !mountedRef.current || requestedRef.current || updateRequiredRef.current)
@@ -556,9 +602,18 @@ function AccountActivityProvider({
         if (!current()) return;
         const platform = Capacitor.getPlatform();
         let mode: ActivityStepSource = null;
-        if (platform === "android" || (platform === "ios" && vjPluginAvailable())) {
+        console.info("[SVJ.Activity] Tracking start:", {
+          platform,
+          native: Capacitor.isNativePlatform(),
+          bridgeAvailable: vjPluginAvailable(),
+        });
+        if (platform === "android" || platform === "ios") {
           if (!vjPluginAvailable())
-            throw new Error("Native step bridge is unavailable in this build.");
+            throw new Error(
+              platform === "ios"
+                ? "iPhone step bridge is unavailable. Install the latest SVJ app build."
+                : "Native step bridge is unavailable in this build.",
+            );
           const info = await vjGetSensorInfo();
           if (!current()) return;
           if (!info?.available || info.mode === "none")
@@ -571,7 +626,9 @@ function AccountActivityProvider({
           if (!current()) return;
           if (permission?.activityRecognition !== "granted")
             throw new Error(
-              "Motion permission denied. Enable Activity Recognition to track steps.",
+              platform === "ios"
+                ? "Motion permission denied. Open Settings to allow Motion & Fitness, then retry."
+                : "Motion permission denied. Enable Activity Recognition to track steps.",
             );
 
           listenerCleanupsRef.current.push(
@@ -598,7 +655,7 @@ function AccountActivityProvider({
                 return;
               activeRef.current = true;
               // Validate before persistence, calories or XP receive the payload.
-              if (!acceptMeasurement(event.sessionSteps, event.timestamp)) return;
+              if (!acceptMeasurement(event.sessionSteps, event.timestamp, event.distance)) return;
               // Native sessionSteps already excludes pre-START and stopped motion.
               // Never import the device's raw counter or historical all-day total.
             }),
@@ -616,38 +673,10 @@ function AccountActivityProvider({
               "The native sensor did not confirm this tracking session. Update the native bridge.",
             );
           }
-        } else if (platform === "ios") {
-          const plugin = await loadPedometer();
-          if (!current()) return;
-          if (!plugin) throw new Error("Live step tracking is unavailable on this device.");
-          pluginRef.current = plugin;
-          let permission = await plugin.checkPermissions();
-          if (!current()) return;
-          if (permission.activityRecognition !== "granted")
-            permission = await plugin.requestPermissions();
-          if (!current()) return;
-          if (permission.activityRecognition !== "granted")
-            throw new Error("Motion permission denied.");
-          const available = await plugin.isAvailable();
-          if (!current()) return;
-          if (!available.stepCounting)
-            throw new Error("This device has no step-counting hardware.");
-          setState((prev) => startTrackedSession(prev, new Date()));
-          const listener = await plugin.addListener("measurement", (event) => {
-            acceptMeasurement(
-              event?.numberOfSteps,
-              event?.endDate === undefined ? Date.now() : event.endDate,
-              event?.distance,
-            );
-          });
-          listenerCleanupsRef.current.push(() => listener.remove());
-          if (!current()) return;
-          activeRef.current = true;
-          await plugin.startMeasurementUpdates();
-          if (!current()) return;
-          mode = "ios";
         } else {
-          throw new Error("Live step tracking is available in the native app.");
+          if (!Capacitor.isNativePlatform())
+            throw new Error("Open SVJ on your iPhone to track steps with Motion & Fitness.");
+          throw new Error(`Step tracking is not supported on this native platform (${platform}).`);
         }
         activeRef.current = true;
         setStepSource(mode);
@@ -663,9 +692,9 @@ function AccountActivityProvider({
         // A partial start must never leave a physical sensor or JS listener alive.
         let cleanupError: unknown;
         try {
-          if (Capacitor.getPlatform() === "android" || vjPluginAvailable()) {
+          if (Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios") {
             await vjStopTracking();
-          } else if (pluginRef.current) await pluginRef.current.stopMeasurementUpdates();
+          }
         } catch (failure) {
           cleanupError = failure;
         }
@@ -676,6 +705,7 @@ function AccountActivityProvider({
         }
         if (generation !== generationRef.current || !mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
+        console.error("[SVJ.Activity] Tracking start failed:", message);
         // Readable, single-source failure detail for the status line below.
         const detail = cleanupError ? `${message}; cleanup: ${cleanupError}` : message;
         if (
@@ -689,7 +719,7 @@ function AccountActivityProvider({
             ? "error"
             : updateRequiredRef.current
               ? "update-required"
-              : /permission denied/i.test(message)
+        : /permission denied/i.test(message)
                 ? "denied"
                 : "unsupported",
         );
@@ -707,6 +737,11 @@ function AccountActivityProvider({
 
   useEffect(() => {
     mountedRef.current = true;
+    console.info("[SVJ.Activity] Runtime:", {
+      platform: Capacitor.getPlatform(),
+      native: Capacitor.isNativePlatform(),
+      pedometerBridge: vjPluginAvailable(),
+    });
     // Clear any native registration left by a WebView reload. Mount, permission
     // grants, visibility changes and app resume never call START.
     void stopTracking().then(() => getSensorInfo());
@@ -725,9 +760,12 @@ function AccountActivityProvider({
     const appListener =
       Capacitor.getPlatform() === "ios" && Capacitor.isPluginAvailable("App")
         ? CapApp.addListener("appStateChange", ({ isActive }) => {
+            console.info("[SVJ.Activity] App lifecycle:", isActive ? "foreground" : "background");
             if (!isActive) void stopTracking();
+            else void refreshDailySteps();
           })
         : null;
+    if (Capacitor.getPlatform() === "ios") void refreshDailySteps();
     return () => {
       mountedRef.current = false;
       document.removeEventListener("visibilitychange", visibility);
@@ -735,7 +773,7 @@ function AccountActivityProvider({
       void appListener?.then((handle) => handle.remove()).catch(() => undefined);
       void stopTracking();
     };
-  }, [userId, stopTracking, getSensorInfo]);
+  }, [userId, stopTracking, getSensorInfo, refreshDailySteps]);
 
   // One calendar-boundary timeout, not a polling loop or sensor query.
   useEffect(() => {
@@ -980,6 +1018,8 @@ function AccountActivityProvider({
     startTracking,
     stopTracking,
     getSensorInfo,
+    refreshDailySteps,
+    openMotionSettings: vjOpenSettings,
     statusMessage,
     stepSource,
     lastSyncedAt: Capacitor.isNativePlatform()

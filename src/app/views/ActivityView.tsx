@@ -163,6 +163,7 @@ const ActivityViewContent: React.FC<{
     trackingActive,
     startTracking,
     stopTracking,
+    refreshDailySteps,
     statusMessage,
     stepSource,
     summary7,
@@ -177,6 +178,9 @@ const ActivityViewContent: React.FC<{
     },
     [stopTracking],
   );
+  useEffect(() => {
+    void refreshDailySteps();
+  }, [refreshDailySteps]);
 
   const [section, setSection] = useState<TrainSection>("activity");
   // A saved route the athlete chose to follow outdoors.

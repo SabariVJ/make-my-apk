@@ -58,7 +58,7 @@ export async function vjGetMeasurement(
   plugin:
     | { getMeasurement?: (options?: { start?: number; end?: number }) => Promise<unknown> }
     | null
-    | undefined,
+    | undefined = VjPedometer,
   options?: { start?: number; end?: number },
 ): Promise<VjValidatedMeasurement> {
   if (!plugin || typeof plugin.getMeasurement !== "function")

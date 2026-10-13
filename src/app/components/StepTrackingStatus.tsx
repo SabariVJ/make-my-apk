@@ -59,7 +59,7 @@ export function StepTrackingStatus() {
         )}
         <button
           className="rounded-xl border border-white/20 px-3 py-2"
-          onClick={() => void DailyPedometer.openSettings().catch(() => undefined)}
+          onClick={() => void (activity?.openMotionSettings?.() ?? DailyPedometer.openSettings())}
         >
           {state?.permission === "denied" ? "Open Settings" : "Permissions"}
         </button>

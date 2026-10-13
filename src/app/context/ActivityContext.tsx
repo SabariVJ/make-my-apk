@@ -530,6 +530,15 @@ function AccountActivityProvider({
     }
   }, [userId]);
 
+  const openMotionSettings = useCallback(async () => {
+    try {
+      await vjOpenSettings();
+    } catch (error) {
+      console.error("[SVJ.Activity] Could not open Motion settings:", error);
+      setStatusMessage("Could not open iPhone Settings. Open Settings > Privacy & Security > Motion & Fitness.");
+    }
+  }, []);
+
   const startTracking = useCallback((): Promise<void> => {
     if (!userId || !mountedRef.current || requestedRef.current || updateRequiredRef.current)
       return Promise.resolve();
@@ -765,7 +774,6 @@ function AccountActivityProvider({
             else void refreshDailySteps();
           })
         : null;
-    if (Capacitor.getPlatform() === "ios") void refreshDailySteps();
     return () => {
       mountedRef.current = false;
       document.removeEventListener("visibilitychange", visibility);
@@ -1019,7 +1027,7 @@ function AccountActivityProvider({
     stopTracking,
     getSensorInfo,
     refreshDailySteps,
-    openMotionSettings: vjOpenSettings,
+    openMotionSettings,
     statusMessage,
     stepSource,
     lastSyncedAt: Capacitor.isNativePlatform()

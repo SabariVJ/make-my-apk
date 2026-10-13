@@ -92,9 +92,17 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(self.snapshot(self.defaults.string(forKey: "svj.daily.owner") ?? ""))
         }
     }
-    @objc func openSettings(_ call: CAPPluginCall) { DispatchQueue.main.async { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!); call.resolve() } }
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { call.reject("iPhone Settings could not be opened"); return }
+            UIApplication.shared.open(url) { opened in
+                if opened { call.resolve() } else { call.reject("iPhone Settings could not be opened") }
+            }
+        }
+    }
     @objc public override func checkPermissions(_ call: CAPPluginCall) { call.resolve(["activityRecognition": permission()]) }
     @objc public override func requestPermissions(_ call: CAPPluginCall) {
+        print("[SVJ.VjPedometer] requesting Motion & Fitness permission")
         session.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { _, _ in call.resolve(["activityRecognition": self.permission()]) }
     }
     @objc func isAvailable(_ call: CAPPluginCall) { call.resolve(["stepCounting": CMPedometer.isStepCountingAvailable(), "sensorManager": CMPedometer.isStepCountingAvailable()]) }
@@ -113,6 +121,7 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func getState(_ call: CAPPluginCall) { call.resolve(state()) }
     @objc func startTracking(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            print("[SVJ.VjPedometer] START requested; permission=\(self.permission()), available=\(CMPedometer.isStepCountingAvailable())")
             guard self.permission() == "granted", CMPedometer.isStepCountingAvailable(), let id = call.getString("sessionId") else { call.reject("Motion permission is required"); return }
             self.session.stopUpdates(); self.sessionId = id; self.sessionStart = Date(); self.sessionSteps = 0
             self.session.startUpdates(from: self.sessionStart!) { data, error in

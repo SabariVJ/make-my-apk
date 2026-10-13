@@ -45,17 +45,24 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
                 "raw": NSNull(), "measurementAt": cached["dateKey"] as? String == day() ? (cached["measurementAt"] ?? NSNull()) : NSNull(), "source": "iPhone Motion", "error": lastError as Any? ?? NSNull()]
     }
     private func readDaily(_ call: CAPPluginCall, owner: String) {
-        guard CMPedometer.isStepCountingAvailable() else { call.resolve(snapshot(owner)); return }
+        guard CMPedometer.isStepCountingAvailable() else {
+            lastError = "Step counting is unavailable on this iPhone."
+            call.resolve(snapshot(owner)); return
+        }
         let generation = dailyGeneration
         let end = Date(), dateKey = day()
         let start = Calendar.current.startOfDay(for: end)
+        print("[SVJ.VjPedometer] daily query started")
         daily.queryPedometerData(from: start, to: end) { [weak self] data, error in
             DispatchQueue.main.async {
                 guard let self = self else { call.reject("Tracking is unavailable"); return }
                 guard generation == self.dailyGeneration, self.defaults.string(forKey: "svj.daily.owner") == owner else { call.reject("Account changed"); return }
                 self.lastError = error == nil ? nil : "Motion readings are unavailable. Check Motion & Fitness permission."
                 if let data = data {
-                    self.defaults.set(["dateKey": dateKey, "steps": data.numberOfSteps.intValue, "measurementAt": data.endDate.timeIntervalSince1970 * 1000], forKey: "svj.daily.snapshot." + owner)
+                    self.defaults.set(["dateKey": dateKey, "steps": data.numberOfSteps.intValue, "distance": data.distance?.doubleValue as Any? ?? NSNull(), "floorsAscended": data.floorsAscended?.intValue as Any? ?? NSNull(), "floorsDescended": data.floorsDescended?.intValue as Any? ?? NSNull(), "measurementAt": data.endDate.timeIntervalSince1970 * 1000], forKey: "svj.daily.snapshot." + owner)
+                    print("[SVJ.VjPedometer] daily query returned steps=\(data.numberOfSteps.intValue)")
+                } else {
+                    print("[SVJ.VjPedometer] daily query failed: \(error?.localizedDescription ?? "no data")")
                 }
                 call.resolve(self.snapshot(owner))
             }
@@ -85,22 +92,36 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(self.snapshot(self.defaults.string(forKey: "svj.daily.owner") ?? ""))
         }
     }
-    @objc func openSettings(_ call: CAPPluginCall) { DispatchQueue.main.async { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!); call.resolve() } }
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { call.reject("iPhone Settings could not be opened"); return }
+            UIApplication.shared.open(url) { opened in
+                if opened { call.resolve() } else { call.reject("iPhone Settings could not be opened") }
+            }
+        }
+    }
     @objc public override func checkPermissions(_ call: CAPPluginCall) { call.resolve(["activityRecognition": permission()]) }
     @objc public override func requestPermissions(_ call: CAPPluginCall) {
+        print("[SVJ.VjPedometer] requesting Motion & Fitness permission")
         session.queryPedometerData(from: Date().addingTimeInterval(-1), to: Date()) { _, _ in call.resolve(["activityRecognition": self.permission()]) }
     }
-    @objc func isAvailable(_ call: CAPPluginCall) { call.resolve(["stepCounting": CMPedometer.isStepCountingAvailable(), "sensorManager": true]) }
-    @objc func getSensorInfo(_ call: CAPPluginCall) { call.resolve(["mode": "counter", "available": CMPedometer.isStepCountingAvailable(), "name": "Core Motion", "vendor": "Apple", "type": 0, "debug": false, "permission": permission()]) }
+    @objc func isAvailable(_ call: CAPPluginCall) { call.resolve(["stepCounting": CMPedometer.isStepCountingAvailable(), "sensorManager": CMPedometer.isStepCountingAvailable()]) }
+    @objc func getSensorInfo(_ call: CAPPluginCall) { let available = CMPedometer.isStepCountingAvailable(); call.resolve(["mode": available ? "counter" : "none", "available": available, "name": "Core Motion", "vendor": "Apple", "type": 0, "debug": false, "permission": permission()]) }
     private func state() -> [String: Any] {
         let active = sessionStart != nil
         return ["trackingRequested": active, "trackingActive": active, "listenerRegistered": active, "listenerRemoved": !active, "sensorStarted": active,
                 "sensorAvailable": CMPedometer.isStepCountingAvailable(), "mode": "counter", "sessionId": sessionId, "sessionSteps": sessionSteps,
-                "sessionStartedMs": (sessionStart?.timeIntervalSince1970 ?? 0) * 1000, "lastError": lastError as Any? ?? NSNull()]
+                "sessionBaselineRaw": 0, "sessionStartedMs": (sessionStart?.timeIntervalSince1970 ?? 0) * 1000,
+                "sessionStoppedMs": active ? 0 : Date().timeIntervalSince1970 * 1000,
+                "firstRaw": 0, "lastRaw": sessionSteps, "dailySteps": sessionSteps,
+                "guardedLastRaw": sessionSteps, "startDateMs": (sessionStart?.timeIntervalSince1970 ?? 0) * 1000,
+                "lastEventMs": Date().timeIntervalSince1970 * 1000,
+                "lastError": lastError as Any? ?? NSNull()]
     }
     @objc func getState(_ call: CAPPluginCall) { call.resolve(state()) }
     @objc func startTracking(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            print("[SVJ.VjPedometer] START requested; permission=\(self.permission()), available=\(CMPedometer.isStepCountingAvailable())")
             guard self.permission() == "granted", CMPedometer.isStepCountingAvailable(), let id = call.getString("sessionId") else { call.reject("Motion permission is required"); return }
             self.session.stopUpdates(); self.sessionId = id; self.sessionStart = Date(); self.sessionSteps = 0
             self.session.startUpdates(from: self.sessionStart!) { data, error in
@@ -110,6 +131,10 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
                     guard let data = data else { return }
                     self.sessionSteps = data.numberOfSteps.intValue
                     var event = self.state(); event["timestamp"] = data.endDate.timeIntervalSince1970 * 1000; event["rawValue"] = self.sessionSteps
+                    event["distance"] = data.distance?.doubleValue as Any? ?? NSNull()
+                    event["floorsAscended"] = data.floorsAscended?.intValue as Any? ?? NSNull()
+                    event["floorsDescended"] = data.floorsDescended?.intValue as Any? ?? NSNull()
+                    print("[SVJ.VjPedometer] live steps=\(self.sessionSteps)")
                     self.notifyListeners("measurement", data: event)
                 }
             }
@@ -118,10 +143,29 @@ public final class VjPedometerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
     @objc func stopTracking(_ call: CAPPluginCall) { DispatchQueue.main.async { self.session.stopUpdates(); self.sessionStart = nil; call.resolve(self.state()) } }
     @objc func getMeasurement(_ call: CAPPluginCall) {
-        let start = Date(timeIntervalSince1970: (call.getDouble("start") ?? 0) / 1000)
-        let end = Date(timeIntervalSince1970: (call.getDouble("end") ?? Date().timeIntervalSince1970 * 1000) / 1000)
+        let now = Date()
+        let startMs = call.getDouble("start") ?? Calendar.current.startOfDay(for: now).timeIntervalSince1970 * 1000
+        let endMs = call.getDouble("end") ?? now.timeIntervalSince1970 * 1000
+        guard startMs.isFinite, endMs.isFinite, startMs >= 0, endMs >= startMs, endMs <= now.timeIntervalSince1970 * 1000 + 60_000 else {
+            call.reject("Invalid Motion history date range"); return
+        }
+        let start = Date(timeIntervalSince1970: startMs / 1000)
+        let end = Date(timeIntervalSince1970: endMs / 1000)
+        print("[SVJ.VjPedometer] history query started")
         session.queryPedometerData(from: start, to: end) { data, error in
-            if let data = data { call.resolve(["numberOfSteps": data.numberOfSteps.intValue]) } else { call.reject("Motion history unavailable") }
+            DispatchQueue.main.async {
+                if let data = data {
+                    var result: [String: Any] = ["numberOfSteps": data.numberOfSteps.intValue]
+                    if let distance = data.distance?.doubleValue { result["distance"] = distance }
+                    if let floors = data.floorsAscended?.intValue { result["floorsAscended"] = floors }
+                    if let floors = data.floorsDescended?.intValue { result["floorsDescended"] = floors }
+                    print("[SVJ.VjPedometer] history query returned steps=\(data.numberOfSteps.intValue)")
+                    call.resolve(result)
+                } else {
+                    print("[SVJ.VjPedometer] history query failed: \(error?.localizedDescription ?? "no data")")
+                    call.reject("Motion history unavailable. Check Motion & Fitness permission.")
+                }
+            }
         }
     }
 }

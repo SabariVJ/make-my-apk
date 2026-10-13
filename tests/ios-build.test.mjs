@@ -11,7 +11,7 @@ it("iPhone target registers the custom auth scheme and Motion permission with na
   const entry = (name) =>
     [...document.querySelectorAll("plist > dict > key")].find((key) => key.textContent === name)
       ?.nextElementSibling;
-  assert.match(entry("NSMotionUsageDescription").textContent, /steps.*workouts/);
+  assert.match(entry("NSMotionUsageDescription").textContent, /steps.*activity progress.*XP/);
   assert.ok(
     [...entry("CFBundleURLTypes").querySelectorAll("string")].some(
       (value) => value.textContent === "app.lovable.svj",
@@ -25,6 +25,11 @@ it("iPhone target registers the custom auth scheme and Motion permission with na
     read("src/app/components/TrialGate.tsx"),
     /useEffect\(installNativeAuthCallbacks, \[\]\)/,
   );
+  const motionBridge = read("ios/App/App/SVJTracking.swift");
+  assert.match(motionBridge, /registerPluginInstance\(VjPedometerPlugin\(\)\)/);
+  assert.match(motionBridge, /queryPedometerData\(from: start, to: end\)/);
+  assert.match(motionBridge, /floorsAscended/);
+  assert.match(read("src/app/context/ActivityContext.tsx"), /platform === "ios" \|\| platform === "android"/);
   dom.window.close();
 });
 it("Swift package dependencies match Capacitor and only ship the three supported iPhone bridges", () => {

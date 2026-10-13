@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Live step sync: native app upserts today's total into svj_live_daily_steps (throttled); web sessions read it via Realtime and show max(local, remote). Display-only — never feeds XP or rewards, which stay server-authoritative.
+- iPhone activity tracking uses the app-owned VjPedometer Core Motion bridge; keeping one native bridge avoids divergent permission and session behavior.

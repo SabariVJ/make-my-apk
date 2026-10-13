@@ -24,6 +24,7 @@ import { ScreenHero } from "@/components/ScreenHero";
 import { SVJScoreRing } from "../components/ui-primitives/SVJScoreRing";
 import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
+import { Capacitor } from "@capacitor/core";
 
 /** Animated numeric readout with a subtle pulse on every increase. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
@@ -163,6 +164,7 @@ const ActivityViewContent: React.FC<{
     trackingActive,
     startTracking,
     stopTracking,
+    refreshDailySteps,
     statusMessage,
     stepSource,
     summary7,
@@ -177,6 +179,9 @@ const ActivityViewContent: React.FC<{
     },
     [stopTracking],
   );
+  useEffect(() => {
+    void refreshDailySteps();
+  }, [refreshDailySteps]);
 
   const [section, setSection] = useState<TrainSection>("activity");
   // A saved route the athlete chose to follow outdoors.
@@ -197,7 +202,7 @@ const ActivityViewContent: React.FC<{
           </div>
           <h1 className="font-anton text-2xl tracking-wide text-white">Activity</h1>
         </div>
-        {activity.dailyTracking?.state?.version !== 2 && (
+        {(activity.dailyTracking?.state?.version !== 2 || Capacitor.getPlatform() === "ios") && (
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-inter font-medium ${
               trackingStatus === "tracking"
@@ -218,7 +223,7 @@ const ActivityViewContent: React.FC<{
       </div>
 
       {/* Always visible: the Activity screen must never be silently stuck. */}
-      {activity.dailyTracking?.state?.version !== 2 && (
+      {(activity.dailyTracking?.state?.version !== 2 || Capacitor.getPlatform() === "ios") && (
         <>
           <p
             role="status"

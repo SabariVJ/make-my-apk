@@ -38,7 +38,7 @@
 		</dict>
 	</array>
 	<key>NSMotionUsageDescription</key>
-	<string>SVJ reads your daily steps and counts steps during workouts when you enable tracking.</string>
+    <string>SVJ uses Motion &amp; Fitness data to track your steps, distance, activity progress and XP.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SVJ records your route during a workout you start, including while the screen is locked. Finish the workout to stop recording.</string>
 	<key>UIBackgroundModes</key>

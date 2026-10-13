@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
 /**
- * Android step-tracking bridge for the app-local `VjPedometerPlugin`.
+ * Native step-tracking bridge for the app-local `VjPedometerPlugin`.
  *
  * The plugin is registered natively (MainActivity + @CapacitorPlugin) and must
  * be reached through `registerPlugin("VjPedometer")`, which is what populates
@@ -16,13 +16,16 @@ export type VjSensorMode = "counter" | "detector" | "accelerometer" | "none";
 export interface VjValidatedMeasurement {
   numberOfSteps: number;
   distance?: number;
+  floorsAscended?: number;
+  floorsDescended?: number;
 }
 
 /** Validate the native payload without coercing strings, nulls or fractional steps. */
 export function vjValidateMeasurement(value: unknown): VjValidatedMeasurement {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new TypeError("Invalid pedometer measurement: expected an object.");
-  const { numberOfSteps, distance } = value as Record<string, unknown>;
+  const { numberOfSteps, distance, floorsAscended, floorsDescended } =
+    value as Record<string, unknown>;
   if (
     typeof numberOfSteps !== "number" ||
     !Number.isSafeInteger(numberOfSteps) ||
@@ -34,7 +37,19 @@ export function vjValidateMeasurement(value: unknown): VjValidatedMeasurement {
     (typeof distance !== "number" || !Number.isFinite(distance) || distance < 0)
   )
     throw new TypeError("Invalid distance: expected a finite non-negative number.");
-  return distance === undefined ? { numberOfSteps } : { numberOfSteps, distance };
+  for (const [name, value] of [
+    ["floorsAscended", floorsAscended],
+    ["floorsDescended", floorsDescended],
+  ] as const) {
+    if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0))
+      throw new TypeError(`Invalid ${name}: expected a non-negative safe integer.`);
+  }
+  return {
+    numberOfSteps,
+    ...(distance !== undefined ? { distance } : {}),
+    ...(floorsAscended !== undefined ? { floorsAscended } : {}),
+    ...(floorsDescended !== undefined ? { floorsDescended } : {}),
+  };
 }
 
 /** Validate explicit query responses with the same rules used for live readings.
@@ -43,7 +58,7 @@ export async function vjGetMeasurement(
   plugin:
     | { getMeasurement?: (options?: { start?: number; end?: number }) => Promise<unknown> }
     | null
-    | undefined,
+    | undefined = VjPedometer,
   options?: { start?: number; end?: number },
 ): Promise<VjValidatedMeasurement> {
   if (!plugin || typeof plugin.getMeasurement !== "function")
@@ -104,6 +119,9 @@ export interface VjMeasurementEvent extends VjTrackingState {
   timestamp: number;
   rawValue: number;
   steps: number;
+  distance?: number;
+  floorsAscended?: number;
+  floorsDescended?: number;
   sensorAvailable: boolean;
   listenerRegistered: boolean;
   sensorStarted: boolean;
@@ -125,8 +143,10 @@ interface VjNativePlugin {
   stopTracking(): Promise<VjPedometerState>;
   startUpdates(): Promise<void>;
   stopUpdates(): Promise<void>;
+  getMeasurement(options?: { start?: number; end?: number }): Promise<unknown>;
   getState(): Promise<VjPedometerState>;
   clearState(): Promise<void>;
+  openSettings(): Promise<void>;
   addListener(
     eventName: "measurement",
     listener: (event: VjMeasurementEvent) => void,
@@ -141,7 +161,7 @@ interface VjNativePlugin {
 export const VjPedometer = registerPlugin<VjNativePlugin>("VjPedometer");
 
 export const VJ_NATIVE_UPDATE_MESSAGE =
-  "Close SVJ and install the latest Android app to use step tracking.";
+  "Close SVJ and install the latest app to use step tracking.";
 
 export class VjNativeUpdateRequiredError extends Error {
   constructor() {
@@ -268,6 +288,11 @@ export async function vjGetSensorInfo(): Promise<VjSensorInfo | null> {
     console.warn("[SVJ.VjPedometer] getSensorInfo error:", err);
     return null;
   }
+}
+
+export async function vjOpenSettings(): Promise<void> {
+  if (!vjPluginAvailable()) throw new Error("Native step bridge is unavailable.");
+  await VjPedometer.openSettings();
 }
 
 /** Each cleanup owns exactly its own handle, even if a new session has begun. */

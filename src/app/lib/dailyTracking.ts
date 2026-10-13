@@ -141,13 +141,13 @@ export function useDailyTracking(ownerId: string | null) {
     const onVisible = () => {
       if (!document.hidden) void refresh();
     };
-    const timer = setInterval(onVisible, 3000);
+    const timer = Capacitor.getPlatform() === "android" ? setInterval(onVisible, 3000) : null;
     document.addEventListener("visibilitychange", onVisible);
     const listener = App.addListener("appStateChange", ({ isActive }) => {
       if (isActive) void refresh();
     });
     return () => {
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
       void listener.then((h) => h.remove()).catch(() => undefined);
     };

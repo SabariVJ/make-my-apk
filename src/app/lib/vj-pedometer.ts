@@ -143,6 +143,7 @@ interface VjNativePlugin {
   stopTracking(): Promise<VjPedometerState>;
   startUpdates(): Promise<void>;
   stopUpdates(): Promise<void>;
+  getMeasurement(options?: { start?: number; end?: number }): Promise<unknown>;
   getState(): Promise<VjPedometerState>;
   clearState(): Promise<void>;
   openSettings(): Promise<void>;

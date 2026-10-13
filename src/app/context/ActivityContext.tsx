@@ -554,8 +554,9 @@ function AccountActivityProvider({
     setTrackingStatus("starting");
     setStatusMessage("Starting step tracking…");
 
-    const acceptMeasurement = (rawSteps: unknown, atMs: unknown, rawDistance?: unknown) => {
+    const acceptMeasurement = (rawSteps: unknown, rawAtMs: unknown, rawDistance?: unknown) => {
       if (!current() || !activeRef.current) return false;
+      const atMs = typeof rawAtMs === "number" ? Math.round(rawAtMs) : rawAtMs;
       if (
         typeof atMs !== "number" ||
         !Number.isSafeInteger(atMs) ||
@@ -759,6 +760,7 @@ function AccountActivityProvider({
       else {
         setState((prev) => rollActivityDay(prev, new Date()).state);
         void getSensorInfo();
+        void refreshDailySteps();
       }
     };
     const pagehide = () => {

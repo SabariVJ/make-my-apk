@@ -24,6 +24,8 @@ import { RedeemPlusCodeForm } from "./components/RedeemPlusCodeForm";
 import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
+import { StartupAnimation } from "./components/StartupAnimation";
+import { BrandShowcaseModal } from "./components/BrandShowcaseModal";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
@@ -119,8 +121,11 @@ const RESPONSIVE_TEST_TABS: ActiveTab[] = [
 const ConfigMissingScreen: React.FC = () => {
   const missing = getMissingSupabaseEnv();
   return (
-    <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="font-anton text-2xl tracking-wide">SVJ</div>
+    <div className="min-h-[100dvh] bg-[#090A0D] text-[#ECEEF2] flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <div className="flex items-center gap-2 mb-2">
+        <img src="/brand/zenexis-symbol.svg" alt="ZENEXIS" className="w-10 h-10 object-contain" />
+        <span className="font-inter font-black text-2xl tracking-[0.25em] text-[#ECEEF2] uppercase">ZENEXIS</span>
+      </div>
       <p className="max-w-sm font-inter text-sm text-[#8C8C90]">
         Backend configuration is missing
         {missing.length > 0 ? ` (${missing.join(", ")})` : ""}.
@@ -141,6 +146,7 @@ const AppContent: React.FC<{
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const [actionError, setActionError] = useState<string | null>(null);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
+  const [brandLabOpen, setBrandLabOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   // Silent admin-role check: renders nothing for everyone else. RLS and the
   // server-side role checks remain the actual security boundary.
@@ -193,8 +199,8 @@ const AppContent: React.FC<{
   if (!profileLoaded) {
     return (
       <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
-        <p className="font-inter text-[11px] text-[#8C8C90]">Loading SVJ</p>
+        <Loader2 className="w-6 h-6 animate-spin text-[#00F59B]" />
+        <p className="font-inter text-[11px] text-[#8C8C90]">Loading ZENEXIS</p>
       </div>
     );
   }
@@ -232,7 +238,7 @@ const AppContent: React.FC<{
     // ── Restricted post-trial shell ──────────────────────────────────────
     return (
       <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
-        <Header />
+        <Header onOpenBrandLab={() => setBrandLabOpen(true)} />
 
         {/* Renders nothing visually — schedules the notification plan. */}
         <NotificationCoordinator onNavigate={handleTabChange} />
@@ -354,7 +360,10 @@ const AppContent: React.FC<{
   return (
     <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
       {/* Top Bar Header */}
-      <Header onOpenUtilityMenu={() => setUtilityMenuOpen(true)} />
+      <Header
+        onOpenUtilityMenu={() => setUtilityMenuOpen(true)}
+        onOpenBrandLab={() => setBrandLabOpen(true)}
+      />
 
       {/* Renders nothing visually — schedules the notification plan
           (daily/evening/training) via the existing native infrastructure. */}
@@ -474,6 +483,7 @@ const AppContent: React.FC<{
           />
           <FirstTimeOnboardingModal />
           <GoogleAuthModal />
+          <BrandShowcaseModal isOpen={brandLabOpen} onClose={() => setBrandLabOpen(false)} />
         </>
       )}
 
@@ -487,11 +497,30 @@ const AppContent: React.FC<{
 };
 
 export default function App() {
-  // Honor the OS "reduce motion" setting globally so every framer-motion
-  // animation (tab transitions, cards, modals) collapses to fades/none
-  // without touching each component individually.
+  const [introCompleted, setIntroCompleted] = useState(() => {
+    if (typeof window === "undefined") return true;
+    if (import.meta.env.MODE === "responsive-test") return true;
+    try {
+      return !!sessionStorage.getItem("zenexis_intro_completed");
+    } catch {
+      return true;
+    }
+  });
+
+  const handleIntroComplete = () => {
+    try {
+      sessionStorage.setItem("zenexis_intro_completed", "1");
+    } catch {
+      // ignore in restricted private browsing
+    }
+    setIntroCompleted(true);
+  };
+
   return (
     <MotionConfig reducedMotion="user">
+      {!introCompleted && (
+        <StartupAnimation concept="precision-reveal" onComplete={handleIntroComplete} />
+      )}
       <AppRoot />
     </MotionConfig>
   );

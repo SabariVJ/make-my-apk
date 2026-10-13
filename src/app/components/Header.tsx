@@ -7,12 +7,13 @@ import { AvatarImage } from "./AvatarImage";
 export const Header: React.FC<{
   /**
    * Opens the mobile utility drawer (Community / Leaderboard / Profile).
-   * Desktop/tablet reach the same destinations through the right-side rail, so
-   * the trigger is only rendered below the `lg` breakpoint. Omitted entirely in
-   * the restricted post-trial shell.
    */
   onOpenUtilityMenu?: () => void;
-}> = ({ onOpenUtilityMenu }) => {
+  /**
+   * Opens the interactive ZENEXIS Brand Lab showcase modal.
+   */
+  onOpenBrandLab?: () => void;
+}> = ({ onOpenUtilityMenu, onOpenBrandLab }) => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const headerRef = useRef<HTMLElement>(null);
 
@@ -44,11 +45,15 @@ export const Header: React.FC<{
         {/* Brand Logo & Name */}
         <div
           className="flex min-w-0 items-center gap-2 cursor-pointer md:gap-3"
-          onClick={() => setIsEditProfileOpen(true)}
+          onClick={() => (onOpenBrandLab ? onOpenBrandLab() : setIsEditProfileOpen(true))}
         >
           <div className="relative shrink-0 group">
-            <div className="w-9 h-9 rounded-2xl bg-[#17171A] border border-white/[0.08] flex items-center justify-center font-anton text-lg text-[#C81E3A] group-hover:border-[#C81E3A]/40 transition-colors">
-              SVJ
+            <div className="w-9 h-9 rounded-2xl bg-[#13151A] border border-[#00F59B]/25 p-1.5 flex items-center justify-center group-hover:border-[#00F59B]/60 transition-colors shadow-[0_0_12px_rgba(0,245,155,0.15)]">
+              <img
+                src="/brand/zenexis-symbol.svg"
+                alt="ZENEXIS"
+                className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+              />
             </div>
             {user.isPremium && (
               <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gold flex items-center justify-center text-[10px] text-black font-bold">
@@ -58,8 +63,8 @@ export const Header: React.FC<{
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-anton tracking-wider text-base text-[#F4F2ED]">SVJ</span>
-              {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
+              <span className="font-inter font-black tracking-[0.18em] text-[15px] text-[#F4F2ED] uppercase">ZENEXIS</span>
+              {user.verifiedIcon && <Shield className="w-4 h-4 text-[#00F59B] fill-[#00F59B]/20" />}
             </div>
             {/* Tier and member ID are two separate elements with their own
                 weight — no middle-dot concatenated meta string. */}

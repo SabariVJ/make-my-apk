@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- UPPER CHEVRON -->
+  <path d="M 256 100 L 122 210 L 162 242 L 256 166 Z" fill="#FFFFFF" />
+  <path d="M 256 100 L 390 210 L 350 242 L 256 166 Z" fill="#E2E8F0" />
+  <!-- LOWER CHEVRON -->
+  <path d="M 256 204 L 122 314 L 162 346 L 256 270 Z" fill="#FFFFFF" />
+  <path d="M 256 204 L 390 314 L 350 346 L 256 270 Z" fill="#E2E8F0" />
+</svg>

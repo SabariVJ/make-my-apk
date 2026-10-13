@@ -80,27 +80,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "svj-build-revision", content: import.meta.env.VITE_APP_REVISION },
-      { title: "SVJ — Self-Improvement Challenges & Community" },
+      { title: "ZENEXIS — Ascend to Your Apex" },
       {
         name: "description",
         content:
-          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+          "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
-      { name: "theme-color", content: "#0B0B0C" },
-      { property: "og:title", content: "SVJ — Self-Improvement Challenges & Community" },
+      { name: "theme-color", content: "#090A0D" },
+      { property: "og:title", content: "ZENEXIS — Ascend to Your Apex" },
       {
         property: "og:description",
         content:
-          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+          "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "SVJ — Self-Improvement Challenges & Community" },
+      { name: "twitter:site", content: "@ZENEXIS" },
+      { name: "twitter:title", content: "ZENEXIS — Ascend to Your Apex" },
       {
         name: "twitter:description",
         content:
-          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+          "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
       {
         property: "og:image",

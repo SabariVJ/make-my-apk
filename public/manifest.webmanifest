@@ -1,7 +1,7 @@
 {
-  "name": "SVJ — Self-Improvement Platform",
-  "short_name": "SVJ",
-  "description": "Daily discipline challenges, XP, leaderboards and rewards.",
+  "name": "ZENEXIS — Self-Improvement Platform",
+  "short_name": "ZENEXIS",
+  "description": "Ascend to your apex. Daily discipline challenges, XP, workouts, and biometrics.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

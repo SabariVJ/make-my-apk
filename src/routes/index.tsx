@@ -4,17 +4,17 @@ import SvjApp from "../app/App";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SVJ — Self-Improvement Challenges & Community" },
+      { title: "ZENEXIS — Ascend to Your Apex" },
       {
         name: "description",
         content:
-          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+          "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
-      { property: "og:title", content: "SVJ — Self-Improvement Challenges & Community" },
+      { property: "og:title", content: "ZENEXIS — Ascend to Your Apex" },
       {
         property: "og:description",
         content:
-          "Take on daily discipline challenges, earn XP, climb the leaderboard and unlock rewards with the SVJ community.",
+          "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

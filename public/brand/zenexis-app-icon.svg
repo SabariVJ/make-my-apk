@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="iconBg" cx="50%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#181A20" />
+      <stop offset="65%" stop-color="#0B0C0E" />
+      <stop offset="100%" stop-color="#060708" />
+    </radialGradient>
+    
+    <!-- Outer Rim Stroke Gradient -->
+    <linearGradient id="rimStroke" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35" />
+      <stop offset="35%" stop-color="#00F59B" stop-opacity="0.6" />
+      <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#00F59B" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Radial Emerald Halo -->
+    <radialGradient id="emeraldHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00F59B" stop-opacity="0.28" />
+      <stop offset="50%" stop-color="#00F59B" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#00F59B" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Logo Gradients -->
+    <linearGradient id="icUpLeft" x1="140" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#E2E8F0" />
+      <stop offset="80%" stop-color="#00F59B" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="icUpRight" x1="372" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F59B" />
+      <stop offset="55%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="icDownLeft" x1="140" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="45%" stop-color="#CBD5E1" />
+      <stop offset="85%" stop-color="#00F59B" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="icDownRight" x1="372" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F59B" />
+      <stop offset="55%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064E3B" />
+    </linearGradient>
+    
+    <filter id="iconShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity="0.75" />
+      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#00F59B" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base (Apple/Android continuous curve) -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#iconBg)" />
+  <rect x="16" y="16" width="480" height="480" rx="108" stroke="url(#rimStroke)" stroke-width="2" />
+  
+  <!-- Subtle Internal Grid Matrix Accent -->
+  <circle cx="256" cy="256" r="160" fill="url(#emeraldHalo)" />
+
+  <!-- Centered Symbol Group with Shadow -->
+  <g filter="url(#iconShadow)">
+    <!-- UPPER CHEVRON -->
+    <path d="M 256 128 L 138 226 L 174 254 L 256 186 Z" fill="url(#icUpLeft)" />
+    <path d="M 256 128 L 374 226 L 338 254 L 256 186 Z" fill="url(#icUpRight)" />
+    <path d="M 256 128 L 256 186" stroke="#FFFFFF" stroke-width="2" opacity="0.8" />
+    <path d="M 256 128 L 138 226" stroke="#FFFFFF" stroke-width="1.6" opacity="0.9" />
+
+    <!-- LOWER CHEVRON -->
+    <path d="M 256 220 L 138 318 L 174 346 L 256 278 Z" fill="url(#icDownLeft)" />
+    <path d="M 256 220 L 374 318 L 338 346 L 256 278 Z" fill="url(#icDownRight)" />
+    <path d="M 256 220 L 256 278" stroke="#FFFFFF" stroke-width="2" opacity="0.7" />
+    <path d="M 256 220 L 138 318" stroke="#FFFFFF" stroke-width="1.6" opacity="0.85" />
+  </g>
+</svg>

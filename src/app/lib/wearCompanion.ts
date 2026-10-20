@@ -375,7 +375,7 @@ export async function importWearSummary(
   }
   if (!shouldImportWearSummary(summary.sessionId)) {
     for (const listener of summarySubscribers) listener(summary, true);
-    publish({ importNotice: "This watch workout is already in your SVJ history." });
+    publish({ importNotice: "This watch workout is already in your ZENEXIS history." });
     return { ok: true, duplicate: true };
   }
   const result = await importPlatformActivity(client, planWearImportSummary(summary));
@@ -387,8 +387,8 @@ export async function importWearSummary(
   for (const listener of summarySubscribers) listener(summary, result.duplicate === true);
   publish({
     importNotice: result.duplicate
-      ? "This watch workout matches an activity already in SVJ — nothing was duplicated."
-      : "Watch workout saved to your SVJ activity history.",
+      ? "This watch workout matches an activity already in ZENEXIS — nothing was duplicated."
+      : "Watch workout saved to your ZENEXIS activity history.",
   });
   return result;
 }

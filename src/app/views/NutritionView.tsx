@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   AlertTriangle,
   BarChart3,
@@ -153,7 +153,7 @@ function MacroCard({
           aria-label={`${label}: ${Math.round(value)} of ${Math.round(target)} ${unit}`}
         >
           <div
-            className="h-full rounded-full transition-[width] duration-500 ease-out"
+            className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
             style={{
               width: `${pct}%`,
               background: `linear-gradient(90deg, ${tones.from} 0%, ${tones.to} 100%)`,
@@ -174,7 +174,7 @@ function MealTypePicker({
   onChange: (value: NutritionMealType) => void;
 }) {
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
       {MEAL_TYPES.map((type) => (
         <button
           key={type}
@@ -195,6 +195,7 @@ function MealTypePicker({
 }
 
 export const NutritionView: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const todayKey = dayKeyLocal();
   const [dashboard, setDashboard] = useState<NutritionDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -456,7 +457,7 @@ export const NutritionView: React.FC = () => {
             setLoading(true);
             void refresh();
           }}
-          className="mt-4 rounded-xl bg-[#C81E3A] px-4 py-2.5 font-anton text-xs uppercase text-white"
+          className="mt-4 min-h-11 rounded-xl bg-[#C81E3A] px-4 font-anton text-xs uppercase text-white"
         >
           Try again
         </button>
@@ -480,7 +481,7 @@ export const NutritionView: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowBodyProfile(true)}
-          className="rounded-xl border border-white/10 bg-[#17171A] p-2.5 text-[#B8B8C0]"
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-white/10 bg-[#17171A] text-[#B8B8C0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           aria-label="Body profile and nutrition goals"
         >
           <Scale className="h-5 w-5" />
@@ -505,7 +506,7 @@ export const NutritionView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditingTargets((value) => !value)}
-                className="inline-flex items-center gap-1.5 text-xs text-[#B8B8C0]"
+                className="inline-flex min-h-11 items-center gap-1.5 text-xs text-[#B8B8C0]"
               >
                 <Target className="h-4 w-4" /> {dashboard.targets.calories.toLocaleString()} target
               </button>
@@ -520,12 +521,12 @@ export const NutritionView: React.FC = () => {
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/60">
             <motion.div
-              initial={{ width: 0 }}
+              initial={reduceMotion ? false : { width: 0 }}
               animate={{ width: `${caloriePct}%` }}
               className="h-full rounded-full bg-gradient-to-r from-[#8C1327] to-[#C81E3A]"
             />
           </div>
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
+          <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
             <MacroCard
               label="Protein"
               value={daily.proteinG}
@@ -555,6 +556,7 @@ export const NutritionView: React.FC = () => {
                 type="button"
                 onClick={() => setEditingTargets(false)}
                 aria-label="Close targets"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl"
               >
                 <X className="h-4 w-4 text-[#8C8C90]" />
               </button>
@@ -625,9 +627,9 @@ export const NutritionView: React.FC = () => {
 
         <p className="rounded-xl border border-white/[0.06] bg-[#101012] px-3 py-2 text-[10px] leading-relaxed text-[#8C8C90]">
           <Sparkles className="mr-1 inline h-3 w-3 text-[#C81E3A]" />
-          Photo nutrition is an estimate, not an exact measurement. SVJ always shows a review step
-          before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20. Manual
-          logging stays available.
+          Photo nutrition is an estimate, not an exact measurement. ZENEXIS always shows a review
+          step before saving. Free accounts receive 3 AI scans per day; Plus accounts receive 20.
+          Manual logging stays available.
         </p>
       </div>
 
@@ -712,7 +714,7 @@ export const NutritionView: React.FC = () => {
                             : prev,
                         )
                       }
-                      className="p-1 text-[#8C8C90] hover:text-[#C81E3A]"
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-[#8C8C90] hover:text-[#C81E3A]"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -721,9 +723,10 @@ export const NutritionView: React.FC = () => {
                     value={item.servingLabel ?? ""}
                     onChange={(e) => patchReviewItem(index, { servingLabel: e.target.value })}
                     placeholder="Portion / serving"
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[#B8B8C0]"
+                    aria-label={`Portion for ${item.name}`}
+                    className="mt-2 min-h-11 w-full rounded-lg border border-white/10 bg-black/30 px-2 text-xs text-[#B8B8C0]"
                   />
-                  <div className="mt-2 grid grid-cols-4 gap-1.5">
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                     {[
                       ["kcal", "calories"],
                       ["P g", "proteinG"],
@@ -739,7 +742,7 @@ export const NutritionView: React.FC = () => {
                           onChange={(e) =>
                             patchReviewItem(index, { [key]: Number(e.target.value) || 0 })
                           }
-                          className="mt-1 min-h-10 w-full rounded-lg border border-white/10 bg-black/30 px-1.5 text-xs text-white"
+                          className="mt-1 min-h-11 w-full rounded-lg border border-white/10 bg-black/30 px-2 text-xs text-white"
                         />
                       </label>
                     ))}
@@ -809,6 +812,7 @@ export const NutritionView: React.FC = () => {
               type="button"
               onClick={() => setShowManual(false)}
               aria-label="Close manual meal"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-xl"
             >
               <X className="h-4 w-4 text-[#8C8C90]" />
             </button>
@@ -817,6 +821,7 @@ export const NutritionView: React.FC = () => {
             <MealTypePicker value={manualType} onChange={setManualType} />
           </div>
           <input
+            aria-label="Meal name"
             value={manualName}
             onChange={(e) => setManualName(e.target.value)}
             placeholder="Meal name"
@@ -985,7 +990,7 @@ export const NutritionView: React.FC = () => {
           </div>
         )}
         <p className="mt-3 text-[10px] font-inter text-[#8C8C90]">
-          History uses saved meals only. SVJ does not infer meals you did not log.
+          History uses saved meals only. ZENEXIS does not infer meals you did not log.
         </p>
       </section>
 

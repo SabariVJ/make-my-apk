@@ -96,7 +96,7 @@ export const UPIPaymentModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <Smartphone className="h-5 w-5 text-[#C81E3A]" />
               <h2 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
-                SVJ Plus payment
+                ZENEXIS Plus payment
               </h2>
             </div>
             <button
@@ -139,11 +139,11 @@ export const UPIPaymentModal: React.FC = () => {
           {paymentTab === "code" ? (
             <div className="space-y-4 py-2">
               <p className="text-center font-inter text-xs text-[#8C8C90]">
-                Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
+                Enter the code earned by completing all 60 days to unlock ZENEXIS Plus for 2 months.
               </p>
               <RedeemPlusCodeForm
                 heading="Activate 60-Day Reward"
-                description="Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months."
+                description="Enter the code earned by completing all 60 days to unlock ZENEXIS Plus for 2 months."
               />
             </div>
           ) : !showQR ? (
@@ -152,7 +152,7 @@ export const UPIPaymentModal: React.FC = () => {
               <div className="relative w-28 h-28 rounded-lg bg-[#0B0B0C] border-2 border-[#C81E3A]/60 flex items-center justify-center mx-auto overflow-hidden p-1.5 shadow-lg shadow-[#C81E3A]/20">
                 <img
                   src={upiQr.url}
-                  alt="SVJ QR Code"
+                  alt="ZENEXIS QR Code"
                   className="w-full h-full object-contain rounded-lg"
                   referrerPolicy="no-referrer"
                 />
@@ -163,8 +163,8 @@ export const UPIPaymentModal: React.FC = () => {
                   Pay with UPI?
                 </h3>
                 <p className="mx-auto mt-1 max-w-xs font-inter text-xs leading-relaxed text-[#8C8C90]">
-                  Scan the code with GPay, PhonePe, Paytm or BHIM. SVJ Plus is activated only after
-                  the payment is manually verified.
+                  Scan the code with GPay, PhonePe, Paytm or BHIM. ZENEXIS Plus is activated only
+                  after the payment is manually verified.
                 </p>
               </div>
 
@@ -190,7 +190,7 @@ export const UPIPaymentModal: React.FC = () => {
                 <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
                   <img
                     src={upiQr.url}
-                    alt="SVJ Official Payment QR Code"
+                    alt="ZENEXIS Official Payment QR Code"
                     width={669}
                     height={610}
                     loading="eager"
@@ -214,8 +214,8 @@ export const UPIPaymentModal: React.FC = () => {
                   <span>Activated by hand, never automatically</span>
                 </div>
                 <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
-                  After paying, send support your UPI transaction reference. SVJ Plus is activated
-                  only after the payment is manually verified.
+                  After paying, send support your UPI transaction reference. ZENEXIS Plus is
+                  activated only after the payment is manually verified.
                 </p>
               </div>
 
@@ -241,7 +241,7 @@ export const UPIPaymentModal: React.FC = () => {
               {showContactFallback && (
                 <div className="svj-radius-row mt-3 space-y-2.5 border border-white/[0.06] bg-[#08080A] p-3 text-left">
                   <p className="font-inter text-[11px] leading-relaxed text-[#8C8C90]">
-                    Send us your payment details to activate SVJ Plus:
+                    Send us your payment details to activate ZENEXIS Plus:
                   </p>
                   <a
                     href={isNative ? supportUrl : appUrl}

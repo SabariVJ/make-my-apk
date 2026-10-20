@@ -114,7 +114,7 @@ export const RouteLibrary: React.FC<RouteLibraryProps> = ({ client: injected, on
   if (!client) {
     return (
       <p className="text-[11px] font-mono text-[#8C8C90]">
-        Sign in to save and reuse your SVJ routes.
+        Sign in to save and reuse your ZENEXIS routes.
       </p>
     );
   }

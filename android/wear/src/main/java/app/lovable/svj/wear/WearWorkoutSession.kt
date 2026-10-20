@@ -182,7 +182,7 @@ class WearWorkoutSession(
         "value" to bpm,
         "timestamp" to atMs,
         "sessionId" to sessionId,
-        "deviceName" to "SVJ Watch"
+        "deviceName" to "ZENEXIS Watch"
     )
 
     fun toStepsSampleJson(nowMs: Long): String = WearJson.obj(
@@ -190,7 +190,7 @@ class WearWorkoutSession(
         "value" to countedSteps,
         "timestamp" to nowMs,
         "sessionId" to sessionId,
-        "deviceName" to "SVJ Watch"
+        "deviceName" to "ZENEXIS Watch"
     )
 
     /**

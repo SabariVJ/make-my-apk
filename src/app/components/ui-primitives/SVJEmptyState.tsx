@@ -43,8 +43,8 @@ export const SVJEmptyState: React.FC<{
       label: "Couldn't load",
     },
     "coming-soon": {
-      tile: "border-[#C9A227]/25 bg-[#C9A227]/10",
-      glyph: "text-[#C9A227]",
+      tile: "border-[#D4AF37]/25 bg-[#D4AF37]/10",
+      glyph: "text-[#D4AF37]",
       label: "Coming next",
     },
   };

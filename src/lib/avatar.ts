@@ -116,10 +116,10 @@ function looksLikeOwnedObjectPath(value: string): boolean {
   return /^[0-9a-fA-F-]{8,}$/.test(first);
 }
 
-/** Single-letter fallback for the initials avatar (matches existing SVJ UI). */
+/** Single-letter fallback for the initials avatar. */
 export function avatarInitials(name: string | null | undefined): string {
   const clean = (name ?? "").trim();
-  if (!clean) return "V";
+  if (!clean) return "Z";
   return clean.slice(0, 1).toUpperCase();
 }
 
@@ -132,7 +132,7 @@ export function avatarInitials(name: string | null | undefined): string {
  */
 export function avatarMonogram(name: string | null | undefined): string {
   const clean = (name ?? "").trim();
-  if (!clean) return "SVJ";
+  if (!clean) return "ZE";
   const parts = clean.split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -34,7 +34,7 @@ import {
 } from "@/lib/challenge.functions";
 
 const BANNER_COPY =
-  "Complete all 60 days to earn a redeem code for 2 months of SVJ Plus, free. One unique code per finisher. Locked to your account, single use, not transferable.";
+  "Complete all 60 days to earn a redeem code for 2 months of ZENEXIS Plus, free. One unique code per finisher. Locked to your account, single use, not transferable.";
 
 const FOCUS_COLORS: Record<string, string> = {
   Physical: "text-[#C81E3A] border-[#C81E3A]/40 bg-[#C81E3A]/10",
@@ -73,6 +73,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export const SixtyDayChallengeView: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const { triggerConfetti, awardXp } = useSVJ();
   const queryClient = useQueryClient();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -211,7 +212,7 @@ export const SixtyDayChallengeView: React.FC = () => {
               <span>60-Day Program</span>
               <span>•</span>
               <span className="text-gold font-bold flex items-center gap-1">
-                <Crown className="w-3.5 h-3.5" /> 2 Months SVJ Plus Reward
+                <Crown className="w-3.5 h-3.5" /> 2 Months ZENEXIS Plus Reward
               </span>
             </div>
             <h1 className="font-inter text-2xl font-semibold tracking-tight text-[#F4F2ED] sm:text-3xl">
@@ -255,7 +256,7 @@ export const SixtyDayChallengeView: React.FC = () => {
       {/* ── Not started: intro + start ──────────────────────────────────── */}
       {state.status === "not_started" && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4"
         >
@@ -339,7 +340,7 @@ export const SixtyDayChallengeView: React.FC = () => {
               </div>
               <div className="w-full h-2.5 rounded-full bg-[#0B0B0C] overflow-hidden p-0.5 border border-white/10">
                 <motion.div
-                  initial={{ width: 0 }}
+                  initial={reduceMotion ? false : { width: 0 }}
                   animate={{ width: `${Math.round((state.daysCompleted / TOTAL_DAYS) * 100)}%` }}
                   transition={{ duration: 0.8 }}
                   className="h-full rounded-full bg-gradient-to-r from-[#E62846] to-[#C81E3A]"
@@ -362,9 +363,10 @@ export const SixtyDayChallengeView: React.FC = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => resumeMutation.mutate()}
                 disabled={resumeMutation.isPending}
-                className="px-4 py-2 rounded-lg bg-gold hover:bg-gold text-black font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
+                className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-gold px-4 font-mono text-xs font-bold text-black disabled:opacity-60"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Resume
@@ -373,20 +375,24 @@ export const SixtyDayChallengeView: React.FC = () => {
           )}
 
           {/* Day grid */}
-          <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
+          <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {state.days.map((d) => {
               const def = getDayDef(d.day);
               const isSelected = selectedDay === d.day;
               return (
                 <button
                   key={d.day}
+                  type="button"
+                  disabled={d.status !== "completed" && d.status !== "current"}
+                  aria-label={`Day ${d.day}: ${d.status}${def?.title ? `, ${def.title}` : ""}`}
+                  aria-pressed={isSelected}
                   onClick={() => {
                     if (d.status === "completed" || d.status === "current") {
                       setSelectedDay(d.day === selectedDay ? null : d.day);
                     }
                   }}
                   title={d.status === "locked" ? `Day ${d.day} — locked` : def?.title}
-                  className={`relative aspect-square rounded-2xl border flex items-center justify-center font-mono text-xs transition-all cursor-pointer ${
+                  className={`relative flex aspect-square min-h-11 items-center justify-center rounded-2xl border font-mono text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-default ${
                     d.status === "completed"
                       ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-400"
                       : d.status === "current"
@@ -417,7 +423,7 @@ export const SixtyDayChallengeView: React.FC = () => {
             {selectedDef && (selectedStatus === "completed" || selectedStatus === "current") ? (
               <motion.div
                 key={`detail-${selectedDef.day}`}
-                initial={{ opacity: 0, y: 8 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 className="svj-radius-card svj-lit-top space-y-4 border border-white/[0.06] bg-[#17171A] p-4"
@@ -599,7 +605,7 @@ export const SixtyDayChallengeView: React.FC = () => {
             ) : (
               <motion.div
                 key="hint"
-                initial={{ opacity: 0 }}
+                initial={reduceMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="svj-radius-card svj-lit-top border border-white/[0.06] bg-[#17171A] p-4 text-center"
@@ -618,7 +624,7 @@ export const SixtyDayChallengeView: React.FC = () => {
       {/* ── Completed: celebration + code ───────────────────────────────── */}
       {state.status === "completed" && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-b from-[#2A1F10] via-[#17171A] to-[#0B0B0C] p-5 text-center shadow-2xl"
         >
@@ -658,16 +664,16 @@ export const SixtyDayChallengeView: React.FC = () => {
                 </div>
                 <p className="text-[11px] font-mono text-[#8C8C90]">
                   {state.codeRedeemed
-                    ? "Redeemed — SVJ Plus is active on this account. Single use, non-transferable."
-                    : "Redeem below to activate 2 months of SVJ Plus — no need to leave this screen."}
+                    ? "Redeemed — ZENEXIS Plus is active on this account. Single use, non-transferable."
+                    : "Redeem below to activate 2 months of ZENEXIS Plus — no need to leave this screen."}
                 </p>
 
                 {!state.codeRedeemed && (
                   <div className="mt-3">
                     <RedeemPlusCodeForm
                       code={state.code ?? undefined}
-                      heading="Activate your 2-month SVJ Plus reward"
-                      description="Redeem your earned code right here. SVJ Plus activates for 2 months instantly."
+                      heading="Activate your 2-month ZENEXIS Plus reward"
+                      description="Redeem your earned code right here. ZENEXIS Plus activates for 2 months instantly."
                     />
                   </div>
                 )}

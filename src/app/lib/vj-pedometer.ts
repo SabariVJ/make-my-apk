@@ -24,8 +24,10 @@ export interface VjValidatedMeasurement {
 export function vjValidateMeasurement(value: unknown): VjValidatedMeasurement {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new TypeError("Invalid pedometer measurement: expected an object.");
-  const { numberOfSteps, distance, floorsAscended, floorsDescended } =
-    value as Record<string, unknown>;
+  const { numberOfSteps, distance, floorsAscended, floorsDescended } = value as Record<
+    string,
+    unknown
+  >;
   if (
     typeof numberOfSteps !== "number" ||
     !Number.isSafeInteger(numberOfSteps) ||
@@ -41,14 +43,17 @@ export function vjValidateMeasurement(value: unknown): VjValidatedMeasurement {
     ["floorsAscended", floorsAscended],
     ["floorsDescended", floorsDescended],
   ] as const) {
-    if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0))
+    if (
+      value !== undefined &&
+      (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
+    )
       throw new TypeError(`Invalid ${name}: expected a non-negative safe integer.`);
   }
   return {
     numberOfSteps,
     ...(distance !== undefined ? { distance } : {}),
-    ...(floorsAscended !== undefined ? { floorsAscended } : {}),
-    ...(floorsDescended !== undefined ? { floorsDescended } : {}),
+    ...(typeof floorsAscended === "number" ? { floorsAscended } : {}),
+    ...(typeof floorsDescended === "number" ? { floorsDescended } : {}),
   };
 }
 
@@ -161,7 +166,7 @@ interface VjNativePlugin {
 export const VjPedometer = registerPlugin<VjNativePlugin>("VjPedometer");
 
 export const VJ_NATIVE_UPDATE_MESSAGE =
-  "Close SVJ and install the latest app to use step tracking.";
+  "Close ZENEXIS and install the latest app to use step tracking.";
 
 export class VjNativeUpdateRequiredError extends Error {
   constructor() {

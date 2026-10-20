@@ -120,7 +120,7 @@ describe("Companion install experience", () => {
 
   it("does not tell users the watch itself is unsupported when the companion is missing", () => {
     const src = devices();
-    assert.match(src, /SVJ is not installed on your watch\./);
+    assert.match(src, /ZENEXIS is not installed on your watch\./);
   });
 });
 

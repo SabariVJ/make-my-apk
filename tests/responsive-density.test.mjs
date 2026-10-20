@@ -325,8 +325,8 @@ describe("Plus, Profile, Community and Leaderboard use desktop width", () => {
 });
 
 describe("60-Day stays a compact day grid", () => {
-  it("keeps the six/ten column day grid", () => {
-    assert.match(sixtyDay, /grid grid-cols-6/);
+  it("keeps five phone columns for 44px targets and ten tablet columns", () => {
+    assert.match(sixtyDay, /grid grid-cols-5/);
     assert.match(sixtyDay, /sm:grid-cols-10/);
   });
 });

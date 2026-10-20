@@ -109,7 +109,7 @@ public class VjWorkoutService extends Service {
   private boolean autoPause = true;
   private String activityId = "";
   private String activityType = "";
-  private String title = "SVJ is recording your activity";
+  private String title = "ZENEXIS is recording your activity";
   private long startedAtMs = 0L;
   private long lastFixAtMs = 0L;
   private int pointCount = 0;
@@ -546,7 +546,7 @@ public class VjWorkoutService extends Service {
     NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_stat_workout)
         .setContentTitle(title)
-        .setContentText(paused ? "Paused — tap to resume in SVJ" : "Recording your route")
+        .setContentText(paused ? "Paused — tap to resume in ZENEXIS" : "Recording your route")
         .setOngoing(true)
         .setOnlyAlertOnce(true)
         .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -563,8 +563,8 @@ public class VjWorkoutService extends Service {
       if (manager == null) return;
       if (manager.getNotificationChannel(CHANNEL_ID) != null) return;
       NotificationChannel channel = new NotificationChannel(
-          CHANNEL_ID, "SVJ activity recording", NotificationManager.IMPORTANCE_LOW);
-      channel.setDescription("Shown while SVJ records your activity.");
+          CHANNEL_ID, "ZENEXIS activity recording", NotificationManager.IMPORTANCE_LOW);
+      channel.setDescription("Shown while ZENEXIS records your activity.");
       manager.createNotificationChannel(channel);
     } catch (Exception e) {
       Log.w(TAG, "createNotificationChannel failed", e);

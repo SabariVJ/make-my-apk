@@ -252,7 +252,7 @@ describe("frontend integration", () => {
     assert.match(supportTickets, /createSupportTicket/);
     assert.match(supportTickets, /Payment issue/);
     assert.match(supportTickets, /In Progress/);
-    assert.match(supportTickets, /SVJ Support/); // admin response block
+    assert.match(supportTickets, /ZENEXIS Support/); // admin response block
     assert.match(supportTickets, /my-tickets-list/);
   });
 });

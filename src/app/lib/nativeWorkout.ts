@@ -244,7 +244,7 @@ export async function startNativeWorkout(options: {
       await plugin.startWorkout({
         activityId: options.activityId,
         activityType: options.activityType,
-        title: options.title ?? "SVJ is recording your activity",
+        title: options.title ?? "ZENEXIS is recording your activity",
         autoPause: options.autoPause ?? true,
         ownerId: options.ownerId,
         startedAtMs: options.startedAtMs,
@@ -343,7 +343,8 @@ export function createJournalLocationAdapter(
             afterSequence: recorder.current?.nativeSequence ?? 0,
             limit: 250,
           });
-          if (!Array.isArray(page.events)) throw new Error("Update SVJ to recover saved routes.");
+          if (!Array.isArray(page.events))
+            throw new Error("Update ZENEXIS to recover saved routes.");
           for (const raw of page.events)
             recorder.replayNativeEvent(validateJournalEvent(raw, ownerId, session.activityId));
           if (page.events.length < 250) break;
@@ -368,7 +369,7 @@ export function createJournalLocationAdapter(
       report = onError;
       await detach();
       const attachedGeneration = generation;
-      if (!plugin.addListener) throw new Error("Update SVJ to record routes.");
+      if (!plugin.addListener) throw new Error("Update ZENEXIS to record routes.");
       const wake = () => {
         void drain().catch(() =>
           report?.("Could not recover route points. Check device storage and retry."),

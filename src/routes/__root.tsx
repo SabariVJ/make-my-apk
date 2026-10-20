@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Daily discipline challenges, gamified XP, workout logging, step tracking, and biometric recovery with the ZENEXIS athlete ecosystem.",
       },
-      { name: "theme-color", content: "#090A0D" },
+      { name: "theme-color", content: "#0B0B0C" },
       { property: "og:title", content: "ZENEXIS — Ascend to Your Apex" },
       {
         property: "og:description",
@@ -95,7 +95,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@ZENEXIS" },
       { name: "twitter:title", content: "ZENEXIS — Ascend to Your Apex" },
       {
         name: "twitter:description",
@@ -104,13 +103,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png",
+        content: "https://savaje-com.lovable.app/brand/zenexis-app-icon-1024.png",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a4af9dc5-6ae5-49c3-8cf3-cc1e3d898068/id-preview-d5d625fb--33b1119f-3051-482e-90aa-488c5d0681b3.lovable.app-1785576350170.png",
+        content: "https://savaje-com.lovable.app/brand/zenexis-app-icon-1024.png",
       },
     ],
     links: [
@@ -139,7 +136,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Critical inline background: keeps the SVJ dark shell visible from the
+        {/* Critical inline background: keeps the ZENEXIS dark shell visible from the
             very first paint, before the Tailwind stylesheet arrives. Without it
             the body defaults to white and flashes during any load. */}
         <style>{`html,body{background-color:#0B0B0C}`}</style>

@@ -162,7 +162,7 @@ describe("wear measurement validation", () => {
     assert.ok(reading);
     assert.equal(reading.bpm, 152);
     assert.equal(reading.source, "wear_os");
-    assert.equal(reading.deviceName, "SVJ Watch");
+    assert.equal(reading.deviceName, "ZENEXIS Watch");
     assert.equal(wearMeasurementToHeartRate({ ...measurement, type: "steps" }), null);
   });
 });

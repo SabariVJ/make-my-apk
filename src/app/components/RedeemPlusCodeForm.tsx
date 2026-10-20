@@ -17,7 +17,7 @@ interface RedeemPlusCodeFormProps {
 export const RedeemPlusCodeForm: React.FC<RedeemPlusCodeFormProps> = ({
   code: prefilledCode,
   heading = "Redeem 60-Day Reward Code",
-  description = "Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.",
+  description = "Enter the code earned by completing all 60 days to unlock ZENEXIS Plus for 2 months.",
 }) => {
   const { updateUserProfile, setIsPaywallOpen, triggerConfetti } = useSVJ();
   const queryClient = useQueryClient();

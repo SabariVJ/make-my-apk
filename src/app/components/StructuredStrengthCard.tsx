@@ -39,8 +39,8 @@ export function StructuredStrengthCard({
           </h2>
 
           <p className="mt-1.5 max-w-xl font-inter text-[11px] leading-relaxed text-[#A6A6AD]">
-            Log exercises, sets, reps and weight into one canonical activity. Every session feeds
-            your Physical stat through the server-authoritative pipeline.
+            Log your exercises, sets, reps and weight. Save each session to track your strength and
+            build your Physical stat.
           </p>
         </div>
 

@@ -67,7 +67,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
 
     setSubmitting(true);
     try {
-      // Android asks once, here, during first-time account setup. SVJ never
+      // Android asks once, here, during first-time account setup. ZENEXIS never
       // requests notification permission again inside the app after this.
       await initializeNotificationsAtSignup(user.id);
 
@@ -104,7 +104,7 @@ export const FirstTimeOnboardingModal: React.FC = () => {
           <div className="relative z-10 text-center mb-6 space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C81E3A]/20 border border-[#C81E3A]/50 text-[#C81E3A] text-xs font-mono font-bold uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Your SVJ Profile</span>
+              <span>Your ZENEXIS Profile</span>
             </div>
             <h1 className="font-inter text-3xl font-semibold tracking-tight text-[#F4F2ED] sm:text-4xl">
               Set Up Your Profile

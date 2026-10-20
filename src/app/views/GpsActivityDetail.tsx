@@ -68,15 +68,15 @@ export interface GpsActivityRow extends ServerActivity {
 }
 
 export const SOURCE_LABELS: Record<string, string> = {
-  svj_native: "Recorded by SVJ",
+  svj_native: "Recorded by ZENEXIS",
   manual: "Logged manually",
   strength_log: "Structured strength",
   health_connect: "Health Connect",
-  wear_os: "SVJ Watch",
+  wear_os: "ZENEXIS Watch",
 };
 
 export function sourceLabel(source: string): string {
-  return SOURCE_LABELS[source] ?? "SVJ activity";
+  return SOURCE_LABELS[source] ?? "ZENEXIS activity";
 }
 
 type Section = "overview" | "map" | "splits" | "performance" | "heart" | "elevation" | "source";
@@ -378,7 +378,7 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
           height={section === "map" ? 320 : 230}
           emptyMessage={
             loadingTrack
-              ? "Loading your SVJ route…"
+              ? "Loading your ZENEXIS route…"
               : isGpsRecorded
                 ? "Route could not be loaded."
                 : "This activity has no GPS route (manual or sensor-only)."
@@ -616,8 +616,9 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
               ))}
             </dl>
             <p className="mt-3 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-              Distance, moving time, elevation and splits for this workout were computed on the SVJ
-              server from the recorded GPS points. XP is granted only by the server reward engine.
+              Distance, moving time, elevation and splits for this workout were computed on the
+              ZENEXIS server from the recorded GPS points. XP is granted only by the server reward
+              engine.
             </p>
           </div>
 
@@ -658,8 +659,8 @@ export const GpsActivityDetail: React.FC<GpsActivityDetailProps> = ({
                   </span>
                 </div>
                 <p className="mb-3 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-                  Segments are private to you: SVJ matches them against your own future workouts to
-                  show your best time and your improvement. There are no public leaderboards.
+                  Segments are private to you: ZENEXIS matches them against your own future workouts
+                  to show your best time and your improvement. There are no public leaderboards.
                 </p>
                 <div className="space-y-2">
                   <input

@@ -25,7 +25,6 @@ import { NativeBannerAd } from "./components/NativeBannerAd";
 import { TrialGate } from "./components/TrialGate";
 import { StatusScreen } from "./components/StatusScreen";
 import { StartupAnimation } from "./components/StartupAnimation";
-import { BrandShowcaseModal } from "./components/BrandShowcaseModal";
 import { NotificationCoordinator } from "./components/NotificationCoordinator";
 import { getMissingSupabaseEnv, hasSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { isFounderAccount } from "./lib/founderGate";
@@ -50,8 +49,7 @@ import {
  * Width: full-bleed on phones, then the content box scales progressively and
  * stays horizontally centered (symmetric margins, never one-sided padding) at
  * every breakpoint: md caps at 3xl, lg at 5xl with roomier px-8 gutters, xl at
- * 6xl. The desktop utility rail is a slim floating pill, not a sidebar, so it
- * lives in the free margin — no reserved gutter needed.
+ * 6xl. Symmetric desktop clearance keeps the utility rail outside the content.
  */
 const ActivityView = lazy(() =>
   import("./views/ActivityView").then((module) => ({ default: module.ActivityView })),
@@ -116,15 +114,15 @@ const RESPONSIVE_TEST_TABS: ActiveTab[] = [
 // Shown instead of crashing (white screen / generic error page) when the
 // running environment has no Supabase backend config yet — e.g. a preview
 // sandbox that has not had VITE_SUPABASE_PUBLISHABLE_KEY set. Lists exactly
-// which variable(s) are missing so it is actionable, and keeps the dark SVJ
+// which variable(s) are missing so it is actionable, and keeps the dark ZENEXIS
 // shell as the first paint.
 const ConfigMissingScreen: React.FC = () => {
   const missing = getMissingSupabaseEnv();
   return (
-    <div className="min-h-[100dvh] bg-[#090A0D] text-[#ECEEF2] flex flex-col items-center justify-center gap-4 p-6 text-center">
+    <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="flex items-center gap-2 mb-2">
-        <img src="/brand/zenexis-symbol.svg" alt="ZENEXIS" className="w-10 h-10 object-contain" />
-        <span className="font-inter font-black text-2xl tracking-[0.25em] text-[#ECEEF2] uppercase">ZENEXIS</span>
+        <img src="/brand/zenexis-symbol.svg" alt="" className="w-10 h-10 object-contain" />
+        <img src="/brand/zenexis-wordmark.svg" alt="ZENEXIS" className="h-8 w-40 object-contain" />
       </div>
       <p className="max-w-sm font-inter text-sm text-[#8C8C90]">
         Backend configuration is missing
@@ -146,7 +144,6 @@ const AppContent: React.FC<{
   const [showTrialNotice, setShowTrialNotice] = useState(locked);
   const [actionError, setActionError] = useState<string | null>(null);
   const [utilityMenuOpen, setUtilityMenuOpen] = useState(false);
-  const [brandLabOpen, setBrandLabOpen] = useState(false);
   const isAndroid = Capacitor.getPlatform() === "android";
   // Silent admin-role check: renders nothing for everyone else. RLS and the
   // server-side role checks remain the actual security boundary.
@@ -214,7 +211,9 @@ const AppContent: React.FC<{
         queryClient.clear();
         await supabase.auth.signOut();
       })().catch(() =>
-        setActionError("Could not confirm tracking stopped. Reopen SVJ and try signing out again."),
+        setActionError(
+          "Could not confirm tracking stopped. Reopen ZENEXIS and try signing out again.",
+        ),
       );
       return;
     }
@@ -238,7 +237,7 @@ const AppContent: React.FC<{
     // ── Restricted post-trial shell ──────────────────────────────────────
     return (
       <div className="min-h-[100dvh] min-w-0 w-full bg-[#0B0B0C] text-[#F4F2ED] font-inter antialiased selection:bg-[#C81E3A] selection:text-white">
-        <Header onOpenBrandLab={() => setBrandLabOpen(true)} />
+        <Header onNavigateHome={() => handleTabChange("sixty")} />
 
         {/* Renders nothing visually — schedules the notification plan. */}
         <NotificationCoordinator onNavigate={handleTabChange} />
@@ -257,7 +256,7 @@ const AppContent: React.FC<{
               </h2>
               <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
                 You can keep using Earn Plus daily missions, the 60-Day Challenge, reward codes, and
-                your profile, or view SVJ Plus membership details.
+                your profile, or view ZENEXIS Plus membership details.
               </p>
               <div className="space-y-2.5">
                 <button
@@ -278,7 +277,7 @@ const AppContent: React.FC<{
                   }}
                   className="w-full cursor-pointer svj-radius-row bg-[#C81E3A] py-3 font-inter text-xs font-semibold text-white transition-colors hover:bg-[#A0182E]"
                 >
-                  Explore SVJ Plus
+                  Explore ZENEXIS Plus
                 </button>
                 <button
                   type="button"
@@ -327,7 +326,8 @@ const AppContent: React.FC<{
                 <div className="space-y-4">
                   <h2 className="font-anton text-xl tracking-wide text-white">Redeem Code</h2>
                   <p className="text-xs text-[#8C8C90] font-inter">
-                    Enter the code earned by completing all 60 days to unlock SVJ Plus for 2 months.
+                    Enter the code earned by completing all 60 days to unlock ZENEXIS Plus for 2
+                    months.
                   </p>
                   <RedeemPlusCodeForm />
                 </div>
@@ -362,7 +362,7 @@ const AppContent: React.FC<{
       {/* Top Bar Header */}
       <Header
         onOpenUtilityMenu={() => setUtilityMenuOpen(true)}
-        onOpenBrandLab={() => setBrandLabOpen(true)}
+        onNavigateHome={() => handleTabChange("challenges")}
       />
 
       {/* Renders nothing visually — schedules the notification plan
@@ -385,7 +385,7 @@ const AppContent: React.FC<{
           fade+slide. The animation wrapper is visual only: state lives in
           providers above it, so Activity tracking, workout recorders and
           native listeners are never reset. */}
-      <main className={PAGE_CONTAINER}>
+      <main className={`${PAGE_CONTAINER} svj-utility-clearance`}>
         {!responsiveTest && <PendingWorkouts />}
         {(storageError || actionError) && (
           <p
@@ -483,7 +483,6 @@ const AppContent: React.FC<{
           />
           <FirstTimeOnboardingModal />
           <GoogleAuthModal />
-          <BrandShowcaseModal isOpen={brandLabOpen} onClose={() => setBrandLabOpen(false)} />
         </>
       )}
 

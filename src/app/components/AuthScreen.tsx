@@ -19,7 +19,7 @@ export const AuthScreen: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  // Age attestation. SVJ has no parental-consent architecture, so account
+  // Age attestation. ZENEXIS has no parental-consent architecture, so account
   // creation is gated to a self-declared 18+. This is a declaration, not
   // identity verification — it must not be described as verification anywhere.
   const [ageConfirmed, setAgeConfirmed] = useState(false);
@@ -70,7 +70,7 @@ export const AuthScreen: React.FC = () => {
     setNotice("");
     // Age gate runs before any personal data is collected for the account.
     if (mode === "signup" && !ageConfirmed) {
-      setError("Please confirm you are 18 or older to create an SVJ account.");
+      setError("Please confirm you are 18 or older to create a ZENEXIS account.");
       return;
     }
     setBusy(true);
@@ -94,7 +94,7 @@ export const AuthScreen: React.FC = () => {
         if (identities.length === 0) {
           // Supabase obscures existing accounts; the user may already be registered.
           setNotice(
-            "This email may already have an SVJ account. Sign in with your password or use Continue with Google. If the account is awaiting confirmation, you can resend the confirmation email.",
+            "This email may already have a ZENEXIS account. Sign in with your password or use Continue with Google. If the account is awaiting confirmation, you can resend the confirmation email.",
           );
         } else {
           // Genuinely created unconfirmed account
@@ -119,7 +119,7 @@ export const AuthScreen: React.FC = () => {
     setNotice("");
     // Google sign-up must not bypass the age gate enforced on the form.
     if (mode === "signup" && !ageConfirmed) {
-      setError("Please confirm you are 18 or older to create an SVJ account.");
+      setError("Please confirm you are 18 or older to create a ZENEXIS account.");
       return;
     }
     setBusy(true);
@@ -152,7 +152,13 @@ export const AuthScreen: React.FC = () => {
         className="svj-radius-card svj-lit-top svj-elev-3 w-full max-w-md space-y-5 border border-white/[0.06] bg-[#17171A] p-5"
       >
         <div className="space-y-1 text-center">
-          <h1 className="font-anton text-2xl tracking-wider text-[#F4F2ED]">SVJ</h1>
+          <h1>
+            <img
+              src="/brand/zenexis-logo-primary.svg"
+              alt="ZENEXIS"
+              className="mx-auto h-14 w-auto max-w-full object-contain"
+            />
+          </h1>
           <p className="font-inter text-xs text-[#8C8C90]">
             {mode === "signup"
               ? "Create your account — 7 days of full access, no charge"
@@ -321,7 +327,7 @@ export const AuthScreen: React.FC = () => {
 
           {mode === "signup" && (
             <p className="text-center text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-              New accounts get 7 days of full SVJ access. No payment details are requested and
+              New accounts get 7 days of full ZENEXIS access. No payment details are requested and
               nothing is charged automatically.
             </p>
           )}

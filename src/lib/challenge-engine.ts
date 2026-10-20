@@ -672,7 +672,7 @@ export function getChallengeInsights(
   if (!stats) {
     return {
       focusAreas: ["Physical", "Discipline"],
-      reason: "Complete your SVJ Assessment to unlock personalized challenges.",
+      reason: "Complete your ZENEXIS Assessment to unlock personalized challenges.",
     };
   }
 

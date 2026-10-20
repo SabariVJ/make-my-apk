@@ -65,7 +65,7 @@ const DayDetail: React.FC<{ cell: HeatmapCell }> = ({ cell }) => (
     <p className={SECTION_TITLE}>{heatCellDateLabel(cell.date)}</p>
     {cell.state === "no_data" ? (
       <p className="mt-1 text-xs font-inter text-[#8C8C90]">
-        No readiness data for this day — SVJ never fills gaps with estimates.
+        No readiness data for this day — ZENEXIS never fills gaps with estimates.
       </p>
     ) : (
       <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs font-inter text-[#F4F2ED]">
@@ -313,8 +313,8 @@ const RecoveryHistorySection: React.FC = () => {
         <p className={SECTION_TITLE}>Your best sleep</p>
         {bestSleep.insufficientData || !bestSleep.bestRangeLabel ? (
           <p className="mt-1 text-xs font-inter leading-relaxed text-[#8C8C90]">
-            Not enough logged nights yet — save check-ins with your sleep hours and SVJ will find
-            the range that suits you.
+            Not enough logged nights yet — save check-ins with your sleep hours and ZENEXIS will
+            find the range that suits you.
           </p>
         ) : (
           <>
@@ -329,8 +329,8 @@ const RecoveryHistorySection: React.FC = () => {
           </>
         )}
         <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-[#8C8C90]">
-          Sleep insight needs {SLEEP_CORRELATION_MIN_SAMPLES}+ paired days before SVJ will interpret
-          anything.
+          Sleep insight needs {SLEEP_CORRELATION_MIN_SAMPLES}+ paired days before ZENEXIS will
+          interpret anything.
         </p>
       </div>
     </div>

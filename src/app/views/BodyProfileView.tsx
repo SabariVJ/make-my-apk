@@ -368,7 +368,7 @@ export const BodyProfileView: React.FC = () => {
           Your details
         </h3>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             {/* Dark in-app calendar: a native date field would open the Android
                 system DatePicker dialog (white sheet) instead. */}
@@ -388,7 +388,8 @@ export const BodyProfileView: React.FC = () => {
                   key={s}
                   type="button"
                   onClick={() => setSex(s)}
-                  className={`flex-1 py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                  aria-pressed={sex === s}
+                  className={`min-h-11 flex-1 rounded-2xl px-1 text-xs font-mono font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                     sex === s
                       ? "bg-[#C81E3A] text-white"
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -403,27 +404,35 @@ export const BodyProfileView: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+            <label
+              htmlFor="body-height"
+              className="font-inter text-[11px] font-semibold text-[#8C8C90]"
+            >
               Height (cm)
             </label>
             <input
+              id="body-height"
               type="number"
               value={height}
               onChange={(e) => setHeight(e.target.value)}
               placeholder="170"
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-xs font-mono text-white focus:border-[#C81E3A] focus:outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+            <label
+              htmlFor="body-weight"
+              className="font-inter text-[11px] font-semibold text-[#8C8C90]"
+            >
               Weight (kg)
             </label>
             <input
+              id="body-weight"
               type="number"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="70"
-              className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-xs font-mono text-white focus:border-[#C81E3A] focus:outline-none"
             />
           </div>
         </div>
@@ -432,7 +441,7 @@ export const BodyProfileView: React.FC = () => {
           <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
             Activity Level
           </label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {[
               { id: "sedentary", label: "Sedentary" },
               { id: "light", label: "Light" },
@@ -444,7 +453,8 @@ export const BodyProfileView: React.FC = () => {
                 key={level.id}
                 type="button"
                 onClick={() => setActivityLevel(level.id)}
-                className={`py-2 rounded-2xl text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                aria-pressed={activityLevel === level.id}
+                className={`min-h-11 rounded-2xl px-2 text-[10px] font-mono font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                   activityLevel === level.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -469,7 +479,8 @@ export const BodyProfileView: React.FC = () => {
                 key={goal.id}
                 type="button"
                 onClick={() => setBodyGoal(goal.id)}
-                className={`py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                aria-pressed={bodyGoal === goal.id}
+                className={`min-h-11 rounded-2xl px-2 text-xs font-mono font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                   bodyGoal === goal.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -482,15 +493,19 @@ export const BodyProfileView: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="font-inter text-[11px] font-semibold text-[#8C8C90]">
+          <label
+            htmlFor="body-target-weight"
+            className="font-inter text-[11px] font-semibold text-[#8C8C90]"
+          >
             Target Weight (kg, optional)
           </label>
           <input
+            id="body-target-weight"
             type="number"
             value={targetWeight}
             onChange={(e) => setTargetWeight(e.target.value)}
             placeholder="65"
-            className="w-full px-3 py-2 rounded-xl bg-[#0B0B0C] border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-[#C81E3A]"
+            className="min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 text-xs font-mono text-white focus:border-[#C81E3A] focus:outline-none"
           />
         </div>
 
@@ -597,7 +612,8 @@ export const BodyProfileView: React.FC = () => {
                   setDietaryPref(d.id);
                   setNutritionDirty(true);
                 }}
-                className={`py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                aria-pressed={dietaryPref === d.id}
+                className={`min-h-11 rounded-2xl px-2 text-xs font-mono font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                   dietaryPref === d.id
                     ? "bg-[#C81E3A] text-white"
                     : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -625,7 +641,8 @@ export const BodyProfileView: React.FC = () => {
                     );
                     setNutritionDirty(true);
                   }}
-                  className={`px-3 py-1.5 rounded-full text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                  aria-pressed={active}
+                  className={`min-h-11 rounded-full px-3 text-[10px] font-mono font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                     active
                       ? "bg-gold/20 border border-gold/50 text-gold"
                       : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:border-white/20"
@@ -674,7 +691,7 @@ export const BodyProfileView: React.FC = () => {
               : "Save Diet Preferences"}
         </button>
         <p className="text-[10px] font-mono text-[#8C8C90]">
-          Free: standard food guidance. SVJ Plus adds deeper personalized guidance and trends.
+          Free: standard food guidance. ZENEXIS Plus adds deeper personalized guidance and trends.
         </p>
       </div>
 

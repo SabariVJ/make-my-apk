@@ -9,11 +9,9 @@ export const Header: React.FC<{
    * Opens the mobile utility drawer (Community / Leaderboard / Profile).
    */
   onOpenUtilityMenu?: () => void;
-  /**
-   * Opens the interactive ZENEXIS Brand Lab showcase modal.
-   */
-  onOpenBrandLab?: () => void;
-}> = ({ onOpenUtilityMenu, onOpenBrandLab }) => {
+  /** Returns to the daily Challenges view. */
+  onNavigateHome: () => void;
+}> = ({ onOpenUtilityMenu, onNavigateHome }) => {
   const { user, setIsPaywallOpen, setIsEditProfileOpen, setIsGoogleAuthModalOpen } = useSVJ();
   const headerRef = useRef<HTMLElement>(null);
 
@@ -43,15 +41,17 @@ export const Header: React.FC<{
     >
       <div className="max-w-7xl mx-auto grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-2 md:flex md:justify-between md:gap-3">
         {/* Brand Logo & Name */}
-        <div
-          className="flex min-w-0 items-center gap-2 cursor-pointer md:gap-3"
-          onClick={() => (onOpenBrandLab ? onOpenBrandLab() : setIsEditProfileOpen(true))}
+        <button
+          type="button"
+          aria-label="Go to today's challenges"
+          className="flex min-w-0 items-center gap-2 rounded-lg text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] md:gap-3"
+          onClick={onNavigateHome}
         >
           <div className="relative shrink-0 group">
             <div className="w-9 h-9 rounded-2xl bg-[#13151A] border border-[#00F59B]/25 p-1.5 flex items-center justify-center group-hover:border-[#00F59B]/60 transition-colors shadow-[0_0_12px_rgba(0,245,155,0.15)]">
               <img
                 src="/brand/zenexis-symbol.svg"
-                alt="ZENEXIS"
+                alt=""
                 className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
               />
             </div>
@@ -63,7 +63,11 @@ export const Header: React.FC<{
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-inter font-black tracking-[0.18em] text-[15px] text-[#F4F2ED] uppercase">ZENEXIS</span>
+              <img
+                src="/brand/zenexis-wordmark.svg"
+                alt=""
+                className="h-5 w-24 object-contain sm:w-28"
+              />
               {user.verifiedIcon && <Shield className="w-4 h-4 text-[#00F59B] fill-[#00F59B]/20" />}
             </div>
             {/* Tier and member ID are two separate elements with their own
@@ -86,7 +90,7 @@ export const Header: React.FC<{
               </span>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Stats Pill & Upgrades */}
         <div className="contents md:flex md:min-w-0 md:items-center md:gap-2 lg:gap-3">
@@ -163,7 +167,7 @@ export const Header: React.FC<{
               <span className="min-w-0 break-words">{user.totalXP.toLocaleString()} XP</span>
             </motion.div>
 
-            {/* SVJ Plus Upgrade Button */}
+            {/* Plus Upgrade Button */}
             {!user.isPremium && (
               <motion.button
                 whileHover={{ scale: 1.03 }}
@@ -188,7 +192,7 @@ export const Header: React.FC<{
             <button
               type="button"
               onClick={onOpenUtilityMenu}
-              aria-label="Open SVJ menu"
+              aria-label="Open ZENEXIS menu"
               data-testid="utility-menu-trigger"
               className="col-start-3 row-start-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#17171A] text-[#8C8C90] transition-colors hover:text-white md:h-9 md:w-9 lg:hidden"
             >

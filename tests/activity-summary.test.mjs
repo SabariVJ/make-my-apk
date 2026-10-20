@@ -62,6 +62,7 @@ const ACTIVITY = {
   trackingActive: false,
   startTracking: async () => {},
   stopTracking: async () => {},
+  refreshDailySteps: async () => {},
   getSensorInfo: async () => {},
   statusMessage: "Step tracking is stopped.",
   stepSource: "counter",

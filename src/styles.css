@@ -326,6 +326,9 @@
     main.svj-page-gutters {
       --svj-gutter: 2rem;
     }
+    main.svj-utility-clearance {
+      width: calc(100% - 14rem);
+    }
   }
 
   /* The admin users table keeps its data and actions readable by turning each

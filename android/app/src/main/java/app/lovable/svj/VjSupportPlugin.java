@@ -46,7 +46,7 @@ public class VjSupportPlugin extends Plugin {
         // Grant no extra access; this only opens a compose draft.
 
         try {
-            Intent chooser = Intent.createChooser(intent, "Email SVJ Support");
+            Intent chooser = Intent.createChooser(intent, "Email ZENEXIS Support");
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getContext().startActivity(chooser);
             call.resolve();

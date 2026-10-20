@@ -49,17 +49,17 @@ export function buildPlusActivationMessage(user: {
   id: string;
 }): string {
   return (
-    `Hi SVJ Founder, I have completed my SVJ Plus payment and would like to verify and activate my subscription.\n\n` +
+    `Hi ZENEXIS Founder, I have completed my ZENEXIS Plus payment and would like to verify and activate my subscription.\n\n` +
     `Name: ${user.name}\n` +
     `Email: ${user.email || "N/A"}\n` +
-    `SVJ User ID: ${user.id}\n\n` +
-    `Please verify my payment and activate SVJ Plus.`
+    `ZENEXIS User ID: ${user.id}\n\n` +
+    `Please verify my payment and activate ZENEXIS Plus.`
   );
 }
 
 /** Simple payment confirmation message (for UPI/trial flows). */
 export function buildPaymentConfirmationMessage(email?: string | null): string {
-  return `Hi SVJ Founder, I have completed my SVJ Plus payment and would like to verify and activate my subscription.\n\nEmail: ${email || "(not signed in)"}\n\nPlease verify my payment and activate SVJ Plus.`;
+  return `Hi ZENEXIS Founder, I have completed my ZENEXIS Plus payment and would like to verify and activate my subscription.\n\nEmail: ${email || "(not signed in)"}\n\nPlease verify my payment and activate ZENEXIS Plus.`;
 }
 
 /** Support email fallback when WhatsApp is unreachable. */
@@ -72,5 +72,5 @@ export function formatWhatsAppNumber(): string {
 
 /** Email fallback with the same activation details prefilled. */
 export function buildActivationMailto(message: string): string {
-  return `mailto:${SVJ_SUPPORT_EMAIL}?subject=${encodeURIComponent("SVJ Plus activation request")}&body=${encodeURIComponent(message)}`;
+  return `mailto:${SVJ_SUPPORT_EMAIL}?subject=${encodeURIComponent("ZENEXIS Plus activation request")}&body=${encodeURIComponent(message)}`;
 }

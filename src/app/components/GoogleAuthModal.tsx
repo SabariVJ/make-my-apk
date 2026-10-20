@@ -132,8 +132,8 @@ export const GoogleAuthModal: React.FC = () => {
                     <div className="flex items-center gap-2 svj-radius-row border border-[#C9A227]/20 bg-[#C9A227]/10 p-3 font-inter text-xs text-[#C9A227]">
                       <Crown className="w-4 h-4 shrink-0" />
                       <span>
-                        Founder privileges are active — SVJ Plus, VIP status and unlimited perks are
-                        unlocked automatically.
+                        Founder privileges are active — ZENEXIS Plus, VIP status and unlimited perks
+                        are unlocked automatically.
                       </span>
                     </div>
                   ) : (
@@ -189,7 +189,7 @@ export const GoogleAuthModal: React.FC = () => {
               <div className="space-y-4">
                 <p className="font-inter text-xs leading-relaxed text-[#8C8C90]">
                   Tap below to open a secure Google sign-in page. After you approve access, you'll
-                  be brought straight back to SVJ with your account linked.
+                  be brought straight back to ZENEXIS with your account linked.
                 </p>
 
                 {error && (

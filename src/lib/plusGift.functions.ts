@@ -44,7 +44,7 @@ export const getMyPendingPlusGift = createServerFn({ method: "GET" })
 
     return {
       id: String(row.id),
-      senderLabel: String(row.sender_label || "SVJ Admin"),
+      senderLabel: String(row.sender_label || "ZENEXIS Admin"),
       durationValue: Number(row.duration_value),
       durationUnit: row.duration_unit as PendingPlusGift["durationUnit"],
       expiresAt,

@@ -1,5 +1,5 @@
 import { useActivityOptional } from "../context/ActivityContext";
-import { dailyTrackingMessage } from "../lib/dailyTracking";
+import { DailyPedometer, dailyTrackingMessage } from "../lib/dailyTracking";
 import { Capacitor } from "@capacitor/core";
 
 export function StepTrackingStatus() {
@@ -46,7 +46,10 @@ export function StepTrackingStatus() {
         <button
           className="rounded-xl border border-white/20 px-3 py-2"
           onClick={() =>
-            void Promise.all([daily.refresh(), activity?.refreshDailySteps?.() ?? Promise.resolve()])
+            void Promise.all([
+              daily.refresh(),
+              activity?.refreshDailySteps?.() ?? Promise.resolve(),
+            ])
           }
         >
           Retry

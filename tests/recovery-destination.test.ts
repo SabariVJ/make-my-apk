@@ -157,7 +157,10 @@ describe("Recovery shell sections", () => {
 
   it("labels every placeholder honestly instead of inventing data", () => {
     assert.match(recoveryView, /Coming next/);
-    assert.match(recoveryView, /Nothing is shown here yet because SVJ only displays recovery data/);
+    assert.match(
+      recoveryView,
+      /Nothing is shown here yet because ZENEXIS only displays recovery data/,
+    );
     // Check the shipped code, not the comments that promise this behaviour.
     const recoveryCode = recoveryView.replace(/^\s*\/\/.*$/gm, "");
     assert.doesNotMatch(recoveryCode, /\bdemo\b|\bsample data\b|\bfake\b/i);

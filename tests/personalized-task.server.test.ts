@@ -33,7 +33,10 @@ test("personalized challenges are gated server-side on assessment completion", (
   // The gate must live in the server function, after the personalization row
   // is read by user_id, and refuse to generate tasks when incomplete.
   assert.match(serverSource, /assessmentCompleted/);
-  assert.match(serverSource, /Complete your SVJ Assessment to unlock personalized challenges\./);
+  assert.match(
+    serverSource,
+    /Complete your ZENEXIS Assessment to unlock personalized challenges\./,
+  );
   // Gate ordering: readPersonalization result checked before generation.
   const gateIndex = serverSource.indexOf("if (!assessmentCompleted)");
   const generateIndex = serverSource.indexOf("selectPersonalizedChallenges(stats");

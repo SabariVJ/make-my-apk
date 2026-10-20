@@ -41,7 +41,7 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(paywall, /One-time payment/);
     assert.match(paywall, /No auto-renewal/);
     assert.match(paywall, /turned\s*on manually after the payment is verified/);
-    assert.match(paywall, /activate your SVJ Plus access/);
+    assert.match(paywall, /activate your ZENEXIS Plus access/);
     assert.doesNotMatch(paywall, /activate your subscription/);
   });
 
@@ -56,8 +56,8 @@ describe("final release hardening", { concurrency: false }, () => {
     assert.match(paywall, /const hasActivePlus = plusActive === true/);
     assert.doesNotMatch(paywall, /const hasActivePlus = user\.isPremium === true/);
     assert.match(paywall, /plusActive === null && hasFuturePlusExpiry/);
-    assert.match(paywall, /SVJ Plus Active/);
-    assert.match(paywall, /Your previous SVJ Plus membership has expired/);
+    assert.match(paywall, /ZENEXIS Plus Active/);
+    assert.match(paywall, /Your previous ZENEXIS Plus membership has expired/);
   });
 
   it("ships a Play Console data-deletion path backed by the real deletion flow", async () => {

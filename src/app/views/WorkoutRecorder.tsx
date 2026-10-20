@@ -202,7 +202,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         </div>
         {nativeRecording && (
           <div className="flex items-center gap-1.5 rounded-full border border-[#C81E3A]/30 bg-[#C81E3A]/10 px-2.5 py-1.5 text-[10px] font-mono uppercase text-[#E62846]">
-            SVJ foreground service
+            ZENEXIS foreground service
           </div>
         )}
         {pendingSync > 0 && (
@@ -354,7 +354,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
             liveHeartRate ? (
               <span className="block">
                 {liveHeartRate.deviceName ??
-                  (liveHeartRate.source === "wear_os" ? "SVJ Watch" : "Chest sensor")}
+                  (liveHeartRate.source === "wear_os" ? "ZENEXIS Watch" : "Chest sensor")}
                 <span
                   className={`mt-0.5 block font-semibold ${
                     liveHeartRate.status === "reconnecting" ? "text-gold" : "text-emerald-400"
@@ -528,13 +528,13 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
         </div>
       )}
 
-      {/* SVJ Live Share */}
+      {/* ZENEXIS Live Share */}
       {(active || finished) && (
         <div className="rounded-2xl border border-[#C81E3A]/25 bg-[#0B0B0C] p-4">
           <div className="mb-2 flex items-center gap-2">
             <Link2 className="h-4 w-4 text-[#E62846]" />
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-white">
-              SVJ Live Share
+              ZENEXIS Live Share
             </span>
           </div>
           <p className="mb-3 text-[10px] font-mono leading-relaxed text-[#8C8C90]">
@@ -596,7 +596,7 @@ export const WorkoutRecorder: React.FC<WorkoutRecorderProps> = ({
 
       {!active && !finished && (
         <p className="text-[10px] font-mono leading-relaxed text-[#8C8C90]">
-          SVJ records location only while you have an outdoor workout started. On Android the
+          ZENEXIS records location only while you have an outdoor workout started. On Android the
           recording runs in a foreground service so it survives a locked screen, and a workout you
           pause or lose signal during is kept on the device until it syncs.
         </p>

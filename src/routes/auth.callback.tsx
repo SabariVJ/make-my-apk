@@ -4,13 +4,16 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
     meta: [
-      { title: "Signing you in — SVJ" },
-      { name: "description", content: "Completing your SVJ sign-in and returning you to the app." },
+      { title: "Signing you in — ZENEXIS" },
+      {
+        name: "description",
+        content: "Completing your ZENEXIS sign-in and returning you to the app.",
+      },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Signing you in — SVJ" },
+      { property: "og:title", content: "Signing you in — ZENEXIS" },
       {
         property: "og:description",
-        content: "Completing your SVJ sign-in and returning you to the app.",
+        content: "Completing your ZENEXIS sign-in and returning you to the app.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

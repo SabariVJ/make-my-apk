@@ -91,10 +91,10 @@ test("step tracking is native-sensor based with a graceful web fallback", () => 
   assert.match(capSettings, /capgo-capacitor-pedometer/);
   // Runtime degrades safely when the native plugin is absent (published web
   // app runs before a new APK is built).
-  assert.match(activityContext, /loadPedometer/);
+  assert.match(activityContext, /vjPluginAvailable\(\)/);
   assert.match(activityContext, /['"]denied['"]|['"]unsupported['"]/);
-  assert.match(activityContext, /requestPermissions/);
-  assert.match(activityContext, /startMeasurementUpdates/);
+  assert.match(activityContext, /vjRequestPermissions\(\)/);
+  assert.match(activityContext, /vjAddMeasurementListener\(/);
   assert.match(activityContext, /vjStartTracking\(sessionId\)/);
   assert.match(activityContext, /vjStopTracking\(\)/);
   // Universal Android sensor hierarchy: counter -> detector -> accelerometer.

@@ -251,7 +251,7 @@ public class VjNotificationsPlugin extends Plugin {
             postNotification(
                 context,
                 id,
-                matched.optString("title", "SVJ"),
+                matched.optString("title", "ZENEXIS"),
                 matched.optString("body", ""),
                 matched.optString("channel", "progress"),
                 matched.optString("target", "profile")
@@ -410,24 +410,24 @@ public class VjNotificationsPlugin extends Plugin {
 
         NotificationChannel progress = new NotificationChannel(
             "svj_progress",
-            "SVJ progress",
+            "ZENEXIS progress",
             NotificationManager.IMPORTANCE_DEFAULT
         );
         progress.setDescription("Progress, momentum and weekly recap reminders.");
 
         NotificationChannel coach = new NotificationChannel(
             "svj_coach",
-            "SVJ coach",
+            "ZENEXIS coach",
             NotificationManager.IMPORTANCE_DEFAULT
         );
         coach.setDescription("Training, recovery, nutrition and daily coaching reminders.");
 
         NotificationChannel membership = new NotificationChannel(
             "svj_membership",
-            "SVJ membership",
+            "ZENEXIS membership",
             NotificationManager.IMPORTANCE_DEFAULT
         );
-        membership.setDescription("SVJ Plus expiry and membership reminders.");
+        membership.setDescription("ZENEXIS Plus expiry and membership reminders.");
 
         manager.createNotificationChannel(progress);
         manager.createNotificationChannel(coach);

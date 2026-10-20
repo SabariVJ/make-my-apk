@@ -252,7 +252,7 @@ export function EarnPlusView({ onBack }: { onBack: () => void }) {
         {active && (
           <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
             {[
-              `${active.policy.plusDays} days of SVJ Plus`,
+              `${active.policy.plusDays} days of ZENEXIS Plus`,
               "One-time launch reward",
               "No automatic charge",
             ].map((fact) => (

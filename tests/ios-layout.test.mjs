@@ -55,7 +55,10 @@ function mount() {
     setIsEditProfileOpen: () => calls.push("profile"),
     setIsGoogleAuthModalOpen: () => calls.push("account"),
   };
-  return render(React.createElement(Header, { onOpenUtilityMenu: () => calls.push("menu") }));
+  return render(React.createElement(Header, {
+    onOpenUtilityMenu: () => calls.push("menu"),
+    onNavigateHome: () => calls.push("home"),
+  }));
 }
 
 describe("iPhone header layout lifecycle", () => {
@@ -81,12 +84,13 @@ describe("iPhone header layout lifecycle", () => {
     assert.equal(observers[1].element, screen.getByTestId("app-header"));
   });
 
-  it("keeps account, menu and profile actions working with large XP and long account details", () => {
+  it("keeps home, account, menu and profile actions working with large XP and long account details", () => {
     mount();
+    fireEvent.click(screen.getByRole("button", { name: "Go to today's challenges" }));
     fireEvent.click(screen.getByRole("button", { name: "Account settings" }));
-    fireEvent.click(screen.getByRole("button", { name: "Open SVJ menu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open ZENEXIS menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Edit profile" }));
-    assert.deepEqual(calls, ["account", "menu", "profile"]);
+    assert.deepEqual(calls, ["home", "account", "menu", "profile"]);
     assert.ok(screen.getByTestId("header-xp").textContent.includes((1234567890123).toLocaleString()));
   });
 

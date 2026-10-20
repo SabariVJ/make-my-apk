@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import { registerPlugin } from "@capacitor/core";
 
 export const SUPPORT_EMAIL = "sabarivj777@gmail.com";
-export const SUPPORT_SUBJECT = "SVJ Support / Account Verification";
+export const SUPPORT_SUBJECT = "ZENEXIS Support / Account Verification";
 
 export interface SupportEmailResult {
   ok: boolean;

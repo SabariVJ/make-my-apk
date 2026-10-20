@@ -30,7 +30,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>SVJ Login</string>
+			<string>ZENEXIS Login</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>app.lovable.svj</string>
@@ -38,9 +38,9 @@
 		</dict>
 	</array>
 	<key>NSMotionUsageDescription</key>
-    <string>SVJ uses Motion &amp; Fitness data to track your steps, distance, activity progress and XP.</string>
+    <string>ZENEXIS uses Motion &amp; Fitness data to track your steps, distance, activity progress and XP.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>SVJ records your route during a workout you start, including while the screen is locked. Finish the workout to stop recording.</string>
+	<string>ZENEXIS records your route during a workout you start, including while the screen is locked. Finish the workout to stop recording.</string>
 	<key>UIBackgroundModes</key>
 	<array><string>location</string></array>
 	<key>LSRequiresIPhoneOS</key>

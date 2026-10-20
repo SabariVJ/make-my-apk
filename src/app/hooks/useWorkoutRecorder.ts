@@ -112,7 +112,7 @@ export function WorkoutRecorderProvider({
 }
 export function useWorkoutRecorder(): UseWorkoutRecorder {
   const value = useContext(RecorderContext);
-  if (!value) throw new Error("Workout recording is unavailable. Please reopen SVJ.");
+  if (!value) throw new Error("Workout recording is unavailable. Please reopen ZENEXIS.");
   return value;
 }
 function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder {
@@ -165,7 +165,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       recovered = recorder.recover();
       setPendingSync(readQueue(storage).length);
     } catch {
-      setError("Could not read saved workouts. Check device storage and reopen SVJ.");
+      setError("Could not read saved workouts. Check device storage and reopen ZENEXIS.");
     }
     if (recovered) {
       setSession(recovered);
@@ -238,7 +238,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
         source,
         deviceName:
           source === "wear_os"
-            ? (selection.reading.deviceName ?? "SVJ Watch")
+            ? (selection.reading.deviceName ?? "ZENEXIS Watch")
             : selection.reading.deviceName,
         status: selection.degraded ? "reconnecting" : "live",
       });
@@ -330,7 +330,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       onWearWorkoutSummary((summary, duplicate) => {
         setNotice(
           duplicate
-            ? "That watch workout is already in your SVJ history."
+            ? "That watch workout is already in your ZENEXIS history."
             : `Watch workout saved · ${summary.activityType}`,
         );
         void syncPending();
@@ -385,11 +385,11 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
         if (isNativeRecordingAvailable()) {
           const capability = await workoutPlugin()?.isAvailable?.();
           if (capability?.version !== 2 || !capability.journal)
-            throw new Error("Install the latest SVJ app to record and recover workouts.");
+            throw new Error("Install the latest ZENEXIS app to record and recover workouts.");
           const permissions = await requestWorkoutPermissions();
           if (!canRecordWith(permissions)) {
             throw new Error(
-              "Allow Location while using SVJ in your phone Settings, then try again.",
+              "Allow Location while using ZENEXIS in your phone Settings, then try again.",
             );
           }
         }
@@ -425,7 +425,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
               if (recorder.current) recorder.pause();
               throw new Error(
                 recorder.current
-                  ? "Could not confirm the start. Your recording is retained; reopen SVJ to recover."
+                  ? "Could not confirm the start. Your recording is retained; reopen ZENEXIS to recover."
                   : "Could not start recording. Check location permission and try again.",
               );
             }
@@ -499,7 +499,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       }
     } catch {
       setError(
-        "Could not confirm recording stopped. Your workout is retained. Reopen SVJ and retry Finish.",
+        "Could not confirm recording stopped. Your workout is retained. Reopen ZENEXIS and retry Finish.",
       );
     } finally {
       setBusy(false);
@@ -536,7 +536,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       setSummary(null);
       setNotice("Workout discarded. Nothing was saved.");
     } catch {
-      setError("Could not confirm discard. Your recording is retained; reopen SVJ and retry.");
+      setError("Could not confirm discard. Your recording is retained; reopen ZENEXIS and retry.");
     } finally {
       setBusy(false);
     }
@@ -600,7 +600,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       setNotice(
         result.duplicate
           ? "This workout was already saved."
-          : "Workout saved to your SVJ activity history.",
+          : "Workout saved to your ZENEXIS activity history.",
       );
       await syncPending();
     } catch {
@@ -616,7 +616,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
     const current = recorder.current;
     const client = activityRpcClient();
     if (!current || !client) {
-      setError("Sign in to use SVJ Live Share.");
+      setError("Sign in to use ZENEXIS Live Share.");
       return;
     }
     // Live sharing must not finish a workout or create reward-bearing activity data.
@@ -641,7 +641,7 @@ function useWorkoutRecorderController(userId: string | null): UseWorkoutRecorder
       lastSharePushRef.current = 0;
       setLiveShare(started.share);
       setSession(recorder.current);
-      setNotice("SVJ Live Share is on. The link stops working when you stop sharing.");
+      setNotice("ZENEXIS Live Share is on. The link stops working when you stop sharing.");
     } catch {
       setError("Could not start sharing. Check your connection and retry.");
     } finally {

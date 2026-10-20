@@ -660,7 +660,7 @@ export const FriendsPanel: React.FC<{ friendsApi: ReturnType<typeof useFriends> 
             </div>
             <div className="mt-4 rounded-2xl border border-white/10 bg-[#0B0B0C] p-3 text-xs font-mono text-[#B8B8C0]">
               {(selectedRivalry.myScore ?? 0) === (selectedRivalry.opponentScore ?? 0)
-                ? "The rivalry is tied. Complete a verified SVJ activity to take the lead."
+                ? "The rivalry is tied. Complete a verified ZENEXIS activity to take the lead."
                 : (selectedRivalry.myScore ?? 0) > (selectedRivalry.opponentScore ?? 0)
                   ? "You are leading. Scores include only verified activity completed during this rivalry."
                   : "Your opponent leads. Scores include only verified activity completed during this rivalry."}

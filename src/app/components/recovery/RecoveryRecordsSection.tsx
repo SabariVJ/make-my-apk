@@ -37,7 +37,7 @@ const BUTTON =
 /** What each record actually measures — plain language, no medical claims. */
 const RECORD_EXPLANATIONS: Record<RecoveryRecordType, string> = {
   highest_readiness_score:
-    "Your highest readiness score SVJ computed on a day with saved recovery data.",
+    "Your highest readiness score ZENEXIS computed on a day with saved recovery data.",
   longest_checkin_streak: "Your longest run of back-to-back days with a saved recovery check-in.",
   longest_ready_streak: `Your longest run of back-to-back days at readiness ${LOW_READINESS_THRESHOLD} or above.`,
   best_7d_readiness_average:

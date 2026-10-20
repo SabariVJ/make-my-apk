@@ -180,6 +180,17 @@ async function geometry(page: Page): Promise<Geometry> {
 }
 
 async function assertFits(page: Page, expectedWidth: number, screen: string) {
+  // WebKit can report the new viewport before its responsive styles have painted.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  const desktopRail = await page.evaluate(() => matchMedia("(min-width: 1024px)").matches);
+  if (desktopRail) {
+    await expect(page.getByTestId("utility-rail")).toBeVisible();
+  }
   const result = await geometry(page);
   const diagnostic = `${screen}: ${JSON.stringify(result)}`;
   expect(result.buildRevision, diagnostic).not.toBe("missing");
@@ -196,6 +207,32 @@ async function assertFits(page: Page, expectedWidth: number, screen: string) {
   expect(result.horizontallyScrollable, diagnostic).toEqual([]);
   expect(result.clippedControls, diagnostic).toEqual([]);
   expect(result.clippedText, diagnostic).toEqual([]);
+  if (desktopRail) {
+    const clearance = await page.evaluate(() => {
+      const main = document.querySelector("main");
+      const rail = document.querySelector('[data-testid="utility-rail"]');
+      if (!main || !rail) return 0;
+      return (
+        rail.getBoundingClientRect().left -
+        (main.getBoundingClientRect().right -
+          Number.parseFloat(getComputedStyle(main).paddingRight))
+      );
+    });
+    expect(clearance, `${screen}: utility rail must not cover page content`).toBeGreaterThanOrEqual(
+      0,
+    );
+  }
+  if (expectedWidth >= 640) {
+    const label = page.locator('[data-testid="primary-nav-challenges"] > span');
+    if (await label.count()) {
+      const lines = await label.evaluate(
+        (element) =>
+          element.getBoundingClientRect().height /
+          Number.parseFloat(getComputedStyle(element).lineHeight),
+      );
+      expect(lines, `${screen}: Challenges label should fit one line`).toBeLessThan(1.5);
+    }
+  }
 }
 
 test("built shell and default destination fit every portrait and landscape viewport", async ({

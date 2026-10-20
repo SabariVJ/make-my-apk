@@ -188,7 +188,7 @@ const SetupFlow: React.FC<{
         How do you train?
       </h2>
       <p className="mt-1.5 text-xs font-inter text-[#8C8C90]">
-        SVJ builds a reviewed weekly plan from these answers. BMI is never used to choose it.
+        ZENEXIS builds a reviewed weekly plan from these answers. BMI is never used to choose it.
       </p>
 
       <div className="mt-3 space-y-3.5">

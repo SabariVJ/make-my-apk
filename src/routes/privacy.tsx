@@ -4,8 +4,8 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — SVJ" },
-      { name: "description", content: "SVJ privacy policy and data practices." },
+      { title: "Privacy Policy — ZENEXIS" },
+      { name: "description", content: "ZENEXIS privacy policy and data practices." },
     ],
   }),
   component: PrivacyPage,
@@ -17,7 +17,7 @@ function PrivacyPage() {
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-8">
         <div className="space-y-2">
           <h1 className="font-inter text-3xl font-semibold tracking-tight">Privacy Policy</h1>
-          <p className="text-xs font-mono text-[#8C8C90]">Last updated: September 2026</p>
+          <p className="text-xs font-mono text-[#8C8C90]">Last updated: October 2026</p>
         </div>
 
         <section className="space-y-3">
@@ -48,15 +48,15 @@ function PrivacyPage() {
               <strong className="text-white">Fitness and recovery data:</strong> Workouts, sets,
               reps, load, training plans, activity steps and routes, GPS points, recovery check-ins,
               reported sleep, readiness history, goals, progress, and consistency insights. Health
-              Connect data is read only when you explicitly connect and authorize it; SVJ does not
-              write to Health Connect.
+              Connect data is read only when you explicitly connect and authorize it; ZENEXIS does
+              not write to Health Connect.
             </p>
             <p>
               <strong className="text-white">Device and communication data:</strong> Notification
               preferences, support messages you send, and advertising/device identifiers handled by
-              Google AdMob. SVJ keeps fitness data in the app while you use the service; you can
-              delete your account from Profile or the deletion page. SVJ is intended for people aged
-              18 or older and does not knowingly create accounts for children.
+              Google AdMob. ZENEXIS keeps fitness data in the app while you use the service; you can
+              delete your account from Profile or the deletion page. ZENEXIS is intended for people
+              aged 18 or older and does not knowingly create accounts for children.
             </p>
           </div>
         </section>
@@ -67,7 +67,7 @@ function PrivacyPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              Your data is used to provide the SVJ experience: tracking challenges, training,
+              Your data is used to provide the ZENEXIS experience: tracking challenges, training,
               recovery, XP, streaks, membership status, reminders, and social connections. Activity
               data powers the leaderboard and friend comparisons. Location and route data are used
               to record the routes and distance you choose to track.
@@ -106,9 +106,9 @@ function PrivacyPage() {
             </p>
             <p>
               <strong className="text-white">Health Connect and device sensors:</strong> With your
-              permission, SVJ reads health and activity records, step counts, and location during an
-              activity you start. Sensor readings stay on your device unless you save or sync the
-              resulting activity.
+              permission, ZENEXIS reads health and activity records, step counts, and location
+              during an activity you start. Sensor readings stay on your device unless you save or
+              sync the resulting activity.
             </p>
             <p>
               <strong className="text-white">Google AdMob:</strong> The Android app displays
@@ -193,7 +193,7 @@ function PrivacyPage() {
 
         <div className="pt-8 border-t border-white/10">
           <Link to="/" className="text-xs text-[#8C8C90] hover:text-white font-mono">
-            ← Back to SVJ
+            ← Back to ZENEXIS
           </Link>
         </div>
       </div>

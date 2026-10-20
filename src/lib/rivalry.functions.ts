@@ -233,5 +233,5 @@ export const recordRivalryEvent = createServerFn({ method: "POST" })
   )
   .handler(async (): Promise<{ ok: boolean; error: string }> => ({
     ok: false,
-    error: "Rivalry progress is recorded only from verified SVJ activity.",
+    error: "Rivalry progress is recorded only from verified ZENEXIS activity.",
   }));

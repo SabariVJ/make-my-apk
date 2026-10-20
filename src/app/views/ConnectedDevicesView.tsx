@@ -226,7 +226,7 @@ export const ConnectedDevicesView: React.FC = () => {
             </p>
             <p className="mt-1 text-xs font-inter leading-relaxed text-[#8C8C90]">
               {nativeAvailable
-                ? "Pair a BLE heart-rate strap or band and SVJ reads your pulse straight from the sensor while you record."
+                ? "Pair a BLE heart-rate strap or band and ZENEXIS reads your pulse straight from the sensor while you record."
                 : "Bluetooth heart-rate pairing is not available in this version."}
             </p>
           </div>
@@ -410,8 +410,8 @@ export const ConnectedDevicesView: React.FC = () => {
           <SVJSectionHeader title="Health Connect" icon={Watch} />
           <p className="mt-2 text-[11px] font-inter leading-relaxed text-[#8C8C90]">
             Syncs authorized workouts, heart rate, steps and distance from supported Android health
-            and watch apps into SVJ — through Android's Health Connect, with the exact permissions
-            you grant. Manage it in{" "}
+            and watch apps into ZENEXIS — through Android's Health Connect, with the exact
+            permissions you grant. Manage it in{" "}
             <span className="text-white">Profile → Settings → Integrations</span>.
           </p>
         </div>
@@ -454,9 +454,9 @@ const HEART_RATE_SOURCE_OPTIONS: {
   label: string;
   hint: string;
 }[] = [
-  { value: "auto", label: "Automatic", hint: "Bluetooth strap first, then SVJ Watch" },
+  { value: "auto", label: "Automatic", hint: "Bluetooth strap first, then ZENEXIS Watch" },
   { value: "ble", label: "Bluetooth sensor", hint: "Always prefer the chest strap" },
-  { value: "wear_os", label: "SVJ Watch", hint: "Always prefer the watch" },
+  { value: "wear_os", label: "ZENEXIS Watch", hint: "Always prefer the watch" },
 ];
 
 function lastSeenLabel(ageMs: number | null): string {
@@ -468,7 +468,7 @@ function lastSeenLabel(ageMs: number | null): string {
 }
 
 /**
- * My Devices → SVJ Watch, plus the live heart-rate source selector.
+ * My Devices → ZENEXIS Watch, plus the live heart-rate source selector.
  *
  * The watch row is driven entirely by what the Wear OS Data Layer actually
  * reports: an app that is merely installed is never shown as connected, and
@@ -526,7 +526,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
       >
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-white">SVJ Watch</p>
+            <p className="text-xs font-semibold text-white">ZENEXIS Watch</p>
             <p className="text-[11px] font-inter text-[#8C8C90]">Wear OS companion</p>
           </div>
           {connection === "connected" && (
@@ -574,7 +574,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
 
         {connection === "companion_missing" && (
           <div className="svj-radius-row mt-3 border border-white/10 bg-black/40 px-3 py-2.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">
-            <p data-testid="wear-companion-missing">SVJ is not installed on your watch.</p>
+            <p data-testid="wear-companion-missing">ZENEXIS is not installed on your watch.</p>
             <a
               href="https://play.google.com/store/apps/details?id=app.lovable.svj"
               target="_blank"
@@ -585,7 +585,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
               Install on watch
             </a>
             <p className="mt-1.5">
-              On a paired Wear OS watch the Play Store offers SVJ for the watch automatically.
+              On a paired Wear OS watch the Play Store offers ZENEXIS for the watch automatically.
               Pairing over Bluetooth alone is not enough.
             </p>
           </div>
@@ -594,7 +594,7 @@ const WearDevicesSection: React.FC<{ now: number }> = ({ now }) => {
           <p className="svj-radius-row mt-3 border border-white/10 bg-black/40 px-3 py-2.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">
             {nativeWear
               ? "Wear OS is not available on this device."
-              : "The SVJ Watch bridge runs in the SVJ Android app. Open SVJ on your phone to connect your watch."}
+              : "The ZENEXIS Watch bridge runs in the ZENEXIS Android app. Open ZENEXIS on your phone to connect your watch."}
           </p>
         )}
         {connection === "reconnecting" && (

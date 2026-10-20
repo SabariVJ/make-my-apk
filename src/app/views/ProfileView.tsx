@@ -136,7 +136,7 @@ export const ProfileView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsGoogleAuthModalOpen(true)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold border transition-all cursor-pointer ${
+                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-mono font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                     user.isFounder
                       ? "bg-gold/15 border-gold/40 text-gold"
                       : user.email
@@ -154,8 +154,9 @@ export const ProfileView: React.FC = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => setIsEditProfileOpen(true)}
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/[0.08] bg-[#08080A] px-4 py-2 font-inter text-xs font-semibold text-white transition-colors hover:bg-white/[0.06]"
+            className="flex min-h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-[#08080A] px-4 font-inter text-xs font-semibold text-white transition-colors hover:bg-white/[0.06]"
           >
             <Edit3 className="h-3.5 w-3.5 text-[#C81E3A]" />
             <span>Edit profile</span>
@@ -378,14 +379,23 @@ export const ProfileView: React.FC = () => {
           {/* Upgrade Banner */}
           {!user.isPremium && (
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="See ZENEXIS Plus plans"
               onClick={() => setIsPaywallOpen(true)}
-              className="svj-radius-card group flex cursor-pointer items-center justify-between border border-[#C81E3A]/35 bg-gradient-to-r from-[#C81E3A]/15 via-[#17171A] to-[#C9A227]/10 p-4"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setIsPaywallOpen(true);
+                }
+              }}
+              className="svj-radius-card group flex min-h-14 cursor-pointer items-center justify-between gap-3 border border-[#C81E3A]/35 bg-gradient-to-r from-[#C81E3A]/15 via-[#17171A] to-[#C9A227]/10 p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
             >
               <div className="flex items-center gap-3">
                 <Crown className="h-6 w-6 shrink-0 text-[#C9A227]" />
                 <div>
                   <h3 className="font-inter text-sm font-semibold text-[#F4F2ED]">
-                    Upgrade to SVJ Plus
+                    Upgrade to ZENEXIS Plus
                   </h3>
                   <p className="font-inter text-xs text-[#8C8C90]">
                     Unlock aura frames, obsidian themes and the VIP badge.
@@ -477,7 +487,8 @@ export const ProfileView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowTransformation(false)}
-              className="svj-safe-close fixed z-50 p-2 rounded-full bg-white/10 text-white cursor-pointer"
+              aria-label="Close transformation report"
+              className="svj-safe-close fixed z-50 flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/10 text-white"
             >
               ✕
             </button>
@@ -551,7 +562,7 @@ export const ProfileView: React.FC = () => {
                   id="logout-dialog-title"
                   className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]"
                 >
-                  Log out of SVJ?
+                  Log out of ZENEXIS?
                 </h2>
               </div>
               <button
@@ -559,15 +570,15 @@ export const ProfileView: React.FC = () => {
                 onClick={() => setShowLogoutDialog(false)}
                 disabled={signingOut}
                 aria-label="Cancel logout"
-                className="rounded-full bg-white/5 p-1.5 text-[#8C8C90] transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/5 text-[#8C8C90] transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <p className="text-xs font-inter leading-relaxed text-[#B8B8C0]">
-              You will be signed out of SVJ on this device. Your account, cloud progress and profile
-              photo remain safe — nothing is deleted. Sign back in anytime to continue where you
-              left off.
+              You will be signed out of ZENEXIS on this device. Your account, cloud progress and
+              profile photo remain safe — nothing is deleted. Sign back in anytime to continue where
+              you left off.
             </p>
             {signOutError && (
               <div

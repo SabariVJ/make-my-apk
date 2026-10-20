@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   Gift,
   Lock,
@@ -24,6 +24,7 @@ import { RewardItem } from "../types";
 import { RedeemPlusCodeForm } from "../components/RedeemPlusCodeForm";
 
 export const RewardsView: React.FC = () => {
+  const reduceMotion = useReducedMotion();
   const { rewards, redeemReward, user, updateUserProfile, triggerConfetti, setIsPaywallOpen } =
     useSVJ();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -105,7 +106,7 @@ export const RewardsView: React.FC = () => {
       if (item.cosmeticId === "samurai" || item.cosmeticId === "theme-crimson-night") {
         const isThemeActive = user.evolutionTheme === "samurai";
         updateUserProfile({ evolutionTheme: isThemeActive ? "wolf" : "samurai" });
-        showToast(isThemeActive ? "Switched to Default Theme" : "Equipped SVJ Obsidian Theme!");
+        showToast(isThemeActive ? "Switched to Default Theme" : "Equipped ZENEXIS Obsidian Theme!");
         triggerConfetti();
       } else if (
         item.cosmeticId === "frame-crimson" ||
@@ -127,10 +128,11 @@ export const RewardsView: React.FC = () => {
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={reduceMotion ? false : { opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-500 text-black font-mono text-xs font-bold shadow-2xl flex items-center gap-2"
+            role="status"
+            className="fixed left-4 right-4 top-20 z-50 flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2.5 font-mono text-xs font-bold text-black shadow-2xl sm:left-auto sm:right-6"
           >
             <Check className="w-4 h-4" />
             <span>{toastMessage}</span>
@@ -151,7 +153,7 @@ export const RewardsView: React.FC = () => {
               <span className="text-[#C81E3A] font-bold">Earned Honor Perks</span>
             </div>
             <h1 className="font-inter text-3xl font-semibold tracking-tight text-[#F4F2ED] sm:text-4xl">
-              The SVJ Vault
+              The ZENEXIS Vault
             </h1>
             <p className="text-xs text-[#8C8C90] font-inter mt-1">
               Exchange your earned discipline XP for elite themes, guides, and steel membership
@@ -181,7 +183,8 @@ export const RewardsView: React.FC = () => {
                 Weekly Vault Rotation (Season 14)
               </span>
               <span className="px-2 py-0.5 rounded-full bg-gold/20 text-gold text-[9px] font-mono font-bold border border-gold/30 flex items-center gap-1">
-                <RefreshCw className="w-2.5 h-2.5 animate-spin" /> NEW REWARDS WEEKLY
+                <RefreshCw className="h-2.5 w-2.5 animate-spin motion-reduce:animate-none" /> NEW
+                REWARDS WEEKLY
               </span>
             </div>
             <p className="text-xs font-mono text-[#8C8C90] mt-0.5">
@@ -223,8 +226,9 @@ export const RewardsView: React.FC = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => setShowNextWeekPreview(true)}
-            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 font-mono text-xs font-bold text-white transition-colors hover:bg-white/10"
           >
             <Sparkles className="w-3.5 h-3.5 text-gold" />
             <span>Next Batch Teaser</span>
@@ -235,7 +239,7 @@ export const RewardsView: React.FC = () => {
       {/* Redeem a 60-Day Challenge code */}
       <RedeemPlusCodeForm
         heading="Redeem a 60-Day Challenge code"
-        description="Earned an SVJ-XXXX-XXXX code from the 60-Day Gauntlet? Enter it below to activate 2 months of SVJ Plus. Codes are single-use and locked to your account."
+        description="Earned an SVJ-XXXX-XXXX code from the 60-Day Gauntlet? Enter it below to activate 2 months of ZENEXIS Plus. Codes are single-use and locked to your account."
       />
 
       {/* Category Selector */}
@@ -243,8 +247,10 @@ export const RewardsView: React.FC = () => {
         {categories.map((cat) => (
           <button
             key={cat}
+            type="button"
             onClick={() => setSelectedCategory(cat)}
-            className={`max-w-full px-4 py-2 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+            aria-pressed={selectedCategory === cat}
+            className={`min-h-11 max-w-full rounded-lg px-4 font-mono text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               selectedCategory === cat
                 ? "bg-[#C81E3A] text-white font-bold shadow-lg shadow-[#C81E3A]/20"
                 : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/5"
@@ -263,7 +269,7 @@ export const RewardsView: React.FC = () => {
           return (
             <motion.div
               key={item.id}
-              whileHover={{ y: -2 }}
+              whileHover={reduceMotion ? undefined : { y: -2 }}
               className="svj-radius-card svj-lit-top flex flex-col justify-between overflow-hidden border border-white/[0.06] bg-[#17171A]"
             >
               <div>
@@ -286,8 +292,8 @@ export const RewardsView: React.FC = () => {
                   </div>
 
                   {item.isPremiumOnly && (
-                    <div className="absolute top-3 right-3 rounded-full bg-gold px-2 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.08em] text-black">
-                      SVJ PLUS EXCLUSIVE
+                    <div className="absolute bottom-3 right-3 rounded-full bg-[#D4AF37] px-2 py-0.5 font-inter text-[9px] font-semibold uppercase tracking-[0.08em] text-black">
+                      ZENEXIS PLUS EXCLUSIVE
                     </div>
                   )}
                 </div>
@@ -320,7 +326,7 @@ export const RewardsView: React.FC = () => {
                       return (
                         <button
                           onClick={() => handleAccessReward(item)}
-                          className={`px-4 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all ${
+                          className={`flex min-h-11 items-center gap-1.5 rounded-lg px-4 font-mono text-xs font-bold shadow-lg transition-colors ${
                             isEquipped
                               ? "bg-gradient-to-r from-gold to-yellow-500 text-black shadow-gold/20"
                               : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white"
@@ -340,7 +346,7 @@ export const RewardsView: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => handleAccessReward(item)}
-                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all"
+                      className="flex min-h-11 items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 font-mono text-xs font-bold text-white shadow-lg transition-colors hover:from-emerald-500 hover:to-teal-500"
                     >
                       <Check className="w-4 h-4 text-emerald-200" />
                       <span>{item.actionLabel || "Access Reward"}</span>
@@ -349,7 +355,7 @@ export const RewardsView: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => redeemReward(item.id)}
-                    className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-2 font-inter text-xs font-semibold transition-colors ${
+                    className={`flex min-h-11 items-center gap-1.5 rounded-lg px-4 font-inter text-xs font-semibold transition-colors ${
                       canAfford
                         ? "bg-[#C81E3A] hover:bg-[#A0182E] text-white shadow-lg shadow-[#C81E3A]/20"
                         : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
@@ -368,9 +374,15 @@ export const RewardsView: React.FC = () => {
       {/* Reward Content Access Modal */}
       <AnimatePresence>
         {activeModalReward && (
-          <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+          <div
+            className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+            role="presentation"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={activeModalReward.title}
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="svj-radius-card svj-lit-top svj-elev-3 relative flex max-h-[88dvh] w-full max-w-2xl flex-col overflow-hidden border border-white/[0.06] bg-[#17171A] p-4"
@@ -395,8 +407,10 @@ export const RewardsView: React.FC = () => {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setActiveModalReward(null)}
-                  className="p-2 rounded-full text-[#8C8C90] hover:text-white hover:bg-white/5 transition-colors"
+                  aria-label="Close reward details"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-[#8C8C90] transition-colors hover:bg-white/5 hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -482,12 +496,18 @@ export const RewardsView: React.FC = () => {
       {/* Next Week Batch Teaser Modal */}
       <AnimatePresence>
         {showNextWeekPreview && (
-          <div className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+          <div
+            className="svj-modal-safe fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+            role="presentation"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Upcoming vault rewards"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl rounded-2xl bg-[#121214] border border-gold/30 p-4 shadow-2xl overflow-hidden"
+              className="relative max-h-[88dvh] w-full max-w-xl overflow-y-auto rounded-2xl border border-gold/30 bg-[#121214] p-4 shadow-2xl"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
@@ -505,8 +525,10 @@ export const RewardsView: React.FC = () => {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowNextWeekPreview(false)}
-                  className="p-2 rounded-full text-[#8C8C90] hover:text-white"
+                  aria-label="Close upcoming rewards"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-[#8C8C90] hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -549,10 +571,10 @@ export const RewardsView: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-xs font-bold text-white uppercase">
-                      SVJ Global Founder Summit Session #15
+                      ZENEXIS Global Founder Summit Session #15
                     </div>
                     <p className="text-[10px] text-[#8C8C90]">
-                      VIP Perk • Private AMA with Sabari & SVJ Athletics Team
+                      VIP Perk • Private AMA with Sabari & ZENEXIS Athletics Team
                     </p>
                   </div>
                   <span className="ml-auto text-xs text-gold font-bold">20,000 XP</span>

@@ -4,8 +4,8 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Service — SVJ" },
-      { name: "description", content: "SVJ terms of service." },
+      { title: "Terms of Service — ZENEXIS" },
+      { name: "description", content: "ZENEXIS terms of service." },
     ],
   }),
   component: TermsPage,
@@ -17,7 +17,7 @@ function TermsPage() {
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-8">
         <div className="space-y-2">
           <h1 className="font-inter text-3xl font-semibold tracking-tight">Terms of Service</h1>
-          <p className="text-xs font-mono text-[#8C8C90]">Last updated: September 2026</p>
+          <p className="text-xs font-mono text-[#8C8C90]">Last updated: October 2026</p>
         </div>
 
         <section className="space-y-3">
@@ -26,8 +26,8 @@ function TermsPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              By using SVJ, you agree to these Terms of Service. If you do not agree, do not use the
-              application.
+              By using ZENEXIS, you agree to these Terms of Service. If you do not agree, do not use
+              the application.
             </p>
           </div>
         </section>
@@ -38,29 +38,29 @@ function TermsPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              You must be at least 18 years old to create an account. SVJ does not offer accounts to
-              children or operate a parental-consent flow. You are responsible for maintaining the
-              security of your account credentials. One account per person.
+              You must be at least 18 years old to create an account. ZENEXIS does not offer
+              accounts to children or operate a parental-consent flow. You are responsible for
+              maintaining the security of your account credentials. One account per person.
             </p>
           </div>
         </section>
 
         <section className="space-y-3">
           <h2 className="font-inter text-lg font-semibold tracking-tight text-[#E62846]">
-            3. SVJ Plus Membership
+            3. ZENEXIS Plus Membership
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              SVJ Plus is an optional membership that unlocks additional features. Membership may be
-              obtained through reward codes earned by completing the 60-Day Challenge.
+              ZENEXIS Plus is an optional membership that unlocks additional features. Membership
+              may be obtained through reward codes earned by completing the 60-Day Challenge.
             </p>
             <p>
               Membership is non-transferable and locked to your account. Lifetime membership
               (Founder accounts) cannot be downgraded or replaced with timed membership.
             </p>
             <p>
-              Paid SVJ Plus access is a one-time purchase, not a recurring subscription. The price
-              and access period are shown before payment, access is activated after the owner
+              Paid ZENEXIS Plus access is a one-time purchase, not a recurring subscription. The
+              price and access period are shown before payment, access is activated after the owner
               verifies the payment, and no automatic renewal or cancellation charge is created.
               Refund requests are handled through the in-app support contact.
             </p>
@@ -73,9 +73,9 @@ function TermsPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              You retain ownership of content you create within SVJ (reflections, check-ins, profile
-              information). By using the application, you grant us a limited license to display this
-              content within the application as intended.
+              You retain ownership of content you create within ZENEXIS (reflections, check-ins,
+              profile information). By using the application, you grant us a limited license to
+              display this content within the application as intended.
             </p>
           </div>
         </section>
@@ -113,8 +113,9 @@ function TermsPage() {
           </h2>
           <div className="text-sm text-[#8C8C90] font-inter space-y-2 leading-relaxed">
             <p>
-              SVJ is provided "as is" without warranties of any kind. We are not responsible for any
-              outcomes related to your use of the application, including health or fitness results.
+              ZENEXIS is provided "as is" without warranties of any kind. We are not responsible for
+              any outcomes related to your use of the application, including health or fitness
+              results.
             </p>
           </div>
         </section>
@@ -136,7 +137,7 @@ function TermsPage() {
 
         <div className="pt-8 border-t border-white/10">
           <Link to="/" className="text-xs text-[#8C8C90] hover:text-white font-mono">
-            ← Back to SVJ
+            ← Back to ZENEXIS
           </Link>
         </div>
       </div>

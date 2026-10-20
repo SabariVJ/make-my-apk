@@ -139,7 +139,7 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
       return;
     }
     String activityType = call.getString("activityType", "running");
-    String title = call.getString("title", "SVJ is recording your activity");
+    String title = call.getString("title", "ZENEXIS is recording your activity");
     boolean autoPause = Boolean.TRUE.equals(call.getBoolean("autoPause", true));
 
     try {
@@ -170,14 +170,14 @@ public class VjWorkoutPlugin extends Plugin implements VjWorkoutService.Listener
 
   private void command(PluginCall call, String action) {
     String owner = call.getString("ownerId", ""), id = call.getString("activityId", "");
-    if (owner.isEmpty() || id.isEmpty()) { call.reject("Recording identity required. Reopen SVJ and retry."); return; }
+    if (owner.isEmpty() || id.isEmpty()) { call.reject("Recording identity required. Reopen ZENEXIS and retry."); return; }
     try { VjWorkoutService.sendAction(getContext(), action, owner, id, acknowledgement(call)); }
-    catch(Exception e) { call.reject("Could not deliver recording command. Open SVJ and retry."); }
+    catch(Exception e) { call.reject("Could not deliver recording command. Open ZENEXIS and retry."); }
   }
 
   private android.os.ResultReceiver acknowledgement(PluginCall call) {
     final boolean[] completed = {false};
-    main.postDelayed(() -> { if (!completed[0]) { completed[0] = true; call.reject("Recording did not confirm the command. Open SVJ and retry."); } }, 15000);
+    main.postDelayed(() -> { if (!completed[0]) { completed[0] = true; call.reject("Recording did not confirm the command. Open ZENEXIS and retry."); } }, 15000);
     return new android.os.ResultReceiver(main) {
       @Override protected void onReceiveResult(int code, android.os.Bundle data) {
         if (completed[0]) return;

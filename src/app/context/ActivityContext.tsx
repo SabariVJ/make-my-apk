@@ -82,6 +82,10 @@ function activityStorageKey(userId: string | null): string {
 }
 const MILESTONE_FEED_PREFIX = "Step Milestone";
 
+// The native pedometer is shared across account-scoped provider instances.
+// A new account must wait for the previous provider's final STOP to finish.
+let nativeStopBarrier: Promise<void> = Promise.resolve();
+
 // NOTE: the pedometer diagnostics panel and its opt-in flag were removed. Step
 // tracking, sensor-mode reporting and native listener bookkeeping are
 // unchanged — only the developer debug surface is gone, so no build (debug APK,
@@ -250,6 +254,8 @@ function AccountActivityProvider({
 
   const stateRef = useRef(state);
   stateRef.current = state;
+  const currentUserIdRef = useRef(userId);
+  currentUserIdRef.current = userId;
   const mountedRef = useRef(false);
   const requestedRef = useRef(false);
   const activeRef = useRef(false);
@@ -459,6 +465,8 @@ function AccountActivityProvider({
     };
     const task = queueRef.current.then(stop, stop);
     queueRef.current = task;
+    const previousStops = nativeStopBarrier;
+    nativeStopBarrier = Promise.allSettled([previousStops, task]).then(() => undefined);
     return task;
   }, [removeOwnedListeners]);
 
@@ -481,23 +489,38 @@ function AccountActivityProvider({
     if (platform !== "ios" || !Capacitor.isNativePlatform()) return;
     if (!vjPluginAvailable()) {
       console.error("[SVJ.Activity] iOS runtime detected but VjPedometer bridge is unavailable.");
-      setStatusMessage("iPhone step tracking is unavailable in this app build. Install the latest SVJ app.");
+      setStatusMessage(
+        "iPhone step tracking is unavailable in this app build. Install the latest ZENEXIS app.",
+      );
       return;
     }
     const generation = generationRef.current;
     try {
       const permission = await vjCheckPermissions();
-      console.info("[SVJ.Activity] iOS Motion permission:", permission?.activityRecognition ?? "unavailable");
+      console.info(
+        "[SVJ.Activity] iOS Motion permission:",
+        permission?.activityRecognition ?? "unavailable",
+      );
       if (permission?.activityRecognition !== "granted") {
         if (permission?.activityRecognition === "denied")
-          setStatusMessage("Motion permission denied. Open Settings to allow Motion & Fitness, then retry.");
+          setStatusMessage(
+            "Motion permission denied. Open Settings to allow Motion & Fitness, then retry.",
+          );
         return;
       }
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      console.info("[SVJ.Activity] Querying Core Motion daily steps:", { start, end: now.getTime() });
+      console.info("[SVJ.Activity] Querying Core Motion daily steps:", {
+        start,
+        end: now.getTime(),
+      });
       const measurement = await vjGetMeasurement(undefined, { start, end: now.getTime() });
-      if (!mountedRef.current || generation !== generationRef.current || userId !== owner.current) return;
+      if (
+        !mountedRef.current ||
+        generation !== generationRef.current ||
+        userId !== currentUserIdRef.current
+      )
+        return;
       console.info("[SVJ.Activity] Core Motion daily result:", {
         steps: measurement.numberOfSteps,
         distanceAvailable: measurement.distance !== undefined,
@@ -535,13 +558,16 @@ function AccountActivityProvider({
       await vjOpenSettings();
     } catch (error) {
       console.error("[SVJ.Activity] Could not open Motion settings:", error);
-      setStatusMessage("Could not open iPhone Settings. Open Settings > Privacy & Security > Motion & Fitness.");
+      setStatusMessage(
+        "Could not open iPhone Settings. Open Settings > Privacy & Security > Motion & Fitness.",
+      );
     }
   }, []);
 
   const startTracking = useCallback((): Promise<void> => {
     if (!userId || !mountedRef.current || requestedRef.current || updateRequiredRef.current)
       return Promise.resolve();
+    const precedingNativeStops = nativeStopBarrier;
     const generation = ++generationRef.current;
     const sessionId = `${Date.now()}-${generation}`;
     const current = () =>
@@ -606,6 +632,7 @@ function AccountActivityProvider({
       return true;
     };
     const start = async () => {
+      await precedingNativeStops;
       if (!current()) return;
       try {
         await removeOwnedListeners();
@@ -621,14 +648,14 @@ function AccountActivityProvider({
           if (!vjPluginAvailable())
             throw new Error(
               platform === "ios"
-                ? "iPhone step bridge is unavailable. Install the latest SVJ app build."
+                ? "iPhone step bridge is unavailable. Install the latest ZENEXIS app build."
                 : "Native step bridge is unavailable in this build.",
             );
           const info = await vjGetSensorInfo();
           if (!current()) return;
           if (!info?.available || info.mode === "none")
             throw new Error("No compatible step sensor found on this device.");
-          mode = info.mode;
+          mode = platform === "ios" ? "ios" : info.mode;
           let permission = await vjCheckPermissions();
           if (!current()) return;
           if (permission?.activityRecognition !== "granted")
@@ -685,7 +712,7 @@ function AccountActivityProvider({
           }
         } else {
           if (!Capacitor.isNativePlatform())
-            throw new Error("Open SVJ on your iPhone to track steps with Motion & Fitness.");
+            throw new Error("Open ZENEXIS on your iPhone to track steps with Motion & Fitness.");
           throw new Error(`Step tracking is not supported on this native platform (${platform}).`);
         }
         activeRef.current = true;
@@ -729,7 +756,7 @@ function AccountActivityProvider({
             ? "error"
             : updateRequiredRef.current
               ? "update-required"
-        : /permission denied/i.test(message)
+              : /permission denied/i.test(message)
                 ? "denied"
                 : "unsupported",
         );

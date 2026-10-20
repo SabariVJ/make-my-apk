@@ -33,7 +33,8 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
             Your free trial has ended
           </h1>
           <p className="text-[11px] font-inter text-[#8C8C90]">
-            SVJ Plus continues everything you have built{email ? `, signed in as ${email}` : ""}.
+            ZENEXIS Plus continues everything you have built{email ? `, signed in as ${email}` : ""}
+            .
           </p>
         </div>
 
@@ -41,7 +42,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
           <div className="w-[min(14rem,60vw)] aspect-square bg-white p-1 rounded-lg flex items-center justify-center overflow-hidden">
             <img
               src={upiQr.url}
-              alt="SVJ Plus payment QR code"
+              alt="ZENEXIS Plus payment QR code"
               width={669}
               height={610}
               loading="eager"
@@ -60,7 +61,7 @@ export const TrialExpiredScreen: React.FC<Props> = ({ email, onSignOut }) => {
         <div className="svj-radius-row space-y-1 border border-white/[0.05] bg-[#08080A] p-3 text-left text-xs text-zinc-300">
           <div className="flex items-center gap-2 font-inter font-semibold text-emerald-400">
             <ShieldCheck className="w-4 h-4" />
-            <span>Lifetime SVJ Plus Access</span>
+            <span>Lifetime ZENEXIS Plus Access</span>
           </div>
           <p className="text-[11px] text-[#8C8C90] leading-relaxed">
             After paying, contact us to activate your account. Access is granted manually after

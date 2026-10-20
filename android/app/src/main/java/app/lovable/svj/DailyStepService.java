@@ -85,14 +85,14 @@ public class DailyStepService extends Service implements SensorEventListener {
       if (!prefs(this).edit().putString("owner", owner).putBoolean("enabled", true).remove("error").commit()) throw new IllegalStateException("Device storage is unavailable.");
       return START_STICKY;
     } catch (Exception e) {
-      prefs(this).edit().putString("error", "Open SVJ to resume tracking. Check Motion permission and device storage.").putBoolean("enabled", false).commit();
+      prefs(this).edit().putString("error", "Open ZENEXIS to resume tracking. Check Motion permission and device storage.").putBoolean("enabled", false).commit();
       stopCounting(); ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY;
     }
   }
   private Notification notification(long total) {
     PendingIntent stop = PendingIntent.getService(this, 8472, new Intent(this, DailyStepService.class).setAction("STOP"), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     PendingIntent open = PendingIntent.getActivity(this, 8472, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-    return new NotificationCompat.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_stat_workout).setContentTitle("SVJ daily steps")
+    return new NotificationCompat.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_stat_workout).setContentTitle("ZENEXIS daily steps")
       .setContentText(total + " steps today").setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).addAction(0, "Stop", stop).build();
   }
   @Override public void onSensorChanged(SensorEvent event) {
@@ -123,7 +123,7 @@ public class DailyStepService extends Service implements SensorEventListener {
     @Override public void onReceive(Context c, Intent intent) {
       if (!prefs(c).getBoolean("enabled", false) || !permitted(c)) return;
       try { enable(c, prefs(c).getString("owner", "")); }
-      catch (Exception e) { prefs(c).edit().putString("error", "Open SVJ to resume daily steps.").commit(); }
+      catch (Exception e) { prefs(c).edit().putString("error", "Open ZENEXIS to resume daily steps.").commit(); }
     }
   }
 }

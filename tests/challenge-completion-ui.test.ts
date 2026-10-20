@@ -46,9 +46,12 @@ describe("challenge completion UI", () => {
     assert.match(challenges, /formatCompletedAt\(challenge\.completedAt\)/);
   });
 
-  it("completion control is a square checkbox, not a pill", () => {
-    const checkbox = challenges.match(/w-5 h-5 rounded-(\w+) border flex items-center/);
-    assert.ok(checkbox, "checkbox class found");
+  it("completion control has a 44px target around a square checkbox", () => {
+    assert.match(challenges, /flex h-11 w-11 shrink-0 items-center justify-center rounded-xl/);
+    const checkbox = challenges.match(
+      /flex h-5 w-5 items-center justify-center rounded-(\w+) border/,
+    );
+    assert.ok(checkbox, "square checkbox visual found");
     assert.equal(checkbox![1], "md");
   });
 

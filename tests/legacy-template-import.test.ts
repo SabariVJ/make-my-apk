@@ -192,7 +192,7 @@ describe("import surface wiring", () => {
     const card = read("src/app/components/LegacyTemplateImportCard.tsx");
     assert.match(card, /data-testid="legacy-template-import-confirm"/);
     assert.match(card, /Import these templates/);
-    assert.match(card, /SVJ never guesses/);
+    assert.match(card, /ZENEXIS never guesses/);
   });
 
   it("never deletes the device originals and never awards XP", () => {

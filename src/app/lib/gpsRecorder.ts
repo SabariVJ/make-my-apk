@@ -76,7 +76,7 @@ export function createMemoryStorage(seed: Record<string, string> = {}): SessionS
 export function createLocalStorageAdapter(): SessionStorage {
   // A memory fallback would silently lose recordings on the next reopen.
   const unavailable = () => {
-    throw new Error("Device storage is unavailable. Free some space and reopen SVJ.");
+    throw new Error("Device storage is unavailable. Free some space and reopen ZENEXIS.");
   };
   return {
     read: (key) => (typeof localStorage === "undefined" ? null : localStorage.getItem(key)),

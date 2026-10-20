@@ -108,9 +108,9 @@ describe("avatarInitials", () => {
     assert.equal(avatarInitials("Sabari VJ"), "S");
   });
 
-  it("falls back to V for missing names", () => {
-    assert.equal(avatarInitials(null), "V");
-    assert.equal(avatarInitials(""), "V");
+  it("falls back to Z for missing names", () => {
+    assert.equal(avatarInitials(null), "Z");
+    assert.equal(avatarInitials(""), "Z");
   });
 });
 

@@ -49,7 +49,7 @@ const Card: React.FC<{ title: string; subtitle?: string; children: React.ReactNo
   subtitle,
   children,
 }) => (
-  <section className="svj-radius-card svj-elev-1 border border-white/[0.06] bg-[#17171A] p-3.5 sm:p-4">
+  <section className="svj-radius-card svj-elev-1 min-w-0 border border-white/[0.06] bg-[#17171A] p-3.5 sm:p-4">
     <SVJSectionHeader title={title} />
     {subtitle && (
       <p className="mt-1.5 text-[11px] font-inter leading-relaxed text-[#8C8C90]">{subtitle}</p>
@@ -304,8 +304,11 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
             />
             <ul className="space-y-2" data-testid="muscle-coverage">
               {coverage.map((entry) => (
-                <li key={entry.muscle} className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-xs font-inter text-[#F4F2ED]">
+                <li
+                  key={entry.muscle}
+                  className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1"
+                >
+                  <span className="flex min-w-0 items-center gap-2 text-xs font-inter text-[#F4F2ED]">
                     {entry.status === "trained" ? (
                       <Check className="h-3.5 w-3.5 text-[#C81E3A]" aria-hidden />
                     ) : (
@@ -313,7 +316,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                     )}
                     {entry.label}
                   </span>
-                  <span className="flex items-center gap-2 font-mono text-[10px] text-[#8C8C90]">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] text-[#8C8C90]">
                     <span>{recency(entry.lastTrainedDate)}</span>
                     <span className="text-[#F4F2ED]">{entry.directSets} direct</span>
                     <span>{entry.supportingSets} supporting</span>
@@ -339,7 +342,7 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                 value={selectedExerciseId ?? ""}
                 onChange={(e) => setSelectedExerciseId(e.target.value)}
                 aria-label="Choose an exercise to review"
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0B0C] px-2 py-2 text-xs font-inter text-white focus:outline-none focus:border-[#C81E3A]/60"
+                className="mt-1 min-h-11 w-full rounded-xl border border-white/10 bg-[#0B0B0C] px-3 py-2 text-sm font-inter text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
               >
                 {options.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -407,40 +410,44 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
                 )}
 
                 {/* Real per-session chart. Bars are completed work only. */}
-                <div
-                  role="img"
-                  aria-label={`${progress.exerciseName} by session, oldest to newest: ${progress.points
-                    .map(
-                      (p) =>
-                        `${p.localDate} ${pointValue(p)}${
-                          progress.trendBasis === "weight"
-                            ? " kg"
-                            : progress.trendBasis === "duration"
-                              ? " seconds"
-                              : " reps"
-                        }`,
-                    )
-                    .join(", ")}`}
-                  className="mt-3 flex items-end gap-1.5"
-                  style={{ height: 96 }}
-                >
-                  {progress.points.slice(-12).map((point) => (
-                    <div
-                      key={point.activityId}
-                      className="flex min-w-0 flex-1 flex-col items-center gap-1"
-                    >
-                      <span className="font-mono text-[9px] text-[#8C8C90]">
-                        {pointValue(point)}
-                      </span>
+                <div className="mt-3 max-w-full rounded-lg">
+                  <div
+                    role="img"
+                    aria-label={`${progress.exerciseName} by session, oldest to newest: ${progress.points
+                      .map(
+                        (p) =>
+                          `${p.localDate} ${pointValue(p)}${
+                            progress.trendBasis === "weight"
+                              ? " kg"
+                              : progress.trendBasis === "duration"
+                                ? " seconds"
+                                : " reps"
+                          }`,
+                      )
+                      .join(", ")}`}
+                    className="flex w-full min-w-0 items-end gap-1 sm:gap-1.5"
+                    style={{ height: 96 }}
+                  >
+                    {progress.points.slice(-12).map((point) => (
                       <div
-                        className="w-full rounded-t-md bg-gradient-to-t from-[#8E1226] to-[#C81E3A]"
-                        style={{ height: `${Math.max(6, (pointValue(point) / maxPoint) * 64)}px` }}
-                      />
-                      <span className="w-full truncate text-center font-mono text-[8px] text-[#8C8C90]">
-                        {point.localDate.slice(5)}
-                      </span>
-                    </div>
-                  ))}
+                        key={point.activityId}
+                        className="flex min-w-0 flex-1 flex-col items-center gap-1"
+                      >
+                        <span className="font-mono text-[9px] text-[#8C8C90]">
+                          {pointValue(point)}
+                        </span>
+                        <div
+                          className="w-full rounded-t-md bg-gradient-to-t from-[#8E1226] to-[#C81E3A]"
+                          style={{
+                            height: `${Math.max(6, (pointValue(point) / maxPoint) * 64)}px`,
+                          }}
+                        />
+                        <span className="w-full truncate text-center font-mono text-[8px] text-[#8C8C90]">
+                          {point.localDate.slice(5)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {progress.points.length > 12 && (
                   <p className="mt-1 text-[9px] font-mono text-[#8C8C90]">
@@ -450,10 +457,10 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
 
                 {nextTarget && (
                   <div
-                    className="svj-radius-row mt-3 border border-[#C9A227]/25 bg-[#C9A227]/[0.06] px-3 py-2.5"
+                    className="svj-radius-row mt-3 border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-2.5"
                     data-testid="next-target"
                   >
-                    <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#C9A227]">
+                    <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
                       Next target
                     </p>
                     <p className="mt-0.5 font-mono text-[11px] text-[#E8D9A0]">
@@ -517,8 +524,8 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
       {/* Body-weight trend — only real logged series, never estimated */}
       <Card title="Body-weight trend" subtitle="Only shown from weight entries you logged">
         <Empty>
-          No body-weight series has been logged yet, so no trend is shown. SVJ never estimates body
-          change from workout volume.
+          No body-weight series has been logged yet, so no trend is shown. ZENEXIS never estimates
+          body change from workout volume.
         </Empty>
       </Card>
     </div>
@@ -526,9 +533,9 @@ export const TrainingProgress: React.FC<TrainingProgressProps> = ({
 };
 
 const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="rounded-xl border border-white/5 bg-black/30 p-2.5">
+  <div className="min-w-0 rounded-xl border border-white/5 bg-black/30 p-2.5">
     <div className="text-[9px] font-mono uppercase tracking-wider text-[#8C8C90]">{label}</div>
-    <div className="font-mono text-lg font-bold text-white">{value}</div>
+    <div className="break-words font-mono text-lg font-bold text-white">{value}</div>
   </div>
 );
 

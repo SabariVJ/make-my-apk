@@ -5,11 +5,11 @@ const APK_URL = "https://github.com/SabariVJ/make-my-apk/releases/latest/downloa
 export const Route = createFileRoute("/landing")({
   head: () => ({
     meta: [
-      { title: "SVJ — Build a Life That Shows" },
+      { title: "ZENEXIS — Ascend to Your Apex" },
       {
         name: "description",
         content:
-          "Daily discipline challenges, real stat tracking, 60-day transformation. Download SVJ and start your journey.",
+          "Daily discipline challenges, real stat tracking, 60-day transformation. Download ZENEXIS and start your journey.",
       },
     ],
   }),
@@ -21,7 +21,7 @@ const ATTRIBUTES = [
   { name: "Ambition", color: "#A855F7", desc: "Set goals and crush them daily" },
   { name: "Intellect", color: "#F59E0B", desc: "Grow knowledge through focused learning" },
   { name: "Mental", color: "#EAB308", desc: "Build resilience and mental clarity" },
-  { name: "Social", color: "#3B82F6", desc: "Connect with the SVJ community" },
+  { name: "Social", color: "#3B82F6", desc: "Connect with the ZENEXIS community" },
   { name: "Discipline", color: "#F43F5E", desc: "Consistency is your superpower" },
 ];
 
@@ -30,10 +30,14 @@ function LandingPage() {
     <div className="min-h-screen bg-[#0B0B0C] text-[#F4F2ED]">
       {/* Navigation */}
       <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/[0.06] bg-[#0B0B0C]/85 px-6 py-4 backdrop-blur-md">
-        <div className="font-anton text-xl tracking-wide">SVJ</div>
+        <img
+          src="/brand/zenexis-logo-primary.svg"
+          alt="ZENEXIS"
+          className="h-10 w-auto max-w-[42vw] object-contain"
+        />
         <a
           href={APK_URL}
-          download="SVJ.apk"
+          download="ZENEXIS.apk"
           className="svj-radius-row bg-[#C81E3A] px-5 py-2 font-inter text-sm font-semibold text-white transition-colors hover:bg-[#A0182E]"
         >
           Download APK
@@ -45,7 +49,7 @@ function LandingPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(200,30,58,0.18),transparent_70%)]" />
         <div className="relative z-10 mx-auto max-w-2xl text-center">
           <p className="font-inter text-[11px] font-semibold tracking-[0.18em] text-[#C9A227]">
-            THE PERFORMANCE OS
+            ASCEND TO YOUR APEX
           </p>
           <h1 className="mt-4 font-anton text-5xl leading-[0.95] tracking-tight sm:text-7xl">
             Build a life
@@ -59,7 +63,7 @@ function LandingPage() {
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <a
               href={APK_URL}
-              download="SVJ.apk"
+              download="ZENEXIS.apk"
               className="svj-radius-row bg-[#C81E3A] px-8 py-4 font-inter font-semibold text-white transition-colors hover:bg-[#A0182E]"
             >
               Download APK
@@ -129,7 +133,7 @@ function LandingPage() {
           <h2 className="mt-3 font-anton text-4xl tracking-tight sm:text-5xl">60-day challenge</h2>
           <p className="mt-6 max-w-2xl font-inter text-lg text-[#A6A6AD]">
             A structured pathway with server-confirmed progress, milestone tracking and an
-            end-of-journey reward code that unlocks SVJ Plus for two months. Every day counts.
+            end-of-journey reward code that unlocks ZENEXIS Plus for two months. Every day counts.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {["60 days", "Server confirmed", "Reward code", "Plus unlocked"].map((tag) => (
@@ -154,7 +158,7 @@ function LandingPage() {
           </p>
           <a
             href={APK_URL}
-            download="SVJ.apk"
+            download="ZENEXIS.apk"
             className="mt-10 inline-flex items-center gap-3 svj-radius-row bg-[#C81E3A] px-10 py-5 font-inter text-lg font-bold text-white transition-colors hover:bg-[#A0182E]"
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +181,11 @@ function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/[0.06] py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
-          <div className="font-anton text-xl tracking-wide">SVJ</div>
+          <img
+            src="/brand/zenexis-logo-primary.svg"
+            alt="ZENEXIS"
+            className="h-10 w-auto max-w-[42vw] object-contain"
+          />
           <div className="flex gap-6 font-inter text-sm text-[#8C8C90]">
             <a href="/privacy" className="transition-colors hover:text-[#F4F2ED]">
               Privacy
@@ -192,7 +200,7 @@ function LandingPage() {
               Contact
             </a>
           </div>
-          <p className="font-inter text-sm text-[#8C8C90]">© 2026 SVJ. All rights reserved.</p>
+          <p className="font-inter text-sm text-[#8C8C90]">© 2026 ZENEXIS. All rights reserved.</p>
         </div>
       </footer>
     </div>

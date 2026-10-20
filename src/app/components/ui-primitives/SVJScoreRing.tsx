@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 
 export type ScoreTone =
   | "crimson"
@@ -48,7 +48,7 @@ export const SVJScoreRing: React.FC<{
 }) => {
   const tones: Record<ScoreTone, string> = {
     crimson: "#C81E3A",
-    premium: "#C9A227",
+    premium: "#D4AF37",
     physical: "#10B981",
     ambition: "#A855F7",
     intellect: "#F59E0B",
@@ -57,6 +57,7 @@ export const SVJScoreRing: React.FC<{
     discipline: "#F43F5E",
   };
   const color = tones[tone];
+  const gradientId = useId();
   const hasData = value !== null && Number.isFinite(value);
   const safeMax = max > 0 ? max : 100;
   const ratio = hasData ? Math.max(0, Math.min(1, (value as number) / safeMax)) : 0;
@@ -92,7 +93,7 @@ export const SVJScoreRing: React.FC<{
           className="-rotate-90"
         >
           <defs>
-            <linearGradient id={`svj-ring-${tone}`} x1="0" y1="0" x2="1" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity="0.55" />
               <stop offset="100%" stopColor={color} stopOpacity="1" />
             </linearGradient>
@@ -122,7 +123,7 @@ export const SVJScoreRing: React.FC<{
               cy={center}
               r={radius}
               fill="none"
-              stroke={`url(#svj-ring-${tone})`}
+              stroke={`url(#${gradientId})`}
               strokeWidth={thickness}
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -143,7 +144,10 @@ export const SVJScoreRing: React.FC<{
           )}
         </svg>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 flex flex-col items-center justify-center"
+        >
           <span
             className="font-anton leading-none tracking-tight text-[#F4F2ED]"
             style={{ fontSize: Math.round(size * 0.26) }}

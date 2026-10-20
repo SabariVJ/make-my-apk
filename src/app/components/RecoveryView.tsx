@@ -58,8 +58,8 @@ const UpcomingSection: React.FC<{
       ))}
     </ul>
     <p className="mt-4 svj-radius-row border border-white/[0.06] bg-[#08080A] px-3 py-2 font-inter text-[11px] leading-relaxed text-[#8C8C90]">
-      Nothing is shown here yet because SVJ only displays recovery data it can actually derive from
-      your recorded activity, check-ins and completed tasks.
+      Nothing is shown here yet because ZENEXIS only displays recovery data it can actually derive
+      from your recorded activity, check-ins and completed tasks.
     </p>
   </div>
 );
@@ -216,7 +216,7 @@ export const RecoveryView: React.FC<{ onOpenPlan?: () => void }> = ({ onOpenPlan
           <UpcomingSection
             section="devices"
             title="Devices"
-            summary="Future recovery and sleep data sources. Nothing is connected yet, and SVJ will only report a device once it can genuinely read from it."
+            summary="Future recovery and sleep data sources. Nothing is connected yet, and ZENEXIS will only report a device once it can genuinely read from it."
             points={[
               "Android Health Connect — steps, sleep and heart rate",
               "Wear OS health data and companion apps",

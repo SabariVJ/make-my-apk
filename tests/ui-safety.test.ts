@@ -47,7 +47,7 @@ describe("no browser dialog APIs in user flows", () => {
   it("ProfileView uses an in-app logout dialog, not window.confirm", async () => {
     const view = await read("../src/app/views/ProfileView.tsx");
     assert.doesNotMatch(view, /window\.confirm/);
-    assert.match(view, /Log out of SVJ\?/);
+    assert.match(view, /Log out of ZENEXIS\?/);
     assert.match(view, /showLogoutDialog/);
   });
 

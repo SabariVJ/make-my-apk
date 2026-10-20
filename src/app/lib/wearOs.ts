@@ -80,7 +80,7 @@ export type SensorSource = (typeof SENSOR_SOURCES)[number];
 export const SENSOR_SOURCE_LABELS: Record<SensorSource, string> = {
   phone: "Phone",
   ble: "Bluetooth sensor",
-  wear_os: "SVJ Watch",
+  wear_os: "ZENEXIS Watch",
   health_connect: "Health Connect",
 };
 
@@ -126,7 +126,7 @@ export type WearConnectionState =
 
 export const WEAR_CONNECTION_LABELS: Record<WearConnectionState, string> = {
   unavailable: "Not available on this device",
-  companion_missing: "SVJ Wear OS app required",
+  companion_missing: "ZENEXIS Wear OS app required",
   disconnected: "Not connected",
   connected: "Connected",
   reconnecting: "Reconnecting…",
@@ -263,7 +263,7 @@ export function normalizeWearMeasurement(raw: unknown, nowMs: number): WearMeasu
     deviceName:
       typeof value.deviceName === "string" && value.deviceName.length > 0
         ? value.deviceName
-        : "SVJ Watch",
+        : "ZENEXIS Watch",
     sessionId: typeof value.sessionId === "string" ? value.sessionId : undefined,
   };
 }
@@ -275,7 +275,7 @@ export function wearMeasurementToHeartRate(measurement: WearMeasurement): LiveHe
     bpm: measurement.value,
     timestampMs: measurement.timestampMs,
     source: "wear_os",
-    deviceName: measurement.deviceName ?? "SVJ Watch",
+    deviceName: measurement.deviceName ?? "ZENEXIS Watch",
     deviceId: measurement.deviceId,
   };
 }

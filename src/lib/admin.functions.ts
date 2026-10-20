@@ -194,7 +194,7 @@ export const adminGrantPlus = createServerFn({ method: "POST" })
         typeof context.claims["email"] === "string"
           ? String(context.claims["email"]).trim().toLowerCase()
           : "";
-      const senderLabel = senderEmail === FOUNDER_EMAIL ? "Founder" : "SVJ Admin";
+      const senderLabel = senderEmail === FOUNDER_EMAIL ? "Founder" : "ZENEXIS Admin";
 
       // The gift RPCs postdate the generated Supabase types; use the
       // untyped client, same as the membership RPC in trial.functions.ts.

@@ -33,7 +33,7 @@ export const SVJSectionHeader: React.FC<{
         {variant === "default" ? (
           <span aria-hidden className="h-3.5 w-1 shrink-0 rounded-full bg-[#C81E3A]" />
         ) : (
-          Icon && <Icon aria-hidden className="h-4 w-4 shrink-0 text-[#C9A227]" />
+          Icon && <Icon aria-hidden className="h-4 w-4 shrink-0 text-[#D4AF37]" />
         )}
         <h3
           className={

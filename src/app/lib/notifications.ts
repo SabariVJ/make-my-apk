@@ -293,7 +293,7 @@ export function buildNotificationPlan(
       body:
         input.totalTasks > 0
           ? `${input.totalTasks} tasks are ready. Start with one clear win.`
-          : "Open SVJ and set one meaningful target for today.",
+          : "Open ZENEXIS and set one meaningful target for today.",
       triggerAt: nextTime(now, prefs.morningTime).getTime(),
       repeatDays: 1,
       channel: "coach",
@@ -350,7 +350,7 @@ export function buildNotificationPlan(
   if (prefs.weeklyRecap) {
     schedules.push({
       id: 105,
-      title: "Your SVJ week",
+      title: "Your ZENEXIS week",
       body: `You have ${input.weeklyXp.toLocaleString()} XP this week. Review what moved and set the next priority.`,
       triggerAt: nextWeekday(now, 0, 18, 0).getTime(),
       repeatDays: 7,
@@ -431,7 +431,7 @@ export function buildNotificationPlan(
         if (!at) continue;
         schedules.push({
           id: 200 + days,
-          title: `SVJ Plus ends in ${days} day${days === 1 ? "" : "s"}`,
+          title: `ZENEXIS Plus ends in ${days} day${days === 1 ? "" : "s"}`,
           body: "Review your membership before access changes.",
           triggerAt: at.getTime(),
           channel: "membership",
@@ -441,8 +441,8 @@ export function buildNotificationPlan(
       if (expiry.getTime() > now.getTime()) {
         schedules.push({
           id: 200,
-          title: "Your SVJ Plus period has ended",
-          body: "Your free features remain available. Open SVJ to review membership options.",
+          title: "Your ZENEXIS Plus period has ended",
+          body: "Your free features remain available. Open ZENEXIS to review membership options.",
           triggerAt: moveOutOfQuietHours(expiry).getTime(),
           channel: "membership",
           target: "profile",
@@ -529,7 +529,7 @@ export async function sendTestNotification(): Promise<boolean> {
   try {
     await VjNotifications.notifyNow({
       id: 9991,
-      title: "SVJ notifications are on",
+      title: "ZENEXIS notifications are on",
       body: "Progress, reminders and membership alerts can now reach you.",
       channel: "progress",
       target: "profile",

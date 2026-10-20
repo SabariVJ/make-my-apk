@@ -151,7 +151,7 @@ const STEPS: Step[] = [
   {
     id: "goals",
     title: "Your Goals",
-    subtitle: "What do you want SVJ to help you improve?",
+    subtitle: "What do you want ZENEXIS to help you improve?",
     icon: Target,
     section: "goals",
   },

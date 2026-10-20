@@ -212,7 +212,7 @@ describe("Smart notifications — Android native bridge", () => {
     assert.match(notificationsPluginSource, /setAndAllowWhileIdle/);
   });
 
-  it("persists schedules, restores them after system clock events and deep-links taps into SVJ", () => {
+  it("persists schedules, restores them after system clock events and deep-links taps into ZENEXIS", () => {
     assert.match(notificationsPluginSource, /PREF_SCHEDULES/);
     assert.match(notificationsPluginSource, /app\.lovable\.svj:\/\/notification\//);
     assert.match(notificationReceiverSource, /BOOT_COMPLETED/);

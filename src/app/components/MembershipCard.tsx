@@ -29,7 +29,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
 
   const handleShare = () => {
     navigator.clipboard.writeText(
-      `SVJ Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${memberSerial}`,
+      `ZENEXIS Member Card: ${user.name} (@${user.username}) | Tier: ${user.tier} | Member ID: ${memberSerial}`,
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -45,7 +45,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
               Membership
             </span>
             <span className="block font-inter text-sm font-semibold text-[#F4F2ED]">
-              Your SVJ digital card
+              Your ZENEXIS digital card
             </span>
           </div>
         </div>
@@ -98,15 +98,17 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
           {/* Top Row */}
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#C81E3A] flex items-center justify-center font-anton text-lg text-white shadow-md shadow-[#C81E3A]/30">
-                SVJ
-              </div>
+              <img
+                src="/brand/zenexis-symbol.svg"
+                alt=""
+                className="h-8 w-8 shrink-0 object-contain"
+              />
               <div>
-                <span className="font-anton tracking-widest text-lg block leading-none text-white">
-                  SVJ MEMBER
+                <span className="font-anton tracking-wide text-xs sm:text-sm block leading-none text-white">
+                  ZENEXIS MEMBER
                 </span>
                 <span className="text-[9px] font-mono text-[#8C8C90] uppercase tracking-wider">
-                  Self-Improvement Guild
+                  Ascend to Your Apex
                 </span>
               </div>
             </div>
@@ -168,7 +170,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
         >
           {/* Magnetic Strip */}
           <div className="flex h-8 min-w-0 w-full items-center justify-end bg-black/90 px-2 text-right font-mono text-[9px] text-zinc-600">
-            MAGNETIC ENCODED 882193-SVJ
+            ZENEXIS MEMBER CARD
           </div>
 
           <div className="flex items-center justify-between gap-4 my-2">
@@ -180,7 +182,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
                 {user.name}
               </div>
               <p className="text-[9px] font-mono text-zinc-500 mt-2 leading-relaxed">
-                This digital card certifies active membership in the SVJ Self-Improvement Guild.
+                This digital card certifies active membership in the ZENEXIS community.
                 Non-transferable.
               </p>
             </div>
@@ -201,7 +203,7 @@ export const MembershipCard: React.FC<MembershipCardProps> = ({ user }) => {
 
           <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-mono text-[#8C8C90]">
             <span>STREAK: {user.currentStreak} DAYS</span>
-            <span className="text-[#C81E3A]">SVJ GUILD OFFICIAL</span>
+            <span className="text-[#C81E3A]">ZENEXIS OFFICIAL</span>
           </div>
         </div>
       </motion.div>

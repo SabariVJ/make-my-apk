@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StepTrackingStatus } from "../components/StepTrackingStatus";
-import { motion } from "motion/react";
 import {
   Activity as ActivityIcon,
   Footprints,
@@ -26,30 +25,10 @@ import { SVJSectionHeader } from "../components/ui-primitives/SVJSectionHeader";
 import { SVJEmptyState } from "../components/ui-primitives/SVJEmptyState";
 import { Capacitor } from "@capacitor/core";
 
-/** Animated numeric readout with a subtle pulse on every increase. */
+/** Live sensor values stay stable in the DOM so frequent updates remain readable. */
 const LiveNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
-  const [bump, setBump] = useState(false);
-  const prev = useRef(value);
-  useEffect(() => {
-    if (value <= prev.current) {
-      prev.current = value;
-      return;
-    }
-    setBump(true);
-    const t = window.setTimeout(() => setBump(false), 450);
-    prev.current = value;
-    return () => window.clearTimeout(t);
-  }, [value]);
   return (
-    <motion.span
-      key={value}
-      initial={bump ? { scale: 1.12 } : false}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 400, damping: 18 }}
-      className={`inline-block ${className ?? ""}`}
-    >
-      {value.toLocaleString()}
-    </motion.span>
+    <span className={`inline-block tabular-nums ${className ?? ""}`}>{value.toLocaleString()}</span>
   );
 };
 
@@ -198,7 +177,7 @@ const ActivityViewContent: React.FC<{
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-2xl bg-[#C81E3A]/15 border border-[#C81E3A]/40 flex items-center justify-center">
-            <ActivityIcon className="w-5 h-5 text-[#E62846]" />
+            <ActivityIcon className="w-5 h-5 text-[#C81E3A]" />
           </div>
           <h1 className="font-anton text-2xl tracking-wide text-white">Activity</h1>
         </div>
@@ -217,7 +196,13 @@ const ActivityViewContent: React.FC<{
             ) : (
               <ActivitySquare className="w-3.5 h-3.5" />
             )}
-            {trackingActive ? "Tracking active" : "Tracking stopped"}
+            {trackingStatus === "starting"
+              ? "Starting tracker"
+              : trackingStatus === "stopping"
+                ? "Stopping tracker"
+                : trackingActive
+                  ? "Tracking active"
+                  : "Tracking stopped"}
           </div>
         )}
       </div>
@@ -234,12 +219,13 @@ const ActivityViewContent: React.FC<{
           <button
             type="button"
             disabled={trackingStatus === "stopping" || trackingStatus === "update-required"}
+            aria-busy={trackingStatus === "starting" || trackingStatus === "stopping"}
             onClick={() => {
               if (trackingRequested || trackingActive || trackingStatus === "error")
                 void stopTracking();
               else void startTracking();
             }}
-            className="mb-3 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press"
+            className="mb-3 min-h-11 w-full rounded-xl bg-[#C81E3A] px-4 py-3 text-xs font-anton uppercase tracking-wider text-white transition-colors hover:bg-[#A0182E] disabled:opacity-50 svj-press focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           >
             {trackingStatus === "update-required"
               ? "APP UPDATE REQUIRED"
@@ -254,7 +240,12 @@ const ActivityViewContent: React.FC<{
 
       {/* Train internal navigation: only working sections are exposed. */}
       <StepTrackingStatus />
-      <div className="mb-3 flex flex-wrap gap-2 pb-1" data-testid="train-sections">
+      <div
+        className="mb-3 flex flex-wrap gap-2 pb-1"
+        data-testid="train-sections"
+        role="group"
+        aria-label="Activity sections"
+      >
         {(
           [
             { id: "activity", label: "Overview" },
@@ -274,10 +265,11 @@ const ActivityViewContent: React.FC<{
               key={s.id}
               type="button"
               onClick={() => setSection(s.id)}
-              className={`min-w-0 max-w-full rounded-lg px-2.5 py-1.5 text-center text-[11px] font-inter font-medium transition-colors ${
+              aria-pressed={section === s.id}
+              className={`min-h-11 min-w-0 max-w-full rounded-xl border px-3 py-2 text-center text-xs font-inter font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                 section === s.id
-                  ? "bg-[#C81E3A]/15 text-white"
-                  : "bg-white/[0.04] text-[#8C8C90] hover:text-white"
+                  ? "border-[#C81E3A]/45 bg-[#C81E3A]/15 text-white"
+                  : "border-white/[0.06] bg-[#17171A] text-[#A9A9AE] hover:border-white/[0.14] hover:text-white"
               }`}
             >
               {s.label}
@@ -376,7 +368,7 @@ const ActivityViewContent: React.FC<{
                   <div className="text-[11px] font-inter text-[#8C8C90]">Active Calories</div>
                   <LiveNumber
                     value={activeKcal}
-                    className="font-mono text-xl font-bold text-[#C9A227]"
+                    className="font-mono text-xl font-bold text-[#D4AF37]"
                   />
                   <div className="text-[10px] font-inter text-[#8C8C90] mt-0.5">From movement</div>
                 </div>

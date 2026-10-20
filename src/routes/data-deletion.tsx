@@ -4,11 +4,11 @@ import { DeleteAccountPage } from "./delete-account";
 export const Route = createFileRoute("/data-deletion")({
   head: () => ({
     meta: [
-      { title: "Delete Your Data — SVJ" },
+      { title: "Delete Your Data — ZENEXIS" },
       {
         name: "description",
         content:
-          "Delete your SVJ account and all associated data, including activity and profile data.",
+          "Delete your ZENEXIS account and all associated data, including activity and profile data.",
       },
     ],
   }),

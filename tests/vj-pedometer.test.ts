@@ -70,7 +70,9 @@ describe("native measurement validation", () => {
         /measurement/,
       );
     }
-    for (const plugin of [null, undefined, {}, { getMeasurement: 1 }]) {
+    // Undefined selects the registered default bridge, so only explicit
+    // absent or malformed plugin objects belong in this assertion.
+    for (const plugin of [null, {}, { getMeasurement: 1 }]) {
       await assert.rejects(vjGetMeasurement(plugin as never), /unavailable/);
     }
   });

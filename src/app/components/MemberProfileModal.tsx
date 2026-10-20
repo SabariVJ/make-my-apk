@@ -38,7 +38,7 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
           {/* Cover Header */}
           <div className="h-28 bg-gradient-to-r from-[#C81E3A]/40 via-[#17171A] to-gold/20 relative p-4 flex justify-between items-start">
             <div className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur border border-white/10 text-[10px] font-mono text-zinc-300">
-              SVJ MEMBER PROFILE
+              ZENEXIS MEMBER PROFILE
             </div>
             <button
               onClick={onClose}

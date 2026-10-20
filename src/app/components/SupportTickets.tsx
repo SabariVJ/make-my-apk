@@ -237,7 +237,7 @@ export const MyTicketsList: React.FC = () => {
           {ticket.admin_response && (
             <div className="mt-2 rounded-xl border border-[#C81E3A]/25 bg-[#C81E3A]/10 p-2.5">
               <p className="font-inter text-[10px] font-bold uppercase tracking-wide text-[#C81E3A]">
-                SVJ Support
+                ZENEXIS Support
               </p>
               <p className="mt-1 whitespace-pre-wrap font-inter text-xs leading-relaxed text-[#F4F2ED]">
                 {ticket.admin_response}

@@ -344,7 +344,7 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
   if (!client) {
     return (
       <p className="text-[11px] font-mono text-[#8C8C90]">
-        Sign in to see your SVJ records, heatmap and personal segments.
+        Sign in to see your ZENEXIS records, heatmap and personal segments.
       </p>
     );
   }
@@ -516,8 +516,8 @@ export const RecordsView: React.FC<RecordsViewProps> = ({ client: injected }) =>
           )}
           {!heatmapLoading && !heatmapError && <HeatmapCanvas cells={cells} />}
           <p className="font-inter text-[10px] leading-relaxed text-[#8C8C90]">
-            Your heatmap is private and built only from workouts SVJ recorded on your own device. It
-            is never shared with other members or used for ranking.
+            Your heatmap is private and built only from workouts ZENEXIS recorded on your own
+            device. It is never shared with other members or used for ranking.
           </p>
         </div>
       )}

@@ -49,7 +49,7 @@ export const HERO_ASSETS: Record<HeroScreen, HeroAsset> = {
   },
   plus: {
     src: "/assets/svj-premium/plus/hero.webp",
-    alt: "SVJ Plus premium hero",
+    alt: "ZENEXIS Plus premium hero",
     focal: "70% 16%",
   },
   profile: {

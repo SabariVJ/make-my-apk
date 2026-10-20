@@ -210,6 +210,14 @@ function payload(steps, overrides = {}) {
     ...overrides,
   };
 }
+function iosPayload({ numberOfSteps, distance, endDate }) {
+  return {
+    ...test.native.state,
+    sessionSteps: numberOfSteps,
+    timestamp: endDate,
+    distance,
+  };
+}
 async function emit(steps, overrides = {}) {
   await act(async () => {
     for (const fn of test.native.handlers.measurement) fn(payload(steps, overrides));
@@ -382,11 +390,13 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
   });
   it("validates live iOS steps and distance without importing historical query totals", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     await mount();
+    const dailyQueries = test.native.calls.query;
     await start();
     const receive = async (event) =>
       act(async () => {
-        for (const fn of test.native.handlers.measurement) fn(event);
+        for (const fn of test.native.handlers.measurement) fn(event === null ? null : iosPayload(event));
       });
     for (const numberOfSteps of [
       NaN,
@@ -421,7 +431,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     const late = [...test.native.handlers.measurement][0];
     await stop();
     const kcal = api.activeKcal;
-    await act(async () => late({ numberOfSteps: 10000, distance: 5000 }));
+    await act(async () => late(iosPayload({ numberOfSteps: 10000, distance: 5000, endDate: Date.now() })));
     assert.equal(api.todaySteps, 2500);
     assert.equal(api.activeKcal, kcal);
     assert.deepEqual(test.xp, [40]);
@@ -429,10 +439,11 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     await start();
     await receive({ numberOfSteps: 3, distance: 1.5, endDate: Date.now() });
     assert.equal(api.todaySteps, 2503);
-    assert.equal(test.native.calls.query, 0, "START/STOP must not import history");
+    assert.equal(test.native.calls.query, dailyQueries, "START/STOP must not import history");
   });
   it("starts iPhone tracking only after Motion permission approval, without duplicate listeners", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     test.native.permission = "prompt";
     test.native.permissionAfterRequest = "granted";
     await mount();
@@ -460,6 +471,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
   });
   it("keeps denied iPhone Motion permission stopped without accepting measurements", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     test.native.permission = "denied";
     await mount();
     await start();
@@ -481,11 +493,12 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
   });
   it("stops iPhone native updates on backgrounding and never resumes automatically", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     await mount();
     await start();
     const late = [...test.native.handlers.measurement][0];
     await act(async () => {
-      late({ numberOfSteps: 20, distance: 12, endDate: Date.now() });
+      late(iosPayload({ numberOfSteps: 20, distance: 12, endDate: Date.now() }));
     });
     await act(async () => {
       for (const handler of test.appHandlers) handler({ isActive: false });
@@ -494,24 +507,26 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.equal(test.native.handlers.measurement.size, 0);
     const starts = test.native.calls.start;
     await act(async () => {
-      late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() });
+      late(iosPayload({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() }));
       for (const handler of test.appHandlers) handler({ isActive: true });
     });
-    assert.equal(api.todaySteps, 20);
+    assert.equal(api.milestoneSteps, 20, "a resumed daily query cannot add to the stopped session");
+    assert.equal(api.todaySteps, 10000, "the separate daily query can refresh total steps");
     assert.equal(test.native.calls.start, starts);
     assert.deepEqual(test.xp, []);
   });
   it("isolates iPhone sessions and ignores old callbacks when the account changes", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     await mount();
     await start();
     const late = [...test.native.handlers.measurement][0];
-    await act(async () => late({ numberOfSteps: 50, distance: 30, endDate: Date.now() }));
+    await act(async () => late(iosPayload({ numberOfSteps: 50, distance: 30, endDate: Date.now() })));
     const oldCache = localStorage.getItem(activityKeyFor("test-user"));
     await act(async () => view.rerender(tree(true, "other-user")));
     await waitFor(() => assert.equal(api.trackingStatus, "stopped"));
     await start();
-    await act(async () => late({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() }));
+    await act(async () => late(iosPayload({ numberOfSteps: 5000, distance: 3000, endDate: Date.now() })));
     assert.equal(api.todaySteps, 0);
     assert.equal(localStorage.getItem(activityKeyFor("test-user")), oldCache);
     assert.deepEqual(test.xp, []);
@@ -519,6 +534,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
   });
   it("finishes old iPhone startup cleanup before a switched account starts a new sensor", async () => {
     test.platform = "ios";
+    test.iosVjBridge = true;
     await mount();
     test.native.startGate = deferred();
     let oldStartup;
@@ -780,7 +796,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
     assert.equal(nativeListenerFullyRemoved(), true);
     assert.equal(screen.getByRole("button", { name: "APP UPDATE REQUIRED" }).disabled, true);
     assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
-    assert.match(document.body.textContent, /install the latest Android app/i);
+    assert.match(document.body.textContent, /close ZENEXIS and install the latest app/i);
     await start();
     assert.equal(test.native.calls.start, 0);
     await emit(10000);
@@ -836,7 +852,7 @@ describe("user-controlled Activity tracking", { concurrency: false, timeout: 20_
       "unavailable Stop must not fake removal",
     );
     assert.equal(screen.queryByRole("button", { name: "RETRY STOP" }), null);
-    assert.match(document.body.textContent, /close SVJ/i);
+    assert.match(document.body.textContent, /close ZENEXIS/i);
     assert.equal(test.native.calls.start, 0);
   });
   it("missing native Start requires an update and never starts a legacy counting session", async () => {

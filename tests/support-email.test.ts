@@ -28,7 +28,7 @@ describe("support email helper (native + web)", () => {
 
   it("support address and subject are correct", () => {
     assert.match(support, /SUPPORT_EMAIL = "sabarivj777@gmail\.com"/);
-    assert.match(support, /SUPPORT_SUBJECT = "SVJ Support \/ Account Verification"/);
+    assert.match(support, /SUPPORT_SUBJECT = "ZENEXIS Support \/ Account Verification"/);
   });
 
   it("native Android uses the VjSupport plugin", () => {

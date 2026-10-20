@@ -66,35 +66,47 @@ const MemberIdentity: React.FC<{
   vip = false,
   meta,
   onOpen,
-}) => (
-  <div
-    className={`flex min-w-0 items-center gap-3 ${onOpen ? "group cursor-pointer" : ""}`}
-    onClick={onOpen}
-  >
-    <div
-      className={`relative shrink-0 overflow-hidden rounded-2xl border border-white/10 ${avatarSize} ${
-        onOpen ? "transition-colors group-hover:border-[#C81E3A]" : ""
-      }`}
-    >
-      <AvatarImage src={avatar} name={name} className="h-full w-full object-cover" />
-    </div>
-    <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        <span
-          className={`truncate font-inter text-sm font-semibold text-[#F4F2ED] ${
-            onOpen ? "transition-colors group-hover:text-[#E62846]" : ""
-          }`}
-        >
-          {name}
-        </span>
-        {verified && <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />}
-        {vip && <Crown aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C9A227]" />}
-        {tier && <TierBadge tier={tier} />}
+}) => {
+  const content = (
+    <>
+      <div
+        className={`relative shrink-0 overflow-hidden rounded-2xl border border-white/10 ${avatarSize} ${
+          onOpen ? "transition-colors group-hover:border-[#C81E3A]" : ""
+        }`}
+      >
+        <AvatarImage src={avatar} name={name} className="h-full w-full object-cover" />
       </div>
-      {meta && <div className="mt-0.5 min-w-0">{meta}</div>}
-    </div>
-  </div>
-);
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <span
+            className={`truncate font-inter text-sm font-semibold text-[#F4F2ED] ${
+              onOpen ? "transition-colors group-hover:text-[#E62846]" : ""
+            }`}
+          >
+            {name}
+          </span>
+          {verified && <Shield aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C81E3A]" />}
+          {vip && <Crown aria-hidden className="h-3.5 w-3.5 shrink-0 text-[#C9A227]" />}
+          {tier && <TierBadge tier={tier} />}
+        </div>
+        {meta && <div className="mt-0.5 min-w-0">{meta}</div>}
+      </div>
+    </>
+  );
+
+  return onOpen ? (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex min-h-11 min-w-0 items-center gap-3 text-left focus-visible:rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
+      aria-label={`View ${name}'s profile`}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex min-w-0 items-center gap-3">{content}</div>
+  );
+};
 
 export const CommunityView: React.FC = () => {
   const {
@@ -234,7 +246,7 @@ export const CommunityView: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Header & Sub-tab Selector */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div className="flex flex-col gap-3 border-b border-white/10 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-anton text-xl tracking-wide text-white sm:text-2xl">
             Guild community
@@ -244,10 +256,12 @@ export const CommunityView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center rounded-xl border border-white/10 bg-[#17171A] p-1 font-inter text-xs">
+        <div className="grid w-full grid-cols-3 items-center rounded-xl border border-white/10 bg-[#17171A] p-1 font-inter text-xs sm:w-auto">
           <button
+            type="button"
             onClick={() => setActiveSubTab("feed")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+            aria-pressed={activeSubTab === "feed"}
+            className={`min-h-11 rounded-lg px-2 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               activeSubTab === "feed"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -256,8 +270,10 @@ export const CommunityView: React.FC = () => {
             Activity Feed
           </button>
           <button
+            type="button"
             onClick={() => setActiveSubTab("directory")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+            aria-pressed={activeSubTab === "directory"}
+            className={`min-h-11 rounded-lg px-2 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               activeSubTab === "directory"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -266,8 +282,10 @@ export const CommunityView: React.FC = () => {
             Members
           </button>
           <button
+            type="button"
             onClick={() => setActiveSubTab("friends")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer relative ${
+            aria-pressed={activeSubTab === "friends"}
+            className={`relative min-h-11 rounded-lg px-2 font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               activeSubTab === "friends"
                 ? "bg-[#C81E3A] text-white"
                 : "text-[#8C8C90] hover:text-white"
@@ -290,7 +308,7 @@ export const CommunityView: React.FC = () => {
             <SVJEmptyState
               icon={Inbox}
               title="The feed is quiet"
-              description="Your verified SVJ activity and your friends' milestones show up here as they happen. Add a friend to fill it faster."
+              description="Your verified ZENEXIS activity and your friends' milestones show up here as they happen. Add a friend to fill it faster."
             />
           )}
           {feed.map((item, index) => {
@@ -346,10 +364,13 @@ export const CommunityView: React.FC = () => {
                     return (
                       <button
                         key={r.type}
+                        type="button"
                         onClick={() => toggleReaction(item.id, r.type)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                        aria-label={`${r.label} reaction, ${count}`}
+                        aria-pressed={isSelected}
+                        className={`min-h-11 rounded-lg px-3 text-xs font-mono flex items-center gap-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                           isSelected
-                            ? "bg-[#C81E3A]/30 border border-[#C81E3A] text-white scale-105"
+                            ? "bg-[#C81E3A]/30 border border-[#C81E3A] text-white"
                             : "bg-[#0B0B0C] border border-white/10 text-[#8C8C90] hover:text-white"
                         }`}
                       >
@@ -394,17 +415,19 @@ export const CommunityView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
+                      aria-label={`Comment on ${item.title}`}
                       placeholder="Add motivational encouragement..."
                       value={commentInputs[item.id] || ""}
                       onChange={(e) =>
                         setCommentInputs({ ...commentInputs, [item.id]: e.target.value })
                       }
                       onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit(item.id)}
-                      className="svj-radius-row flex-1 border border-white/10 bg-[#0B0B0C] px-3.5 py-2 font-inter text-xs text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A] focus:outline-none"
+                      className="svj-radius-row min-h-11 min-w-0 flex-1 border border-white/10 bg-[#0B0B0C] px-3.5 py-2 font-inter text-xs text-white placeholder:text-[#8C8C90] focus:border-[#C81E3A] focus:outline-none"
                     />
                     <button
+                      type="button"
                       onClick={() => handleCommentSubmit(item.id)}
-                      className="rounded-xl bg-[#C81E3A] p-2 text-white transition-colors hover:bg-[#A0182E]"
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[#C81E3A] text-white transition-colors hover:bg-[#A0182E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
                       aria-label="Post comment"
                     >
                       <Send className="h-3.5 w-3.5" />
@@ -423,10 +446,11 @@ export const CommunityView: React.FC = () => {
             <Search className="absolute left-3.5 top-3 w-4 h-4 text-[#8C8C90]" />
             <input
               type="text"
+              aria-label="Search members"
               placeholder="Search members by username or tier..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#17171A] border border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#C81E3A]"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-[#17171A] py-2.5 pl-10 pr-4 font-mono text-xs text-white focus:border-[#C81E3A] focus:outline-none"
             />
           </div>
 
@@ -457,7 +481,7 @@ export const CommunityView: React.FC = () => {
                       setRivalryFeedback(null);
                       if (retryId) void handleSendRivalry(retryId);
                     }}
-                    className="flex items-center gap-1 rounded-lg border border-rose-500/40 px-2 py-1 text-[10px] font-bold uppercase hover:bg-rose-500/20"
+                    className="flex min-h-11 items-center gap-1 rounded-lg border border-rose-500/40 px-3 text-[10px] font-bold uppercase hover:bg-rose-500/20"
                   >
                     <RefreshCw className="h-3 w-3" /> Retry
                   </button>
@@ -465,7 +489,7 @@ export const CommunityView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setRivalryFeedback(null)}
-                  className="rounded-lg px-1.5 py-1 text-[10px] uppercase opacity-70 hover:opacity-100"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[10px] uppercase opacity-70 hover:opacity-100"
                   aria-label="Dismiss message"
                 >
                   ✕
@@ -481,7 +505,7 @@ export const CommunityView: React.FC = () => {
               description={
                 searchQuery
                   ? "Try a shorter name, or clear the search to see everyone in the guild."
-                  : "As real SVJ members join and appear in the directory, they show up here."
+                  : "As real ZENEXIS members join and appear in the directory, they show up here."
               }
             />
           )}
@@ -495,11 +519,10 @@ export const CommunityView: React.FC = () => {
               return (
                 <motion.div
                   key={m.id}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedMemberModal(m)}
-                  className="svj-radius-card svj-elev-1 flex cursor-pointer items-start justify-between gap-3 border border-white/[0.06] bg-[#17171A] p-4 transition-colors hover:border-[#C81E3A]/40"
+                  className="svj-radius-card svj-elev-1 flex min-w-0 items-start justify-between gap-3 border border-white/[0.06] bg-[#17171A] p-4 transition-colors hover:border-[#C81E3A]/40"
                 >
                   <MemberIdentity
+                    onOpen={() => setSelectedMemberModal(m)}
                     name={m.username}
                     avatar={m.avatar}
                     tier={m.tier}
@@ -530,12 +553,13 @@ export const CommunityView: React.FC = () => {
                         always fails. */}
                     {!isSelf && rivalryState === "none" && !isFriend && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           void friendsApi.sendRequest(m.id);
                         }}
                         disabled={friendsApi.busyId === m.id}
-                        className="flex cursor-pointer items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 font-inter text-[10px] font-semibold text-[#F4F2ED] transition-colors hover:bg-white/[0.12] disabled:opacity-50"
+                        className="flex min-h-11 items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-3 font-inter text-[10px] font-semibold text-[#F4F2ED] transition-colors hover:bg-white/[0.12] disabled:opacity-50"
                       >
                         {friendsApi.busyId === m.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -547,12 +571,13 @@ export const CommunityView: React.FC = () => {
                     )}
                     {!isSelf && isFriend && rivalryState === "none" && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleSendRivalry(m.id);
                         }}
                         disabled={sendingId === m.id || !!sendingId}
-                        className="flex cursor-pointer items-center gap-1 rounded-full border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-[#E62846] transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-50"
+                        className="flex min-h-11 items-center gap-1 rounded-full border border-[#C81E3A]/40 bg-[#C81E3A]/15 px-3 font-inter text-[10px] font-semibold text-[#E62846] transition-colors hover:bg-[#C81E3A]/25 disabled:opacity-50"
                       >
                         {sendingId === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                         Outperform
@@ -575,7 +600,7 @@ export const CommunityView: React.FC = () => {
                           e.stopPropagation();
                           setComparingMember(m);
                         }}
-                        className="cursor-pointer rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-inter text-[10px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/25"
+                        className="min-h-11 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 font-inter text-[10px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/25"
                       >
                         View rivalry
                       </button>

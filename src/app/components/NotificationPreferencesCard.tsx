@@ -15,8 +15,8 @@ export const NotificationPreferencesCard: React.FC = () => (
       <div>
         <h3 className="font-inter text-[15px] font-semibold text-white">Notifications</h3>
         <p className="mt-1 text-xs leading-relaxed text-[#8C8C90]">
-          SVJ asks for notification permission once during account setup. To turn notifications on
-          or off later, use this app&apos;s notification controls in your phone settings.
+          ZENEXIS asks for notification permission once during account setup. To turn notifications
+          on or off later, use this app&apos;s notification controls in your phone settings.
         </p>
       </div>
     </div>

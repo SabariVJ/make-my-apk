@@ -320,7 +320,8 @@ export const XPComparisonModal: React.FC<XPComparisonModalProps> = ({ member, on
                         Live rivalry score
                       </p>
                       <p className="mt-1 font-inter text-[10px] leading-relaxed text-[#8C8C90]">
-                        Only verified SVJ activity recorded after the rivalry started counts here.
+                        Only verified ZENEXIS activity recorded after the rivalry started counts
+                        here.
                       </p>
                     </div>
                     <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-inter text-[10px] font-semibold text-emerald-400">

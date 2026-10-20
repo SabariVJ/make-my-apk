@@ -4,9 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { claimMyPlusGift, getMyPendingPlusGift } from "@/lib/plusGift.functions";
 
 function formatGiftDuration(value: number, unit: "week" | "month" | "lifetime"): string {
-  if (unit === "lifetime") return "Lifetime SVJ Plus";
+  if (unit === "lifetime") return "Lifetime ZENEXIS Plus";
   const label = unit === "week" ? "week" : "month";
-  return `${value} ${label}${value === 1 ? "" : "s"} of SVJ Plus`;
+  return `${value} ${label}${value === 1 ? "" : "s"} of ZENEXIS Plus`;
 }
 
 export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => {
@@ -70,7 +70,7 @@ export const PlusGiftClaimModal: React.FC<{ userId: string }> = ({ userId }) => 
           {gift.senderLabel} sent you
         </p>
         <h2 id="plus-gift-title" className="mt-1 font-anton text-2xl tracking-wide text-white">
-          SVJ PLUS
+          ZENEXIS PLUS
         </h2>
         <p className="mt-1 font-inter text-sm text-[#D4AF37]">
           {formatGiftDuration(gift.durationValue, gift.durationUnit)}

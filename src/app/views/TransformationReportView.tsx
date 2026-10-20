@@ -503,8 +503,8 @@ export const TransformationReportView: React.FC = () => {
             </span>
             <p className="mt-0.5 text-[11px] font-inter text-[#B8B8C0]">
               {totalImprovement > 0
-                ? `Across all 8 attributes, you've gained a combined ${totalImprovement} points since starting SVJ.`
-                : "Complete your SVJ Assessment to establish a baseline and start measuring your growth."}
+                ? `Across all 8 attributes, you've gained a combined ${totalImprovement} points since starting ZENEXIS.`
+                : "Complete your ZENEXIS Assessment to establish a baseline and start measuring your growth."}
             </p>
           </div>
         </div>

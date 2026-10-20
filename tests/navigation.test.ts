@@ -182,8 +182,8 @@ describe("primary nav spacing is compact", () => {
     assert.doesNotMatch(navigation, /\bflex-1\b/);
   });
 
-  it("uses w-fit so the tab group stays compact instead of full-width", () => {
-    assert.match(navigation, /w-fit/);
+  it("bounds the dock width while leaving enough room for full labels", () => {
+    assert.match(navigation, /w-full max-w-md/);
   });
 
   it("applies consistent gap between tabs", () => {
@@ -215,7 +215,11 @@ describe("mobile responsiveness", () => {
     assert.match(header, /onOpenUtilityMenu/);
     assert.match(header, /data-testid="utility-menu-trigger"/);
     assert.match(header, /lg:hidden/);
-    assert.match(app, /<Header onOpenUtilityMenu=\{\(\) => setUtilityMenuOpen\(true\)\} \/>/);
+    assert.match(
+      app,
+      /<Header\s+onOpenUtilityMenu=\{\(\) => setUtilityMenuOpen\(true\)\}\s+onNavigateHome=\{\(\) => handleTabChange\("challenges"\)\}\s*\/>/,
+    );
+    assert.match(app, /<Header onNavigateHome=\{\(\) => handleTabChange\("sixty"\)\} \/>/);
   });
 
   it("keeps the profile avatar opening the one existing Profile route", () => {

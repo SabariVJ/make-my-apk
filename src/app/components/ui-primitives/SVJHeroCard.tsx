@@ -48,9 +48,9 @@ export const SVJHeroCard: React.FC<{
       badge: "Complete",
     },
     reward: {
-      shell: "border-[#C9A227]/30 bg-gradient-to-br from-[#201A0C] via-[#151517] to-[#151517]",
-      accent: "#C9A227",
-      eyebrowColor: "text-[#C9A227]",
+      shell: "border-[#D4AF37]/30 bg-gradient-to-br from-[#201A0C] via-[#151517] to-[#151517]",
+      accent: "#D4AF37",
+      eyebrowColor: "text-[#D4AF37]",
     },
     milestone: {
       shell: "border-[#A855F7]/25 bg-gradient-to-br from-[#1A1024] via-[#151517] to-[#151517]",

@@ -8,8 +8,8 @@ import { markIntentionalSignOut } from "@/app/lib/sessionExpired";
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
     meta: [
-      { title: "Delete Account — SVJ" },
-      { name: "description", content: "Permanently delete your SVJ account and data." },
+      { title: "Delete Account — ZENEXIS" },
+      { name: "description", content: "Permanently delete your ZENEXIS account and data." },
       { name: "robots", content: "noindex" },
     ],
   }),

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "motion/react";
-import { svjStaggerContainer, svjStaggerItem, svjSpringSoft, svjWhileTap } from "../lib/motion";
+import { svjStaggerContainer, svjStaggerItem, svjWhileTap } from "../lib/motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -309,7 +309,6 @@ export const ChallengesView: React.FC<{
 
   const completedCount = displayChallenges.filter((c) => c.completed).length;
   const totalCount = displayChallenges.length;
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   // Task XP today is the sum of the STORED payouts on rows still completed —
   // never the nominal challenge XP, so a re-check reuses the original amount.
   const todayXP = displayChallenges
@@ -367,10 +366,10 @@ export const ChallengesView: React.FC<{
           <button
             type="button"
             onClick={() => setShowAssessment(true)}
-            className="w-full svj-card-crimson p-4 text-left svj-press"
+            className="w-full min-h-11 svj-card-crimson p-4 text-left svj-press focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           >
             <span className="flex items-center gap-2 font-inter text-sm font-semibold text-[#F4F2ED]">
-              <ClipboardCheck className="h-4 w-4 text-[#E62846]" /> Complete your SVJ assessment
+              <ClipboardCheck className="h-4 w-4 text-[#C81E3A]" /> Complete your ZENEXIS assessment
             </span>
             <span className="mt-1 block text-xs font-inter text-[#8C8C90]">
               Personalize challenges around your goals, interests and improvement areas.
@@ -389,7 +388,7 @@ export const ChallengesView: React.FC<{
           <button
             type="button"
             onClick={() => setShowAssessment(false)}
-            className="svj-safe-close fixed z-50 rounded-full border border-white/10 bg-[#17171A] p-2 text-white"
+            className="svj-safe-close fixed z-50 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#17171A] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
             aria-label="Close assessment"
           >
             <X className="h-5 w-5" />
@@ -408,14 +407,14 @@ export const ChallengesView: React.FC<{
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E62846]">
+              <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C81E3A]">
                 Today&apos;s mission
               </p>
               <h1 className="mt-1 font-anton text-2xl leading-none tracking-wide text-white sm:text-3xl">
                 Forge your day
               </h1>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#C9A227]/25 bg-[#C9A227]/10 px-2.5 py-1.5 text-[11px] font-inter font-semibold text-[#C9A227]">
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-1.5 text-[11px] font-inter font-semibold text-[#D4AF37]">
               <Flame aria-hidden className="h-3.5 w-3.5" />
               {user.currentStreak}d streak
             </div>
@@ -451,31 +450,14 @@ export const ChallengesView: React.FC<{
               {!isAndroid && (
                 <div className="svj-stat p-3">
                   <div className="flex items-center gap-1.5 text-[11px] font-inter text-[#8C8C90]">
-                    <Sparkles aria-hidden className="h-3.5 w-3.5 text-[#C9A227]" />
+                    <Sparkles aria-hidden className="h-3.5 w-3.5 text-[#D4AF37]" />
                     Global rank
                   </div>
-                  <div className="font-mono text-xl font-bold text-[#C9A227]">#{userRank}</div>
+                  <div className="font-mono text-xl font-bold text-[#D4AF37]">#{userRank}</div>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Programs — demoted from two full hero cards to compact status chips.
-          Each chip opens the exact destination it always did. */}
-      <section className="space-y-3">
-        <SVJSectionHeader title="Your programs" eyebrow="Long-running" />
-        <div className="grid min-w-0 grid-cols-1 items-start gap-2 lg:grid-cols-2">
-          {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} compact />}
-          {onOpenSixtyDay && !sixtyDayQuery.isError && (
-            <SixtyDayProgramCard
-              state={sixtyDayQuery.data ?? null}
-              loading={sixtyDayQuery.isLoading}
-              onOpen={onOpenSixtyDay}
-              compact
-            />
-          )}
         </div>
       </section>
 
@@ -498,10 +480,12 @@ export const ChallengesView: React.FC<{
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`max-w-full px-3 py-1.5 rounded-lg text-[11px] font-inter font-medium transition-all cursor-pointer ${
+              type="button"
+              aria-pressed={selectedCategory === cat}
+              className={`min-h-11 max-w-full rounded-xl border px-3 py-2 text-xs font-inter font-semibold transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                 selectedCategory === cat
-                  ? "bg-[#C81E3A] text-white"
-                  : "bg-[#17171A] text-[#8C8C90] hover:text-white border border-white/[0.04]"
+                  ? "border-[#C81E3A] bg-[#C81E3A] text-white"
+                  : "border-white/[0.06] bg-[#17171A] text-[#B8B8C0] hover:text-white"
               }`}
             >
               {cat}
@@ -515,7 +499,8 @@ export const ChallengesView: React.FC<{
             setEditingTask(null);
             setIsAddModalOpen(true);
           }}
-          className="ml-auto max-w-full px-3 py-1.5 rounded-lg bg-[#17171A] hover:bg-white/[0.06] text-white border border-white/[0.06] text-[11px] font-inter font-medium flex items-center gap-1.5 shrink-0 cursor-pointer"
+          type="button"
+          className="ml-auto flex min-h-11 max-w-full shrink-0 items-center gap-1.5 rounded-xl border border-white/[0.06] bg-[#17171A] px-3 py-2 text-xs font-inter font-semibold text-white hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
         >
           <Plus className="w-3.5 h-3.5 text-[#C81E3A]" />
           <span>Add Task</span>
@@ -603,21 +588,21 @@ export const ChallengesView: React.FC<{
                     event.stopPropagation();
                     handleToggle(challenge.id);
                   }}
-                  className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-colors shrink-0 ${
-                    challenge.completed
-                      ? "bg-[#C81E3A] border-[#C81E3A] text-white"
-                      : "border-white/20 group-hover:border-[#C81E3A]/60"
-                  } ${completingId === challenge.id ? "cursor-wait" : ""}`}
+                  className={`-m-2.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${completingId === challenge.id ? "cursor-wait" : ""}`}
                 >
-                  {completingId === challenge.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white/70" />
-                  ) : challenge.completed ? (
-                    completionLocked(challenge) ? (
-                      <Lock className="w-3 h-3 text-white/80" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                    )
-                  ) : null}
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${challenge.completed ? "border-[#C81E3A] bg-[#C81E3A] text-white" : "border-white/30 group-hover:border-[#C81E3A]/60"}`}
+                  >
+                    {completingId === challenge.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-white/70" />
+                    ) : challenge.completed ? (
+                      completionLocked(challenge) ? (
+                        <Lock className="h-3 w-3 text-white/80" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      )
+                    ) : null}
+                  </span>
                 </button>
 
                 <div className="min-w-0 flex-1">
@@ -685,7 +670,7 @@ export const ChallengesView: React.FC<{
                       setIsAddModalOpen(true);
                     }}
                     aria-label={`Edit ${challenge.title}`}
-                    className="p-1.5 rounded-lg text-[#A6A6AD] hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#C81E3A]"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-[#A6A6AD] hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -701,7 +686,7 @@ export const ChallengesView: React.FC<{
                     }}
                     aria-label={`Remove ${challenge.title}`}
                     title={`Remove ${challenge.title}`}
-                    className="p-1.5 rounded-lg text-[#8C8C90] hover:text-[#C81E3A] hover:bg-[#C81E3A]/10 transition-colors cursor-pointer shrink-0"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#A6A6AD] transition-colors hover:bg-[#C81E3A]/10 hover:text-[#C81E3A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -720,6 +705,22 @@ export const ChallengesView: React.FC<{
           ))}
         </AnimatePresence>
       </motion.div>
+
+      {/* Longer-running programs follow the daily mission and movement actions. */}
+      <section className="space-y-3">
+        <SVJSectionHeader title="Your programs" eyebrow="Long-running" />
+        <div className="grid min-w-0 grid-cols-1 items-start gap-2 lg:grid-cols-2">
+          {onOpenEarnPlus && <EarnPlusCard onOpen={onOpenEarnPlus} compact />}
+          {onOpenSixtyDay && !sixtyDayQuery.isError && (
+            <SixtyDayProgramCard
+              state={sixtyDayQuery.data ?? null}
+              loading={sixtyDayQuery.isLoading}
+              onOpen={onOpenSixtyDay}
+              compact
+            />
+          )}
+        </div>
+      </section>
 
       <TaskEditorDialog
         open={isAddModalOpen}

@@ -46,7 +46,7 @@ const PHASES: { name: string; xp: number; checkin: string; days: DaySeed[] }[] =
           "45 min strength session",
           "20 min conditioning finisher",
           "10 min mobility cooldown",
-          "Log your session in SVJ",
+          "Log your session in ZENEXIS",
         ],
       },
       {

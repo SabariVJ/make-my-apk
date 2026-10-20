@@ -52,7 +52,7 @@ export function sanitizeTrainingRpcError(message: string | null | undefined): {
     lower.includes("connection")
   ) {
     return {
-      userMessage: "Couldn't reach the SVJ servers. Check your connection and try again.",
+      userMessage: "Couldn't reach the ZENEXIS servers. Check your connection and try again.",
       meta: { code: "TRAINING_RPC_NETWORK", deploymentProblem: false },
     };
   }

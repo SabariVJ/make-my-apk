@@ -156,14 +156,14 @@ class MainActivity : Activity(), WearWorkoutHub.Listener {
         val bpm = if (heartRate != null && heartRate.hasSignal(now)) heartRate.current else null
 
         return column(
-            title("SVJ"),
+            title("ZENEXIS"),
             statusPill(if (recording) "RECORDING" else "READY", if (recording) accent else good),
             spacer(6),
             label("Heart rate"),
             value(bpm?.toString() ?: "--", 34f),
             label(
                 when {
-                    bpm != null -> "SVJ Watch"
+                    bpm != null -> "ZENEXIS Watch"
                     heartRate != null && heartRate.sampleCount > 0 -> "Signal lost"
                     !sensors.hasHeartRateSensor -> "No HR sensor"
                     !sensors.hasHeartRatePermission() -> "Permission required"
@@ -272,7 +272,7 @@ class MainActivity : Activity(), WearWorkoutHub.Listener {
                     }
                 ),
                 spacer(6),
-                label("Saved to SVJ"),
+                label("Saved to ZENEXIS"),
                 label(
                     if (WearDataLayer.phoneConnected) "Sent to your phone" else "Will sync when the phone returns",
                     if (WearDataLayer.phoneConnected) good else warn
@@ -358,7 +358,7 @@ class MainActivity : Activity(), WearWorkoutHub.Listener {
         children.add(spacer(6))
         children.add(
             label(
-                "SVJ only records your watch sensors during a workout you start. " +
+                "ZENEXIS only records your watch sensors during a workout you start. " +
                     "SpO2, ECG and blood pressure need dedicated hardware and are not measured."
             )
         )
@@ -398,7 +398,7 @@ class MainActivity : Activity(), WearWorkoutHub.Listener {
             title("CONNECTION"),
             label("Phone"),
             label(
-                if (WearDataLayer.phoneConnected) "CONNECTED · ${WearDataLayer.phoneNodeName ?: "SVJ phone"}"
+                if (WearDataLayer.phoneConnected) "CONNECTED · ${WearDataLayer.phoneNodeName ?: "ZENEXIS phone"}"
                 else "NOT FOUND",
                 if (WearDataLayer.phoneConnected) good else muted
             ),

@@ -106,6 +106,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <nav
       data-testid="primary-navigation"
+      aria-label="Primary navigation"
       // Floating glass dock: inset from the edges, lifted off the bottom by
       // the existing env(safe-area-inset-bottom) pattern (the same one the
       // page container uses in App.tsx) so the gesture bar is always cleared
@@ -117,7 +118,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           padding shrinks slightly below 360px, labels wrap, and touch targets
           keep their 44px+ height. */}
       <div
-        className={`svj-glass-dock mx-auto w-full max-w-md ${dockColumns} gap-0.5 px-1 py-1.5 sm:w-fit sm:rounded-2xl sm:px-1.5 sm:py-2 md:gap-1`}
+        className={`svj-glass-dock mx-auto w-full max-w-md ${dockColumns} gap-0.5 px-1 py-1.5 sm:rounded-2xl sm:px-1.5 sm:py-2 md:gap-1`}
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -130,7 +131,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id)}
               aria-current={isActive ? "page" : undefined}
               data-testid={`primary-nav-${item.id}`}
-              className="svj-press relative flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-colors sm:px-3 md:min-w-[64px]"
+              className="svj-press relative flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-colors md:min-w-[64px]"
             >
               {isActive && (
                 <motion.div
@@ -158,7 +159,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </div>
 
               <span
-                className={`w-full min-w-0 whitespace-normal break-words text-center text-[10px] leading-tight font-inter font-medium transition-colors sm:text-[11px] ${
+                className={`w-full min-w-0 whitespace-normal break-words text-center text-[11px] leading-tight font-inter font-medium transition-colors sm:text-xs ${
                   isActive ? "text-[#F4F2ED] font-semibold" : "text-[#8C8C90]"
                 }`}
               >

@@ -20,10 +20,11 @@ const POLL_MS = 15_000;
 export const Route = createFileRoute("/live/$token")({
   head: () => ({
     meta: [
-      { title: "SVJ Live Share" },
+      { title: "ZENEXIS Live Share" },
       {
         name: "description",
-        content: "Follow a live SVJ activity. No account or sign-in is required to view this link.",
+        content:
+          "Follow a live ZENEXIS activity. No account or sign-in is required to view this link.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -137,7 +138,7 @@ function LiveSharePage() {
               Live
             </span>
           </div>
-          <span className="font-anton text-lg tracking-wide text-[#F4F2ED]">SVJ</span>
+          <span className="font-anton text-lg tracking-wide text-[#F4F2ED]">ZENEXIS</span>
         </header>
 
         <section className="svj-radius-card svj-lit-top border border-white/[0.08] bg-[#17171A] p-5">

@@ -321,9 +321,10 @@ export const redeemPlusCode = createServerFn({ method: "POST" })
     if (payload.ok === true) {
       return {
         ok: true,
-        message:
+        message: (
           payload.message ??
-          "SVJ Plus activated for 2 months. Locked to your account — single use.",
+          "ZENEXIS Plus activated for 2 months. Locked to your account — single use."
+        ).replaceAll("SVJ Plus", "ZENEXIS Plus"),
         plusExpiresAt: payload.plusExpiresAt ?? null,
       };
     }

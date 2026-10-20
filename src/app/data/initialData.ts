@@ -43,7 +43,7 @@ export const TIERS: TierInfo[] = [
     color: "#E5E4E2",
     badgeBg: "bg-teal-950/80 text-teal-200 border-teal-600",
     icon: "gem",
-    description: "Mastery in execution. Top 5% of all SVJ members.",
+    description: "Mastery in execution. Top 5% of all ZENEXIS members.",
     benefits: ["Platinum Animated Aura", "Custom Theme unlock", "Priority Community Status"],
   },
   {
@@ -62,7 +62,7 @@ export const TIERS: TierInfo[] = [
     badgeBg: "bg-rose-950/90 text-rose-300 border-rose-700",
     icon: "crown",
     description: "Apex Predator. Legendary status attained.",
-    benefits: ["Obsidian Legend Frame", "Global Top 1% Hall of Fame", "All SVJ Perks Unlocked"],
+    benefits: ["Obsidian Legend Frame", "Global Top 1% Hall of Fame", "All ZENEXIS Perks Unlocked"],
   },
 ];
 
@@ -142,7 +142,7 @@ export const INITIAL_CHALLENGES: DailyChallenge[] = [
 export const INITIAL_REWARDS: RewardItem[] = [
   {
     id: "rew-1",
-    title: "SVJ Obsidian Theme",
+    title: "ZENEXIS Obsidian Theme",
     category: "Cosmetic",
     xpCost: 2500,
     minTier: "Bronze",
@@ -211,7 +211,7 @@ export const INITIAL_REWARDS: RewardItem[] = [
 export const INITIAL_USER: UserProfile = {
   id: "user-me",
   name: "New Voyager",
-  username: "initiate_svj",
+  username: "initiate_zenexis",
   avatar: "",
   tier: "Initiate",
   totalXP: 0,

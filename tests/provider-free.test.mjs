@@ -220,7 +220,7 @@ describe("the native SVJ activity platform is wired", () => {
       "utf8",
     );
     // The service must create a persistent recording notification...
-    assert.match(service, /SVJ is recording your activity/);
+    assert.match(service, /ZENEXIS is recording your activity/);
     // ...and must not start collecting before an explicit start command.
     assert.match(service, /if \(!active \|\| paused \|\| location == null\) return;/);
   });

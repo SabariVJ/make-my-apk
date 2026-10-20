@@ -46,7 +46,7 @@ export function validateDailyState(raw: DailyTrackingState, ownerId: string): Da
     typeof raw.source !== "string" ||
     (raw.measurementAt != null && (!Number.isFinite(raw.measurementAt) || raw.measurementAt <= 0))
   )
-    throw new Error("Update the SVJ app to enable reliable daily tracking.");
+    throw new Error("Update the ZENEXIS app to enable reliable daily tracking.");
   return {
     ...raw,
     raw: raw.raw != null && Number.isFinite(raw.raw) && raw.raw >= 0 ? raw.raw : null,
@@ -123,7 +123,7 @@ export function useDailyTracking(ownerId: string | null) {
       );
     } catch {
       if (owner.current === ownerId)
-        setError("Update the SVJ app to use daily tracking, then try again.");
+        setError("Update the ZENEXIS app to use daily tracking, then try again.");
     }
   }, [native, ownerId]);
 
@@ -181,7 +181,7 @@ export function useDailyTracking(ownerId: string | null) {
       }
       await refresh();
     } catch {
-      setError("Could not confirm tracking stopped. Open SVJ and try again.");
+      setError("Could not confirm tracking stopped. Open ZENEXIS and try again.");
     }
   }, [refresh, ownerId]);
   const enableHealthFallback = useCallback(async () => {

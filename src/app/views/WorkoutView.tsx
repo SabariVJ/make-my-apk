@@ -286,7 +286,7 @@ export const WorkoutView: React.FC = () => {
                 ? "Turn off the guided training experience (your data is kept)"
                 : "Turn on the guided training experience"
             }
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider ${
+            className={`flex min-h-11 shrink-0 items-center rounded-full border px-3 py-2 text-[10px] font-mono uppercase tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               guided
                 ? "border-[#C81E3A]/60 bg-[#C81E3A]/15 text-[#F4F2ED]"
                 : "border-white/10 bg-black/30 text-[#8C8C90]"
@@ -315,6 +315,7 @@ export const WorkoutView: React.FC = () => {
         role="tablist"
         aria-label="Training sections"
         className="sticky top-[var(--svj-header-height)] z-20 grid min-w-0 grid-cols-5 gap-1 bg-[#0B0B0C]/95 py-2 backdrop-blur-md sm:gap-1.5 lg:gap-2"
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
       >
         {tabs.map((t) => {
           const Icon = t.icon;
@@ -323,11 +324,29 @@ export const WorkoutView: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              onKeyDown={(event) => {
+                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                event.preventDefault();
+                const index = tabs.findIndex((item) => item.id === t.id);
+                const nextIndex =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? tabs.length - 1
+                      : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+                const next = tabs[nextIndex];
+                setTab(next.id);
+                event.currentTarget.parentElement
+                  ?.querySelector<HTMLElement>(`#train-tab-${next.id}`)
+                  ?.focus();
+              }}
+              id={`train-tab-${t.id}`}
               role="tab"
               aria-selected={active}
               aria-controls={`train-panel-${t.id}`}
+              tabIndex={active ? 0 : -1}
               data-testid={`train-tab-${t.id}`}
-              className={`flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 font-inter text-[10px] font-semibold transition-all cursor-pointer sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[13px] lg:px-3 ${
+              className={`flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 font-inter text-[10px] font-semibold transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[13px] lg:px-3 ${
                 active
                   ? "bg-[#C81E3A]/15 border-[#C81E3A]/50 text-[#F4F2ED]"
                   : "bg-[#17171A] border-white/8 text-[#8C8C90] hover:text-[#F4F2ED]"
@@ -393,11 +412,11 @@ export const WorkoutView: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Session name (e.g. Push Day)"
-                className="min-w-0 w-full flex-1 bg-[#17171A] svj-border rounded-xl px-4 py-2.5 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus:outline-none focus:border-[#C81E3A]/60"
+                className="min-h-11 min-w-0 w-full flex-1 bg-[#17171A] svj-border rounded-xl px-4 py-2.5 text-[#F4F2ED] font-inter placeholder:text-[#8C8C90]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
               />
               <button
                 onClick={() => setExercises((prev) => [...prev, blankExercise()])}
-                className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 font-inter text-[13px] text-[#8C8C90] transition-colors hover:border-[#C81E3A]/50 hover:text-[#F4F2ED] cursor-pointer"
+                className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 font-inter text-[13px] text-[#B8B8C0] transition-colors hover:border-[#C81E3A]/50 hover:text-[#F4F2ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
               >
                 <Plus className="h-4 w-4" /> Add exercise
               </button>
@@ -421,7 +440,7 @@ export const WorkoutView: React.FC = () => {
                     {exercises.length > 1 && (
                       <button
                         onClick={() => setExercises((prev) => prev.filter((e2) => e2.id !== ex.id))}
-                        className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#A6A6AD] hover:bg-[#C81E3A]/10 hover:text-[#C81E3A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                         aria-label="Remove exercise"
                       >
                         <X className="w-4 h-4" />
@@ -430,7 +449,7 @@ export const WorkoutView: React.FC = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 text-[10px] uppercase tracking-wider font-inter text-[#8C8C90]">
+                    <div className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2 text-[10px] uppercase tracking-wider font-inter text-[#8C8C90]">
                       <span>Set</span>
                       <span>Reps</span>
                       <span>Weight (kg)</span>
@@ -439,7 +458,7 @@ export const WorkoutView: React.FC = () => {
                     {ex.sets.map((st, i) => (
                       <div
                         key={i}
-                        className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-2 items-center"
+                        className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2 items-center"
                       >
                         <span className="font-mono text-xs text-[#8C8C90]">{i + 1}</span>
                         <input
@@ -448,7 +467,8 @@ export const WorkoutView: React.FC = () => {
                           aria-label={`Exercise ${exIdx + 1}, set ${i + 1} reps`}
                           value={st.reps}
                           onChange={(e) => updateSet(ex.id, i, "reps", Number(e.target.value))}
-                          className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                          inputMode="numeric"
+                          className="min-h-11 min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-2 py-2 text-sm font-mono text-[#F4F2ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                         />
                         <input
                           type="number"
@@ -457,14 +477,15 @@ export const WorkoutView: React.FC = () => {
                           aria-label={`Exercise ${exIdx + 1}, set ${i + 1} weight`}
                           value={st.weight}
                           onChange={(e) => updateSet(ex.id, i, "weight", Number(e.target.value))}
-                          className="min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-3 py-2 text-sm font-mono text-[#F4F2ED] focus:outline-none focus:border-[#C81E3A]/60"
+                          inputMode="decimal"
+                          className="min-h-11 min-w-0 bg-[#0B0B0C] svj-border rounded-lg px-2 py-2 text-sm font-mono text-[#F4F2ED] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                         />
                         {ex.sets.length > 1 ? (
                           <button
                             onClick={() =>
                               updateExercise(ex.id, { sets: ex.sets.filter((_, j) => j !== i) })
                             }
-                            className="text-[#8C8C90] hover:text-[#C81E3A] cursor-pointer"
+                            className="flex h-11 w-11 items-center justify-center rounded-xl text-[#A6A6AD] hover:bg-[#C81E3A]/10 hover:text-[#C81E3A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                             aria-label="Remove set"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -485,7 +506,7 @@ export const WorkoutView: React.FC = () => {
                         ],
                       })
                     }
-                    className="text-xs font-inter font-semibold text-[#C81E3A] hover:text-[#E62846] cursor-pointer"
+                    className="min-h-11 rounded-xl px-2 text-xs font-inter font-semibold text-[#C81E3A] hover:bg-[#C81E3A]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37]"
                   >
                     + Add set
                   </button>
@@ -520,14 +541,14 @@ export const WorkoutView: React.FC = () => {
                 <button
                   onClick={() => saveWorkoutTemplate(name || "Untitled Template", exercises)}
                   disabled={!exercises.some((e) => e.name.trim())}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B0B0C] svj-border px-3.5 py-2.5 font-inter text-[13px] font-semibold text-[#F4F2ED] hover:bg-[#212126] disabled:opacity-40 cursor-pointer lg:flex-none"
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B0B0C] svj-border px-3.5 py-2.5 font-inter text-[13px] font-semibold text-[#F4F2ED] hover:bg-[#212126] disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D4AF37] lg:flex-none"
                 >
                   <Save className="h-4 w-4" /> Save template
                 </button>
                 <button
                   onClick={handleLog}
                   disabled={!totals.valid}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl svj-crimson-gradient px-3.5 py-2.5 font-inter text-[13px] font-bold text-white disabled:opacity-40 svj-card-glow cursor-pointer lg:flex-none"
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl svj-crimson-gradient px-3.5 py-2.5 font-inter text-[13px] font-bold text-white disabled:opacity-40 svj-card-glow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] lg:flex-none"
                 >
                   <Dumbbell className="h-4 w-4" /> Log workout
                 </button>

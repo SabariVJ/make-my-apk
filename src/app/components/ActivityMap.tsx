@@ -507,7 +507,7 @@ export const ActivityMap: React.FC<ActivityMapProps> = ({
         className="absolute inset-0 w-full"
         style={{ height: viewportHeight }}
         role="img"
-        aria-label="SVJ recorded route"
+        aria-label="ZENEXIS recorded route"
         data-testid="activity-map"
       >
         <defs>

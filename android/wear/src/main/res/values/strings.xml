@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SVJ</string>
+    <string name="app_name">ZENEXIS</string>
     <string name="workout_channel_name">Workout</string>
-    <string name="workout_notification_recording">SVJ is recording your workout</string>
-    <string name="workout_notification_paused">SVJ workout paused</string>
+    <string name="workout_notification_recording">ZENEXIS is recording your workout</string>
+    <string name="workout_notification_paused">ZENEXIS workout paused</string>
 </resources>

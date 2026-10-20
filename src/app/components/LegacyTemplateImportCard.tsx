@@ -143,7 +143,7 @@ export const LegacyTemplateImportCard: React.FC<LegacyTemplateImportCardProps> =
           <p className="mt-1 font-inter text-xs text-[#A6A6AD]">
             {plans.length} template{plans.length === 1 ? "" : "s"} can move into your account.{" "}
             {unresolved > 0
-              ? `${unresolved} exercise${unresolved === 1 ? "" : "s"} need your choice — SVJ never guesses.`
+              ? `${unresolved} exercise${unresolved === 1 ? "" : "s"} need your choice — ZENEXIS never guesses.`
               : `${totalExercises} exercise${totalExercises === 1 ? "" : "s"} matched the catalog.`}
           </p>
         </div>

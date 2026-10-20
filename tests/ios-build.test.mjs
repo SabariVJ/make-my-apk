@@ -29,7 +29,10 @@ it("iPhone target registers the custom auth scheme and Motion permission with na
   assert.match(motionBridge, /registerPluginInstance\(VjPedometerPlugin\(\)\)/);
   assert.match(motionBridge, /queryPedometerData\(from: start, to: end\)/);
   assert.match(motionBridge, /floorsAscended/);
-  assert.match(read("src/app/context/ActivityContext.tsx"), /platform === "ios" \|\| platform === "android"/);
+  assert.match(
+    read("src/app/context/ActivityContext.tsx"),
+    /(?:platform === "ios" \|\| platform === "android"|platform === "android" \|\| platform === "ios")/,
+  );
   dom.window.close();
 });
 it("Swift package dependencies match Capacitor and only ship the three supported iPhone bridges", () => {
@@ -70,10 +73,16 @@ it("public Mac workflow compiles an unsigned physical-device build and validates
     workflow.jobs.iphone.steps.some((step) => step.with?.path === "ios/output/SVJ-ios-test.ipa"),
   );
 });
-it("native assets use SVJ branding and no Android-only permissions or paid entitlements", () => {
+it("native assets use ZENEXIS branding and no Android-only permissions or paid entitlements", () => {
   const icon = readFileSync("ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png");
   assert.equal(icon.readUInt32BE(16), 1024);
   assert.equal(icon.readUInt32BE(20), 1024);
+  const info = new JSDOM(read("ios/App/App/Info.plist"), { contentType: "text/xml" });
+  const displayName = [...info.window.document.querySelectorAll("plist > dict > key")].find(
+    (key) => key.textContent === "CFBundleDisplayName",
+  )?.nextElementSibling?.textContent;
+  assert.equal(displayName, "ZENEXIS");
+  info.window.close();
   assert.doesNotMatch(
     read("ios/App/App/Info.plist"),
     /NSHealth|GADApplicationIdentifier/,

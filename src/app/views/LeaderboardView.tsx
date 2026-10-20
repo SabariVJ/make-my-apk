@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { svjStaggerContainer, svjStaggerItem, svjSpringSoft, svjWhileTap } from "../lib/motion";
 import {
   Trophy,
@@ -29,6 +29,7 @@ export const LeaderboardView: React.FC = () => {
   const { user, setComparingMember, setSelectedMemberModal } = useSVJ();
   const { members } = useFriends();
   const [filter, setFilter] = useState<StandingsFilter>("total");
+  const reduceMotion = useReducedMotion();
 
   // Real server rows only: identity, lifetime XP, streak and global rank.
   const serverLeaderboard = members.map(memberToLeaderboardEntry);
@@ -63,7 +64,7 @@ export const LeaderboardView: React.FC = () => {
               <Trophy className="w-3.5 h-3.5 text-gold" />
               <span>Global Standings</span>
               <span>•</span>
-              <span className="text-emerald-400 font-bold">Live SVJ Ranks</span>
+              <span className="text-emerald-400 font-bold">Live ZENEXIS Ranks</span>
             </div>
             <h1 className="font-anton text-3xl tracking-wide text-white sm:text-4xl">
               Global Hall of Mastery
@@ -89,8 +90,10 @@ export const LeaderboardView: React.FC = () => {
         {(["total", "streak"] as const).map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setFilter(tab)}
-            className={`flex-1 py-2 rounded-2xl uppercase font-semibold transition-all cursor-pointer ${
+            aria-pressed={filter === tab}
+            className={`min-h-11 flex-1 rounded-2xl px-3 uppercase font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
               filter === tab
                 ? "bg-[#C81E3A] text-white shadow-lg shadow-[#C81E3A]/30"
                 : "text-[#8C8C90] hover:text-white"
@@ -117,10 +120,13 @@ export const LeaderboardView: React.FC = () => {
         <div className="grid grid-cols-3 items-end gap-2 pb-2 pt-4 sm:gap-4">
           {/* 2nd Place — silver */}
           {top3[1] && (
-            <motion.div
+            <motion.button
+              type="button"
+              disabled={isSelfEntry(top3[1].id, user.id)}
+              aria-label={`Rank 2: ${top3[1].username}, ${top3[1].totalXP.toLocaleString()} XP. View comparison`}
               onClick={() => openComparison(top3[1].id)}
-              whileTap={{ scale: 0.97 }}
-              className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#C7CBD1]/30 bg-gradient-to-b from-[#1B1D20] to-[#141416] p-3 text-center sm:p-4"
+              whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+              className="svj-radius-card svj-elev-2 relative w-full border border-[#C7CBD1]/30 bg-gradient-to-b from-[#1B1D20] to-[#141416] p-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-default sm:p-4"
             >
               <div className="absolute -top-3 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border border-[#C7CBD1]/50 bg-[#2A2E33] font-anton text-xs text-[#E3E6EA]">
                 2
@@ -143,15 +149,18 @@ export const LeaderboardView: React.FC = () => {
               <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
                 {top3[1].tier}
               </span>
-            </motion.div>
+            </motion.button>
           )}
 
           {/* 1st Place (Crown Champion) */}
           {top3[0] && (
-            <motion.div
+            <motion.button
+              type="button"
+              disabled={isSelfEntry(top3[0].id, user.id)}
+              aria-label={`Rank 1: ${top3[0].username}, ${top3[0].totalXP.toLocaleString()} XP. View comparison`}
               onClick={() => openComparison(top3[0].id)}
-              whileTap={{ scale: 0.97 }}
-              className="svj-radius-card svj-elev-3 relative -translate-y-2 cursor-pointer border-2 border-[#C9A227] bg-gradient-to-b from-[#241D0C] to-[#15130E] p-4 text-center sm:p-5"
+              whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+              className="svj-radius-card svj-elev-3 relative -translate-y-2 w-full border-2 border-[#D4AF37] bg-gradient-to-b from-[#241D0C] to-[#15130E] p-4 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-default sm:p-5"
             >
               <div
                 aria-hidden
@@ -186,15 +195,18 @@ export const LeaderboardView: React.FC = () => {
               <span className="mt-1 block font-inter text-[10px] text-[#C9A227]/75">
                 {top3[0].tier} tier
               </span>
-            </motion.div>
+            </motion.button>
           )}
 
           {/* 3rd Place */}
           {top3[2] && (
-            <motion.div
+            <motion.button
+              type="button"
+              disabled={isSelfEntry(top3[2].id, user.id)}
+              aria-label={`Rank 3: ${top3[2].username}, ${top3[2].totalXP.toLocaleString()} XP. View comparison`}
               onClick={() => openComparison(top3[2].id)}
-              whileTap={{ scale: 0.97 }}
-              className="svj-radius-card svj-elev-2 relative cursor-pointer border border-[#B0713A]/35 bg-gradient-to-b from-[#1F1813] to-[#141416] p-3 text-center sm:p-4"
+              whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+              className="svj-radius-card svj-elev-2 relative w-full border border-[#B0713A]/35 bg-gradient-to-b from-[#1F1813] to-[#141416] p-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] disabled:cursor-default sm:p-4"
             >
               <div className="absolute -top-3 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border border-[#B0713A]/60 bg-[#3A2415] font-anton text-xs text-[#E3A76B]">
                 3
@@ -217,7 +229,7 @@ export const LeaderboardView: React.FC = () => {
               <span className="mt-1 block font-inter text-[10px] text-[#8C8C90]">
                 {top3[2].tier} tier
               </span>
-            </motion.div>
+            </motion.button>
           )}
         </div>
       )}
@@ -231,7 +243,7 @@ export const LeaderboardView: React.FC = () => {
 
         <motion.div
           variants={svjStaggerContainer}
-          initial="hidden"
+          initial={reduceMotion ? false : "hidden"}
           animate="show"
           className="grid gap-2 lg:grid-cols-2"
         >
@@ -240,12 +252,15 @@ export const LeaderboardView: React.FC = () => {
             const isMe = isSelfEntry(entry.id, user.id);
 
             return (
-              <motion.div
+              <motion.button
                 key={entry.id}
+                type="button"
+                disabled={isMe}
+                aria-label={`Rank ${rankNum}: ${entry.username}, ${entry.totalXP.toLocaleString()} XP, ${entry.streak} day streak. View comparison`}
                 variants={svjStaggerItem}
-                whileTap={svjWhileTap}
+                whileTap={reduceMotion ? undefined : svjWhileTap}
                 onClick={() => openComparison(entry.id)}
-                className={`svj-radius-row flex items-center justify-between gap-3 border p-3 transition-colors ${
+                className={`svj-radius-row flex min-h-14 w-full items-center justify-between gap-3 border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${
                   isMe
                     ? "border-[#C81E3A]/60 bg-[#C81E3A]/15"
                     : "cursor-pointer border-white/[0.06] bg-[#17171A] hover:border-white/20"
@@ -316,7 +331,7 @@ export const LeaderboardView: React.FC = () => {
                     </span>
                   )}
                 </div>
-              </motion.div>
+              </motion.button>
             );
           })}
         </motion.div>

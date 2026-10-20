@@ -111,7 +111,7 @@ export const TrialGate: React.FC<{
     retry: 1,
   });
 
-  if (!sessionReady) return <Splash label="Loading SVJ" />;
+  if (!sessionReady) return <Splash label="Loading ZENEXIS" />;
   if (!session) return <AuthScreen />;
   if (statusQuery.isPending) return <Splash label="Checking your trial" />;
   if (statusQuery.isError) {

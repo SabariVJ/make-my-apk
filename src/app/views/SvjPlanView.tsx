@@ -428,7 +428,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-[11px] font-inter text-[#C81E3A] uppercase tracking-wider mb-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>MY SVJ PLAN</span>
+            <span>MY ZENEXIS PLAN</span>
             {!isPlus && (
               <span className="px-2 py-0.5 rounded-2xl bg-gold/15 border border-gold/40 text-gold font-bold">
                 PLUS FEATURE
@@ -450,7 +450,7 @@ export const SvjPlanView: React.FC<{ onNavigateToChallenges?: () => void }> = ({
           </div>
           <div>
             <h3 className="font-inter text-base font-semibold tracking-tight text-[#F4F2ED]">
-              Unlock My SVJ Plan
+              Unlock My ZENEXIS Plan
             </h3>
             <p className="text-xs text-[#8C8C90] mt-1 max-w-sm mx-auto">
               Get personalized weekly analysis, stat intelligence, priority areas, and adaptive

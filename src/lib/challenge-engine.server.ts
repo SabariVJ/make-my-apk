@@ -183,7 +183,7 @@ function toResult(assignments: AssignmentRow[]): PersonalizedResult["challenges"
   }));
 }
 
-const ASSESSMENT_REASON = "Complete your SVJ Assessment to unlock personalized challenges.";
+const ASSESSMENT_REASON = "Complete your ZENEXIS Assessment to unlock personalized challenges.";
 
 /**
  * Server function: returns the user's persisted personalized assignments.

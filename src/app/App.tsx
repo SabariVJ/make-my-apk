@@ -196,7 +196,7 @@ const AppContent: React.FC<{
   if (!profileLoaded) {
     return (
       <div className="min-h-[100dvh] bg-[#0B0B0C] text-[#F4F2ED] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-[#00F59B]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#C81E3A]" />
         <p className="font-inter text-[11px] text-[#8C8C90]">Loading ZENEXIS</p>
       </div>
     );

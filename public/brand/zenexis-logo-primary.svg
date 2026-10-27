@@ -3,24 +3,24 @@
     <linearGradient id="logoUpLeft" x1="50" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="40%" stop-color="#E2E8F0" />
-      <stop offset="80%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#059669" />
+      <stop offset="80%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#A0182E" />
     </linearGradient>
     <linearGradient id="logoUpRight" x1="270" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="60%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="60%" stop-color="#A0182E" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="logoDownLeft" x1="50" y1="120" x2="160" y2="240" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#F8FAFC" />
       <stop offset="45%" stop-color="#CBD5E1" />
-      <stop offset="85%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="85%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="logoDownRight" x1="270" y1="120" x2="160" y2="240" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="60%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#064E3B" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="60%" stop-color="#7F1325" />
+      <stop offset="100%" stop-color="#560D19" />
     </linearGradient>
     <linearGradient id="textGrad" x1="320" y1="80" x2="900" y2="180" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
@@ -60,5 +60,5 @@
   </g>
 
   <!-- Tagline "ASCEND TO YOUR APEX" -->
-  <text x="272" y="222" font-family="'Inter', sans-serif" font-size="16" font-weight="600" letter-spacing="6" fill="#00F59B" opacity="0.95">ASCEND TO YOUR APEX</text>
+  <text x="272" y="222" font-family="'Inter', sans-serif" font-size="16" font-weight="600" letter-spacing="6" fill="#C81E3A" opacity="0.95">ASCEND TO YOUR APEX</text>
 </svg>

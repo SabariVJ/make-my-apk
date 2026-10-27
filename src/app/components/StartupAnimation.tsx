@@ -68,7 +68,8 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="absolute w-[360px] h-[360px] rounded-full pointer-events-none"
             style={{
-              background: "radial-gradient(circle, rgba(0,245,155,0.22) 0%, rgba(0,245,155,0.04) 50%, transparent 70%)",
+              background:
+                "radial-gradient(circle, rgba(200, 30, 58,0.22) 0%, rgba(200, 30, 58,0.04) 50%, transparent 70%)",
             }}
           />
 
@@ -80,9 +81,9 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
             >
               <defs>
                 <linearGradient id="laserLine" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#00F59B" stop-opacity="0" />
-                  <stop offset="50%" stop-color="#00F59B" stop-opacity="0.35" />
-                  <stop offset="100%" stop-color="#00F59B" stop-opacity="0" />
+                  <stop offset="0%" stopColor="#C81E3A" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#C81E3A" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#C81E3A" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <motion.line
@@ -93,7 +94,7 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                 stroke="url(#laserLine)"
                 strokeWidth="1"
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: phase === "intro" ? 0 : 1, opacity: phase === "exit" ? 0 : 0.4 }}
+                animate={{ pathLength: phase === "intro" ? 0 : 1, opacity: 0.4 }}
                 transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
               />
               <motion.line
@@ -104,7 +105,7 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                 stroke="url(#laserLine)"
                 strokeWidth="1"
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: phase === "intro" ? 0 : 1, opacity: phase === "exit" ? 0 : 0.4 }}
+                animate={{ pathLength: phase === "intro" ? 0 : 1, opacity: 0.4 }}
                 transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               />
             </svg>
@@ -129,7 +130,7 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                     scale: phase === "assemble" ? 1 : 0.4,
                   }}
                   transition={{ duration: 0.65, delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute w-2 h-2 rounded-full bg-[#00F59B] shadow-[0_0_10px_#00F59B]"
+                  className="absolute w-2 h-2 rounded-full bg-[#C81E3A] shadow-[0_0_10px_#C81E3A]"
                 />
               ))}
             </div>
@@ -151,29 +152,60 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
               }}
               className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center"
             >
-              <svg viewBox="0 0 512 512" className="w-full h-full filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.8)]">
+              <svg
+                viewBox="0 0 512 512"
+                className="w-full h-full filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.8)]"
+              >
                 <defs>
-                  <linearGradient id="animUpLeft" x1="122" y1="100" x2="256" y2="242" gradientUnits="userSpaceOnUse">
+                  <linearGradient
+                    id="animUpLeft"
+                    x1="122"
+                    y1="100"
+                    x2="256"
+                    y2="242"
+                    gradientUnits="userSpaceOnUse"
+                  >
                     <stop offset="0%" stopColor="#FFFFFF" />
                     <stop offset="35%" stopColor="#E2E8F0" />
-                    <stop offset="70%" stopColor="#00F59B" />
-                    <stop offset="100%" stopColor="#059669" />
+                    <stop offset="70%" stopColor="#C81E3A" />
+                    <stop offset="100%" stopColor="#A0182E" />
                   </linearGradient>
-                  <linearGradient id="animUpRight" x1="390" y1="100" x2="256" y2="242" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#00F59B" />
-                    <stop offset="50%" stopColor="#059669" />
-                    <stop offset="100%" stopColor="#047857" />
+                  <linearGradient
+                    id="animUpRight"
+                    x1="390"
+                    y1="100"
+                    x2="256"
+                    y2="242"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor="#C81E3A" />
+                    <stop offset="50%" stopColor="#A0182E" />
+                    <stop offset="100%" stopColor="#7F1325" />
                   </linearGradient>
-                  <linearGradient id="animDownLeft" x1="122" y1="204" x2="256" y2="346" gradientUnits="userSpaceOnUse">
+                  <linearGradient
+                    id="animDownLeft"
+                    x1="122"
+                    y1="204"
+                    x2="256"
+                    y2="346"
+                    gradientUnits="userSpaceOnUse"
+                  >
                     <stop offset="0%" stopColor="#F1F5F9" />
                     <stop offset="40%" stopColor="#CBD5E1" />
-                    <stop offset="80%" stopColor="#00F59B" />
-                    <stop offset="100%" stopColor="#047857" />
+                    <stop offset="80%" stopColor="#C81E3A" />
+                    <stop offset="100%" stopColor="#7F1325" />
                   </linearGradient>
-                  <linearGradient id="animDownRight" x1="390" y1="204" x2="256" y2="346" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#00F59B" />
-                    <stop offset="50%" stopColor="#047857" />
-                    <stop offset="100%" stopColor="#064E3B" />
+                  <linearGradient
+                    id="animDownRight"
+                    x1="390"
+                    y1="204"
+                    x2="256"
+                    y2="346"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor="#C81E3A" />
+                    <stop offset="50%" stopColor="#7F1325" />
+                    <stop offset="100%" stopColor="#560D19" />
                   </linearGradient>
                 </defs>
 
@@ -185,8 +217,20 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                 >
                   <path d="M 256 100 L 122 210 L 162 242 L 256 166 Z" fill="url(#animUpLeft)" />
                   <path d="M 256 100 L 390 210 L 350 242 L 256 166 Z" fill="url(#animUpRight)" />
-                  <path d="M 256 100 L 256 166" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
-                  <path d="M 256 100 L 122 210" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.9" />
+                  <path
+                    d="M 256 100 L 256 166"
+                    stroke="#FFFFFF"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    opacity="0.8"
+                  />
+                  <path
+                    d="M 256 100 L 122 210"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    opacity="0.9"
+                  />
                 </motion.g>
 
                 {/* LOWER CHEVRON */}
@@ -197,8 +241,20 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                 >
                   <path d="M 256 204 L 122 314 L 162 346 L 256 270 Z" fill="url(#animDownLeft)" />
                   <path d="M 256 204 L 390 314 L 350 346 L 256 270 Z" fill="url(#animDownRight)" />
-                  <path d="M 256 204 L 256 270" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
-                  <path d="M 256 204 L 122 314" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+                  <path
+                    d="M 256 204 L 256 270"
+                    stroke="#FFFFFF"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                  />
+                  <path
+                    d="M 256 204 L 122 314"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    opacity="0.85"
+                  />
                 </motion.g>
               </svg>
 
@@ -208,7 +264,7 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
                   initial={{ opacity: 0, scale: 0.4 }}
                   animate={{ opacity: [0, 1, 0], scale: [0.4, 2, 2.5] }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="absolute top-4 w-4 h-4 rounded-full bg-white shadow-[0_0_16px_#00F59B]"
+                  className="absolute top-4 w-4 h-4 rounded-full bg-white shadow-[0_0_16px_#C81E3A]"
                 />
               )}
             </motion.div>
@@ -218,9 +274,9 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
               <motion.h1
                 initial={{ y: 24, opacity: 0, letterSpacing: "0.2em" }}
                 animate={{
-                  y: phase === "wordmark" || phase === "exit" ? 0 : 24,
-                  opacity: phase === "wordmark" || phase === "exit" ? 1 : 0,
-                  letterSpacing: phase === "wordmark" || phase === "exit" ? "0.32em" : "0.2em",
+                  y: phase === "wordmark" ? 0 : 24,
+                  opacity: phase === "wordmark" ? 1 : 0,
+                  letterSpacing: phase === "wordmark" ? "0.32em" : "0.2em",
                 }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                 className="text-2xl sm:text-3xl font-extrabold tracking-[0.32em] text-[#ECEEF2] uppercase pl-[0.32em]"
@@ -232,11 +288,11 @@ export const StartupAnimation: React.FC<StartupAnimationProps> = ({
               <motion.p
                 initial={{ y: 12, opacity: 0, letterSpacing: "0.25em" }}
                 animate={{
-                  y: phase === "wordmark" || phase === "exit" ? 0 : 12,
-                  opacity: phase === "wordmark" || phase === "exit" ? 0.85 : 0,
+                  y: phase === "wordmark" ? 0 : 12,
+                  opacity: phase === "wordmark" ? 0.85 : 0,
                 }}
                 transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-2 text-[10px] sm:text-[11px] font-semibold text-[#00F59B] uppercase tracking-[0.3em] pl-[0.3em]"
+                className="mt-2 text-[10px] sm:text-[11px] font-semibold text-[#C81E3A] uppercase tracking-[0.3em] pl-[0.3em]"
               >
                 ASCEND TO YOUR APEX
               </motion.p>

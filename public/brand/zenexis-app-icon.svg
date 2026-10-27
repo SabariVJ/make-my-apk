@@ -9,46 +9,46 @@
     
     <!-- Outer Rim Stroke Gradient -->
     <linearGradient id="rimStroke" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35" />
-      <stop offset="35%" stop-color="#00F59B" stop-opacity="0.6" />
+      <stop offset="0%" stop-color="#C81E3A" stop-opacity="0.35" />
+      <stop offset="35%" stop-color="#C81E3A" stop-opacity="0.6" />
       <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.1" />
-      <stop offset="100%" stop-color="#00F59B" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#C81E3A" stop-opacity="0.2" />
     </linearGradient>
 
-    <!-- Radial Emerald Halo -->
-    <radialGradient id="emeraldHalo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F59B" stop-opacity="0.28" />
-      <stop offset="50%" stop-color="#00F59B" stop-opacity="0.08" />
-      <stop offset="100%" stop-color="#00F59B" stop-opacity="0" />
+    <!-- Radial Crimson Halo -->
+    <radialGradient id="crimsonHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C81E3A" stop-opacity="0.28" />
+      <stop offset="50%" stop-color="#C81E3A" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#C81E3A" stop-opacity="0" />
     </radialGradient>
 
     <!-- Logo Gradients -->
     <linearGradient id="icUpLeft" x1="140" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="40%" stop-color="#E2E8F0" />
-      <stop offset="80%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#059669" />
+      <stop offset="80%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#A0182E" />
     </linearGradient>
     <linearGradient id="icUpRight" x1="372" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="55%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="55%" stop-color="#A0182E" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="icDownLeft" x1="140" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#F8FAFC" />
       <stop offset="45%" stop-color="#CBD5E1" />
-      <stop offset="85%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="85%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="icDownRight" x1="372" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="55%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#064E3B" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="55%" stop-color="#7F1325" />
+      <stop offset="100%" stop-color="#560D19" />
     </linearGradient>
     
     <filter id="iconShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity="0.75" />
-      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#00F59B" flood-opacity="0.25" />
+      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#C81E3A" flood-opacity="0.25" />
     </filter>
   </defs>
 
@@ -57,7 +57,7 @@
   <rect x="16" y="16" width="480" height="480" rx="108" stroke="url(#rimStroke)" stroke-width="2" />
   
   <!-- Subtle Internal Grid Matrix Accent -->
-  <circle cx="256" cy="256" r="160" fill="url(#emeraldHalo)" />
+  <circle cx="256" cy="256" r="160" fill="url(#crimsonHalo)" />
 
   <!-- Centered Symbol Group with Shadow -->
   <g filter="url(#iconShadow)">

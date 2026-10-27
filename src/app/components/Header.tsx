@@ -48,7 +48,7 @@ export const Header: React.FC<{
           onClick={onNavigateHome}
         >
           <div className="relative shrink-0 group">
-            <div className="w-9 h-9 rounded-2xl bg-[#13151A] border border-[#00F59B]/25 p-1.5 flex items-center justify-center group-hover:border-[#00F59B]/60 transition-colors shadow-[0_0_12px_rgba(0,245,155,0.15)]">
+            <div className="w-9 h-9 rounded-2xl bg-[#13151A] border border-[#C81E3A]/25 p-1.5 flex items-center justify-center group-hover:border-[#C81E3A]/60 transition-colors shadow-[0_0_12px_rgba(200, 30, 58,0.15)]">
               <img
                 src="/brand/zenexis-symbol.svg"
                 alt=""
@@ -68,7 +68,7 @@ export const Header: React.FC<{
                 alt=""
                 className="h-5 w-24 object-contain sm:w-28"
               />
-              {user.verifiedIcon && <Shield className="w-4 h-4 text-[#00F59B] fill-[#00F59B]/20" />}
+              {user.verifiedIcon && <Shield className="w-4 h-4 text-[#C81E3A] fill-[#C81E3A]/20" />}
             </div>
             {/* Tier and member ID are two separate elements with their own
                 weight — no middle-dot concatenated meta string. */}

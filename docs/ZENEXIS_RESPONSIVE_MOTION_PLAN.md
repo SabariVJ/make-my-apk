@@ -3,9 +3,9 @@
 ## Approved direction and constraints
 
 - Source of truth: `rebrand/new-brand-identity` after the latest release changes.
-- Keep the existing Sovereign Crimson logo files and the existing `StartupAnimation` sequence exactly as supplied on that branch. The approved artwork includes emerald. Do not redraw it, retime it, or substitute a new splash.
+- Preserve the approved Sovereign Crimson logo geometry and startup choreography. On 27 October 2026 the user requested red: replace the former emerald accents with crimson `#C81E3A` and darker red gradient stops across web and native exports. Do not redraw or retime the animation.
 - Use `ZENEXIS` and `ASCEND TO YOUR APEX` on customer-facing surfaces. Keep package IDs, URL/domain, auth redirects, database identifiers, notification channel IDs, reward-code format, and existing account records stable.
-- App canvas: obsidian `#0B0B0C`; action accent: crimson `#C81E3A`; earned/premium accent: gold `#D4AF37`; primary text: bone `#F4F2ED`. Emerald from the approved artwork is an identity cue, used sparingly where it connects a surface to the logo. The artwork itself keeps its original onyx/titanium/emerald values.
+- App canvas: obsidian `#0B0B0C`; identity/action accent: crimson `#C81E3A`; earned/premium accent: gold `#D4AF37`; primary text: bone `#F4F2ED`. Logo highlights retain their approved metallic treatment with crimson gradients.
 - No merge, push, release, or deployment until the user reviews the result and approves it.
 
 ## Experience to design first
@@ -23,7 +23,7 @@ The primary path is **open app → see today's challenge → train or track → 
 
 1. **Hierarchy:** one hero per destination, then compact sections. Shared cards, section headers, badges, rings, buttons, and empty states should follow the same spacing and type scale.
 2. **Typography:** Anton for short display headlines, Inter for reading and controls, IBM Plex Mono for numeric telemetry only. Body copy and control labels must remain legible at increased text scale.
-3. **Color:** use crimson for primary action/live state, gold for Plus and earned milestones, emerald for selected identity moments, and neutral surfaces for most content. Never rely on color alone to explain status.
+3. **Color:** use crimson for identity and primary action/live state, gold for Plus and earned milestones, and neutral surfaces for most content. Never rely on color alone to explain status.
 4. **Motion:** preserve the startup; use motion only for a meaningful state change or orientation cue. Press feedback about 120ms, state changes about 200ms, destination changes about 240ms, and progress reveals about 500ms. Use transform and opacity for moving elements; live sensor values update immediately. Limit entrance stagger to 300ms total.
 5. **Reduced motion:** remove travel, scale, and stagger when `prefers-reduced-motion` is enabled. Keep state and result readable without the animation. Avoid looping attention effects.
 6. **Accessibility:** semantic controls, visible focus, descriptive names, screen-reader status for important results, 44px minimum primary touch targets, and readable contrast on the dark surfaces.
@@ -67,9 +67,15 @@ Screenshot review also identified and corrected desktop utility-rail overlap and
 
 Before any release, review screenshots and the approved startup on a real small Android phone, a recent iPhone, and an iPad; verify native splash, safe areas, font scaling, keyboard, reduced motion, permission prompts, sensor start/stop, and app links. Native app compilation and physical-device checks need the Android SDK/macOS build environment and devices. Confirm store listing graphics and text in the publishing consoles after the code review. No merge or deployment is part of this checkpoint.
 
+## Crimson update — 27 October 2026
+
+The user requested a red logo after the initial emerald approval. All identity SVGs and derived web/Android/iOS icons and splash images now use crimson. Vector paths and startup timers are preserved. Redundant unreachable startup comparisons were removed without changing rendered behavior; the full TypeScript check now passes. The production build, full suite (1,624 passed, 2 skipped), iOS suite (71 passed), and changed-component lint pass.
+
+The public URL was inspected and reported revision `6d6e57dd34a4`, predating the pushed ZENEXIS release `614cebf`. Lovable's editor confirms the newer ZENEXIS preview and unpublished changes. GitHub synchronization updates the editor; publishing to the existing URL remains a separate action requiring the user's deployment approval.
+
 ## Release acceptance
 
-- Approved logo and startup file contents are unchanged; Android/iOS splash references resolve to approved files.
+- Approved logo geometry and startup timing are preserved; Android/iOS splash references resolve to the crimson exports.
 - Every customer-facing app name, icon, splash, notification, support/payment message, and public page says ZENEXIS, except existing issued codes and serial identifiers that users may need to redeem or quote.
 - The core journey works with real data and truthful empty, loading, error, permission, and offline states.
 - No horizontal overflow or clipped controls in the viewport matrix; touch, keyboard, screen-reader, reduced-motion, and text-scaling checks pass.

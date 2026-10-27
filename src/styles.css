@@ -250,9 +250,9 @@
   --color-attr-discipline: #f43f5e;
 
   /* ZENEXIS Brand Identity Tokens */
-  --color-zenexis-emerald: #00f59b;
-  --color-zenexis-emerald-glow: rgba(0, 245, 155, 0.35);
-  --color-zenexis-emerald-deep: #059669;
+  --color-zenexis-crimson: #c81e3a;
+  --color-zenexis-crimson-glow: rgba(200, 30, 58, 0.35);
+  --color-zenexis-crimson-deep: #a0182e;
   --color-zenexis-onyx: #090a0d;
   --color-zenexis-titanium: #eceef2;
   --color-zenexis-slate: #13151a;

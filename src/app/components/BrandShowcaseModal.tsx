@@ -35,14 +35,18 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#13151A] border border-[#00F59B]/40 p-2 flex items-center justify-center">
-                <img src="/brand/zenexis-symbol.svg" alt="ZENEXIS" className="w-full h-full object-contain" />
+              <div className="w-10 h-10 rounded-2xl bg-[#13151A] border border-[#C81E3A]/40 p-2 flex items-center justify-center">
+                <img
+                  src="/brand/zenexis-symbol.svg"
+                  alt="ZENEXIS"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h2 className="font-inter font-black text-lg tracking-[0.15em] text-white uppercase">
                   ZENEXIS Identity Lab
                 </h2>
-                <p className="text-xs text-[#00F59B] font-mono tracking-wider">
+                <p className="text-xs text-[#C81E3A] font-mono tracking-wider">
                   ASCEND TO YOUR APEX — BRAND SPECIFICATION
                 </p>
               </div>
@@ -58,7 +62,7 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
           {/* Section: Startup Animation Previews */}
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
-              <Play className="w-4 h-4 text-[#00F59B]" />
+              <Play className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="text-xs font-mono font-bold tracking-wider text-[#8C8C90] uppercase">
                 Interactive Startup Animation Previews
               </h3>
@@ -67,51 +71,54 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
               {/* Concept B */}
               <button
                 onClick={() => setActiveAnimation("precision-reveal")}
-                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#00F59B]/40 text-left transition-all hover:scale-[1.02]"
+                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#C81E3A]/40 text-left transition-all hover:scale-[1.02]"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#00F59B]/10 text-[#00F59B] font-bold">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#C81E3A]/10 text-[#C81E3A] font-bold">
                     ACTIVE DEFAULT
                   </span>
-                  <Play className="w-3.5 h-3.5 text-[#00F59B] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Play className="w-3.5 h-3.5 text-[#C81E3A] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h4 className="font-inter font-bold text-sm text-white">Precision Reveal</h4>
                 <p className="text-[11px] text-[#8C8C90] mt-1 leading-relaxed">
-                  Fine geometric lines assemble with spring damping, specular rim glint, and typography unmask.
+                  Fine geometric lines assemble with spring damping, specular rim glint, and
+                  typography unmask.
                 </p>
               </button>
 
               {/* Concept A */}
               <button
                 onClick={() => setActiveAnimation("energy-formation")}
-                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#00F59B]/40 text-left transition-all hover:scale-[1.02]"
+                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#C81E3A]/40 text-left transition-all hover:scale-[1.02]"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#8C8C90]">
                     CONCEPT A
                   </span>
-                  <Play className="w-3.5 h-3.5 text-[#00F59B] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Play className="w-3.5 h-3.5 text-[#C81E3A] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h4 className="font-inter font-bold text-sm text-white">Energy Formation</h4>
                 <p className="text-[11px] text-[#8C8C90] mt-1 leading-relaxed">
-                  Abstract emerald energy particles converge radially into the dual-chevron with shockwave light pulse.
+                  Abstract crimson energy particles converge radially into the dual-chevron with
+                  shockwave light pulse.
                 </p>
               </button>
 
               {/* Concept C */}
               <button
                 onClick={() => setActiveAnimation("cinematic-transformation")}
-                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#00F59B]/40 text-left transition-all hover:scale-[1.02]"
+                className="group p-4 rounded-2xl bg-[#14161C] border border-white/5 hover:border-[#C81E3A]/40 text-left transition-all hover:scale-[1.02]"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-[#8C8C90]">
                     CONCEPT C
                   </span>
-                  <Play className="w-3.5 h-3.5 text-[#00F59B] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Play className="w-3.5 h-3.5 text-[#C81E3A] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h4 className="font-inter font-bold text-sm text-white">Transformation</h4>
                 <p className="text-[11px] text-[#8C8C90] mt-1 leading-relaxed">
-                  Fluid energy aura transforms into the sharp aerodynamic chevrons with high-contrast finish.
+                  Fluid energy aura transforms into the sharp aerodynamic chevrons with
+                  high-contrast finish.
                 </p>
               </button>
             </div>
@@ -120,7 +127,7 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
           {/* Section: Vector Asset Suite */}
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
-              <Layers className="w-4 h-4 text-[#00F59B]" />
+              <Layers className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="text-xs font-mono font-bold tracking-wider text-[#8C8C90] uppercase">
                 Production Vector Asset Suite
               </h3>
@@ -128,34 +135,50 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 rounded-2xl bg-[#14161C] border border-white/5 flex flex-col items-center text-center">
                 <div className="w-16 h-16 p-2 flex items-center justify-center">
-                  <img src="/brand/zenexis-symbol.svg" alt="Primary Symbol" className="w-full h-full object-contain" />
+                  <img
+                    src="/brand/zenexis-symbol.svg"
+                    alt="Primary Symbol"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-[11px] font-mono text-[#8C8C90] mt-2">Symbol (Dark)</span>
-                <span className="text-[9px] text-[#00F59B] font-mono">SVG • Vector</span>
+                <span className="text-[9px] text-[#C81E3A] font-mono">SVG • Vector</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#14161C] border border-white/5 flex flex-col items-center text-center">
                 <div className="w-16 h-16 p-2 flex items-center justify-center">
-                  <img src="/brand/zenexis-symbol-monochrome.svg" alt="Monochrome" className="w-full h-full object-contain" />
+                  <img
+                    src="/brand/zenexis-symbol-monochrome.svg"
+                    alt="Monochrome"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-[11px] font-mono text-[#8C8C90] mt-2">Monochrome</span>
-                <span className="text-[9px] text-[#00F59B] font-mono">SVG • Clean</span>
+                <span className="text-[9px] text-[#C81E3A] font-mono">SVG • Clean</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#14161C] border border-white/5 flex flex-col items-center text-center">
                 <div className="w-16 h-16 p-1 flex items-center justify-center">
-                  <img src="/brand/zenexis-app-icon.svg" alt="App Icon" className="w-full h-full object-contain rounded-2xl" />
+                  <img
+                    src="/brand/zenexis-app-icon.svg"
+                    alt="App Icon"
+                    className="w-full h-full object-contain rounded-2xl"
+                  />
                 </div>
                 <span className="text-[11px] font-mono text-[#8C8C90] mt-2">App Icon</span>
-                <span className="text-[9px] text-[#00F59B] font-mono">iOS & Android</span>
+                <span className="text-[9px] text-[#C81E3A] font-mono">iOS & Android</span>
               </div>
 
               <div className="p-3 rounded-2xl bg-[#14161C] border border-white/5 flex flex-col items-center text-center">
                 <div className="w-16 h-16 p-2 flex items-center justify-center">
-                  <img src="/brand/zenexis-wordmark.svg" alt="Wordmark" className="w-full h-full object-contain" />
+                  <img
+                    src="/brand/zenexis-wordmark.svg"
+                    alt="Wordmark"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-[11px] font-mono text-[#8C8C90] mt-2">Wordmark</span>
-                <span className="text-[9px] text-[#00F59B] font-mono">SVG • 640×140</span>
+                <span className="text-[9px] text-[#C81E3A] font-mono">SVG • 640×140</span>
               </div>
             </div>
           </div>
@@ -163,24 +186,24 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
           {/* Section: Color Palette Tokens */}
           <div className="mt-6">
             <div className="flex items-center gap-2 mb-3">
-              <Palette className="w-4 h-4 text-[#00F59B]" />
+              <Palette className="w-4 h-4 text-[#C81E3A]" />
               <h3 className="text-xs font-mono font-bold tracking-wider text-[#8C8C90] uppercase">
                 Brand Palette Tokens
               </h3>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="p-2.5 rounded-xl bg-[#14161C] border border-white/5 flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-[#00F59B] shadow-[0_0_8px_#00F59B]" />
+                <div className="w-6 h-6 rounded-lg bg-[#C81E3A] shadow-[0_0_8px_#C81E3A]" />
                 <div>
-                  <div className="text-[11px] font-bold text-white">Laser Emerald</div>
-                  <div className="text-[10px] font-mono text-[#8C8C90]">#00F59B</div>
+                  <div className="text-[11px] font-bold text-white">Sovereign Crimson</div>
+                  <div className="text-[10px] font-mono text-[#8C8C90]">#C81E3A</div>
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-[#14161C] border border-white/5 flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-[#059669]" />
+                <div className="w-6 h-6 rounded-lg bg-[#A0182E]" />
                 <div>
                   <div className="text-[11px] font-bold text-white">Deep Teal</div>
-                  <div className="text-[10px] font-mono text-[#8C8C90]">#059669</div>
+                  <div className="text-[10px] font-mono text-[#8C8C90]">#A0182E</div>
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-[#14161C] border border-white/5 flex items-center gap-2.5">
@@ -205,7 +228,7 @@ export const BrandShowcaseModal: React.FC<BrandShowcaseModalProps> = ({ isOpen, 
             <span>60 FPS Motion Config • Reduced-Motion Protected</span>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-full bg-[#00F59B] text-black font-bold font-inter text-xs hover:bg-[#00D485] transition-colors"
+              className="px-4 py-1.5 rounded-full bg-[#C81E3A] text-black font-bold font-inter text-xs hover:bg-[#A0182E] transition-colors"
             >
               Done
             </button>

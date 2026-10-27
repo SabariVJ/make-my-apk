@@ -14,26 +14,26 @@ const symbolSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
     <linearGradient id="upLeftGrad" x1="122" y1="100" x2="256" y2="242" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="35%" stop-color="#E2E8F0" />
-      <stop offset="70%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#059669" />
+      <stop offset="70%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#A0182E" />
     </linearGradient>
     <linearGradient id="upRightGrad" x1="390" y1="100" x2="256" y2="242" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="50%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="50%" stop-color="#A0182E" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
 
     <!-- Gradients for Lower Chevron -->
     <linearGradient id="downLeftGrad" x1="122" y1="204" x2="256" y2="346" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#F1F5F9" />
       <stop offset="40%" stop-color="#CBD5E1" />
-      <stop offset="80%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="80%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="downRightGrad" x1="390" y1="204" x2="256" y2="346" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="50%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#064E3B" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="50%" stop-color="#7F1325" />
+      <stop offset="100%" stop-color="#560D19" />
     </linearGradient>
 
     <!-- Core Glow Filter -->
@@ -45,8 +45,8 @@ const symbolSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
 
   <!-- Ambient Underglow -->
   <g opacity="0.45" filter="url(#apexGlow)">
-    <path d="M 256 120 L 375 215 L 340 242 L 256 178 L 172 242 L 137 215 Z" fill="#00F59B" />
-    <path d="M 256 220 L 375 315 L 340 342 L 256 278 L 172 342 L 137 315 Z" fill="#00F59B" />
+    <path d="M 256 120 L 375 215 L 340 242 L 256 178 L 172 242 L 137 215 Z" fill="#C81E3A" />
+    <path d="M 256 220 L 375 315 L 340 342 L 256 278 L 172 342 L 137 315 Z" fill="#C81E3A" />
   </g>
 
   <!-- UPPER CHEVRON -->
@@ -92,46 +92,46 @@ const appIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512
     
     <!-- Outer Rim Stroke Gradient -->
     <linearGradient id="rimStroke" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35" />
-      <stop offset="35%" stop-color="#00F59B" stop-opacity="0.6" />
+      <stop offset="0%" stop-color="#C81E3A" stop-opacity="0.35" />
+      <stop offset="35%" stop-color="#C81E3A" stop-opacity="0.6" />
       <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.1" />
-      <stop offset="100%" stop-color="#00F59B" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#C81E3A" stop-opacity="0.2" />
     </linearGradient>
 
-    <!-- Radial Emerald Halo -->
-    <radialGradient id="emeraldHalo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F59B" stop-opacity="0.28" />
-      <stop offset="50%" stop-color="#00F59B" stop-opacity="0.08" />
-      <stop offset="100%" stop-color="#00F59B" stop-opacity="0" />
+    <!-- Radial Crimson Halo -->
+    <radialGradient id="crimsonHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C81E3A" stop-opacity="0.28" />
+      <stop offset="50%" stop-color="#C81E3A" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#C81E3A" stop-opacity="0" />
     </radialGradient>
 
     <!-- Logo Gradients -->
     <linearGradient id="icUpLeft" x1="140" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="40%" stop-color="#E2E8F0" />
-      <stop offset="80%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#059669" />
+      <stop offset="80%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#A0182E" />
     </linearGradient>
     <linearGradient id="icUpRight" x1="372" y1="120" x2="256" y2="242" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="55%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="55%" stop-color="#A0182E" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="icDownLeft" x1="140" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#F8FAFC" />
       <stop offset="45%" stop-color="#CBD5E1" />
-      <stop offset="85%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="85%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="icDownRight" x1="372" y1="214" x2="256" y2="336" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="55%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#064E3B" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="55%" stop-color="#7F1325" />
+      <stop offset="100%" stop-color="#560D19" />
     </linearGradient>
     
     <filter id="iconShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity="0.75" />
-      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#00F59B" flood-opacity="0.25" />
+      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#C81E3A" flood-opacity="0.25" />
     </filter>
   </defs>
 
@@ -140,7 +140,7 @@ const appIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512
   <rect x="16" y="16" width="480" height="480" rx="108" stroke="url(#rimStroke)" stroke-width="2" />
   
   <!-- Subtle Internal Grid Matrix Accent -->
-  <circle cx="256" cy="256" r="160" fill="url(#emeraldHalo)" />
+  <circle cx="256" cy="256" r="160" fill="url(#crimsonHalo)" />
 
   <!-- Centered Symbol Group with Shadow -->
   <g filter="url(#iconShadow)">
@@ -164,24 +164,24 @@ const logoPrimarySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960
     <linearGradient id="logoUpLeft" x1="50" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="40%" stop-color="#E2E8F0" />
-      <stop offset="80%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#059669" />
+      <stop offset="80%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#A0182E" />
     </linearGradient>
     <linearGradient id="logoUpRight" x1="270" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="60%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="60%" stop-color="#A0182E" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="logoDownLeft" x1="50" y1="120" x2="160" y2="240" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#F8FAFC" />
       <stop offset="45%" stop-color="#CBD5E1" />
-      <stop offset="85%" stop-color="#00F59B" />
-      <stop offset="100%" stop-color="#047857" />
+      <stop offset="85%" stop-color="#C81E3A" />
+      <stop offset="100%" stop-color="#7F1325" />
     </linearGradient>
     <linearGradient id="logoDownRight" x1="270" y1="120" x2="160" y2="240" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F59B" />
-      <stop offset="60%" stop-color="#047857" />
-      <stop offset="100%" stop-color="#064E3B" />
+      <stop offset="0%" stop-color="#C81E3A" />
+      <stop offset="60%" stop-color="#7F1325" />
+      <stop offset="100%" stop-color="#560D19" />
     </linearGradient>
     <linearGradient id="textGrad" x1="320" y1="80" x2="900" y2="180" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
@@ -221,22 +221,22 @@ const logoPrimarySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960
   </g>
 
   <!-- Tagline "ASCEND TO YOUR APEX" -->
-  <text x="272" y="222" font-family="'Inter', sans-serif" font-size="16" font-weight="600" letter-spacing="6" fill="#00F59B" opacity="0.95">ASCEND TO YOUR APEX</text>
+  <text x="272" y="222" font-family="'Inter', sans-serif" font-size="16" font-weight="600" letter-spacing="6" fill="#C81E3A" opacity="0.95">ASCEND TO YOUR APEX</text>
 </svg>`;
 
 // 5. Light Background Variant Logo
 const logoLightSvg = logoPrimarySvg
   .replace('fill="url(#textGrad)"', 'fill="#0B0C0E"')
-  .replace('fill="#00F59B"', 'fill="#059669"');
+  .replace('fill="#C81E3A"', 'fill="#A0182E"');
 
 // 6. Monochrome All-White Logo
 const logoMonochromeSvg = logoPrimarySvg
-  .replace(/url\(#logoUpLeft\)/g, '#FFFFFF')
-  .replace(/url\(#logoUpRight\)/g, '#E2E8F0')
-  .replace(/url\(#logoDownLeft\)/g, '#FFFFFF')
-  .replace(/url\(#logoDownRight\)/g, '#E2E8F0')
+  .replace(/url\(#logoUpLeft\)/g, "#FFFFFF")
+  .replace(/url\(#logoUpRight\)/g, "#E2E8F0")
+  .replace(/url\(#logoDownLeft\)/g, "#FFFFFF")
+  .replace(/url\(#logoDownRight\)/g, "#E2E8F0")
   .replace('fill="url(#textGrad)"', 'fill="#FFFFFF"')
-  .replace('fill="#00F59B"', 'fill="#FFFFFF"');
+  .replace('fill="#C81E3A"', 'fill="#FFFFFF"');
 
 // 7. Standalone Wordmark SVG
 const wordmarkSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" fill="none">
@@ -279,48 +279,72 @@ async function generatePngExports() {
   const logoBuffer = Buffer.from(logoPrimarySvg);
 
   // 1024x1024 Master iOS App Store Icon
-  await sharp(iconBuffer).resize(1024, 1024).png().toFile(path.join(BRAND_DIR, "zenexis-app-icon-1024.png"));
-  
+  await sharp(iconBuffer)
+    .resize(1024, 1024)
+    .png()
+    .toFile(path.join(BRAND_DIR, "zenexis-app-icon-1024.png"));
+
   // 512x512 Google Play & Web PWA Icons
-  await sharp(iconBuffer).resize(512, 512).png().toFile(path.join(BRAND_DIR, "zenexis-app-icon-512.png"));
+  await sharp(iconBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(BRAND_DIR, "zenexis-app-icon-512.png"));
   await sharp(iconBuffer).resize(512, 512).png().toFile(path.resolve("public/icon-512.png"));
   await sharp(iconBuffer).resize(192, 192).png().toFile(path.resolve("public/icon-192.png"));
   await sharp(iconBuffer).resize(64, 64).png().toFile(path.resolve("public/favicon.png"));
 
   // High-Res Primary Logos
-  await sharp(logoBuffer).resize(1920, 560).png().toFile(path.join(BRAND_DIR, "zenexis-logo-primary-2x.png"));
-  await sharp(symbolBuffer).resize(1024, 1024).png().toFile(path.join(BRAND_DIR, "zenexis-symbol-1024.png"));
+  await sharp(logoBuffer)
+    .resize(1920, 560)
+    .png()
+    .toFile(path.join(BRAND_DIR, "zenexis-logo-primary-2x.png"));
+  await sharp(symbolBuffer)
+    .resize(1024, 1024)
+    .png()
+    .toFile(path.join(BRAND_DIR, "zenexis-symbol-1024.png"));
 
   // Android Adaptive Launcher Assets
   // Foreground: 432x432 (safe zone is center 66% = 288px)
   const androidForegroundSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" fill="none">
     <g transform="translate(68, 68) scale(0.58)">
-      ${symbolSvg.replace(/<svg[^>]*>/, '').replace('</svg>', '')}
+      ${symbolSvg.replace(/<svg[^>]*>/, "").replace("</svg>", "")}
     </g>
   </svg>`;
   fs.writeFileSync(path.join(BRAND_DIR, "ic_launcher_foreground.svg"), androidForegroundSvg);
-  
+
   const fgBuffer = Buffer.from(androidForegroundSvg);
   const mipmaps = [
     { dir: "mipmap-mdpi", size: 108 },
     { dir: "mipmap-hdpi", size: 162 },
     { dir: "mipmap-xhdpi", size: 216 },
     { dir: "mipmap-xxhdpi", size: 324 },
-    { dir: "mipmap-xxxhdpi", size: 432 }
+    { dir: "mipmap-xxxhdpi", size: 432 },
   ];
 
   for (const m of mipmaps) {
     const targetDir = path.resolve("android/app/src/main/res", m.dir);
     if (fs.existsSync(targetDir)) {
-      await sharp(fgBuffer).resize(m.size, m.size).png().toFile(path.join(targetDir, "ic_launcher_foreground.png"));
+      await sharp(fgBuffer)
+        .resize(m.size, m.size)
+        .png()
+        .toFile(path.join(targetDir, "ic_launcher_foreground.png"));
       // Legacy square icon & round icon
-      await sharp(iconBuffer).resize(m.size / 432 * 192, m.size / 432 * 192).png().toFile(path.join(targetDir, "ic_launcher.png"));
-      await sharp(iconBuffer).resize(m.size / 432 * 192, m.size / 432 * 192).png().toFile(path.join(targetDir, "ic_launcher_round.png"));
+      await sharp(iconBuffer)
+        .resize((m.size / 432) * 192, (m.size / 432) * 192)
+        .png()
+        .toFile(path.join(targetDir, "ic_launcher.png"));
+      await sharp(iconBuffer)
+        .resize((m.size / 432) * 192, (m.size / 432) * 192)
+        .png()
+        .toFile(path.join(targetDir, "ic_launcher_round.png"));
     }
   }
 
   // Play Store 512x512 Master Android Icon
-  await sharp(iconBuffer).resize(512, 512).png().toFile(path.resolve("android/app/src/main/ic_launcher-playstore.png"));
+  await sharp(iconBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.resolve("android/app/src/main/ic_launcher-playstore.png"));
 
   // Android Splash Screen (centered symbol on obsidian background)
   const splashBuffer = await sharp(symbolBuffer)
@@ -330,7 +354,7 @@ async function generatePngExports() {
       bottom: 480,
       left: 360,
       right: 360,
-      background: { r: 11, g: 12, b: 14, alpha: 1 }
+      background: { r: 11, g: 12, b: 14, alpha: 1 },
     })
     .png()
     .toFile(path.resolve("android/app/src/main/res/drawable/splash.png"));
@@ -338,7 +362,10 @@ async function generatePngExports() {
   // iOS App Icon Assets (Assets.xcassets/AppIcon.appiconset)
   const iosIconDir = path.resolve("ios/App/App/Assets.xcassets/AppIcon.appiconset");
   if (fs.existsSync(iosIconDir)) {
-    await sharp(iconBuffer).resize(1024, 1024).png().toFile(path.join(iosIconDir, "AppIcon-512@2x.png"));
+    await sharp(iconBuffer)
+      .resize(1024, 1024)
+      .png()
+      .toFile(path.join(iosIconDir, "AppIcon-512@2x.png"));
   }
 
   // iOS Launch Screen Splash Image (Assets.xcassets/Splash.imageset)
@@ -351,16 +378,18 @@ async function generatePngExports() {
         bottom: 600,
         left: 480,
         right: 480,
-        background: { r: 11, g: 12, b: 14, alpha: 1 }
+        background: { r: 11, g: 12, b: 14, alpha: 1 },
       })
       .png()
       .toFile(path.join(iosSplashDir, "splash.png"));
   }
 
-  console.log("High-resolution PNG assets, Android adaptive icons, and iOS launch assets successfully generated!");
+  console.log(
+    "High-resolution PNG assets, Android adaptive icons, and iOS launch assets successfully generated!",
+  );
 }
 
-generatePngExports().catch(err => {
+generatePngExports().catch((err) => {
   console.error("Export error:", err);
   process.exit(1);
 });
